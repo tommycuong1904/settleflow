@@ -1,0 +1,10 @@
+export type TransactionProofStatus = "pending" | "confirmed" | "failed";
+
+export type TransactionProof = {
+  id: string;
+  milestoneId: string;
+  txHash: string;
+  network: string;
+  status: TransactionProofStatus;
+  explorerUrl: string;
+};
