@@ -28,7 +28,7 @@ This makes contributor payouts more legible, controllable, and onchain-native th
 
 ## Implemented Checkpoint 2 State
 
-The repository now includes:
+The repository currently includes:
 - landing page for product framing
 - dashboard route for payout operations visibility
 - payout creation route with milestone split preview
@@ -54,8 +54,42 @@ The MVP focuses on one core workflow:
 - MVP scope defined
 - Repository structure and implementation plan established
 - Checkpoint 2 UI scaffold implemented and verified with real build
-- Local preview server verified over HTTP
 - Core UI flow and Arc integration scaffolding in place
+
+## Verified Checkpoint 2 State
+
+Verified routes:
+- `/`
+- `/dashboard`
+- `/payouts/new`
+- `/payouts/payout-1`
+
+Verified checks:
+- `npm run build` completed successfully
+- key routes are implemented in the repository
+- checkpoint UI flow is present across landing, dashboard, payout creation, and payout detail views
+
+## Checkpoint 2 Screens
+
+### Landing page
+*Product framing for milestone-based contributor payouts on Arc.*
+
+![Landing page](docs/screenshots/landing-page.png)
+
+### Dashboard
+*Payout visibility, review queue, and release status.*
+
+![Dashboard](docs/screenshots/dashboard.png)
+
+### Payout creation
+*Define contributor scope, milestone split, and payout structure.*
+
+![Payout creation](docs/screenshots/payout-creation.png)
+
+### Payout detail
+*Review milestones, gate release, and show settlement proof.*
+
+![Payout detail](docs/screenshots/payout-detail.png)
 
 ## Planned Stack
 
@@ -66,28 +100,6 @@ The MVP focuses on one core workflow:
 - **Blockchain target:** Arc Testnet
 - **Money layer:** USDC
 - **Payments integration:** App Kit Send
-
-## Local Development
-
-```bash
-npm install
-npm run dev -- -H 0.0.0.0
-```
-
-Preview is available locally at:
-- `http://127.0.0.1:3000/`
-
-Verified screenshot evidence captured during review pass:
-- landing: `/root/.hermes/cache/screenshots/browser_screenshot_5ca69c2016be4b78ac1981e328c5bdde.png`
-- dashboard: `/root/.hermes/cache/screenshots/browser_screenshot_bf8760ef702642f9914b935a352af01c.png`
-- payout detail: `/root/.hermes/cache/screenshots/browser_screenshot_989a5d534bf0423bb48265da689e9b02.png`
-
-## Verified Routes
-
-- `/`
-- `/dashboard`
-- `/payouts/new`
-- `/payouts/payout-1`
 
 ## Repository Structure
 

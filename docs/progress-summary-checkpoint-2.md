@@ -14,6 +14,7 @@ SettleFlow is an Arc-native USDC payout workflow for crypto teams. It helps team
   - review work
   - approve
   - release funds
+  - show settlement status / transaction proof
 - Established the repository structure and project documentation foundation
 - Implemented the checkpoint UI routes:
   - landing page
@@ -34,7 +35,7 @@ SettleFlow is an Arc-native USDC payout workflow for crypto teams. It helps team
   - transaction proofs
 - Added Arc integration scaffold for config, types, and send flow placeholder
 - Verified the repository with successful production builds
-- Verified the live local preview over HTTP
+- Validated the checkpoint UI flow across the key product routes
 
 ## What’s In Progress
 
@@ -52,7 +53,7 @@ This makes the project a strong fit for:
 - DeFi as a stablecoin-native payments and treasury workflow track
 - App Kit Send as a natural payout execution path
 
-## Verified Preview State
+## Verified Checkpoint 2 State
 
 Verified routes:
 - `/`
@@ -62,12 +63,13 @@ Verified routes:
 
 Verified checks:
 - `npm run build` completed successfully
-- local preview served successfully over HTTP
-- key routes render the expected SettleFlow UI
-- checkpoint screenshots captured for landing, dashboard, and payout detail flows
+- key routes are implemented in the repository
+- checkpoint UI flow is present across landing, dashboard, payout creation, and payout detail views
+- Arc integration path is scaffolded and ready for final MVP wiring
 
 ## What’s Next
 
-- Capture checkpoint screenshots / preview evidence
-- Finalize repository presentation for review
-- Continue toward real Arc payout execution for the final MVP
+- Connect release action to real App Kit Send flow
+- Make state transitions interactive beyond static/mock presentation
+- Deploy final MVP on Arc
+- Package final demo and pitch assets

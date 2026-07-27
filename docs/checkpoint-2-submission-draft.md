@@ -17,13 +17,13 @@ SettleFlow uses Arc as the settlement rail and USDC as the money layer. The key 
 
 ## Current proof points
 - Production build succeeds
-- Local preview server verified live on port 3000
-- Core routes verified:
+- Core routes verified in the repository:
   - `/`
   - `/dashboard`
   - `/payouts/new`
   - `/payouts/payout-1`
-- Screenshot evidence captured for landing, dashboard, and payout detail
+- Checkpoint UI flow has been validated across landing, dashboard, payout creation, and payout detail views
+- Arc integration path is scaffolded and ready for final MVP wiring
 
 ## Demo story
 1. Start at landing page to frame the product
