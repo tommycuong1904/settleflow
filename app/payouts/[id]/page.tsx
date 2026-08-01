@@ -63,7 +63,7 @@ export default async function PayoutDetailPage({
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="rounded-3xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.72)] px-5 py-4">
             <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
-              Review pressure
+              Awaiting review
             </p>
             <p className="mt-2 text-2xl font-semibold tracking-tight text-white">
               {submittedCount}
@@ -74,15 +74,15 @@ export default async function PayoutDetailPage({
           </div>
           <div className="rounded-3xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.72)] px-5 py-4">
             <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
-              Release-ready next
+              Next release
             </p>
             <p className="mt-2 text-lg font-semibold tracking-tight text-white">
-              {nextReleasableMilestone ? nextReleasableMilestone.title : "No milestone approved yet"}
+              {nextReleasableMilestone ? nextReleasableMilestone.title : "No release available yet"}
             </p>
             <p className="mt-1 text-sm text-[var(--text-primary)]">
               {nextReleasableMilestone
-                ? `${formatUsdc(nextReleasableMilestone.amount)} USDC can move to Arc next.`
-                : "Approval unlocks the next release step."}
+                ? `${formatUsdc(nextReleasableMilestone.amount)} USDC is ready to move on Arc.`
+                : "Approve the submitted milestone to unlock the next release."}
             </p>
           </div>
         </div>
@@ -99,7 +99,12 @@ export default async function PayoutDetailPage({
             { label: "Total amount", value: `${formatUsdc(payout.totalAmount)} USDC` },
             {
               label: "Payout status",
-              value: payout.status.replace("_", " "),
+              value:
+                payout.status === "partially_released"
+                  ? "Partially released"
+                  : payout.status === "active"
+                    ? "In progress"
+                    : payout.status.replace("_", " "),
             },
           ].map((item) => (
             <div key={item.label} className="rounded-2xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.62)] p-4">
@@ -116,10 +121,10 @@ export default async function PayoutDetailPage({
 
       <section className="grid gap-4 md:grid-cols-4">
         <StatCard label="Total milestones" value={milestones.length} />
-        <StatCard label="Approved" value={approvedCount} />
-        <StatCard label="Released" value={releasedCount} />
+        <StatCard label="Approved milestones" value={approvedCount} />
+        <StatCard label="Released milestones" value={releasedCount} />
         <StatCard
-          label="Amount released"
+          label="Total released"
           value={`${formatUsdc(amountReleased)} USDC`}
           hint="Released milestones already settled on Arc"
         />
@@ -131,7 +136,7 @@ export default async function PayoutDetailPage({
             <div className="grid gap-4 md:grid-cols-3">
               <div>
                 <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                  Submitted now
+                  Waiting now
                 </p>
                 <p className="mt-2 text-2xl font-semibold tracking-tight text-white">
                   {submittedCount}
@@ -139,7 +144,7 @@ export default async function PayoutDetailPage({
               </div>
               <div>
                 <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                  Approved next
+                  Ready to release
                 </p>
                 <p className="mt-2 text-2xl font-semibold tracking-tight text-white">
                   {nextReleasableMilestone ? formatUsdc(nextReleasableMilestone.amount) : "0"} USDC
@@ -169,12 +174,12 @@ export default async function PayoutDetailPage({
                 <p className="font-semibold text-white">
                   {nextReleasableMilestone
                     ? nextReleasableMilestone.title
-                    : "No approved milestone waiting for release"}
+                    : "No release available yet"}
                 </p>
                 <p>
                   {nextReleasableMilestone
-                    ? `${formatUsdc(nextReleasableMilestone.amount)} USDC is ready for App Kit Send integration.`
-                    : "Once a milestone is approved, it becomes eligible for Arc settlement."}
+                    ? `${formatUsdc(nextReleasableMilestone.amount)} USDC is ready for Arc release.`
+                    : "Approve the submitted milestone to unlock the next release."}
                 </p>
               </div>
               <div className="rounded-3xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.74)] p-4">
@@ -185,7 +190,7 @@ export default async function PayoutDetailPage({
                 <p className="mt-1 text-sm text-[var(--text-primary)]">Asset: USDC</p>
               </div>
               <div className="rounded-2xl border border-dashed border-[var(--border-soft)] px-4 py-3 text-sm text-[var(--text-muted)]">
-                Release should happen only after reviewer approval is visible in the milestone workflow.
+                No release should happen until reviewer approval is visible in the milestone workflow.
               </div>
             </div>
           </SectionCard>

@@ -15,12 +15,12 @@ export function ReleasePanel({
   return (
     <div className="space-y-4 text-sm text-[var(--text-primary)]">
       <div className="space-y-1.5">
-        <p className="font-semibold text-white">Approval-gated release</p>
-        <p>Only approved milestones can be released in USDC on Arc.</p>
+        <p className="font-semibold text-white">Release after approval</p>
+        <p>Only approved milestones can move in USDC on Arc.</p>
       </div>
       <div className="rounded-3xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.84)] p-4">
         <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
-          Current release target
+          Current release amount
         </p>
         <p className="mt-3 text-xl font-semibold tracking-tight text-white">
           {formatUsdc(amount)} USDC
@@ -31,7 +31,7 @@ export function ReleasePanel({
         <Button variant="primary">Release Payout</Button>
       ) : (
         <div className="rounded-2xl border border-dashed border-[var(--border-soft)] px-4 py-3 text-sm text-[var(--text-muted)]">
-          Release becomes available after approval.
+          No release available yet — approve the submitted milestone to unlock release.
         </div>
       )}
     </div>

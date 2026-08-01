@@ -73,7 +73,7 @@ export default function CreatePayoutPage() {
                 Release rule
               </p>
               <p className="mt-2 text-lg font-semibold tracking-tight text-white">
-                Approval gated
+                Release after approval
               </p>
             </div>
           </div>
@@ -200,7 +200,7 @@ export default function CreatePayoutPage() {
               {
                 title: "Approve before release",
                 description:
-                  "Approval is the gating event before USDC can move on Arc.",
+                  "Approval is the one event that unlocks release on Arc.",
               },
               {
                 title: "Release and attach proof",
@@ -250,9 +250,9 @@ export default function CreatePayoutPage() {
               </div>
               <div className="rounded-3xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.62)] p-4">
                 <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                  Milestone count
+                  Total milestones
                 </p>
-                <p className="mt-2 font-semibold text-white">{milestoneDrafts.length} milestones</p>
+                <p className="mt-2 font-semibold text-white">{milestoneDrafts.length}</p>
               </div>
             </div>
 

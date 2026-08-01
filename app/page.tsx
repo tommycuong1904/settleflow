@@ -46,9 +46,9 @@ const flowSteps = [
 ];
 
 const proofSignals = [
-  "Milestones created before release",
-  "Approval gates every payout step",
-  "Settlement proof visible in payout detail",
+  "Milestones are created before any release happens",
+  "Approval unlocks every payout step",
+  "Settlement proof stays visible in payout detail",
 ];
 
 export default function Home() {
@@ -56,24 +56,23 @@ export default function Home() {
     <div className="flex flex-col gap-8 md:gap-10">
       <section className="sf-shell overflow-hidden rounded-[2rem] px-6 py-8 md:px-8 md:py-10">
         <div className="grid gap-8 xl:grid-cols-[1.1fr_0.9fr] xl:items-center">
-          <div className="max-w-3xl space-y-6">
+          <div className="max-w-3xl space-y-5">
             <span className="inline-flex rounded-full border border-cyan-300/30 bg-cyan-400/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-cyan-200">
-              Build on Arc · Demo-ready payout workflow
+              Build on Arc · Payout workflow demo
             </span>
-            <div className="space-y-4">
+            <div className="space-y-3">
               <h1 className="max-w-3xl text-4xl font-semibold tracking-tight text-white sm:text-5xl">
-                Create milestone-based USDC payouts with approval-gated release on Arc.
+                Release USDC only after milestone approval.
               </h1>
               <p className="max-w-2xl text-base leading-8 text-[var(--text-primary)] sm:text-lg">
-                SettleFlow helps crypto teams define payout agreements, review submitted
-                work, and release USDC only after milestone approval — with settlement
-                proof attached to the payout record.
+                SettleFlow helps crypto teams create payout agreements, review submitted work,
+                and keep settlement proof attached once funds move on Arc.
               </p>
             </div>
             <div className="flex flex-wrap gap-3">
               <Button href="/payouts/new">Launch Demo</Button>
               <Button href="/dashboard" variant="secondary">
-                View Dashboard
+                View Sample Dashboard
               </Button>
             </div>
           </div>
@@ -111,7 +110,7 @@ export default function Home() {
                   <p className="text-xs uppercase tracking-[0.16em] text-[var(--text-muted)]">
                     Proof status
                   </p>
-                  <p className="mt-2 text-lg font-semibold text-cyan-100">Ready on release</p>
+                  <p className="mt-2 text-lg font-semibold text-cyan-100">Proof after release</p>
                 </div>
               </div>
 
@@ -184,7 +183,7 @@ export default function Home() {
           </div>
         </SectionCard>
 
-        <SectionCard title="Proof signals">
+        <SectionCard title="What reviewers can verify">
           <div className="space-y-3">
             {proofSignals.map((signal) => (
               <div
@@ -195,10 +194,6 @@ export default function Home() {
                 <p className="leading-6">{signal}</p>
               </div>
             ))}
-          </div>
-          <div className="mt-5 rounded-2xl border border-cyan-300/20 bg-cyan-400/8 p-4 text-sm leading-6 text-[var(--text-primary)]">
-            SettleFlow is designed so reviewers can understand the payout flow, the
-            release gate, and the Arc settlement proof in a single demo path.
           </div>
         </SectionCard>
       </section>

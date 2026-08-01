@@ -7,7 +7,7 @@ import { mockContributors } from "@/lib/data/mock-contributors";
 import { mockMilestones } from "@/lib/data/mock-milestones";
 import { mockPayouts } from "@/lib/data/mock-payouts";
 import { mockTransactionProofs } from "@/lib/data/mock-transaction-proofs";
-import { formatUsdc } from "@/lib/utils/format";
+import { formatUsdc, shortenAddress } from "@/lib/utils/format";
 
 export default function DashboardPage() {
   const activePayouts = mockPayouts.filter((payout) =>
@@ -65,8 +65,7 @@ export default function DashboardPage() {
                 {pendingApprovals.length} milestone{pendingApprovals.length === 1 ? "" : "s"} waiting for review
               </h2>
               <p className="max-w-2xl text-sm leading-7 text-[var(--text-primary)]">
-                Submitted work should be reviewed first so approved milestones can
-                move into release-ready state without blocking the payout flow.
+                Review submitted work first so approved milestones can move into release-ready state without blocking the payout flow.
               </p>
             </div>
           </div>
@@ -74,18 +73,18 @@ export default function DashboardPage() {
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
             <div className="rounded-3xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.72)] p-5">
               <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                Release-ready value
+                Ready to release
               </p>
               <p className="mt-3 text-2xl font-semibold tracking-tight text-white">
                 {formatUsdc(releaseReadyMilestones.reduce((sum, milestone) => sum + milestone.amount, 0))} USDC
               </p>
               <p className="mt-2 text-sm text-[var(--text-primary)]">
-                Approved milestones that can move to Arc settlement next.
+                Approved milestone value that can move to Arc next.
               </p>
             </div>
             <div className="rounded-3xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.72)] p-5">
               <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                Recent proof volume
+                Released with proof
               </p>
               <p className="mt-3 text-2xl font-semibold tracking-tight text-white">
                 {formatUsdc(releasedValue)} USDC
@@ -99,11 +98,11 @@ export default function DashboardPage() {
       </section>
 
       <section className="grid gap-4 md:grid-cols-4">
-        <StatCard label="Active Payouts" value={activePayouts.length} />
-        <StatCard label="Pending Approvals" value={pendingApprovals.length} />
-        <StatCard label="Release Ready" value={releaseReadyMilestones.length} />
+        <StatCard label="Active payouts" value={activePayouts.length} />
+        <StatCard label="Milestones awaiting review" value={pendingApprovals.length} />
+        <StatCard label="Milestones ready to release" value={releaseReadyMilestones.length} />
         <StatCard
-          label="Total USDC Scheduled"
+          label="Total scheduled"
           value={`${formatUsdc(totalScheduled)} USDC`}
           hint="Visible milestone commitments across all payouts"
         />
@@ -152,7 +151,7 @@ export default function DashboardPage() {
                           Review milestone
                         </Button>
                         <div className="rounded-2xl border border-dashed border-[var(--border-soft)] px-4 py-3 text-sm text-[var(--text-muted)]">
-                          Submitted work should be approved before release becomes available.
+                          Approving this milestone unlocks the next release step.
                         </div>
                       </div>
                     </div>
@@ -245,7 +244,7 @@ export default function DashboardPage() {
                           {formatUsdc(milestone.amount)} USDC · {proof?.network ?? "Arc Testnet"}
                         </p>
                         <p className="break-all font-mono text-xs leading-6 text-cyan-100">
-                          {proof ? proof.txHash : "Proof pending"}
+                          {proof ? shortenAddress(proof.txHash) : "Proof pending"}
                         </p>
                       </div>
                     </div>
