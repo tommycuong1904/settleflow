@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { MilestoneStatusBadge } from "@/components/milestones/milestone-status-badge";
+import { Button } from "@/components/shared/button";
 import { EmptyState } from "@/components/shared/empty-state";
 import { SectionCard } from "@/components/shared/section-card";
 import { mockContributors } from "@/lib/data/mock-contributors";
@@ -23,34 +23,85 @@ export default function DashboardPage() {
     (sum, payout) => sum + payout.totalAmount,
     0,
   );
+  const releaseReadyMilestones = mockMilestones.filter(
+    (milestone) => milestone.status === "approved",
+  );
+  const releasedValue = releasedMilestones.reduce(
+    (sum, milestone) => sum + milestone.amount,
+    0,
+  );
 
   return (
     <div className="flex flex-col gap-8">
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div className="space-y-2">
-          <p className="text-sm font-medium uppercase tracking-[0.2em] text-cyan-300">
+        <div className="space-y-3">
+          <p className="text-sm font-medium uppercase tracking-[0.22em] text-cyan-300">
             Payout operations
           </p>
-          <h1 className="text-3xl font-semibold tracking-tight text-white">
-            Payout Dashboard
-          </h1>
-          <p className="max-w-2xl text-sm leading-7 text-slate-300">
-            Monitor milestone-based contributor payouts, review queue pressure,
-            and release readiness on Arc.
-          </p>
+          <div className="space-y-2">
+            <h1 className="text-3xl font-semibold tracking-tight text-white md:text-4xl">
+              Review queue, release readiness, and settlement proof in one place.
+            </h1>
+            <p className="max-w-3xl text-sm leading-7 text-[var(--text-primary)] md:text-base">
+              SettleFlow keeps contributor payouts visible from submitted work to
+              approved release and onchain proof, so teams can move faster
+              without losing control.
+            </p>
+          </div>
         </div>
-        <Link
-          href="/payouts/new"
-          className="inline-flex items-center justify-center rounded-xl border border-cyan-300 bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-300"
-        >
+        <Button href="/payouts/new" variant="primary">
           New Payout
-        </Link>
+        </Button>
       </div>
+
+      <section className="sf-shell rounded-3xl p-6 md:p-7">
+        <div className="grid gap-6 xl:grid-cols-[1.25fr_0.75fr] xl:items-start">
+          <div className="space-y-4">
+            <div className="inline-flex rounded-full border border-cyan-300/20 bg-cyan-400/8 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200">
+              Priority queue
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-2xl font-semibold tracking-tight text-white">
+                {pendingApprovals.length} milestone{pendingApprovals.length === 1 ? "" : "s"} waiting for review
+              </h2>
+              <p className="max-w-2xl text-sm leading-7 text-[var(--text-primary)]">
+                Submitted work should be reviewed first so approved milestones can
+                move into release-ready state without blocking the payout flow.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+            <div className="rounded-3xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.72)] p-5">
+              <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                Release-ready value
+              </p>
+              <p className="mt-3 text-2xl font-semibold tracking-tight text-white">
+                {formatUsdc(releaseReadyMilestones.reduce((sum, milestone) => sum + milestone.amount, 0))} USDC
+              </p>
+              <p className="mt-2 text-sm text-[var(--text-primary)]">
+                Approved milestones that can move to Arc settlement next.
+              </p>
+            </div>
+            <div className="rounded-3xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.72)] p-5">
+              <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                Recent proof volume
+              </p>
+              <p className="mt-3 text-2xl font-semibold tracking-tight text-white">
+                {formatUsdc(releasedValue)} USDC
+              </p>
+              <p className="mt-2 text-sm text-[var(--text-primary)]">
+                Already released and visible through Arc transaction proof.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
 
       <section className="grid gap-4 md:grid-cols-4">
         <StatCard label="Active Payouts" value={activePayouts.length} />
         <StatCard label="Pending Approvals" value={pendingApprovals.length} />
-        <StatCard label="Released Milestones" value={releasedMilestones.length} />
+        <StatCard label="Release Ready" value={releaseReadyMilestones.length} />
         <StatCard
           label="Total USDC Scheduled"
           value={`${formatUsdc(totalScheduled)} USDC`}
@@ -58,90 +109,120 @@ export default function DashboardPage() {
         />
       </section>
 
-      <div className="grid gap-6 xl:grid-cols-[1.5fr_1fr]">
-        <SectionCard title="Active Payouts">
+      <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+        <SectionCard title="Pending Review Queue">
           <div className="space-y-4">
-            {activePayouts.map((payout) => {
-              const contributor = mockContributors.find(
-                (item) => item.id === payout.contributorId,
-              );
-              const payoutMilestones = mockMilestones.filter(
-                (milestone) => milestone.payoutId === payout.id,
-              );
-              const releasedAmount = payoutMilestones
-                .filter((milestone) => milestone.status === "released")
-                .reduce((sum, milestone) => sum + milestone.amount, 0);
+            {pendingApprovals.length === 0 ? (
+              <EmptyState
+                title="No milestones waiting for review"
+                description="As contributors submit work, review-ready milestones will appear here."
+              />
+            ) : (
+              pendingApprovals.map((milestone) => {
+                const payout = mockPayouts.find((item) => item.id === milestone.payoutId);
+                const contributor = mockContributors.find(
+                  (item) => item.id === payout?.contributorId,
+                );
 
-              return (
-                <div
-                  key={payout.id}
-                  className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4"
-                >
-                  <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                    <div className="space-y-2">
-                      <p className="font-semibold text-white">{payout.title}</p>
-                      <p className="text-sm text-slate-400">
-                        {contributor?.name ?? payout.contributorId} · {formatUsdc(payout.totalAmount)} USDC
-                      </p>
-                      <p className="text-xs uppercase tracking-[0.18em] text-slate-500">
-                        {payout.status.replace("_", " ")} · released {formatUsdc(releasedAmount)} / {formatUsdc(payout.totalAmount)} USDC
-                      </p>
+                return (
+                  <div
+                    key={milestone.id}
+                    className="sf-shell rounded-3xl p-5"
+                  >
+                    <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                      <div className="space-y-3">
+                        <div className="flex flex-wrap items-center gap-3">
+                          <MilestoneStatusBadge status={milestone.status} />
+                          <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                            {payout?.title}
+                          </p>
+                        </div>
+                        <div className="space-y-1.5">
+                          <p className="text-lg font-semibold text-white">{milestone.title}</p>
+                          <p className="text-sm text-[var(--text-primary)]">
+                            {contributor?.name ?? payout?.contributorId ?? "Unknown contributor"} · {formatUsdc(milestone.amount)} USDC awaiting review
+                          </p>
+                        </div>
+                        <p className="max-w-2xl text-sm leading-6 text-[var(--text-muted)]">
+                          {milestone.description}
+                        </p>
+                      </div>
+                      <div className="flex min-w-[180px] flex-col gap-3">
+                        <Button href={`/payouts/${milestone.payoutId}`} variant="primary">
+                          Review milestone
+                        </Button>
+                        <div className="rounded-2xl border border-dashed border-[var(--border-soft)] px-4 py-3 text-sm text-[var(--text-muted)]">
+                          Submitted work should be approved before release becomes available.
+                        </div>
+                      </div>
                     </div>
-                    <Link
-                      href={`/payouts/${payout.id}`}
-                      className="text-sm font-semibold text-cyan-300 hover:text-cyan-200"
-                    >
-                      View Details
-                    </Link>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </div>
         </SectionCard>
 
         <div className="flex flex-col gap-6">
-          <SectionCard title="Pending Review">
+          <SectionCard title="Active Payouts">
             <div className="space-y-4">
-              {pendingApprovals.length === 0 ? (
-                <EmptyState
-                  title="No milestones waiting for review"
-                  description="As contributors submit work, review-ready milestones will appear here."
-                />
-              ) : (
-                pendingApprovals.map((milestone) => {
-                  const payout = mockPayouts.find(
-                    (item) => item.id === milestone.payoutId,
-                  );
-                  return (
-                    <div
-                      key={milestone.id}
-                      className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4"
-                    >
-                      <div className="mb-2 flex items-center gap-2">
-                        <MilestoneStatusBadge status={milestone.status} />
+              {activePayouts.map((payout) => {
+                const contributor = mockContributors.find(
+                  (item) => item.id === payout.contributorId,
+                );
+                const payoutMilestones = mockMilestones.filter(
+                  (milestone) => milestone.payoutId === payout.id,
+                );
+                const releasedAmount = payoutMilestones
+                  .filter((milestone) => milestone.status === "released")
+                  .reduce((sum, milestone) => sum + milestone.amount, 0);
+
+                return (
+                  <div
+                    key={payout.id}
+                    className="rounded-3xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.62)] p-5"
+                  >
+                    <div className="space-y-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-lg font-semibold text-white">{payout.title}</p>
+                          <p className="mt-1 text-sm text-[var(--text-primary)]">
+                            {contributor?.name ?? payout.contributorId}
+                          </p>
+                        </div>
+                        <MilestoneStatusBadge
+                          status={payout.status === "partially_released" ? "approved" : "pending"}
+                        />
                       </div>
-                      <p className="font-semibold text-white">{milestone.title}</p>
-                      <p className="text-sm text-slate-400">
-                        {formatUsdc(milestone.amount)} USDC awaiting review
-                      </p>
-                      <p className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-500">
-                        {payout?.title}
-                      </p>
-                      <Link
-                        href={`/payouts/${milestone.payoutId}`}
-                        className="mt-3 inline-flex text-sm font-semibold text-cyan-300 hover:text-cyan-200"
-                      >
-                        Review
-                      </Link>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <div>
+                          <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                            Total commitment
+                          </p>
+                          <p className="mt-1 font-semibold text-white">
+                            {formatUsdc(payout.totalAmount)} USDC
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                            Released so far
+                          </p>
+                          <p className="mt-1 font-semibold text-white">
+                            {formatUsdc(releasedAmount)} / {formatUsdc(payout.totalAmount)} USDC
+                          </p>
+                        </div>
+                      </div>
+                      <Button href={`/payouts/${payout.id}`} variant="ghost">
+                        View payout detail
+                      </Button>
                     </div>
-                  );
-                })
-              )}
+                  </div>
+                );
+              })}
             </div>
           </SectionCard>
 
-          <SectionCard title="Recent Releases">
+          <SectionCard title="Recent Settlement Proof">
             <div className="space-y-4">
               {releasedMilestones.length === 0 ? (
                 <EmptyState
@@ -156,15 +237,17 @@ export default function DashboardPage() {
                   return (
                     <div
                       key={milestone.id}
-                      className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4"
+                      className="rounded-3xl border border-[var(--border-soft)] bg-[rgba(8,15,31,0.72)] p-5"
                     >
-                      <p className="font-semibold text-white">{milestone.title}</p>
-                      <p className="text-sm text-slate-400">
-                        {formatUsdc(milestone.amount)} USDC · {proof?.network ?? "Arc Testnet"}
-                      </p>
-                      <p className="mt-1 break-all font-mono text-xs text-cyan-200">
-                        {proof ? `${proof.txHash.slice(0, 18)}...` : "Proof pending"}
-                      </p>
+                      <div className="space-y-2">
+                        <p className="text-lg font-semibold text-white">{milestone.title}</p>
+                        <p className="text-sm text-[var(--text-primary)]">
+                          {formatUsdc(milestone.amount)} USDC · {proof?.network ?? "Arc Testnet"}
+                        </p>
+                        <p className="break-all font-mono text-xs leading-6 text-cyan-100">
+                          {proof ? proof.txHash : "Proof pending"}
+                        </p>
+                      </div>
                     </div>
                   );
                 })
