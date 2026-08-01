@@ -29,10 +29,10 @@ This document lists issues, gaps, inconsistencies, and inspection risks visible 
 - No unit, integration, or end-to-end test files were found using common naming patterns.
 - The repository currently relies on build success and manual inspection more than automated verification.
 
-### 5. Stale internal progress docs
-- `docs/project-status.md` still says the project is focused on Phase 3 / planning for Phases 4 and 5.
-- `docs/workboard.md` still reflects earlier in-progress state.
-- This does not match the later committed UI work already present in the repository.
+### 5. Stale internal progress docs preserved for historical reference
+- `docs/archive/project-status.md` still says the project is focused on Phase 3 / planning for Phases 4 and 5.
+- `docs/archive/workboard.md` still reflects earlier in-progress state.
+- These files are now archived, which reduces confusion, but they still should not be treated as current source-of-truth docs.
 
 ### 6. Potentially misleading payout detail fallback behavior
 - `app/payouts/[id]/page.tsx` falls back to the first payout if the requested ID is not found.

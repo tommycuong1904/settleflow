@@ -137,9 +137,9 @@ This repository is currently a frontend-first Next.js demo application for Settl
 ## 8. Documentation state
 
 ### Confirmed
-- Technical docs exist in English for README, architecture, MVP scope, and checkpoint materials.
-- Internal planning docs also exist under `docs/`, but some of them are stale relative to current repository state.
-- `docs/project-status.md` and `docs/workboard.md` still describe earlier progress phases rather than the fully completed 5-phase state now present in git history.
+- Technical docs exist in English for README, canonical docs, MVP scope, and checkpoint materials.
+- Internal planning docs still exist in archived form under `docs/archive/`, preserving earlier progress context without competing with canonical docs.
+- `docs/archive/project-status.md` and `docs/archive/workboard.md` describe earlier progress phases rather than the fully completed state now present in git history.
 
 ## 9. Unknowns that require further inspection
 

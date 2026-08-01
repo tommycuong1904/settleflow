@@ -9,6 +9,8 @@ Read these first:
 
 These files are the primary reference set for understanding the product, architecture, repository conventions, and current implementation state.
 
+`AGENTS.md` points future agents to this file first as the docs entrypoint.
+
 ## Supporting Docs
 Use these as secondary references when needed:
 - `mvp-scope.md`

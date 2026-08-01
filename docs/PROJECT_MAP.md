@@ -140,18 +140,25 @@ settleflow/
 
 ### Confirmed
 - `README.md`
-- `docs/architecture.md`
+- `docs/README.md`
+- `docs/PROJECT.md`
+- `docs/ARCHITECTURE.md`
+- `docs/CONVENTIONS.md`
+- `docs/CURRENT_STATE.md`
+- `docs/PROJECT_MAP.md`
+- `docs/KNOWN_ISSUES.md`
 - `docs/mvp-scope.md`
 - `docs/checkpoint-2-demo-flow.md`
 - `docs/checkpoint-2-deck-outline.md`
 - `docs/checkpoint-2-submission-draft.md`
 - `docs/progress-summary-checkpoint-2.md`
-- `docs/project-status.md`
-- `docs/workboard.md`
+- `docs/archive/architecture.md`
+- `docs/archive/project-status.md`
+- `docs/archive/workboard.md`
 - `docs/screenshots/*.png`
 
 ### Assumption
-- The docs mix product positioning, checkpoint material, and internal project-tracking notes.
+- The docs are now organized into canonical, supporting, and archived/legacy groups.
 
 ## Configuration and Tooling
 
