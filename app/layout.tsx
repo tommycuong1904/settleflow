@@ -28,24 +28,25 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full bg-slate-950 text-slate-100">
+      <body className="min-h-full bg-background text-slate-100">
         <div className="min-h-screen">
-          <header className="border-b border-slate-800 bg-slate-950/95">
-            <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-              <Link href="/" className="text-lg font-semibold tracking-tight">
-                SettleFlow
+          <header className="border-b border-[var(--border-soft)] bg-slate-950/90 backdrop-blur">
+            <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
+              <Link href="/" className="text-lg font-semibold tracking-tight text-white">
+                <span className="text-white">Settle</span>
+                <span className="text-cyan-300">Flow</span>
               </Link>
-              <nav className="flex items-center gap-6 text-sm text-slate-300">
-                <Link href="/dashboard" className="hover:text-cyan-300">
+              <nav className="flex items-center gap-6 text-sm text-[var(--text-primary)]">
+                <Link href="/dashboard" className="transition-colors hover:text-cyan-200">
                   Dashboard
                 </Link>
-                <Link href="/payouts/new" className="hover:text-cyan-300">
+                <Link href="/payouts/new" className="transition-colors hover:text-cyan-200">
                   New Payout
                 </Link>
               </nav>
             </div>
           </header>
-          <main className="mx-auto flex max-w-6xl flex-col px-6 py-10">
+          <main className="mx-auto flex max-w-6xl flex-col px-6 py-10 md:py-12">
             {children}
           </main>
         </div>

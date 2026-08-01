@@ -2,6 +2,7 @@ import { MilestoneStatusBadge } from "@/components/milestones/milestone-status-b
 import { ReviewControls } from "@/components/milestones/review-controls";
 import { ReleasePanel } from "@/components/payouts/release-panel";
 import type { Milestone } from "@/lib/models/milestone";
+import { formatUsdc } from "@/lib/utils/format";
 
 type MilestoneRowProps = {
   milestone: Milestone;
@@ -13,17 +14,21 @@ export function MilestoneRow({ milestone }: MilestoneRowProps) {
   const isReleased = milestone.status === "released";
 
   return (
-    <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4">
+    <div className="sf-shell rounded-3xl p-5">
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-        <div className="space-y-2">
+        <div className="space-y-3">
           <div className="flex flex-wrap items-center gap-3">
             <p className="font-semibold text-white">{milestone.title}</p>
             <MilestoneStatusBadge status={milestone.status} />
           </div>
-          <p className="text-sm leading-6 text-slate-300">{milestone.description}</p>
-          <p className="text-sm font-medium text-slate-200">{milestone.amount} USDC</p>
+          <p className="max-w-2xl text-sm leading-6 text-[var(--text-primary)]">
+            {milestone.description}
+          </p>
+          <p className="text-sm font-semibold text-cyan-100">
+            {formatUsdc(milestone.amount)} USDC
+          </p>
         </div>
-        <div className="min-w-[240px] rounded-2xl border border-slate-800 bg-slate-950/70 p-4 text-sm text-slate-300">
+        <div className="sf-panel min-w-[240px] rounded-3xl p-4 text-sm text-[var(--text-primary)]">
           {isSubmitted ? <ReviewControls submittedAt={milestone.submittedAt} /> : null}
 
           {isApproved ? (
@@ -34,7 +39,7 @@ export function MilestoneRow({ milestone }: MilestoneRowProps) {
             <div className="space-y-2">
               <p className="font-semibold text-white">Released in USDC on Arc</p>
               <p>Settlement confirmed</p>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-[var(--text-muted)]">
                 Released {milestone.releasedAt ? milestone.releasedAt.slice(0, 10) : "recently"}
               </p>
             </div>
