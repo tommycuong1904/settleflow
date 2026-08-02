@@ -2,6 +2,8 @@
 
 **Arc-native USDC payout workflow for crypto teams.**
 
+For the current documentation reading order, start with `docs/README.md`.
+
 SettleFlow helps crypto teams create milestone-based contributor payouts, review submitted work, and release USDC only after approval. Instead of ad hoc wallet transfers, SettleFlow turns contributor compensation into a programmable settlement workflow on Arc.
 
 ## Problem
@@ -26,7 +28,7 @@ SettleFlow is built around Arc because the product depends on stablecoin-native 
 
 This makes contributor payouts more legible, controllable, and onchain-native than manual wallet transfers.
 
-## Implemented Checkpoint 2 State
+## Current Repository State
 
 The repository currently includes:
 - landing page for product framing
@@ -36,6 +38,13 @@ The repository currently includes:
 - reusable milestone, proof, stat, and section components
 - mock contributors, payouts, milestones, and transaction proof data
 - Arc integration scaffold under `lib/arc/`
+
+Current implementation state:
+- frontend-first demo application
+- mock-data-driven workflow
+- no confirmed backend or database in this repository
+- no confirmed authentication flow
+- Arc payment path scaffolded but not yet live
 
 ## MVP Scope
 
@@ -53,7 +62,7 @@ The MVP focuses on one core workflow:
 - DeFi track positioning selected
 - MVP scope defined
 - Repository structure and implementation plan established
-- Checkpoint 2 UI scaffold implemented and verified with real build
+- Frontend-first demo flow implemented and verified with real build
 - Core UI flow and Arc integration scaffolding in place
 
 ## Verified Checkpoint 2 State
@@ -106,7 +115,7 @@ Verified checks:
 - `app/` — app routes and pages
 - `components/` — reusable UI components
 - `lib/` — models, mock data, Arc helpers, utilities
-- `docs/` — product, architecture, and checkpoint notes
+- `docs/` — canonical product, architecture, conventions, current state, and checkpoint docs
 - `public/` — static assets
 
 ## Roadmap
