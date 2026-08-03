@@ -1,39 +1,61 @@
 import { Button } from "@/components/shared/button";
-import { formatUsdc } from "@/lib/utils/format";
+
+type ReleasePanelStatus = "idle" | "submitting" | "confirmed" | "failed";
 
 type ReleasePanelProps = {
   amount: number;
   network?: string;
   enabled?: boolean;
+  status?: ReleasePanelStatus;
+  errorMessage?: string | null;
+  onRelease?: () => void;
 };
 
+function getButtonLabel(status: ReleasePanelStatus) {
+  switch (status) {
+    case "submitting":
+      return "Submitting...";
+    case "confirmed":
+      return "Released";
+    case "failed":
+      return "Retry release";
+    case "idle":
+    default:
+      return "Release Payout";
+  }
+}
+
 export function ReleasePanel({
-  amount,
-  network = "Arc Testnet",
   enabled = false,
+  status = "idle",
+  errorMessage = null,
+  onRelease,
 }: ReleasePanelProps) {
-  return (
-    <div className="space-y-4 text-sm text-[var(--text-primary)]">
-      <div className="space-y-1.5">
-        <p className="font-semibold text-white">Release after approval</p>
-        <p>Only approved milestones can move in USDC on Arc.</p>
+  const canRelease = enabled && status !== "submitting" && status !== "confirmed";
+
+  const statusLine =
+    status === "confirmed"
+      ? "Proof is now available in the settlement panel."
+      : status === "failed"
+        ? errorMessage ?? "The release did not complete. Retry when the Arc path is ready."
+        : status === "submitting"
+          ? "Preparing the Arc release path and waiting for a result."
+          : "Ready to release 200 USDC on Arc.";
+
+  return enabled ? (
+    <div className="space-y-3 text-sm text-[var(--text-primary)]">
+      <Button variant="primary" onClick={onRelease} disabled={!canRelease}>
+        {getButtonLabel(status)}
+      </Button>
+      <div className="rounded-2xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.48)] px-4 py-3 text-sm text-white">
+        {statusLine}
       </div>
-      <div className="rounded-3xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.84)] p-4">
-        <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
-          Current release amount
-        </p>
-        <p className="mt-3 text-xl font-semibold tracking-tight text-white">
-          {formatUsdc(amount)} USDC
-        </p>
-        <p className="mt-1 text-sm text-[var(--text-primary)]">Network: {network}</p>
-      </div>
-      {enabled ? (
-        <Button variant="primary">Release Payout</Button>
-      ) : (
-        <div className="rounded-2xl border border-dashed border-[var(--border-soft)] px-4 py-3 text-sm text-[var(--text-muted)]">
-          No release available yet — approve the submitted milestone to unlock release.
-        </div>
-      )}
+    </div>
+  ) : (
+    <div className="rounded-2xl border border-dashed border-[var(--border-soft)] px-4 py-3 text-sm text-[var(--text-muted)]">
+      No release available yet — approve the submitted milestone to unlock release.
     </div>
   );
 }
+
+export type { ReleasePanelStatus };

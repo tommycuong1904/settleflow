@@ -21,7 +21,7 @@ SettleFlow uses Arc as the settlement rail and USDC as the money layer. The key 
   - `/`
   - `/dashboard`
   - `/payouts/new`
-  - `/payouts/payout-1`
+  - `/payouts/payout-detail`
 - Checkpoint UI flow has been validated across landing, dashboard, payout creation, and payout detail views
 - Arc integration path is scaffolded and ready for final MVP wiring
 

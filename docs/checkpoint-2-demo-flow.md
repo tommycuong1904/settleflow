@@ -32,7 +32,7 @@ What to point at:
 - Recent releases with Arc proof snippets
 
 ### 3. Payout detail
-URL: `/payouts/payout-1`
+URL: `/payouts/payout-detail`
 
 Talk track:
 - This is the core workflow screen.
