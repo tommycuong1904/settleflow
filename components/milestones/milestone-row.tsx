@@ -1,6 +1,5 @@
 import { MilestoneStatusBadge } from "@/components/milestones/milestone-status-badge";
 import { ReviewControls } from "@/components/milestones/review-controls";
-import { ReleasePanel } from "@/components/payouts/release-panel";
 import type { Milestone } from "@/lib/models/milestone";
 import { formatUsdc } from "@/lib/utils/format";
 
@@ -32,13 +31,15 @@ export function MilestoneRow({ milestone }: MilestoneRowProps) {
           {isSubmitted ? <ReviewControls submittedAt={milestone.submittedAt} /> : null}
 
           {isApproved ? (
-            <ReleasePanel amount={milestone.amount} enabled network="Arc Testnet" />
+            <div className="space-y-2">
+              <p>Approved and unlocked for release on Arc.</p>
+            </div>
           ) : null}
 
           {isReleased ? (
             <div className="space-y-2">
               <p className="font-semibold text-white">Released in USDC on Arc</p>
-              <p>Settlement confirmed</p>
+              <p>Settlement proof is now available in the side panel.</p>
               <p className="text-xs text-[var(--text-muted)]">
                 Released {milestone.releasedAt ? milestone.releasedAt.slice(0, 10) : "recently"}
               </p>

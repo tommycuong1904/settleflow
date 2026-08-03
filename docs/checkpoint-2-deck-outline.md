@@ -58,7 +58,7 @@ Current checkpoint state:
 ## Slide 7 — Checkpoint 2 proof
 Verified proof points:
 - production build succeeds
-- verified routes: `/`, `/dashboard`, `/payouts/new`, `/payouts/payout-1`
+- verified routes: `/`, `/dashboard`, `/payouts/new`, `/payouts/payout-detail`
 - checkpoint UI flow has been validated across landing, dashboard, payout creation, and payout detail views
 - Arc integration path is scaffolded and ready for final MVP wiring
 

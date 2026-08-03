@@ -59,7 +59,7 @@ Verified routes:
 - `/`
 - `/dashboard`
 - `/payouts/new`
-- `/payouts/payout-1`
+- `/payouts/payout-detail`
 
 Verified checks:
 - `npm run build` completed successfully
