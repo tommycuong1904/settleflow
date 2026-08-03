@@ -37,14 +37,16 @@ The repository currently includes:
 - payout detail route with review, release, and settlement proof blocks
 - reusable milestone, proof, stat, and section components
 - mock contributors, payouts, milestones, and transaction proof data
-- Arc integration scaffold under `lib/arc/`
+- canonical payout detail route at `/payouts/payout-detail`
+- interactive release wedge with settlement proof sync and reload persistence
+- Arc integration scaffold under `lib/arc/` with mode-aware execution plumbing (`mock`, `demo`, `real`)
 
 Current implementation state:
 - frontend-first demo application
-- mock-data-driven workflow
+- mock/demo-safe workflow with interactive release state
 - no confirmed backend or database in this repository
 - no confirmed authentication flow
-- Arc payment path scaffolded but not yet live
+- Arc payment path scaffolded with mode-aware execution plumbing, but not yet live for production payout execution
 
 ## MVP Scope
 
@@ -76,7 +78,9 @@ Verified routes:
 Verified checks:
 - `npm run build` completed successfully
 - key routes are implemented in the repository
+- invalid legacy payout routes return `404`
 - checkpoint UI flow is present across landing, dashboard, payout creation, and payout detail views
+- payout detail release/proof state stays synchronized and persists across reloads in demo-safe mode
 
 ## Checkpoint 2 Screens
 
