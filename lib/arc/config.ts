@@ -1,3 +1,9 @@
+import type { ArcExecutionMode } from "@/lib/arc/types";
+
+const executionMode =
+  (process.env.NEXT_PUBLIC_ARC_EXECUTION_MODE as ArcExecutionMode | undefined) ??
+  "mock";
+
 export const ARC_CONFIG = {
   chainId: Number(process.env.NEXT_PUBLIC_ARC_CHAIN_ID ?? 5042002),
   rpcUrl:
@@ -7,4 +13,5 @@ export const ARC_CONFIG = {
   usdcAddress:
     process.env.NEXT_PUBLIC_USDC_ADDRESS ??
     "0x3600000000000000000000000000000000000000",
+  executionMode,
 } as const;

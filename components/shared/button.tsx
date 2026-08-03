@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { ReactNode } from "react";
+import type { MouseEventHandler, ReactNode } from "react";
 
 type ButtonVariant = "primary" | "secondary" | "ghost";
 
@@ -7,6 +7,9 @@ type ButtonProps = {
   children: ReactNode;
   href?: string;
   variant?: ButtonVariant;
+  onClick?: MouseEventHandler<HTMLButtonElement>;
+  disabled?: boolean;
+  type?: "button" | "submit" | "reset";
 };
 
 const baseClasses =
@@ -14,15 +17,24 @@ const baseClasses =
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary:
-    "border border-cyan-300/70 bg-cyan-400 text-slate-950 hover:bg-cyan-300",
+    "border border-cyan-300/70 bg-cyan-400 text-slate-950 hover:bg-cyan-300 disabled:border-cyan-200/20 disabled:bg-cyan-400/40 disabled:text-slate-900/70",
   secondary:
-    "border border-[var(--border-soft)] bg-[rgba(15,23,42,0.78)] text-[var(--foreground)] hover:border-cyan-300/40 hover:bg-[rgba(17,24,39,0.98)]",
+    "border border-[var(--border-soft)] bg-[rgba(15,23,42,0.78)] text-[var(--foreground)] hover:border-cyan-300/40 hover:bg-[rgba(17,24,39,0.98)] disabled:border-[var(--border-soft)]/60 disabled:bg-[rgba(15,23,42,0.4)] disabled:text-[var(--text-muted)]",
   ghost:
-    "border border-transparent bg-transparent text-cyan-200 hover:bg-cyan-400/10 hover:text-cyan-100",
+    "border border-transparent bg-transparent text-cyan-200 hover:bg-cyan-400/10 hover:text-cyan-100 disabled:text-[var(--text-muted)]",
 };
 
-export function Button({ children, href, variant = "primary" }: ButtonProps) {
-  const className = `${baseClasses} ${variantClasses[variant]}`;
+const disabledClasses = "disabled:cursor-not-allowed disabled:hover:bg-inherit";
+
+export function Button({
+  children,
+  href,
+  variant = "primary",
+  onClick,
+  disabled = false,
+  type = "button",
+}: ButtonProps) {
+  const className = `${baseClasses} ${variantClasses[variant]} ${disabledClasses}`;
 
   if (href) {
     return (
@@ -32,5 +44,9 @@ export function Button({ children, href, variant = "primary" }: ButtonProps) {
     );
   }
 
-  return <button className={className}>{children}</button>;
+  return (
+    <button className={className} onClick={onClick} disabled={disabled} type={type}>
+      {children}
+    </button>
+  );
 }
