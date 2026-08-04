@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
+import { ARC_CONFIG } from "@/lib/arc/config";
 import { mapSendResultToProof } from "@/lib/arc/map-send-result-to-proof";
 import { sendUsdcOnArc } from "@/lib/arc/send";
 import {
@@ -16,6 +17,7 @@ import { formatUsdc } from "@/lib/utils/format";
 
 type PayoutDetailReleaseShellProps = {
   payoutId: string;
+  recipientAddress?: string;
   nextReleasableMilestone?: Milestone;
   releaseProof?: TransactionProof;
   onReleaseSuccess?: (payload: {
@@ -27,6 +29,7 @@ type PayoutDetailReleaseShellProps = {
 
 export function PayoutDetailReleaseShell({
   payoutId,
+  recipientAddress,
   nextReleasableMilestone,
   releaseProof,
   onReleaseSuccess,
@@ -37,33 +40,25 @@ export function PayoutDetailReleaseShell({
   const [releaseError, setReleaseError] = useState<string | null>(null);
   const [activeProof, setActiveProof] = useState<TransactionProof | undefined>(releaseProof);
 
-  useEffect(() => {
-    if (releaseProof) {
-      setActiveProof(releaseProof);
-      setReleaseStatus("confirmed");
-      setReleaseError(null);
-      return;
-    }
-
-    if (!nextReleasableMilestone) {
-      setActiveProof(undefined);
-      setReleaseStatus("idle");
-    }
-  }, [nextReleasableMilestone, releaseProof]);
+  const resolvedProof = activeProof ?? releaseProof;
+  const effectiveReleaseStatus =
+    resolvedProof && releaseStatus !== "failed" ? "confirmed" : releaseStatus;
 
   const statusText = useMemo(() => {
-    switch (releaseStatus) {
+    switch (effectiveReleaseStatus) {
       case "submitting":
-        return "Release flow is actively running.";
+        return "SettleFlow is preparing the Arc payout release and proof update.";
       case "confirmed":
-        return "Release completed and proof has been refreshed.";
+        return "Release completed. The latest milestone now shows a refreshed Arc settlement proof.";
       case "failed":
-        return releaseError ?? "Release flow hit an error.";
+        return releaseError ?? "Release flow hit an error before proof could be attached.";
       case "idle":
       default:
-        return nextReleasableMilestone ? null : "No approved milestone is ready yet.";
+        return nextReleasableMilestone
+          ? "This milestone is approved and ready for a sequential USDC release on Arc."
+          : "No approved milestone is ready for release yet.";
     }
-  }, [nextReleasableMilestone, releaseError, releaseStatus]);
+  }, [effectiveReleaseStatus, nextReleasableMilestone, releaseError]);
 
   async function handleRelease() {
     if (!nextReleasableMilestone) {
@@ -74,9 +69,10 @@ export function PayoutDetailReleaseShell({
     setReleaseStatus("submitting");
 
     const result = await sendUsdcOnArc({
-      recipient: "0x0000000000000000000000000000000000000000",
+      recipient:
+        recipientAddress ?? "0x0000000000000000000000000000000000000000",
       amount: nextReleasableMilestone.amount,
-      tokenAddress: "USDC",
+      tokenAddress: ARC_CONFIG.usdcAddress,
       payoutId,
       milestoneId: nextReleasableMilestone.id,
       note: nextReleasableMilestone.title,
@@ -115,26 +111,33 @@ export function PayoutDetailReleaseShell({
             <p className="font-semibold text-white">
               {nextReleasableMilestone
                 ? nextReleasableMilestone.title
-                : activeProof
+                : resolvedProof
                   ? "Latest released milestone"
                   : "No release available yet"}
             </p>
             <p className="mt-2 text-lg font-semibold text-white">
               {nextReleasableMilestone
                 ? `${formatUsdc(nextReleasableMilestone.amount)} USDC`
-                : activeProof
+                : resolvedProof
                   ? "Released"
                   : "0 USDC"}
             </p>
             <p className="mt-1 text-sm text-[var(--text-primary)]">
-              Arc Testnet • Asset: USDC
+              {ARC_CONFIG.executionMode === "real"
+                ? "Arc Testnet • Live execution path"
+                : ARC_CONFIG.executionMode === "demo"
+                  ? "Arc Testnet • Demo-confirmed execution path"
+                  : "Arc Testnet • Mock execution path"}
+            </p>
+            <p className="mt-1 text-xs text-[var(--text-muted)]">
+              Recipient: {recipientAddress ?? "Demo wallet not provided yet"}
             </p>
           </div>
           <ReleasePanel
             amount={nextReleasableMilestone?.amount ?? 0}
-            network="Arc Testnet"
-            enabled={Boolean(nextReleasableMilestone) || Boolean(activeProof)}
-            status={releaseStatus}
+            network={`Arc Testnet (${ARC_CONFIG.executionMode})`}
+            enabled={Boolean(nextReleasableMilestone) || Boolean(resolvedProof)}
+            status={effectiveReleaseStatus}
             errorMessage={releaseError}
             onRelease={() => {
               void handleRelease();
@@ -149,7 +152,14 @@ export function PayoutDetailReleaseShell({
       </SectionCard>
 
       <SectionCard title="Settlement Proof">
-        <TransactionProofCard proof={activeProof} />
+        <TransactionProofCard proof={resolvedProof} />
+        <div className="mt-4 rounded-2xl border border-dashed border-[var(--border-soft)] px-4 py-3 text-sm text-[var(--text-muted)]">
+          {ARC_CONFIG.executionMode === "real"
+            ? "Real wallet execution is the intended final path, but the live Arc transfer wiring is not complete in this repo yet."
+            : ARC_CONFIG.executionMode === "demo"
+              ? "This proof is generated through the demo-confirmed Arc path so judges can verify release sequencing, recipient context, and proof attachment end-to-end."
+              : "This proof is generated through the mock Arc path to keep the review-to-release story demo-safe while the live settlement path remains scaffolded."}
+        </div>
       </SectionCard>
 
       <SectionCard title="How SettleFlow works">
@@ -157,7 +167,7 @@ export function PayoutDetailReleaseShell({
           {[
             "Contributor submits work against a milestone.",
             "Reviewer approves the milestone before release.",
-            "Approved funds move in USDC on Arc and attach transaction proof.",
+            "Approved funds move in USDC on Arc, then refresh the settlement proof attached to the payout.",
           ].map((item, index) => (
             <div
               key={item}

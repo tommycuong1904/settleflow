@@ -26,6 +26,8 @@ function getButtonLabel(status: ReleasePanelStatus) {
 }
 
 export function ReleasePanel({
+  amount,
+  network = "Arc Testnet",
   enabled = false,
   status = "idle",
   errorMessage = null,
@@ -39,8 +41,8 @@ export function ReleasePanel({
       : status === "failed"
         ? errorMessage ?? "The release did not complete. Retry when the Arc path is ready."
         : status === "submitting"
-          ? "Preparing the Arc release path and waiting for a result."
-          : "Ready to release 200 USDC on Arc.";
+          ? `Preparing the ${network} release path and waiting for a result.`
+          : `Ready to release ${amount} USDC on ${network}.`;
 
   return enabled ? (
     <div className="space-y-3 text-sm text-[var(--text-primary)]">

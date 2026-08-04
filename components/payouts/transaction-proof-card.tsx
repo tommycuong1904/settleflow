@@ -60,7 +60,7 @@ export function TransactionProofCard({ proof }: TransactionProofCardProps) {
         </span>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <div className="rounded-2xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.6)] p-4">
           <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
             Network
@@ -72,6 +72,16 @@ export function TransactionProofCard({ proof }: TransactionProofCardProps) {
             Milestone proof
           </p>
           <p className="mt-2 font-semibold text-white">{proof.milestoneId}</p>
+        </div>
+        <div className="rounded-2xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.6)] p-4">
+          <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
+            Confirmed at
+          </p>
+          <p className="mt-2 font-semibold text-white">
+            {proof.confirmedAt
+              ? new Date(proof.confirmedAt).toLocaleString()
+              : "Awaiting confirmation"}
+          </p>
         </div>
       </div>
 

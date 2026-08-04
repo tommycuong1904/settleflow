@@ -21,5 +21,6 @@ export function mapSendResultToProof({
     network: result.network,
     status: result.status,
     explorerUrl: result.explorerUrl,
+    confirmedAt: result.confirmedAt,
   };
 }

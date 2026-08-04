@@ -7,4 +7,5 @@ export type TransactionProof = {
   network: string;
   status: TransactionProofStatus;
   explorerUrl: string;
+  confirmedAt?: string;
 };

@@ -2,7 +2,7 @@ import type { ArcExecutionMode } from "@/lib/arc/types";
 
 const executionMode =
   (process.env.NEXT_PUBLIC_ARC_EXECUTION_MODE as ArcExecutionMode | undefined) ??
-  "mock";
+  "demo";
 
 export const ARC_CONFIG = {
   chainId: Number(process.env.NEXT_PUBLIC_ARC_CHAIN_ID ?? 5042002),
