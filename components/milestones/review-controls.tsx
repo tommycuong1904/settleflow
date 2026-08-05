@@ -2,9 +2,15 @@ import { Button } from "@/components/shared/button";
 
 type ReviewControlsProps = {
   submittedAt?: string;
+  onApprove?: () => void;
+  onReject?: () => void;
 };
 
-export function ReviewControls({ submittedAt }: ReviewControlsProps) {
+export function ReviewControls({
+  submittedAt,
+  onApprove,
+  onReject,
+}: ReviewControlsProps) {
   return (
     <div className="space-y-4">
       <div className="space-y-1.5">
@@ -14,8 +20,12 @@ export function ReviewControls({ submittedAt }: ReviewControlsProps) {
         </p>
       </div>
       <div className="flex flex-wrap gap-2">
-        <Button variant="primary">Approve</Button>
-        <Button variant="secondary">Reject</Button>
+        <Button variant="primary" onClick={onApprove}>
+          Approve
+        </Button>
+        <Button variant="secondary" onClick={onReject}>
+          Reject
+        </Button>
       </div>
       <p className="text-xs leading-6 text-[var(--text-muted)]">
         Reject keeps the payout blocked until updated work is submitted again.

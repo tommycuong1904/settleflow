@@ -5,9 +5,15 @@ import { formatUsdc } from "@/lib/utils/format";
 
 type MilestoneRowProps = {
   milestone: Milestone;
+  onApprove?: (milestoneId: string) => void;
+  onReject?: (milestoneId: string) => void;
 };
 
-export function MilestoneRow({ milestone }: MilestoneRowProps) {
+export function MilestoneRow({
+  milestone,
+  onApprove,
+  onReject,
+}: MilestoneRowProps) {
   const isSubmitted = milestone.status === "submitted";
   const isApproved = milestone.status === "approved";
   const isReleased = milestone.status === "released";
@@ -28,7 +34,13 @@ export function MilestoneRow({ milestone }: MilestoneRowProps) {
           </p>
         </div>
         <div className="sf-panel min-w-[240px] rounded-3xl p-4 text-sm text-[var(--text-primary)]">
-          {isSubmitted ? <ReviewControls submittedAt={milestone.submittedAt} /> : null}
+          {isSubmitted ? (
+            <ReviewControls
+              submittedAt={milestone.submittedAt}
+              onApprove={() => onApprove?.(milestone.id)}
+              onReject={() => onReject?.(milestone.id)}
+            />
+          ) : null}
 
           {isApproved ? (
             <div className="space-y-2">

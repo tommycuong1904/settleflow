@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 import { StatCard } from "@/components/dashboard/stat-card";
 import { MilestoneRow } from "@/components/milestones/milestone-row";
@@ -35,28 +35,28 @@ export function PayoutDetailClient({
   initialMilestones,
   initialReleaseProof,
 }: PayoutDetailClientProps) {
-  const [persistedRelease, setPersistedRelease] = useState<PersistedReleaseState | null>(null);
+  const [persistedRelease, setPersistedRelease] = useState<PersistedReleaseState | null>(() => {
+    if (typeof window === "undefined") return null;
 
-  useEffect(() => {
     const stored = window.sessionStorage.getItem(getStorageKey(payout.id));
-    if (!stored) return;
+    if (!stored) return null;
 
     try {
       const parsed = JSON.parse(stored) as PersistedReleaseState;
-      if (parsed?.releasedMilestoneId && parsed?.proof?.milestoneId) {
-        setPersistedRelease(parsed);
-      }
+      return parsed?.releasedMilestoneId && parsed?.proof?.milestoneId ? parsed : null;
     } catch {
       window.sessionStorage.removeItem(getStorageKey(payout.id));
+      return null;
     }
-  }, [payout.id]);
+  });
+  const [milestoneState, setMilestoneState] = useState(() => initialMilestones);
 
   const milestones = useMemo(() => {
     if (!persistedRelease) {
-      return initialMilestones;
+      return milestoneState;
     }
 
-    return initialMilestones.map((milestone) =>
+    return milestoneState.map((milestone) =>
       milestone.id === persistedRelease.releasedMilestoneId
         ? {
             ...milestone,
@@ -65,9 +65,13 @@ export function PayoutDetailClient({
           }
         : milestone,
     );
-  }, [initialMilestones, persistedRelease]);
+  }, [milestoneState, persistedRelease]);
 
   const releaseProof = persistedRelease?.proof ?? initialReleaseProof;
+
+  const latestReleasedMilestone = releaseProof
+    ? milestones.find((milestone) => milestone.id === releaseProof.milestoneId)
+    : milestones.findLast((milestone) => milestone.status === "released");
 
   const nextReleasableMilestone = milestones.find(
     (milestone) => milestone.status === "approved",
@@ -95,6 +99,26 @@ export function PayoutDetailClient({
           : "In progress"
         : payout.status.replace("_", " ");
 
+  function handleApproveMilestone(milestoneId: string) {
+    setMilestoneState((current) =>
+      current.map((milestone) =>
+        milestone.id === milestoneId && milestone.status === "submitted"
+          ? { ...milestone, status: "approved" as const }
+          : milestone,
+      ),
+    );
+  }
+
+  function handleRejectMilestone(milestoneId: string) {
+    setMilestoneState((current) =>
+      current.map((milestone) =>
+        milestone.id === milestoneId && milestone.status === "submitted"
+          ? { ...milestone, status: "rejected" as const }
+          : milestone,
+      ),
+    );
+  }
+
   function handleReleaseSuccess(payload: { milestoneId: string; proof: TransactionProof; releasedAt: string }) {
     const nextState: PersistedReleaseState = {
       releasedMilestoneId: payload.milestoneId,
@@ -103,6 +127,17 @@ export function PayoutDetailClient({
     };
 
     setPersistedRelease(nextState);
+    setMilestoneState((current) =>
+      current.map((milestone) =>
+        milestone.id === payload.milestoneId
+          ? {
+              ...milestone,
+              status: "released" as const,
+              releasedAt: payload.releasedAt,
+            }
+          : milestone,
+      ),
+    );
     window.sessionStorage.setItem(getStorageKey(payout.id), JSON.stringify(nextState));
   }
 
@@ -149,7 +184,7 @@ export function PayoutDetailClient({
         </div>
       </SectionCard>
 
-      <section className="grid gap-4 md:grid-cols-4">
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         <StatCard label="Milestones" value={milestones.length} />
         <StatCard label="Awaiting review" value={submittedCount} />
         <StatCard label="Ready to release" value={readyToReleaseCount} />
@@ -158,19 +193,36 @@ export function PayoutDetailClient({
           value={`${formatUsdc(amountReleased)} USDC`}
           hint={`${releasedCount} milestone${releasedCount === 1 ? "" : "s"} already settled on Arc`}
         />
+        <StatCard
+          label="Latest release"
+          value={latestReleasedMilestone ? latestReleasedMilestone.title : "Not released yet"}
+          hint={
+            releaseProof?.confirmedAt
+              ? `Confirmed ${new Date(releaseProof.confirmedAt).toLocaleString()}`
+              : releaseProof
+                ? "Proof attached to latest payout event"
+                : "Release the next approved milestone to attach proof"
+          }
+        />
       </section>
 
       <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
         <SectionCard title="Milestone Workflow">
           <div className="space-y-4">
             {milestones.map((milestone) => (
-              <MilestoneRow key={milestone.id} milestone={milestone} />
+              <MilestoneRow
+                key={milestone.id}
+                milestone={milestone}
+                onApprove={handleApproveMilestone}
+                onReject={handleRejectMilestone}
+              />
             ))}
           </div>
         </SectionCard>
 
         <PayoutDetailReleaseShell
           payoutId={payout.id}
+          recipientAddress={contributor?.walletAddress}
           nextReleasableMilestone={nextReleasableMilestone}
           releaseProof={releaseProof}
           onReleaseSuccess={handleReleaseSuccess}
