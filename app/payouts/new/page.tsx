@@ -3,8 +3,24 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 
-import { Button } from "@/components/shared/button";
-import { SectionCard } from "@/components/shared/section-card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { mockContributors } from "@/lib/data/mock-contributors";
 import { formatUsdc, shortenAddress } from "@/lib/utils/format";
 
@@ -47,9 +63,6 @@ const initialMilestoneDrafts: MilestoneDraft[] = [
     state: "Settlement proof",
   },
 ];
-
-const inputClassName =
-  "w-full rounded-2xl border border-[var(--border-soft)] bg-[rgba(8,15,31,0.78)] px-4 py-3 text-sm text-white outline-none transition-colors placeholder:text-[var(--text-muted)] focus:border-cyan-300/40 focus:bg-[rgba(8,15,31,0.92)]";
 
 function isLikelyWalletAddress(value: string) {
   return /^0x[a-fA-F0-9]{40}$/.test(value.trim());
@@ -241,74 +254,84 @@ export default function CreatePayoutPage() {
               across {createdSummary.milestoneCount} milestone(s).
             </p>
             <div className="mt-4 flex flex-wrap gap-3">
-              <Link href="/payouts/payout-detail">
-                <Button>Open payout detail flow</Button>
-              </Link>
-              <Link href="/dashboard">
-                <Button variant="secondary">Return to dashboard</Button>
-              </Link>
+              <Button asChild>
+                <Link href="/payouts/payout-detail">Open payout detail flow</Link>
+              </Button>
+              <Button asChild variant="secondary">
+                <Link href="/dashboard">Return to dashboard</Link>
+              </Button>
             </div>
           </div>
         ) : null}
 
-        <SectionCard title="Payout Basics">
-          <div className="grid gap-5 md:grid-cols-2">
-            <label className="space-y-2 text-sm text-[var(--text-primary)]">
-              <span>Payout title</span>
-              <input
-                className={inputClassName}
-                value={payoutTitle}
-                onChange={(event) => setPayoutTitle(event.target.value)}
-              />
-              {errors.title ? <p className="text-xs text-rose-300">{errors.title}</p> : null}
-            </label>
-            <label className="space-y-2 text-sm text-[var(--text-primary)]">
-              <span>Contributor</span>
-              <select
-                className={inputClassName}
-                value={contributorId}
-                onChange={(event) => handleContributorChange(event.target.value)}
-              >
-                {mockContributors.map((contributor) => (
-                  <option key={contributor.id} value={contributor.id}>
-                    {contributor.name} · {contributor.role}
-                  </option>
-                ))}
-              </select>
-              {errors.contributorId ? (
-                <p className="text-xs text-rose-300">{errors.contributorId}</p>
-              ) : null}
-            </label>
-            <label className="space-y-2 text-sm text-[var(--text-primary)] md:col-span-2">
-              <span>Wallet address</span>
-              <input
-                className={inputClassName}
-                value={walletAddress}
-                onChange={(event) => setWalletAddress(event.target.value)}
-              />
-              {errors.walletAddress ? (
-                <p className="text-xs text-rose-300">{errors.walletAddress}</p>
-              ) : null}
-            </label>
-            <label className="space-y-2 text-sm text-[var(--text-primary)]">
-              <span>Total amount (USDC)</span>
-              <input className={inputClassName} value={String(totalAmount)} readOnly />
-              {errors.totalAmount ? (
-                <p className="text-xs text-rose-300">{errors.totalAmount}</p>
-              ) : null}
-            </label>
-            <div className="rounded-3xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.64)] p-5 text-sm text-[var(--text-primary)]">
-              <p className="font-semibold text-white">Why this agreement matters</p>
-              <p className="mt-2 leading-6 text-[var(--text-muted)]">
-                Contributors get clarity on payout scope, while teams keep each
-                release locked behind explicit milestone review.
-              </p>
+        <Card className="sf-shell">
+          <CardHeader>
+            <CardTitle>Payout Basics</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-5 md:grid-cols-2">
+              <label className="space-y-2 text-sm text-[var(--text-primary)]">
+                <span>Payout title</span>
+                <Input
+                  value={payoutTitle}
+                  onChange={(event) => setPayoutTitle(event.target.value)}
+                />
+                {errors.title ? <p className="text-xs text-rose-300">{errors.title}</p> : null}
+              </label>
+              <label className="space-y-2 text-sm text-[var(--text-primary)]">
+                <span>Contributor</span>
+                <Select value={contributorId} onValueChange={handleContributorChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a contributor" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {mockContributors.map((contributor) => (
+                      <SelectItem key={contributor.id} value={contributor.id}>
+                        {contributor.name} · {contributor.role}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.contributorId ? (
+                  <p className="text-xs text-rose-300">{errors.contributorId}</p>
+                ) : null}
+              </label>
+              <label className="space-y-2 text-sm text-[var(--text-primary)] md:col-span-2">
+                <span>Wallet address</span>
+                <Input
+                  value={walletAddress}
+                  onChange={(event) => setWalletAddress(event.target.value)}
+                />
+                {errors.walletAddress ? (
+                  <p className="text-xs text-rose-300">{errors.walletAddress}</p>
+                ) : null}
+              </label>
+              <label className="space-y-2 text-sm text-[var(--text-primary)]">
+                <span>Total amount (USDC)</span>
+                <Input value={String(totalAmount)} readOnly />
+                {errors.totalAmount ? (
+                  <p className="text-xs text-rose-300">{errors.totalAmount}</p>
+                ) : null}
+              </label>
+              <Card className="bg-[rgba(15,23,42,0.64)]">
+                <CardContent className="p-5">
+                  <p className="font-semibold text-white">Why this agreement matters</p>
+                  <p className="mt-2 text-sm leading-6 text-[var(--text-muted)]">
+                    Contributors get clarity on payout scope, while teams keep each
+                    release locked behind explicit milestone review.
+                  </p>
+                </CardContent>
+              </Card>
             </div>
-          </div>
-        </SectionCard>
+          </CardContent>
+        </Card>
 
-        <SectionCard title="Milestone Structure">
-          <div className="mb-5 rounded-3xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.66)] p-5">
+        <Card className="sf-shell">
+          <CardHeader>
+            <CardTitle>Milestone Structure</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="mb-5 rounded-3xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.66)] p-5">
             <div className="grid gap-4 md:grid-cols-3">
               <div>
                 <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
@@ -339,7 +362,8 @@ export default function CreatePayoutPage() {
 
           <div className="space-y-4">
             {milestones.map((milestone, index) => (
-              <div key={milestone.id} className="sf-shell rounded-3xl p-5">
+              <Card key={milestone.id} className="sf-shell">
+                <CardContent className="p-5">
                 <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                   <div className="space-y-1.5">
                     <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--text-muted)]">
@@ -350,25 +374,24 @@ export default function CreatePayoutPage() {
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="rounded-full border border-cyan-300/30 bg-cyan-400/10 px-3 py-1 text-xs font-semibold text-cyan-200">
-                      {milestone.state}
-                    </span>
+                    <Badge>{milestone.state}</Badge>
                     {milestones.length > 1 ? (
-                      <button
+                      <Button
                         type="button"
-                        className="text-xs font-semibold text-rose-200 transition-colors hover:text-rose-100"
+                        variant="ghost"
+                        size="sm"
+                        className="text-rose-200 hover:bg-rose-400/10 hover:text-rose-100"
                         onClick={() => handleRemoveMilestone(milestone.id)}
                       >
                         Remove
-                      </button>
+                      </Button>
                     ) : null}
                   </div>
                 </div>
                 <div className="grid gap-4 md:grid-cols-[1fr_180px]">
                   <label className="space-y-2 text-sm text-[var(--text-primary)]">
                     <span>Milestone title</span>
-                    <input
-                      className={inputClassName}
+                    <Input
                       value={milestone.title}
                       onChange={(event) =>
                         handleMilestoneChange(milestone.id, "title", event.target.value)
@@ -377,8 +400,7 @@ export default function CreatePayoutPage() {
                   </label>
                   <label className="space-y-2 text-sm text-[var(--text-primary)]">
                     <span>Amount</span>
-                    <input
-                      className={inputClassName}
+                    <Input
                       type="number"
                       inputMode="decimal"
                       min="0"
@@ -392,15 +414,16 @@ export default function CreatePayoutPage() {
                 </div>
                 <label className="mt-4 block space-y-2 text-sm text-[var(--text-primary)]">
                   <span>Description</span>
-                  <textarea
-                    className={`${inputClassName} min-h-28 resize-none`}
+                  <Textarea
+                    className="min-h-28 resize-none"
                     value={milestone.description}
                     onChange={(event) =>
                       handleMilestoneChange(milestone.id, "description", event.target.value)
                     }
                   />
                 </label>
-              </div>
+                </CardContent>
+              </Card>
             ))}
           </div>
           <div className="mt-4 flex flex-wrap gap-3">
@@ -411,12 +434,17 @@ export default function CreatePayoutPage() {
               {submitState === "creating" ? "Creating payout..." : "Create payout draft"}
             </Button>
           </div>
-        </SectionCard>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="flex flex-col gap-6">
-        <SectionCard title="Approval Logic">
-          <div className="space-y-3 text-sm text-[var(--text-primary)]">
+        <Card className="sf-shell">
+          <CardHeader>
+            <CardTitle>Approval Logic</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3 text-sm text-[var(--text-primary)]">
             {[
               {
                 title: "Submit work",
@@ -457,11 +485,18 @@ export default function CreatePayoutPage() {
               </div>
             ))}
           </div>
-        </SectionCard>
+          </CardContent>
+        </Card>
 
-        <SectionCard title="Settlement Preview">
-          <div className="space-y-5 text-sm text-[var(--text-primary)]">
-            <div className="rounded-3xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.62)] p-5">
+        <Card className="sf-shell">
+          <CardHeader>
+            <CardTitle>Settlement Preview</CardTitle>
+            <CardDescription>Review the final payout story before creating the draft.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-5 text-sm text-[var(--text-primary)]">
+              <Card className="bg-[rgba(15,23,42,0.62)]">
+                <CardContent className="p-5">
               <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
                 Payout title
               </p>
@@ -476,21 +511,26 @@ export default function CreatePayoutPage() {
               <p className="mt-3 font-mono text-xs text-cyan-100">
                 {shortenAddress(walletAddress || selectedContributor.walletAddress)}
               </p>
-            </div>
+                </CardContent>
+              </Card>
 
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-3xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.62)] p-4">
-                <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                  Total payout
-                </p>
-                <p className="mt-2 font-semibold text-white">{formatUsdc(totalAmount)} USDC</p>
-              </div>
-              <div className="rounded-3xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.62)] p-4">
-                <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                  Total milestones
-                </p>
-                <p className="mt-2 font-semibold text-white">{milestones.length}</p>
-              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+              <Card className="bg-[rgba(15,23,42,0.62)]">
+                <CardContent className="p-4">
+                  <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                    Total payout
+                  </p>
+                  <p className="mt-2 font-semibold text-white">{formatUsdc(totalAmount)} USDC</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-[rgba(15,23,42,0.62)]">
+                <CardContent className="p-4">
+                  <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                    Total milestones
+                  </p>
+                  <p className="mt-2 font-semibold text-white">{milestones.length}</p>
+                </CardContent>
+              </Card>
             </div>
 
             <div className="space-y-3">
@@ -498,10 +538,8 @@ export default function CreatePayoutPage() {
                 Preview timeline
               </p>
               {milestones.map((milestone, index) => (
-                <div
-                  key={milestone.id}
-                  className="rounded-3xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.62)] p-4"
-                >
+                <Card key={milestone.id} className="bg-[rgba(15,23,42,0.62)]">
+                  <CardContent className="p-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <p className="font-semibold text-white">
@@ -515,20 +553,26 @@ export default function CreatePayoutPage() {
                       <p className="font-semibold text-white">
                         {Number(milestone.amount) > 0 ? `${formatUsdc(Number(milestone.amount))} USDC` : "0 USDC"}
                       </p>
-                      <p className="mt-1 text-xs text-cyan-100">{milestone.state}</p>
+                      <div className="mt-2 flex justify-end">
+                        <Badge variant="secondary">{milestone.state}</Badge>
+                      </div>
                     </div>
                   </div>
-                </div>
+                  </CardContent>
+                </Card>
               ))}
             </div>
 
-            <div className="rounded-3xl border border-dashed border-[var(--border-soft)] px-4 py-4 text-sm leading-6 text-[var(--text-muted)]">
-              Once the payout is created, the team can move into milestone review,
-              approval, release, and settlement proof on Arc without changing the
-              contributor context.
-            </div>
+            <Card className="border-dashed bg-transparent">
+              <CardContent className="px-4 py-4 text-sm leading-6 text-[var(--text-muted)]">
+                Once the payout is created, the team can move into milestone review,
+                approval, release, and settlement proof on Arc without changing the
+                contributor context.
+              </CardContent>
+            </Card>
           </div>
-        </SectionCard>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
