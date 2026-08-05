@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { MilestoneRow } from "@/components/milestones/milestone-row";
 import { PayoutDetailReleaseShell } from "@/components/payouts/payout-detail-release-shell";
-import { SectionCard } from "@/components/shared/section-card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Contributor } from "@/lib/models/contributor";
 import type { Milestone } from "@/lib/models/milestone";
 import type { Payout } from "@/lib/models/payout";
@@ -158,8 +158,12 @@ export function PayoutDetailClient({
         </div>
       </div>
 
-      <SectionCard title="Payout Summary">
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <Card className="sf-shell">
+        <CardHeader>
+          <CardTitle>Payout Summary</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {[
             { label: "Contributor", value: contributor?.name ?? payout.contributorId },
             {
@@ -182,7 +186,8 @@ export function PayoutDetailClient({
             </div>
           ))}
         </div>
-      </SectionCard>
+        </CardContent>
+      </Card>
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         <StatCard label="Milestones" value={milestones.length} />
@@ -207,8 +212,12 @@ export function PayoutDetailClient({
       </section>
 
       <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-        <SectionCard title="Milestone Workflow">
-          <div className="space-y-4">
+        <Card className="sf-shell">
+          <CardHeader>
+            <CardTitle>Milestone Workflow</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
             {milestones.map((milestone) => (
               <MilestoneRow
                 key={milestone.id}
@@ -218,7 +227,8 @@ export function PayoutDetailClient({
               />
             ))}
           </div>
-        </SectionCard>
+          </CardContent>
+        </Card>
 
         <PayoutDetailReleaseShell
           payoutId={payout.id}

@@ -10,7 +10,7 @@ import {
   type ReleasePanelStatus,
 } from "@/components/payouts/release-panel";
 import { TransactionProofCard } from "@/components/payouts/transaction-proof-card";
-import { SectionCard } from "@/components/shared/section-card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Milestone } from "@/lib/models/milestone";
 import type { TransactionProof } from "@/lib/models/transaction-proof";
 import { formatUsdc } from "@/lib/utils/format";
@@ -105,8 +105,13 @@ export function PayoutDetailReleaseShell({
 
   return (
     <div className="flex flex-col gap-6">
-      <SectionCard title="Release Target">
-        <div className="space-y-4 text-sm text-[var(--text-primary)]">
+      <Card className="sf-shell">
+        <CardHeader>
+          <CardTitle>Release Target</CardTitle>
+          <CardDescription>Keep the release action, recipient context, and Arc execution mode in one place.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4 text-sm text-[var(--text-primary)]">
           <div className="rounded-3xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.74)] p-4">
             <p className="font-semibold text-white">
               {nextReleasableMilestone
@@ -149,10 +154,15 @@ export function PayoutDetailReleaseShell({
             </div>
           ) : null}
         </div>
-      </SectionCard>
+        </CardContent>
+      </Card>
 
-      <SectionCard title="Settlement Proof">
-        <TransactionProofCard proof={resolvedProof} />
+      <Card className="sf-shell">
+        <CardHeader>
+          <CardTitle>Settlement Proof</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <TransactionProofCard proof={resolvedProof} />
         <div className="mt-4 rounded-2xl border border-dashed border-[var(--border-soft)] px-4 py-3 text-sm text-[var(--text-muted)]">
           {ARC_CONFIG.executionMode === "real"
             ? "Real wallet execution is the intended final path, but the live Arc transfer wiring is not complete in this repo yet."
@@ -160,10 +170,15 @@ export function PayoutDetailReleaseShell({
               ? "This proof is generated through the demo-confirmed Arc path so judges can verify release sequencing, recipient context, and proof attachment end-to-end."
               : "This proof is generated through the mock Arc path to keep the review-to-release story demo-safe while the live settlement path remains scaffolded."}
         </div>
-      </SectionCard>
+        </CardContent>
+      </Card>
 
-      <SectionCard title="How SettleFlow works">
-        <div className="space-y-3 text-sm text-[var(--text-primary)]">
+      <Card className="sf-shell">
+        <CardHeader>
+          <CardTitle>How SettleFlow works</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3 text-sm text-[var(--text-primary)]">
           {[
             "Contributor submits work against a milestone.",
             "Reviewer approves the milestone before release.",
@@ -180,7 +195,8 @@ export function PayoutDetailReleaseShell({
             </div>
           ))}
         </div>
-      </SectionCard>
+        </CardContent>
+      </Card>
     </div>
   );
 }
