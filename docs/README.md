@@ -22,6 +22,15 @@ Use these as secondary references when needed:
 - `progress-summary-checkpoint-2.md`
 - `screenshots/`
 
+## Checkpoint 2 Packaging Path
+Use these files in this order when preparing a checkpoint/demo package:
+1. `checkpoint-2-submission-draft.md` — primary checkpoint submission narrative
+2. `checkpoint-2-demo-flow.md` — route order and live demo talk track
+3. `checkpoint-2-deck-outline.md` — presentation/deck structure
+4. `progress-summary-checkpoint-2.md` — supporting proof of implemented and verified state
+
+This keeps checkpoint packaging work focused without treating the checkpoint files as canonical product architecture docs.
+
 ## Archive
 Archived files live under `archive/`.
 
