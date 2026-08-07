@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 
 import { ARC_CONFIG } from "@/lib/arc/config";
 import { mapSendResultToProof } from "@/lib/arc/map-send-result-to-proof";
-import { sendUsdcOnArc } from "@/lib/arc/send";
 import {
   ReleasePanel,
   type ReleasePanelStatus,
@@ -68,39 +67,79 @@ export function PayoutDetailReleaseShell({
     setReleaseError(null);
     setReleaseStatus("submitting");
 
-    const result = await sendUsdcOnArc({
-      recipient:
-        recipientAddress ?? "0x0000000000000000000000000000000000000000",
-      amount: String(nextReleasableMilestone.amount),
-      tokenAddress: ARC_CONFIG.usdcAddress,
-      payoutId,
-      milestoneId: nextReleasableMilestone.id,
-      note: nextReleasableMilestone.title,
-    });
+    try {
+      const response = await fetch("/api/release", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          payoutId,
+          milestoneId: nextReleasableMilestone.id,
+          recipientAddress:
+            recipientAddress ?? "0x0000000000000000000000000000000000000000",
+          amount: String(nextReleasableMilestone.amount),
+        }),
+      });
 
-    if (result.status === "failed") {
-      setReleaseError(result.errorMessage ?? "Release failed.");
-      setReleaseStatus("failed");
-      return;
-    }
+      const data = (await response.json()) as {
+        error?: string;
+        release?: { id: string; status: string; txHash?: string };
+        proof?: {
+          id: string;
+          milestoneId: string;
+          txHash?: string;
+          network?: string;
+          status: string;
+          explorerUrl?: string;
+          confirmedAt?: string;
+        };
+      };
 
-    const mappedProof = mapSendResultToProof({
-      result,
-      milestoneId: nextReleasableMilestone.id,
-    });
+      if (!response.ok || data.error) {
+        setReleaseError(data.error ?? "Release request failed.");
+        setReleaseStatus("failed");
+        return;
+      }
 
-    const releasedAt = result.confirmedAt ?? new Date().toISOString();
+      const result = mapSendResultToProof(
+        {
+          result: {
+            status:
+              data.release?.status === "confirmed"
+                ? "confirmed"
+                : data.release?.status === "failed"
+                  ? "failed"
+                  : "pending",
+            txHash: data.proof?.txHash,
+            explorerUrl: data.proof?.explorerUrl,
+            network: data.proof?.network,
+            confirmedAt: data.proof?.confirmedAt,
+          },
+          milestoneId: nextReleasableMilestone.id,
+        },
+      );
 
-    if (mappedProof) {
-      setActiveProof(mappedProof);
+      if (!result) {
+        setReleaseError("Release succeeded but proof could not be mapped.");
+        setReleaseStatus("failed");
+        return;
+      }
+
+      const releasedAt = result.confirmedAt ?? new Date().toISOString();
+
+      setActiveProof(result);
       onReleaseSuccess?.({
         milestoneId: nextReleasableMilestone.id,
-        proof: mappedProof,
+        proof: result,
         releasedAt,
       });
-    }
 
-    setReleaseStatus(result.status === "confirmed" ? "confirmed" : "submitting");
+      setReleaseStatus("confirmed");
+    } catch (err) {
+      setReleaseError(
+        err instanceof Error ? err.message : "Release request failed.",
+      );
+      setReleaseStatus("failed");
+    }
   }
 
   return (
