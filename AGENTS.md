@@ -2,14 +2,18 @@
 
 ## Before starting
 
-Read these files in order:
+Read these files, loading only as far as needed:
 
-1. docs/README.md
-2. docs/PROJECT.md
-3. docs/ARCHITECTURE.md
-4. docs/CONVENTIONS.md
-5. docs/CURRENT_STATE.md
-6. The assigned task file
+### Tier 1 — always (product goal + current state)
+1. docs/PROJECT.md
+2. docs/CURRENT_STATE.md
+3. The assigned task file (if one exists)
+
+### Tier 2 — load if modifying routes, adding features, or changing data flow
+4. docs/ARCHITECTURE.md
+
+### Tier 3 — load if unsure about naming, structure, or styling patterns
+5. docs/CONVENTIONS.md
 
 Do not scan the entire repository unless necessary.
 

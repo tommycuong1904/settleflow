@@ -244,26 +244,6 @@ export default function CreatePayoutPage() {
           </div>
         </div>
 
-        {submitState === "created" && createdSummary ? (
-          <div className="rounded-3xl border border-emerald-400/30 bg-emerald-400/10 px-5 py-4 text-sm text-emerald-100">
-            <p className="font-semibold text-white">Payout draft created</p>
-            <p className="mt-2 leading-6">
-              <span className="font-semibold text-white">{createdSummary.title}</span> is now
-              framed as a {formatUsdc(createdSummary.totalAmount)} USDC payout for{" "}
-              <span className="font-semibold text-white">{createdSummary.contributorName}</span>
-              across {createdSummary.milestoneCount} milestone(s).
-            </p>
-            <div className="mt-4 flex flex-wrap gap-3">
-              <Button asChild>
-                <Link href="/payouts/payout-detail">Open payout detail flow</Link>
-              </Button>
-              <Button asChild variant="secondary">
-                <Link href="/dashboard">Return to dashboard</Link>
-              </Button>
-            </div>
-          </div>
-        ) : null}
-
         <Card className="sf-shell">
           <CardHeader>
             <CardTitle>Payout Basics</CardTitle>
@@ -436,6 +416,26 @@ export default function CreatePayoutPage() {
           </div>
           </CardContent>
         </Card>
+
+        {submitState === "created" && createdSummary ? (
+          <div className="rounded-3xl border border-emerald-400/30 bg-emerald-400/10 px-5 py-4 text-sm text-emerald-100">
+            <p className="font-semibold text-white">Payout draft created</p>
+            <p className="mt-2 leading-6">
+              <span className="font-semibold text-white">{createdSummary.title}</span> is now
+              framed as a {formatUsdc(createdSummary.totalAmount)} USDC payout for{" "}
+              <span className="font-semibold text-white">{createdSummary.contributorName}</span>
+              across {createdSummary.milestoneCount} milestone(s).
+            </p>
+            <div className="mt-4 flex flex-wrap gap-3">
+              <Button asChild>
+                <Link href="/payouts/payout-detail">Open payout detail flow</Link>
+              </Button>
+              <Button asChild variant="secondary">
+                <Link href="/dashboard">Return to dashboard</Link>
+              </Button>
+            </div>
+          </div>
+        ) : null}
       </div>
 
       <div className="flex flex-col gap-6">
