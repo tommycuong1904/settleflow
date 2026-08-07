@@ -1,13 +1,16 @@
+export type ReleaseExecutionMode = "browser_wallet" | "circle_wallet";
 export type ArcExecutionMode = "mock" | "demo" | "real";
 
 export type ArcSendStatus = "pending" | "confirmed" | "failed";
 
 export type ArcSendRequest = {
   recipient: string;
-  amount: number;
+  amount: string;
   tokenAddress: string;
+  executionMode?: ReleaseExecutionMode;
   payoutId?: string;
   milestoneId?: string;
+  releaseId?: string;
   note?: string;
 };
 

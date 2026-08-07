@@ -140,6 +140,11 @@ enum ReviewDecision {
   rejected
 }
 
+enum ReleaseExecutionMode {
+  browser_wallet
+  circle_wallet
+}
+
 enum ReleaseStatus {
   queued
   pending
@@ -326,9 +331,13 @@ model Release {
   milestoneId       String?
   triggeredByUserId String
   amountUsdc        Decimal             @db.Decimal(30, 6)
+  executionMode     ReleaseExecutionMode
+  sourceWalletAddress String?
+  destinationWalletAddress String
   status            ReleaseStatus       @default(queued)
   arcRequestId      String?
-  destinationWalletAddress String?
+  txHash            String?             @unique
+  explorerUrl       String?
   failureReason     String?
   requestedAt       DateTime            @default(now())
   executedAt        DateTime?
@@ -344,6 +353,7 @@ model Release {
   @@index([payoutId, status])
   @@index([milestoneId])
   @@index([arcRequestId])
+  @@index([executionMode, status])
 }
 
 model TransactionProof {
@@ -409,6 +419,14 @@ Enforce it in the transaction that creates or updates payout milestones:
 
 ### Release uniqueness
 The illustrative schema allows multiple releases per milestone to preserve retry history. Application logic must prevent a second active release for the same milestone while an existing one is `queued` or `pending`.
+
+### Release execution mode
+`executionMode` is persisted on each release so the selected signing path is auditable and cannot silently change between retries:
+
+- `browser_wallet`: the operator's connected wallet submits the transaction.
+- `circle_wallet`: a protected server-side Circle Wallets adapter submits the transaction.
+
+The database stores wallet addresses and transaction metadata, but never private keys, API secrets, entity secrets, or other signing credentials. Circle Wallets credentials belong only in server-side environment configuration.
 
 ### Proof uniqueness
 `txHash` is nullable because queued/failed proofs may not have a transaction hash. PostgreSQL permits multiple NULL values under a normal unique constraint. Once present, a transaction hash must be unique.

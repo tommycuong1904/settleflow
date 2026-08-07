@@ -71,7 +71,7 @@ export function PayoutDetailReleaseShell({
     const result = await sendUsdcOnArc({
       recipient:
         recipientAddress ?? "0x0000000000000000000000000000000000000000",
-      amount: nextReleasableMilestone.amount,
+      amount: String(nextReleasableMilestone.amount),
       tokenAddress: ARC_CONFIG.usdcAddress,
       payoutId,
       milestoneId: nextReleasableMilestone.id,
