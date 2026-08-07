@@ -76,12 +76,19 @@ export async function POST(request: Request) {
       });
 
       if (!milestone) throw new Error("MILESTONE_NOT_FOUND");
+      if (milestone.payout.id !== payoutId)
+        throw new Error("PAYOUT_MILESTONE_MISMATCH");
       if (milestone.status !== "approved")
         throw new Error("MILESTONE_NOT_APPROVED");
       if (milestone.releases.length > 0)
         throw new Error("RELEASE_ALREADY_EXISTS");
       if (!milestone.payout.targetWalletAddress)
         throw new Error("DESTINATION_WALLET_MISSING");
+      if (
+        recipientAddress.trim().toLowerCase() !==
+        milestone.payout.targetWalletAddress.trim().toLowerCase()
+      )
+        throw new Error("RECIPIENT_ADDRESS_MISMATCH");
 
       const requestedAmount = new Decimal(amount);
       if (!requestedAmount.equals(milestone.amountUsdc))
