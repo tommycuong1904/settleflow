@@ -1,5 +1,6 @@
 import { ARC_CONFIG } from "@/lib/arc/config";
 import type { ArcSendRequest, ArcSendResult } from "@/lib/arc/types";
+import { createReleaseExecutor } from "@/lib/arc/release-executor";
 
 function buildExplorerUrl(txHash: string) {
   return `${ARC_CONFIG.explorerUrl}/tx/${txHash}`;
@@ -42,14 +43,15 @@ async function sendDemoUsdcOnArc(
 async function sendRealUsdcOnArc(
   request: ArcSendRequest,
 ): Promise<ArcSendResult> {
-  void request;
+  if (!request.executionMode) {
+    return {
+      status: "failed",
+      network: "Arc Testnet",
+      errorMessage: "A release execution mode is required for live execution.",
+    };
+  }
 
-  return {
-    status: "failed",
-    network: "Arc Testnet",
-    errorMessage:
-      "Real Arc execution is not wired yet. Switch to demo mode or implement the live wallet path.",
-  };
+  return createReleaseExecutor(request.executionMode)(request);
 }
 
 export async function sendUsdcOnArc(
