@@ -137,7 +137,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="grid gap-4 md:grid-cols-3">
+      <section id="workflow" className="grid gap-4 md:grid-cols-3">
         {workflowCards.map((card) => (
           <SectionCard key={card.title} title={card.title}>
             <div className="space-y-3">
