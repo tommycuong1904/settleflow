@@ -50,6 +50,8 @@ export function PayoutDetailClient({
     }
   });
   const [milestoneState, setMilestoneState] = useState(() => initialMilestones);
+  const [reviewError, setReviewError] = useState<string | null>(null);
+  const [reviewingMilestoneId, setReviewingMilestoneId] = useState<string | null>(null);
 
   const milestones = useMemo(() => {
     if (!persistedRelease) {
@@ -99,24 +101,35 @@ export function PayoutDetailClient({
           : "In progress"
         : payout.status.replace("_", " ");
 
-  function handleApproveMilestone(milestoneId: string) {
-    setMilestoneState((current) =>
-      current.map((milestone) =>
-        milestone.id === milestoneId && milestone.status === "submitted"
-          ? { ...milestone, status: "approved" as const }
+  async function reviewMilestone(milestoneId: string, decision: "approved" | "rejected") {
+    setReviewError(null);
+    setReviewingMilestoneId(milestoneId);
+    try {
+      const response = await fetch(`/api/v1/milestones/${milestoneId}/${decision === "approved" ? "approve" : "reject"}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reviewedByUserId: "user-reviewer" }),
+      });
+      const data = (await response.json()) as { error?: string };
+      if (!response.ok) throw new Error(data.error ?? `Unable to ${decision} milestone.`);
+      setMilestoneState((current) => current.map((milestone) =>
+        milestone.id === milestoneId
+          ? { ...milestone, status: decision, ...(decision === "approved" ? { approvedAt: new Date().toISOString() } : {}) }
           : milestone,
-      ),
-    );
+      ));
+    } catch (error) {
+      setReviewError(error instanceof Error ? error.message : "Review request failed.");
+    } finally {
+      setReviewingMilestoneId(null);
+    }
+  }
+
+  function handleApproveMilestone(milestoneId: string) {
+    void reviewMilestone(milestoneId, "approved");
   }
 
   function handleRejectMilestone(milestoneId: string) {
-    setMilestoneState((current) =>
-      current.map((milestone) =>
-        milestone.id === milestoneId && milestone.status === "submitted"
-          ? { ...milestone, status: "rejected" as const }
-          : milestone,
-      ),
-    );
+    void reviewMilestone(milestoneId, "rejected");
   }
 
   function handleReleaseSuccess(payload: { milestoneId: string; proof: TransactionProof; releasedAt: string }) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
 import { Badge } from "@/components/ui/badge";
@@ -21,7 +21,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { mockContributors } from "@/lib/data/mock-contributors";
 import { formatUsdc, shortenAddress } from "@/lib/utils/format";
 
 type MilestoneDraft = {
@@ -32,12 +31,20 @@ type MilestoneDraft = {
   state: string;
 };
 
+type ContributorOption = {
+  id: string;
+  displayName: string;
+  walletAddress: string;
+  status?: string;
+};
+
 type FormErrors = {
   title?: string;
   contributorId?: string;
   walletAddress?: string;
   milestones?: string;
   totalAmount?: string;
+  submit?: string;
 };
 
 const initialMilestoneDrafts: MilestoneDraft[] = [
@@ -47,20 +54,6 @@ const initialMilestoneDrafts: MilestoneDraft[] = [
     description: "Create 3 visual directions for review and first approval.",
     amount: "80",
     state: "Review milestone",
-  },
-  {
-    id: "milestone-draft-2",
-    title: "Finalize social asset set",
-    description: "Deliver approved launch assets for X, Telegram, and Farcaster.",
-    amount: "120",
-    state: "Release milestone",
-  },
-  {
-    id: "milestone-draft-3",
-    title: "Export all format variants",
-    description: "Ship final size variants and handoff package for launch week.",
-    amount: "100",
-    state: "Settlement proof",
   },
 ];
 
@@ -73,24 +66,44 @@ function sanitizeAmountInput(value: string) {
 }
 
 export default function CreatePayoutPage() {
+  const [contributors, setContributors] = useState<ContributorOption[]>([]);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [payoutTitle, setPayoutTitle] = useState("Community Campaign Design");
-  const [contributorId, setContributorId] = useState(mockContributors[0]?.id ?? "");
-  const [walletAddress, setWalletAddress] = useState(
-    mockContributors[0]?.walletAddress ?? "",
-  );
+  const [contributorId, setContributorId] = useState("");
+  const [walletAddress, setWalletAddress] = useState("");
   const [milestones, setMilestones] = useState<MilestoneDraft[]>(initialMilestoneDrafts);
   const [submitState, setSubmitState] = useState<"idle" | "creating" | "created">("idle");
   const [errors, setErrors] = useState<FormErrors>({});
   const [createdSummary, setCreatedSummary] = useState<{
+    payoutId: string;
     title: string;
     contributorName: string;
     totalAmount: number;
     milestoneCount: number;
   } | null>(null);
 
-  const selectedContributor =
-    mockContributors.find((contributor) => contributor.id === contributorId) ??
-    mockContributors[0];
+  const selectedContributor = contributors.find((contributor) => contributor.id === contributorId) ?? null;
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetch("/api/v1/contributors?status=active")
+      .then(async (response) => {
+        const data = (await response.json()) as { data?: ContributorOption[]; error?: string };
+        if (!response.ok) throw new Error(data.error ?? "Unable to load contributors.");
+        if (!cancelled) {
+          const nextContributors = data.data ?? [];
+          setContributors(nextContributors);
+          if (nextContributors[0]) {
+            setContributorId(nextContributors[0].id);
+            setWalletAddress(nextContributors[0].walletAddress);
+          }
+        }
+      })
+      .catch((error) => {
+        if (!cancelled) setLoadError(error instanceof Error ? error.message : "Unable to load contributors.");
+      });
+    return () => { cancelled = true; };
+  }, []);
 
   const totalAmount = useMemo(
     () =>
@@ -103,7 +116,7 @@ export default function CreatePayoutPage() {
 
   function handleContributorChange(nextContributorId: string) {
     setContributorId(nextContributorId);
-    const contributor = mockContributors.find((item) => item.id === nextContributorId);
+    const contributor = contributors.find((item) => item.id === nextContributorId);
     if (contributor) {
       setWalletAddress(contributor.walletAddress);
     }
@@ -183,26 +196,68 @@ export default function CreatePayoutPage() {
   }
 
   async function handleCreatePayout() {
+    if (submitState === "creating") return;
+
     if (!validateForm()) {
       setSubmitState("idle");
       return;
     }
 
     setSubmitState("creating");
-    await new Promise((resolve) => setTimeout(resolve, 900));
-
-    setCreatedSummary({
-      title: payoutTitle.trim(),
-      contributorName: selectedContributor?.name ?? "Contributor",
-      totalAmount,
-      milestoneCount: milestones.length,
-    });
-    setSubmitState("created");
+    setErrors({});
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 15_000);
+    try {
+      const response = await fetch("/api/v1/payouts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
+        body: JSON.stringify({
+          workspaceId: "ws-demo",
+          createdByUserId: "user-reviewer",
+          title: payoutTitle.trim(),
+          contributorId,
+          targetWalletAddress: walletAddress.trim(),
+          totalAmountUsdc: String(totalAmount),
+          currency: "USDC",
+          milestones: milestones.map((milestone, index) => ({
+            title: milestone.title.trim(),
+            description: milestone.description.trim(),
+            amountUsdc: milestone.amount,
+            sequence: index + 1,
+          })),
+        }),
+      });
+      const data = (await response.json()) as { payout?: { id: string }; error?: string };
+      if (!response.ok) throw new Error(data.error ?? "Unable to create payout.");
+      setCreatedSummary({
+        payoutId: data.payout?.id ?? "",
+        title: payoutTitle.trim(),
+        contributorName: selectedContributor?.displayName ?? "Contributor",
+        totalAmount,
+        milestoneCount: milestones.length,
+      });
+      setSubmitState("created");
+    } catch (error) {
+      setErrors({
+        submit:
+          error instanceof DOMException && error.name === "AbortError"
+            ? "Creating the payout timed out. Please try again."
+            : error instanceof Error
+              ? error.message
+              : "Unable to create payout.",
+      });
+      setSubmitState("idle");
+    } finally {
+      window.clearTimeout(timeoutId);
+    }
   }
 
   return (
     <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
       <div className="space-y-6">
+        {loadError ? <p className="rounded-2xl border border-rose-400/30 bg-rose-400/10 p-3 text-sm text-rose-200">{loadError}</p> : null}
+        {errors.submit ? <p className="rounded-2xl border border-rose-400/30 bg-rose-400/10 p-3 text-sm text-rose-200">{errors.submit}</p> : null}
         <div className="space-y-4">
           <div className="space-y-2">
             <p className="text-sm font-medium uppercase tracking-[0.22em] text-cyan-300">
@@ -265,9 +320,9 @@ export default function CreatePayoutPage() {
                     <SelectValue placeholder="Select a contributor" />
                   </SelectTrigger>
                   <SelectContent>
-                    {mockContributors.map((contributor) => (
+                    {contributors.map((contributor) => (
                       <SelectItem key={contributor.id} value={contributor.id}>
-                        {contributor.name} · {contributor.role}
+                        {contributor.displayName} · {contributor.status ?? "active"}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -410,7 +465,7 @@ export default function CreatePayoutPage() {
             <Button variant="secondary" onClick={handleAddMilestone}>
               Add Milestone
             </Button>
-            <Button onClick={() => void handleCreatePayout()}>
+            <Button disabled={submitState === "creating"} onClick={() => void handleCreatePayout()}>
               {submitState === "creating" ? "Creating payout..." : "Create payout draft"}
             </Button>
           </div>
@@ -428,7 +483,7 @@ export default function CreatePayoutPage() {
             </p>
             <div className="mt-4 flex flex-wrap gap-3">
               <Button asChild>
-                <Link href="/payouts/payout-detail">Open payout detail flow</Link>
+                <Link href={`/payouts/${createdSummary.payoutId}`}>Open payout detail flow</Link>
               </Button>
               <Button asChild variant="secondary">
                 <Link href="/dashboard">Return to dashboard</Link>
@@ -506,10 +561,10 @@ export default function CreatePayoutPage() {
               <p className="mt-4 text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
                 Recipient
               </p>
-              <p className="mt-2 text-lg font-semibold text-white">{selectedContributor.name}</p>
-              <p className="mt-1 text-[var(--text-muted)]">{selectedContributor.role}</p>
+              <p className="mt-2 text-lg font-semibold text-white">{selectedContributor?.displayName ?? "No contributor selected"}</p>
+              <p className="mt-1 text-[var(--text-muted)]">{selectedContributor?.status ?? ""}</p>
               <p className="mt-3 font-mono text-xs text-cyan-100">
-                {shortenAddress(walletAddress || selectedContributor.walletAddress)}
+                {shortenAddress(walletAddress || selectedContributor?.walletAddress || "")}
               </p>
                 </CardContent>
               </Card>

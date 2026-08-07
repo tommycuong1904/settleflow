@@ -68,15 +68,12 @@ export function PayoutDetailReleaseShell({
     setReleaseStatus("submitting");
 
     try {
-      const response = await fetch("/api/release", {
+      const response = await fetch(`/api/v1/milestones/${nextReleasableMilestone.id}/release`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          payoutId,
-          milestoneId: nextReleasableMilestone.id,
-          recipientAddress:
-            recipientAddress ?? "0x0000000000000000000000000000000000000000",
-          amount: String(nextReleasableMilestone.amount),
+          triggeredByUserId: "user-reviewer",
+          amountUsdc: String(nextReleasableMilestone.amount),
         }),
       });
 

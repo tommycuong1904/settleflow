@@ -3,27 +3,27 @@ import { MilestoneStatusBadge } from "@/components/milestones/milestone-status-b
 import { Button } from "@/components/shared/button";
 import { EmptyState } from "@/components/shared/empty-state";
 import { SectionCard } from "@/components/shared/section-card";
-import { mockContributors } from "@/lib/data/mock-contributors";
-import { mockMilestones } from "@/lib/data/mock-milestones";
-import { mockPayouts } from "@/lib/data/mock-payouts";
-import { mockTransactionProofs } from "@/lib/data/mock-transaction-proofs";
+import { getDashboardData } from "@/lib/repositories/dashboard";
 import { formatUsdc, shortenAddress } from "@/lib/utils/format";
 
-export default function DashboardPage() {
-  const activePayouts = mockPayouts.filter((payout) =>
+export default async function DashboardPage() {
+  const { payouts, milestones, contributors, transactionProofs } =
+    await getDashboardData();
+
+  const activePayouts = payouts.filter((payout) =>
     ["active", "partially_released"].includes(payout.status),
   );
-  const pendingApprovals = mockMilestones.filter(
+  const pendingApprovals = milestones.filter(
     (milestone) => milestone.status === "submitted",
   );
-  const releasedMilestones = mockMilestones.filter(
+  const releasedMilestones = milestones.filter(
     (milestone) => milestone.status === "released",
   );
-  const totalScheduled = mockPayouts.reduce(
+  const totalScheduled = payouts.reduce(
     (sum, payout) => sum + payout.totalAmount,
     0,
   );
-  const releaseReadyMilestones = mockMilestones.filter(
+  const releaseReadyMilestones = milestones.filter(
     (milestone) => milestone.status === "approved",
   );
   const releasedValue = releasedMilestones.reduce(
@@ -118,8 +118,8 @@ export default function DashboardPage() {
               />
             ) : (
               pendingApprovals.map((milestone) => {
-                const payout = mockPayouts.find((item) => item.id === milestone.payoutId);
-                const contributor = mockContributors.find(
+                const payout = payouts.find((item) => item.id === milestone.payoutId);
+                const contributor = contributors.find(
                   (item) => item.id === payout?.contributorId,
                 );
 
@@ -166,10 +166,10 @@ export default function DashboardPage() {
           <SectionCard title="Active Payouts">
             <div className="space-y-4">
               {activePayouts.map((payout) => {
-                const contributor = mockContributors.find(
+                const contributor = contributors.find(
                   (item) => item.id === payout.contributorId,
                 );
-                const payoutMilestones = mockMilestones.filter(
+                const payoutMilestones = milestones.filter(
                   (milestone) => milestone.payoutId === payout.id,
                 );
                 const releasedAmount = payoutMilestones
@@ -230,7 +230,7 @@ export default function DashboardPage() {
                 />
               ) : (
                 releasedMilestones.slice(0, 2).map((milestone) => {
-                  const proof = mockTransactionProofs.find(
+                  const proof = transactionProofs.find(
                     (item) => item.milestoneId === milestone.id,
                   );
                   return (
