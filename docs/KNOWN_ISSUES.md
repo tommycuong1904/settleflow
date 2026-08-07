@@ -20,6 +20,8 @@ This document lists issues, gaps, inconsistencies, and inspection risks visible 
 - `lib/arc/send.ts` returns a hard-coded pending response.
 - No wallet connection or transaction execution implementation was found.
 - No proof ingestion/update mechanism was found.
+- The planned execution boundary includes two adapters: `browser_wallet` and `circle_wallet`.
+- Neither adapter is wired yet; Circle Wallets credentials and server-side execution remain future backend work.
 
 ### 3. No authentication or access control
 - No login flow, session handling, auth provider config, or middleware protection was found.

@@ -1,0 +1,46 @@
+import { Prisma } from "@prisma/client";
+import { db } from "@/lib/db/client";
+
+export type SubmitMilestoneInput = {
+  submittedByUserId: string;
+  summary: string;
+  artifactUrl?: string;
+  artifactLabel?: string;
+  notes?: string;
+};
+
+export async function submitMilestone(milestoneId: string, input: SubmitMilestoneInput) {
+  return db.$transaction(async (tx: Prisma.TransactionClient) => {
+    const milestone = await tx.milestone.findUnique({
+      where: { id: milestoneId },
+      select: { id: true, status: true },
+    });
+    if (!milestone) throw new Error("MILESTONE_NOT_FOUND");
+    if (milestone.status !== "pending" && milestone.status !== "rejected") {
+      throw new Error("MILESTONE_NOT_SUBMITTABLE");
+    }
+
+    const submitter = await tx.user.findUnique({ where: { id: input.submittedByUserId }, select: { id: true } });
+    if (!submitter) throw new Error("USER_NOT_FOUND");
+
+    const previousCount = await tx.milestoneSubmission.count({ where: { milestoneId } });
+    const submission = await tx.milestoneSubmission.create({
+      data: {
+        milestoneId,
+        submittedByUserId: input.submittedByUserId,
+        summary: input.summary,
+        artifactUrl: input.artifactUrl,
+        artifactLabel: input.artifactLabel,
+        notes: input.notes,
+        resubmissionNumber: previousCount,
+      },
+      select: { id: true, submittedAt: true },
+    });
+    const updatedMilestone = await tx.milestone.update({
+      where: { id: milestoneId },
+      data: { status: "submitted", submittedAt: submission.submittedAt, rejectedAt: null },
+      select: { id: true, status: true },
+    });
+    return { milestone: updatedMilestone, submission };
+  });
+}

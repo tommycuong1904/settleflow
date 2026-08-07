@@ -1,0 +1,306 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum WorkspaceMemberRole {
+  owner
+  ops
+  reviewer
+  contributor
+}
+
+enum ContributorStatus {
+  active
+  archived
+}
+
+enum PayoutStatus {
+  draft
+  active
+  partially_released
+  completed
+}
+
+enum MilestoneStatus {
+  pending
+  submitted
+  approved
+  released
+  rejected
+}
+
+enum ReviewDecision {
+  approved
+  rejected
+}
+
+enum ReleaseExecutionMode {
+  browser_wallet
+  circle_wallet
+}
+
+enum ReleaseStatus {
+  queued
+  pending
+  confirmed
+  failed
+  cancelled
+}
+
+enum TransactionProofStatus {
+  pending
+  confirmed
+  failed
+}
+
+model Workspace {
+  id                 String   @id @default(uuid())
+  name               String
+  slug               String   @unique
+  description        String?
+  defaultCurrency    String   @default("USDC")
+  defaultChainId     String?
+  defaultUsdcAddress String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  members      WorkspaceMember[]
+  contributors Contributor[]
+  payouts      Payout[]
+  activityLogs ActivityLog[]
+}
+
+model User {
+  id            String   @id @default(uuid())
+  displayName   String
+  email         String?  @unique
+  avatarUrl     String?
+  walletAddress String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  memberships        WorkspaceMember[]
+  createdPayouts     Payout[]              @relation("PayoutCreator")
+  submissions        MilestoneSubmission[]
+  reviews            MilestoneReview[]
+  releases           Release[]
+  activityLogs       ActivityLog[]
+  linkedContributors Contributor[]         @relation("LinkedContributor")
+}
+
+model WorkspaceMember {
+  id          String              @id @default(uuid())
+  workspaceId String
+  userId      String
+  role        WorkspaceMemberRole
+  createdAt   DateTime            @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId, role])
+  @@index([userId])
+}
+
+model Contributor {
+  id            String            @id @default(uuid())
+  workspaceId   String
+  linkedUserId  String?
+  name          String
+  email         String?
+  walletAddress String
+  role          String?
+  notes         String?
+  status        ContributorStatus @default(active)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  workspace  Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  linkedUser User?     @relation("LinkedContributor", fields: [linkedUserId], references: [id], onDelete: SetNull)
+  payouts    Payout[]
+
+  @@index([workspaceId, status])
+  @@index([workspaceId, name])
+}
+
+model Payout {
+  id                  String       @id @default(uuid())
+  workspaceId         String
+  contributorId       String
+  createdByUserId     String
+  title               String
+  description         String?
+  currency            String       @default("USDC")
+  totalAmountUsdc     Decimal      @db.Decimal(30, 6)
+  status              PayoutStatus @default(draft)
+  chainId             String?
+  usdcTokenAddress    String?
+  targetWalletAddress String?
+  startDate           DateTime?
+  dueDate             DateTime?
+  completedAt         DateTime?
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+
+  workspace         Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  contributor       Contributor        @relation(fields: [contributorId], references: [id], onDelete: Restrict)
+  createdBy         User               @relation("PayoutCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  milestones        Milestone[]
+  releases          Release[]
+  transactionProofs TransactionProof[]
+  activityLogs      ActivityLog[]
+
+  @@index([workspaceId, status])
+  @@index([contributorId])
+  @@index([createdAt])
+}
+
+model Milestone {
+  id                 String          @id @default(uuid())
+  payoutId           String
+  title              String
+  description        String
+  acceptanceCriteria String?
+  amountUsdc         Decimal         @db.Decimal(30, 6)
+  sequence           Int
+  status             MilestoneStatus @default(pending)
+  dueDate            DateTime?
+  submittedAt        DateTime?
+  approvedAt         DateTime?
+  rejectedAt         DateTime?
+  releasedAt         DateTime?
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  payout            Payout                @relation(fields: [payoutId], references: [id], onDelete: Cascade)
+  submissions       MilestoneSubmission[]
+  reviews           MilestoneReview[]
+  releases          Release[]
+  transactionProofs TransactionProof[]
+  activityLogs      ActivityLog[]
+
+  @@unique([payoutId, sequence])
+  @@index([payoutId, status])
+}
+
+model MilestoneSubmission {
+  id                 String   @id @default(uuid())
+  milestoneId        String
+  submittedByUserId  String
+  summary            String
+  artifactUrl        String?
+  artifactLabel      String?
+  notes              String?
+  resubmissionNumber Int      @default(0)
+  submittedAt        DateTime @default(now())
+
+  milestone   Milestone         @relation(fields: [milestoneId], references: [id], onDelete: Cascade)
+  submittedBy User              @relation(fields: [submittedByUserId], references: [id], onDelete: Restrict)
+  reviews     MilestoneReview[]
+
+  @@index([milestoneId, submittedAt])
+  @@index([submittedByUserId])
+}
+
+model MilestoneReview {
+  id               String         @id @default(uuid())
+  milestoneId      String
+  submissionId     String
+  reviewedByUserId String
+  decision         ReviewDecision
+  comment          String?
+  reviewedAt       DateTime       @default(now())
+
+  milestone  Milestone           @relation(fields: [milestoneId], references: [id], onDelete: Cascade)
+  submission MilestoneSubmission @relation(fields: [submissionId], references: [id], onDelete: Restrict)
+  reviewedBy User                @relation(fields: [reviewedByUserId], references: [id], onDelete: Restrict)
+
+  @@index([milestoneId, reviewedAt])
+  @@index([submissionId])
+}
+
+model Release {
+  id                       String        @id @default(uuid())
+  payoutId                 String
+  milestoneId              String?
+  triggeredByUserId        String
+  amountUsdc               Decimal       @db.Decimal(30, 6)
+  status                   ReleaseStatus @default(queued)
+  arcRequestId             String?
+  executionMode            ReleaseExecutionMode
+  sourceWalletAddress      String?
+  destinationWalletAddress String
+  txHash                   String?       @unique
+  explorerUrl              String?
+  failureReason            String?
+  requestedAt              DateTime      @default(now())
+  executedAt               DateTime?
+  failedAt                 DateTime?
+  createdAt                DateTime      @default(now())
+  updatedAt                DateTime      @updatedAt
+
+  payout       Payout             @relation(fields: [payoutId], references: [id], onDelete: Restrict)
+  milestone    Milestone?         @relation(fields: [milestoneId], references: [id], onDelete: Restrict)
+  triggeredBy  User               @relation(fields: [triggeredByUserId], references: [id], onDelete: Restrict)
+  proofs       TransactionProof[]
+  activityLogs ActivityLog[]
+
+  @@index([payoutId, status])
+  @@index([milestoneId])
+  @@index([arcRequestId])
+  @@index([executionMode, status])
+}
+
+model TransactionProof {
+  id            String                 @id @default(uuid())
+  payoutId      String
+  milestoneId   String?
+  releaseId     String?
+  status        TransactionProofStatus @default(pending)
+  txHash        String?
+  network       String?
+  explorerUrl   String?
+  blockNumber   BigInt?
+  failureReason String?
+  confirmedAt   DateTime?
+  failedAt      DateTime?
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
+
+  payout    Payout     @relation(fields: [payoutId], references: [id], onDelete: Restrict)
+  milestone Milestone? @relation(fields: [milestoneId], references: [id], onDelete: Restrict)
+  release   Release?   @relation(fields: [releaseId], references: [id], onDelete: Restrict)
+
+  @@unique([txHash])
+  @@index([payoutId, status])
+  @@index([releaseId])
+}
+
+model ActivityLog {
+  id           String   @id @default(uuid())
+  workspaceId  String
+  actorUserId  String
+  payoutId     String?
+  milestoneId  String?
+  releaseId    String?
+  entityType   String
+  entityId     String
+  action       String
+  metadataJson Json?
+  occurredAt   DateTime @default(now())
+
+  workspace Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  actorUser User       @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
+  payout    Payout?    @relation(fields: [payoutId], references: [id], onDelete: Cascade)
+  milestone Milestone? @relation(fields: [milestoneId], references: [id], onDelete: Cascade)
+  release   Release?   @relation(fields: [releaseId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, occurredAt])
+  @@index([payoutId, occurredAt])
+  @@index([entityType, entityId])
+}

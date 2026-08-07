@@ -7,7 +7,7 @@ const executionMode =
 export const ARC_CONFIG = {
   chainId: Number(process.env.NEXT_PUBLIC_ARC_CHAIN_ID ?? 5042002),
   rpcUrl:
-    process.env.NEXT_PUBLIC_ARC_RPC_URL ?? "https://rpc.testnet.arc.network",
+    process.env.NEXT_PUBLIC_ARC_RPC_URL ?? "https://rpc.testnet.arc.io",
   explorerUrl:
     process.env.NEXT_PUBLIC_ARC_EXPLORER_URL ?? "https://testnet.arcscan.app",
   usdcAddress:

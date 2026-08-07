@@ -96,6 +96,33 @@ Confirmed helpers:
 - `formatUsdc()`
 - `shortenAddress()`
 
+## Release Execution Model
+
+SettleFlow supports two mutually exclusive execution modes for an approved release:
+
+- `browser_wallet`: a connected operator wallet signs and submits the transaction in the browser.
+- `circle_wallet`: a server-side Circle Wallets integration signs and submits the transaction through a protected backend boundary.
+
+Both modes share the same release workflow, state machine, and transaction proof model. They differ only in who controls signing and where transaction credentials are held. The UI and domain service must not implement separate payout state machines for the two modes.
+
+The release service selects an execution adapter from the release configuration:
+
+```text
+approve milestone
+  -> create queued release
+  -> select browser_wallet or circle_wallet adapter
+  -> submit USDC transfer on Arc
+  -> reconcile transaction result
+  -> persist transaction proof and activity log
+```
+
+Security boundaries:
+
+- Browser wallet calls are client-initiated and require explicit user confirmation.
+- Circle Wallets calls are server-only; credentials must never use `NEXT_PUBLIC_*` variables.
+- A release is not confirmed merely because a send request was accepted; confirmation must be reconciled and persisted.
+- Both adapters must use string/decimal money values and idempotent release handling.
+
 ## Route Responsibilities
 
 ### `/`
@@ -195,3 +222,4 @@ Before implementing new product behavior, define:
 - API contract shapes
 - persistent storage model
 - auth/permission scope
+- release execution policy and adapter boundary (`browser_wallet` vs `circle_wallet`)
