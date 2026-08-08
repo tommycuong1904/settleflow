@@ -13,7 +13,7 @@ export async function POST(
     triggeredByUserId?: string;
   }) | null;
   if (!body || typeof body.status !== "string" || !statuses.has(body.status)) {
-    return NextResponse.json({ error: "status must be confirmed or failed." }, { status: 400 });
+    return NextResponse.json({ error: "status must be confirmed or failed.", code: "INVALID_PROOF_STATUS" }, { status: 400 });
   }
 
   const actorUserId = typeof body.triggeredByUserId === "string" && body.triggeredByUserId.trim().length > 0
@@ -21,7 +21,7 @@ export async function POST(
     : body.refreshedByUserId;
 
   if (typeof actorUserId !== "string" || actorUserId.trim().length === 0) {
-    return NextResponse.json({ error: "triggeredByUserId is required." }, { status: 400 });
+    return NextResponse.json({ error: "triggeredByUserId is required.", code: "INVALID_PROOF_REFRESH_PAYLOAD" }, { status: 400 });
   }
 
   try {
@@ -39,6 +39,6 @@ export async function POST(
       TX_HASH_REQUIRED: 422,
       FAILURE_REASON_REQUIRED: 422,
     }[code] ?? 500;
-    return NextResponse.json({ error: code }, { status });
+    return NextResponse.json({ error: code, code }, { status });
   }
 }

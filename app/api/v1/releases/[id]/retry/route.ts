@@ -15,7 +15,7 @@ export async function POST(
 
   if (!isNonEmpty(triggeredByUserId)) {
     return NextResponse.json(
-      { error: "triggeredByUserId is required." },
+      { error: "triggeredByUserId is required.", code: "INVALID_RELEASE_RETRY_PAYLOAD" },
       { status: 400 },
     );
   }
@@ -33,6 +33,6 @@ export async function POST(
       FORBIDDEN_RELEASE_RETRY: 403,
     }[code] ?? 500;
 
-    return NextResponse.json({ error: code }, { status });
+    return NextResponse.json({ error: code, code }, { status });
   }
 }
