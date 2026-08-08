@@ -155,8 +155,7 @@ export async function getPayoutDetail(id: string): Promise<PayoutDetailData | nu
         },
       },
       transactionProofs: {
-        where: { status: "confirmed" },
-        orderBy: { confirmedAt: "desc" },
+        orderBy: { createdAt: "desc" },
         take: 1,
         select: {
           id: true,

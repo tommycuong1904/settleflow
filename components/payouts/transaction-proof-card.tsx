@@ -92,20 +92,22 @@ export function TransactionProofCard({ proof }: TransactionProofCardProps) {
               Transaction hash
             </p>
             <p className="mt-1 text-xs text-[var(--text-muted)]">
-              Short view: {shortenAddress(proof.txHash)}
+              {proof.txHash ? `Short view: ${shortenAddress(proof.txHash)}` : "Hash will appear after settlement is confirmed."}
             </p>
           </div>
-          <a
-            href={proof.explorerUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center rounded-xl border border-cyan-300/25 bg-cyan-400/10 px-3 py-2 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-400/15 hover:text-cyan-50"
-          >
-            View on Arc explorer
-          </a>
+          {proof.explorerUrl ? (
+            <a
+              href={proof.explorerUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center rounded-xl border border-cyan-300/25 bg-cyan-400/10 px-3 py-2 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-400/15 hover:text-cyan-50"
+            >
+              View on Arc explorer
+            </a>
+          ) : null}
         </div>
         <p className="mt-4 break-all rounded-2xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.68)] px-4 py-3 font-mono text-xs leading-6 text-cyan-100">
-          {proof.txHash}
+          {proof.txHash || "Pending / unavailable"}
         </p>
       </div>
     </div>

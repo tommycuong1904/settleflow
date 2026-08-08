@@ -20,6 +20,7 @@ export async function POST(
     const code = error instanceof Error ? error.message : "UNKNOWN_ERROR";
     const status = {
       RELEASE_NOT_FOUND: 404,
+      MILESTONE_NOT_FOUND: 404,
       PROOF_NOT_FOUND: 404,
       RELEASE_NOT_REFRESHABLE: 409,
       PROOF_NOT_PENDING: 409,
