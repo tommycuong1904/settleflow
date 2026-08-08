@@ -14,23 +14,30 @@ This document maps the current repository structure and explains the role of eac
 ```text
 settleflow/
 ├── app/
+│   ├── api/
+│   ├── dashboard/
+│   ├── payouts/
+│   ├── globals.css
 │   ├── layout.tsx
-│   ├── page.tsx
-│   ├── dashboard/page.tsx
-│   └── payouts/
-│       ├── new/page.tsx
-│       └── [id]/page.tsx
+│   └── page.tsx
 ├── components/
 │   ├── dashboard/
 │   ├── milestones/
 │   ├── payouts/
-│   └── shared/
+│   ├── shared/
+│   └── ui/
 ├── docs/
 ├── lib/
 │   ├── arc/
 │   ├── data/
+│   ├── db/
 │   ├── models/
+│   ├── repositories/
 │   └── utils/
+├── prisma/
+│   ├── migrations/
+│   ├── schema.prisma
+│   └── seed.js
 ├── public/
 ├── package.json
 ├── package-lock.json
@@ -47,161 +54,192 @@ settleflow/
 ### `app/layout.tsx`
 - **Confirmed**:
   - Defines the root HTML shell.
-  - Loads Google Geist fonts.
+  - Loads Geist fonts.
   - Sets metadata title/description.
-  - Renders a shared header with links to `/dashboard` and `/payouts/new`.
+  - Renders shared layout chrome including header and footer.
   - Wraps all route content inside a shared main container.
 
 ### `app/page.tsx`
 - **Confirmed**:
   - Landing page.
   - Presents product narrative, workflow steps, reviewer-facing proof messaging, and CTAs.
-- **Assumption**:
-  - Intended as the main marketing / demo entry point for reviewers.
+  - Includes the `#workflow` anchor for landing-page navigation.
 
 ### `app/dashboard/page.tsx`
 - **Confirmed**:
   - Dashboard view for payout operations.
-  - Uses mock payout, milestone, contributor, and proof data.
-  - Surfaces review queue, ready-to-release value, released-with-proof value, active payouts, and recent settlement proof.
+  - Represents the read-model surface for key payout metrics, review queue, and proof visibility.
 
 ### `app/payouts/new/page.tsx`
 - **Confirmed**:
   - Create Payout UI.
-  - Contains form-like inputs for title, contributor, wallet, and amount.
-  - Shows milestone structure, approval logic, settlement preview, and release/proof flow.
-- **Assumption**:
-  - Intended to become a real payout creation form later.
+  - Loads contributor options from an API route.
+  - Submits payout creation through the v1 payout API.
 
 ### `app/payouts/[id]/page.tsx`
 - **Confirmed**:
   - Dynamic payout detail route.
-  - Reads `params.id`, finds a payout from mock data, and falls back to the first payout if no match is found.
-  - Shows payout summary, milestone workflow, release target, settlement proof, and workflow explanation.
-- **Risk note**:
-  - The fallback behavior can hide invalid IDs instead of failing loudly.
+  - Displays payout summary, milestone workflow, release target, and settlement proof.
+  - Integrates with submit/approve/reject/release behaviors through the API layer.
+
+## API Route Map
+
+### `app/api/`
+- **Confirmed**:
+  - `contributors/route.ts`
+  - `dashboard/route.ts`
+  - `payouts/route.ts`
+  - `payouts/[id]/route.ts`
+  - `release/route.ts`
+- **Assumption**:
+  - These paths exist as compatibility or simplified entry points alongside the versioned API surface.
+
+### `app/api/v1/`
+- **Confirmed**:
+  - `contributors/route.ts`
+  - `dashboard/route.ts`
+  - `payouts/route.ts`
+  - `payouts/[id]/route.ts`
+  - `payouts/[id]/activate/route.ts`
+  - `milestones/[id]/submit/route.ts`
+  - `milestones/[id]/approve/route.ts`
+  - `milestones/[id]/reject/route.ts`
+  - `milestones/[id]/release/route.ts`
+  - `releases/[id]/route.ts`
+  - `releases/[id]/retry/route.ts`
+  - `releases/[id]/proof/refresh/route.ts`
+- **Confirmed**:
+  - The repository now has an explicit server mutation/read surface rather than frontend-only state transitions.
 
 ## Component Map
 
 ### `components/shared/`
 - **Confirmed**:
-  - `button.tsx`: reusable button/link wrapper with `primary`, `secondary`, `ghost` variants.
-  - `section-card.tsx`: shared section container.
-  - `empty-state.tsx`: shared empty-state block.
+  - Shared layout and UI wrappers such as button, footer, section card, and empty-state building blocks.
 
 ### `components/dashboard/`
 - **Confirmed**:
-  - `stat-card.tsx`: reusable dashboard metric display.
+  - Dashboard-facing metric and summary components.
 
 ### `components/milestones/`
 - **Confirmed**:
-  - `milestone-row.tsx`: milestone card that conditionally renders review controls, release panel, or passive status messaging.
-  - `milestone-status-badge.tsx`: milestone status badge.
-  - `review-controls.tsx`: approve/reject control block with helper copy.
+  - Milestone display and action components for status, review, and release flow presentation.
 
 ### `components/payouts/`
 - **Confirmed**:
-  - `release-panel.tsx`: release action surface for approved milestones.
-  - `transaction-proof-card.tsx`: transaction proof UI with status, network, tx hash, and explorer link.
+  - Payout-specific interaction surfaces such as the release panel and transaction proof card.
+
+### `components/ui/`
+- **Confirmed**:
+  - Low-level reusable UI primitives exist in the repository now.
 
 ## Library Structure
 
 ### `lib/models/`
 - **Confirmed**:
-  - `contributor.ts`
-  - `payout.ts`
-  - `milestone.ts`
-  - `transaction-proof.ts`
-- **Confirmed**:
-  - These files define the main domain types used by the UI.
+  - Domain model types for contributor, payout, milestone, and transaction proof remain part of the codebase.
 
 ### `lib/data/`
 - **Confirmed**:
-  - `mock-contributors.ts`
-  - `mock-payouts.ts`
-  - `mock-milestones.ts`
-  - `mock-transaction-proofs.ts`
+  - Legacy mock data files still exist.
+- **Assumption**:
+  - They are now transitional/demo-support artifacts rather than the sole runtime data source.
+
+### `lib/db/`
 - **Confirmed**:
-  - Current application state is driven by hard-coded mock arrays.
+  - `client.ts` provides the database client entry point.
+
+### `lib/repositories/`
+- **Confirmed**:
+  - Repository modules now encapsulate server-side data access and workflow mutations:
+    - `contributors.ts`
+    - `dashboard.ts`
+    - `milestone-release.ts`
+    - `milestone-review.ts`
+    - `milestone-submission.ts`
+    - `payout-activation.ts`
+    - `payout-creation.ts`
+    - `payout-editing.ts`
+    - `payouts.ts`
+    - `release-proof.ts`
+    - `release-retry.ts`
+    - `releases.ts`
 
 ### `lib/arc/`
 - **Confirmed**:
-  - `config.ts`: Arc chain/rpc/explorer/USDC config from `NEXT_PUBLIC_*` env vars with defaults.
-  - `types.ts`: send request/result types.
-  - `send.ts`: placeholder `sendUsdcOnArc()` function returning a mocked pending response.
+  - `config.ts`: Arc chain/rpc/explorer/USDC config from env vars with defaults.
+  - `types.ts`: request/result types.
+  - `send.ts`: mode-aware Arc send entry point.
+  - `release-executor.ts`: release execution boundary.
+  - `map-send-result-to-proof.ts`: maps send results into proof records/UI shape.
 - **Assumption**:
-  - This is scaffolding for future Arc/App Kit Send integration, not a real onchain implementation yet.
+  - This area is the official application boundary for Arc payout execution logic.
 
 ### `lib/utils/`
 - **Confirmed**:
-  - `format.ts` contains `formatUsdc()` and `shortenAddress()` helpers.
+  - Formatting helpers remain in the repository.
+
+## Prisma / Database Structure
+
+### Confirmed
+- `prisma/schema.prisma` defines the database schema.
+- `prisma/migrations/` contains migration history.
+- `prisma/seed.js` provides seed data bootstrapping.
 
 ## Docs Structure
 
 ### Confirmed
-- `README.md`
-- `docs/README.md`
-- `docs/PROJECT.md`
-- `docs/ARCHITECTURE.md`
-- `docs/CONVENTIONS.md`
-- `docs/CURRENT_STATE.md`
-- `docs/PROJECT_MAP.md`
-- `docs/KNOWN_ISSUES.md`
-- `docs/mvp-scope.md`
-- `docs/checkpoint-2-demo-flow.md`
-- `docs/checkpoint-2-deck-outline.md`
-- `docs/checkpoint-2-submission-draft.md`
-- `docs/progress-summary-checkpoint-2.md`
-- `docs/archive/architecture.md`
-- `docs/archive/project-status.md`
-- `docs/archive/workboard.md`
-- `docs/screenshots/*.png`
-
-### Assumption
-- The docs are now organized into canonical, supporting, and archived/legacy groups.
+- Canonical docs:
+  - `docs/PROJECT.md`
+  - `docs/ARCHITECTURE.md`
+  - `docs/CONVENTIONS.md`
+  - `docs/CURRENT_STATE.md`
+  - `docs/PROJECT_MAP.md`
+  - `docs/KNOWN_ISSUES.md`
+- Domain/planning docs:
+  - `docs/DOMAIN_MODEL.md`
+  - `docs/WORKFLOW_STATE_MACHINE.md`
+  - `docs/API_PLAN.md`
+  - `docs/DB_SCHEMA.md`
+- Supporting docs:
+  - `docs/mvp-scope.md`
+  - checkpoint and submission materials
+  - screenshots
+- Archive docs:
+  - `docs/archive/*`
 
 ## Configuration and Tooling
 
 ### Confirmed
 - `package.json`
   - scripts: `dev`, `build`, `start`, `lint`
-  - runtime deps: `next`, `react`, `react-dom`
-  - dev deps: TypeScript, ESLint, Tailwind v4, Next ESLint config
+  - runtime deps include Next, React, Radix helpers, and UI utility packages
+  - Prisma seed config exists
 - `tsconfig.json`
   - strict mode enabled
   - path alias `@/*`
 - `next.config.ts`
-  - Turbopack root configured
+  - Next config present
 - `postcss.config.mjs`
   - Tailwind PostCSS plugin enabled
 - `eslint.config.mjs`
-  - uses Next core-web-vitals + TypeScript presets
-- `.gitignore`
-  - ignores `.next`, `node_modules`, env files, coverage, and `local-artifacts/`
+  - uses Next + TypeScript presets
 
 ## Runtime / Generated Directories
 
 ### Confirmed
 - `.next/` exists in the repository working tree.
 - `node_modules/` exists in the repository working tree.
-- `local-artifacts/` exists and is intentionally ignored.
-
-### Unknown
-- Whether `.deckenv/` is intentionally part of the project workflow or a local auxiliary environment; it was visible in repository search noise but not part of the inspected application structure.
 
 ## Missing Areas
 
 ### Confirmed missing from inspected repository
-- No `app/api/` routes.
-- No `route.ts` files under `app/`.
-- No `middleware.ts`.
-- No explicit auth provider config.
-- No database schema or ORM config inspected.
-- No test files matching common `*.test.*` / `*.spec.*` patterns.
+- No auth middleware or provider integration was found.
+- No test files matching common `*.test.*` / `*.spec.*` patterns were found.
 
 ## Inspection Limits
 
 ### Unknown
-- Full CSS system details were not exhaustively mapped in this pass.
-- No backend services or external integrations were found beyond Arc scaffolding, but hidden future plans may exist in uninspected docs or branches.
-- No package installation was performed, so tool availability was not expanded beyond what is already present.
+- Full component-level coupling between legacy mock artifacts and repository-backed data flow was not exhaustively mapped in this pass.
+- The production-readiness of the real Arc execution path was not verified here against live official Arc constraints.
+- Supporting docs outside the canonical set were not fully rationalized in this pass.

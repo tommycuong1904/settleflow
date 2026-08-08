@@ -1,7 +1,7 @@
 # CURRENT_STATE
 
 ## Summary
-This repository is currently a frontend-first Next.js demo application for SettleFlow, an Arc-native milestone-based USDC payout workflow for crypto teams.
+This repository is now a full-stack Next.js application for SettleFlow, an Arc-native milestone-based USDC payout workflow for crypto teams. The current implementation has moved beyond a frontend-only demo: it now includes a PostgreSQL + Prisma data layer, repository-backed server reads/writes, and API routes for payout, milestone, and release actions. Arc release execution still remains environment-mode dependent rather than production-complete.
 
 ## Fact vs Assumption Legend
 - **Confirmed**: directly verified from repository files or command output.
@@ -17,15 +17,20 @@ This repository is currently a frontend-first Next.js demo application for Settl
   - `/dashboard`
   - `/payouts/new`
   - `/payouts/[id]`
-- The app currently works as a **UI/demo layer backed by mock data**, not a live backend.
-- Core data is loaded from hard-coded files in `lib/data/`.
-- Domain types are defined in `lib/models/`.
-- Arc configuration is read from `NEXT_PUBLIC_*` env vars with defaults.
-- The payout send function `sendUsdcOnArc()` currently returns a placeholder pending response and does not perform a real transaction.
-- `npm run build` is available and has been used successfully during earlier verified work in this repository.
+- The repository now contains a **PostgreSQL + Prisma** persistence layer:
+  - `prisma/schema.prisma`
+  - `prisma/migrations/20260807140115_init/`
+  - `lib/db/client.ts`
+- `npx prisma migrate status` reports: **Database schema is up to date**.
+- The repository now contains server-side data access via `lib/repositories/`.
+- The repository now exposes API routes under `app/api/` and `app/api/v1/` for reads and mutations.
+- The create payout flow uses `fetch("/api/v1/payouts", ...)`.
+- Contributor loading on the create payout page uses `fetch("/api/v1/contributors?status=active")`.
+- Arc configuration is still read from `NEXT_PUBLIC_*` env vars with defaults.
+- Arc release behavior is now mode-aware through `sendUsdcOnArc()` and `createReleaseExecutor()`, with `mock`, `demo`, and `real` execution paths.
 
 ### Assumption
-- The app is meant to demonstrate product logic and user flow first, then grow into a real payout system with live settlement integration later.
+- The repository is transitioning from checkpoint/demo-first implementation toward a more complete application wedge, while still preserving some demo-safe behavior for release execution.
 
 ## 2. Current feature surface
 
@@ -34,61 +39,76 @@ This repository is currently a frontend-first Next.js demo application for Settl
 - Explains the product proposition.
 - Frames the workflow around milestone definition, review, approval, release, and proof.
 - Includes CTAs to launch the demo and view the dashboard.
+- Includes a shared footer mounted from the app layout.
 
 ### Dashboard (`/dashboard`)
 #### Confirmed
 - Shows high-level payout operations metrics.
 - Surfaces milestones waiting for review.
 - Shows active payouts and recent settlement proof.
-- Reads all state from mock data arrays.
+- Is backed by repository-driven server data rather than a purely static route-level mock implementation.
 
 ### Create Payout (`/payouts/new`)
 #### Confirmed
 - Presents a form-like payout agreement builder.
-- Includes fields for payout title, contributor, wallet address, total amount, milestone structure, and release/proof framing.
-- Uses static defaults and mock contributors.
+- Loads contributors from `/api/v1/contributors`.
+- Submits payout creation through `/api/v1/payouts`.
+- Includes milestone structure, wallet, amount, and release framing in the flow.
 
 ### Payout Detail (`/payouts/[id]`)
 #### Confirmed
 - Displays payout summary, milestone workflow, release target, and settlement proof.
-- Renders milestone-specific UI states:
-  - pending
-  - submitted
-  - approved
-  - released
-- Uses review and release UI components, but they are not wired to persistent mutations.
+- Is backed by repository/API infrastructure rather than route-local hard-coded arrays.
+- Supports milestone-specific actions through API routes for:
+  - submit
+  - approve
+  - reject
+  - release
+- Includes release retry and proof refresh API surfaces.
 
 ## 3. Data, database, and API state
 
 ### Confirmed facts
-- There is **no inspected database layer**.
-- No Prisma schema, Drizzle schema, SQL migrations, or similar database artifacts were found in the inspected application structure.
-- There are **no inspected API routes** under `app/api/`.
-- There are **no `route.ts` files** in the app routes that would expose server endpoints.
-- Application state is driven by:
-  - `mock-contributors.ts`
-  - `mock-payouts.ts`
-  - `mock-milestones.ts`
-  - `mock-transaction-proofs.ts`
+- The repository has a Prisma schema and migration history.
+- The configured datasource is PostgreSQL.
+- The repository has a seed script at `prisma/seed.js`.
+- The repository contains repository modules for:
+  - contributors
+  - dashboard
+  - milestone submission/review/release
+  - payout activation/creation/editing/list/detail
+  - release proof
+  - release retry
+  - releases
+- The repository contains API routes for:
+  - contributors
+  - dashboard
+  - payouts
+  - payout detail
+  - payout activation
+  - milestone submit/approve/reject/release
+  - release detail
+  - release retry
+  - release proof refresh
+- Legacy mock data files still exist in `lib/data/`, but application architecture is no longer accurately described as mock-only.
 
 ### Assumptions
-- The repository is still in a pre-backend checkpoint/demo stage.
-- Database and API work likely remain future implementation steps rather than removed code.
+- Some mock artifacts are being retained for demo support, fallback logic, or transitional development rather than as the primary application data source.
 
 ### Unknown
-- Whether a backend exists in another repository or planned private service.
+- Whether all remaining UI surfaces are fully detached from mock-data-era assumptions in every edge case.
 
 ## 4. Authentication state
 
 ### Confirmed facts
-- Search did not find auth-related flows such as `nextauth`, `clerk`, `supabase auth`, `login`, `signin`, or session handling in app code.
+- Search did not find auth-related flows such as `nextauth`, `clerk`, `getServerSession`, or `middleware` in application code.
 - No auth middleware or guarded route structure was found.
 
 ### Conclusion
 - **No authentication flow is currently implemented in the inspected repository.**
 
 ### Unknown
-- Whether auth is intentionally out of scope for the current checkpoint or simply not started yet.
+- Whether auth is intentionally deferred until after the current backend/data wedge.
 
 ## 5. Build, scripts, and tests
 
@@ -98,70 +118,70 @@ This repository is currently a frontend-first Next.js demo application for Settl
   - `npm run build`
   - `npm run start`
   - `npm run lint`
+- Prisma seed configuration exists in `package.json#prisma.seed`.
 - ESLint is configured via `eslint.config.mjs`.
 - TypeScript strict mode is enabled in `tsconfig.json`.
 - No explicit repository test files were found under common naming patterns.
 - No Playwright/Jest/Vitest/Cypress test suites were found in application source.
 
 ### Notes
-- `package-lock.json` references some transitive tooling noise, but there is no confirmed first-class test setup in the repository source itself.
+- The repository now has stronger runtime/data infrastructure than before, but still lacks a first-class automated test suite.
 
 ## 6. What appears complete
 
 ### Confirmed
 - Core route structure is present.
-- Shared layout and navigation are implemented.
-- Reusable UI component system exists for cards, buttons, statuses, proof display, and milestone controls.
-- Mock domain model is coherent enough to drive the demo flow.
+- Shared layout, navigation, and footer are implemented.
+- Reusable UI component system exists for cards, buttons, statuses, proof display, milestone controls, and shared layout sections.
+- A Prisma-backed database layer exists.
+- A repository/service-style server data layer exists.
+- API surfaces exist for the main payout and milestone actions.
 - Product framing docs and checkpoint docs exist.
-- The Arc integration surface has a basic file structure and typed placeholder abstraction.
+- Arc integration has a mode-aware adapter boundary rather than a single placeholder send stub.
 
 ### Assumption
-- The UI/UX demo layer is relatively mature compared with the missing backend/auth/data layers.
+- The repo now has a real application backbone for the payout workflow, even though some execution/auth/test gaps still prevent calling it production-ready.
 
 ## 7. What appears unfinished
 
 ### Confirmed
-- Real payout execution is unfinished: `sendUsdcOnArc()` is still a placeholder.
-- Create payout is unfinished as a real workflow: inputs are present, but no persistence or submission path was found.
-- Review/approve/reject/release actions are unfinished as live mutations.
-- Settlement proof is currently driven by mock data.
-- No backend API surface was found.
-- No database layer was found.
-- No authentication flow was found.
+- Authentication and access control are still absent.
 - No automated tests were found.
+- Arc execution is not verified here as a production-safe live payment path; behavior still depends on execution mode.
+- Legacy mock-data files remain in the repository and may still represent transition-era coupling or fallback assumptions.
 
 ### Assumption
-- The repository is intentionally optimized for checkpoint/demo readiness rather than production behavior.
+- Additional hardening is still needed around auth, validation depth, production release execution, and failure-path testing.
 
 ## 8. Documentation state
 
 ### Confirmed
-- Technical docs exist in English for README, canonical docs, MVP scope, and checkpoint materials.
-- Internal planning docs still exist in archived form under `docs/archive/`, preserving earlier progress context without competing with canonical docs.
-- `docs/archive/project-status.md` and `docs/archive/workboard.md` describe earlier progress phases rather than the fully completed state now present in git history.
+- Technical docs exist in English for README, canonical docs, workflow/domain/API planning docs, DB schema planning, and checkpoint materials.
+- Some documentation files were stale after the backend/data wedge and required refresh against current repository state.
+- Archived docs still preserve earlier progress phases under `docs/archive/`.
 
 ## 9. Unknowns that require further inspection
 
-- How `app/globals.css` defines the design system in detail.
-- Whether there are hidden TODO markers not covered in this pass.
-- Whether `.deckenv/` is relevant to product workflows or only local artifact tooling.
-- Whether any untracked local scripts outside the inspected app influence deployment or demo operations.
-- Whether branch history contains abandoned backend/auth work.
+- Whether all route handlers return a fully standardized error contract.
+- Whether all release/retry/proof-refresh flows have been manually verified end-to-end against the seeded database.
+- Whether the real Arc execution path is fully aligned with official Arc requirements for production release handling.
+- Whether remaining stale checkpoint/supporting docs still need rationalization.
 
 ## 10. Confidence statement
 
 ### High confidence
 - Route structure
 - dependency/tooling setup
-- absence of backend/API/auth in the inspected source
-- mock-data-driven architecture
-- placeholder Arc send integration
+- presence of database/API/repository layers
+- absence of auth in the inspected source
+- absence of automated tests in the inspected source
+- mode-aware Arc send architecture
 
 ### Medium confidence
-- interpretation that the repo is checkpoint/demo-first by intention, not only by incompleteness
+- interpretation that the repo is now beyond frontend-only demo stage
+- interpretation that some mock-era files remain for transitional/demo reasons
 
 ### Lower confidence / requires more inspection
-- deployment workflow
-- future backend integration plan beyond current docs
-- whether hidden stale assets or support environments affect the real project lifecycle
+- production readiness of release execution
+- full consistency of all edge-case flows across UI, API, and persistence
+- broader deployment/ops story outside the inspected repository surface
