@@ -25,6 +25,15 @@ export async function retryFailedRelease(releaseId: string, triggeredByUserId: s
     if (previous.status !== "failed") throw new Error("RELEASE_NOT_FAILED");
     if (!previous.destinationWalletAddress) throw new Error("DESTINATION_WALLET_MISSING");
 
+    const latestForMilestone = await tx.release.findFirst({
+      where: { milestoneId: previous.milestoneId },
+      orderBy: { createdAt: "desc" },
+      select: { id: true },
+    });
+    if (latestForMilestone && latestForMilestone.id !== previous.id) {
+      throw new Error("STALE_RELEASE_RETRY");
+    }
+
     const user = await tx.user.findUnique({
       where: { id: triggeredByUserId },
       select: { id: true },

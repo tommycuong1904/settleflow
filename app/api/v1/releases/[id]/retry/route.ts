@@ -28,6 +28,7 @@ export async function POST(
       {
         RELEASE_NOT_FOUND: 404,
         RELEASE_NOT_FAILED: 409,
+        STALE_RELEASE_RETRY: 409,
         DESTINATION_WALLET_MISSING: 422,
         USER_NOT_FOUND: 404,
         FORBIDDEN_RELEASE_RETRY: 403,
