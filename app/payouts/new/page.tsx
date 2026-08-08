@@ -214,7 +214,7 @@ export default function CreatePayoutPage() {
         signal: controller.signal,
         body: JSON.stringify({
           workspaceId: "ws-demo",
-          createdByUserId: "user-reviewer",
+          createdByUserId: "user-owner",
           title: payoutTitle.trim(),
           contributorId,
           targetWalletAddress: walletAddress.trim(),
