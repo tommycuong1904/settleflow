@@ -8,16 +8,24 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
-  const body = await request.json().catch(() => null) as (Partial<RefreshProofInput> & { refreshedByUserId?: string }) | null;
+  const body = await request.json().catch(() => null) as (Partial<RefreshProofInput> & {
+    refreshedByUserId?: string;
+    triggeredByUserId?: string;
+  }) | null;
   if (!body || typeof body.status !== "string" || !statuses.has(body.status)) {
     return NextResponse.json({ error: "status must be confirmed or failed." }, { status: 400 });
   }
-  if (typeof body.refreshedByUserId !== "string" || body.refreshedByUserId.trim().length === 0) {
-    return NextResponse.json({ error: "refreshedByUserId is required." }, { status: 400 });
+
+  const actorUserId = typeof body.triggeredByUserId === "string" && body.triggeredByUserId.trim().length > 0
+    ? body.triggeredByUserId
+    : body.refreshedByUserId;
+
+  if (typeof actorUserId !== "string" || actorUserId.trim().length === 0) {
+    return NextResponse.json({ error: "triggeredByUserId is required." }, { status: 400 });
   }
 
   try {
-    const result = await refreshReleaseProof(id, body.refreshedByUserId, body as RefreshProofInput);
+    const result = await refreshReleaseProof(id, actorUserId, body as RefreshProofInput);
     return NextResponse.json({ data: result });
   } catch (error) {
     const code = error instanceof Error ? error.message : "UNKNOWN_ERROR";
