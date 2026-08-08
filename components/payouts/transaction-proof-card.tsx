@@ -83,7 +83,34 @@ export function TransactionProofCard({ proof }: TransactionProofCardProps) {
               : "Awaiting confirmation"}
           </p>
         </div>
+        <div className="rounded-2xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.6)] p-4">
+          <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
+            Failed at
+          </p>
+          <p className="mt-2 font-semibold text-white">
+            {proof.failedAt
+              ? new Date(proof.failedAt).toLocaleString()
+              : proof.status === "failed"
+                ? "Failure time unavailable"
+                : "—"}
+          </p>
+        </div>
+        <div className="rounded-2xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.6)] p-4">
+          <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
+            Block number
+          </p>
+          <p className="mt-2 font-semibold text-white">{proof.blockNumber ?? "Pending / unavailable"}</p>
+        </div>
       </div>
+
+      {proof.failureReason ? (
+        <div className="rounded-3xl border border-rose-300/20 bg-rose-400/10 p-4 text-sm text-rose-50">
+          <p className="text-xs uppercase tracking-[0.18em] text-rose-200/80">
+            Failure reason
+          </p>
+          <p className="mt-2 leading-6">{proof.failureReason}</p>
+        </div>
+      ) : null}
 
       <div className="rounded-3xl border border-[var(--border-soft)] bg-[rgba(8,15,31,0.82)] p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
