@@ -21,11 +21,12 @@ export async function updatePayoutDraft(
   input: UpdatePayoutDraftInput,
 ) {
   return db.$transaction(async (tx: Prisma.TransactionClient) => {
-    const current = await tx.payout.findFirst({
-      where: { id, workspaceId },
-      select: { status: true, contributorId: true },
+    const current = await tx.payout.findUnique({
+      where: { id },
+      select: { status: true, contributorId: true, workspaceId: true },
     });
     if (!current) throw new Error("PAYOUT_NOT_FOUND");
+    if (current.workspaceId !== workspaceId) throw new Error("WORKSPACE_SCOPE_MISMATCH");
     if (current.status !== "draft") throw new Error("PAYOUT_NOT_DRAFT");
 
     if (input.contributorId) {

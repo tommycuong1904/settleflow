@@ -48,11 +48,13 @@ export async function PATCH(
       code,
       {
         PAYOUT_NOT_FOUND: 404,
+        WORKSPACE_SCOPE_MISMATCH: 409,
         PAYOUT_NOT_DRAFT: 409,
         CONTRIBUTOR_NOT_FOUND: 404,
       },
       {
         PAYOUT_NOT_FOUND: "Payout not found.",
+        WORKSPACE_SCOPE_MISMATCH: "workspaceId does not match the payout workspace.",
         PAYOUT_NOT_DRAFT: "Only draft payouts can be edited.",
         CONTRIBUTOR_NOT_FOUND: "Contributor not found.",
       },

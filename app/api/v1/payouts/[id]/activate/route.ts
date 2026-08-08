@@ -31,6 +31,7 @@ export async function POST(
       code,
       {
         PAYOUT_NOT_FOUND: 404,
+        WORKSPACE_SCOPE_MISMATCH: 409,
         USER_NOT_FOUND: 404,
         USER_NOT_ALLOWED_TO_ACTIVATE_PAYOUT: 403,
         PAYOUT_NOT_DRAFT: 409,
@@ -39,6 +40,7 @@ export async function POST(
       },
       {
         PAYOUT_NOT_FOUND: "Payout not found.",
+        WORKSPACE_SCOPE_MISMATCH: "workspaceId does not match the payout workspace.",
         USER_NOT_FOUND: "Activator not found.",
         USER_NOT_ALLOWED_TO_ACTIVATE_PAYOUT: "User is not allowed to activate payouts in this workspace.",
         PAYOUT_NOT_DRAFT: "Only draft payouts can be activated.",

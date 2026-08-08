@@ -5,12 +5,14 @@ import { hasWorkspaceRole } from "@/lib/repositories/permissions";
 
 export async function activatePayout(id: string, workspaceId: string, activatedByUserId: string) {
   return db.$transaction(async (tx: Prisma.TransactionClient) => {
-    const payout = await tx.payout.findFirst({
-      where: { id, workspaceId },
+    const payout = await tx.payout.findUnique({
+      where: { id },
       select: { id: true, status: true, totalAmountUsdc: true, targetWalletAddress: true,
+        workspaceId: true,
         milestones: { select: { amountUsdc: true, title: true, description: true } } },
     });
     if (!payout) throw new Error("PAYOUT_NOT_FOUND");
+    if (payout.workspaceId !== workspaceId) throw new Error("WORKSPACE_SCOPE_MISMATCH");
 
     const user = await tx.user.findUnique({
       where: { id: activatedByUserId },
