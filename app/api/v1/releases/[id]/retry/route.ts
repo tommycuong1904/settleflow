@@ -30,6 +30,7 @@ export async function POST(
       RELEASE_NOT_FAILED: 409,
       DESTINATION_WALLET_MISSING: 422,
       USER_NOT_FOUND: 404,
+      FORBIDDEN_RELEASE_RETRY: 403,
     }[code] ?? 500;
 
     return NextResponse.json({ error: code }, { status });

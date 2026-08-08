@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db/client";
+import { hasWorkspaceRole } from "@/lib/repositories/permissions";
 
 export async function retryFailedRelease(releaseId: string, triggeredByUserId: string) {
   return db.$transaction(async (tx: Prisma.TransactionClient) => {
@@ -14,6 +15,9 @@ export async function retryFailedRelease(releaseId: string, triggeredByUserId: s
         sourceWalletAddress: true,
         status: true,
         destinationWalletAddress: true,
+        payout: {
+          select: { workspaceId: true },
+        },
       },
     });
 
@@ -26,6 +30,14 @@ export async function retryFailedRelease(releaseId: string, triggeredByUserId: s
       select: { id: true },
     });
     if (!user) throw new Error("USER_NOT_FOUND");
+
+    const canRetryRelease = await hasWorkspaceRole(
+      tx,
+      previous.payout.workspaceId,
+      triggeredByUserId,
+      ["owner", "ops"],
+    );
+    if (!canRetryRelease) throw new Error("FORBIDDEN_RELEASE_RETRY");
 
     const release = await tx.release.create({
       data: {
