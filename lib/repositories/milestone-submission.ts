@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db/client";
+import { hasWorkspaceRole } from "@/lib/repositories/permissions";
 
 export type SubmitMilestoneInput = {
   submittedByUserId: string;
@@ -13,7 +14,16 @@ export async function submitMilestone(milestoneId: string, input: SubmitMileston
   return db.$transaction(async (tx: Prisma.TransactionClient) => {
     const milestone = await tx.milestone.findUnique({
       where: { id: milestoneId },
-      select: { id: true, status: true },
+      select: {
+        id: true,
+        status: true,
+        payout: {
+          select: {
+            workspaceId: true,
+            contributor: { select: { linkedUserId: true } },
+          },
+        },
+      },
     });
     if (!milestone) throw new Error("MILESTONE_NOT_FOUND");
     if (milestone.status !== "pending" && milestone.status !== "rejected") {
@@ -22,6 +32,17 @@ export async function submitMilestone(milestoneId: string, input: SubmitMileston
 
     const submitter = await tx.user.findUnique({ where: { id: input.submittedByUserId }, select: { id: true } });
     if (!submitter) throw new Error("USER_NOT_FOUND");
+
+    const isLinkedContributor = milestone.payout.contributor.linkedUserId === input.submittedByUserId;
+    const hasContributorRole = await hasWorkspaceRole(
+      tx,
+      milestone.payout.workspaceId,
+      input.submittedByUserId,
+      ["owner", "ops", "contributor"],
+    );
+    if (!isLinkedContributor && !hasContributorRole) {
+      throw new Error("USER_NOT_ALLOWED_TO_SUBMIT");
+    }
 
     const previousCount = await tx.milestoneSubmission.count({ where: { milestoneId } });
     const submission = await tx.milestoneSubmission.create({

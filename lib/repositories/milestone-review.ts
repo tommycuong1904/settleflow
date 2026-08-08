@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db/client";
+import { hasWorkspaceRole } from "@/lib/repositories/permissions";
 
 export async function reviewMilestone(
   milestoneId: string,
@@ -13,6 +14,7 @@ export async function reviewMilestone(
       select: {
         id: true,
         status: true,
+        payout: { select: { workspaceId: true } },
         submissions: { orderBy: { submittedAt: "desc" }, take: 1, select: { id: true } },
       },
     });
@@ -25,6 +27,14 @@ export async function reviewMilestone(
     }
     const reviewer = await tx.user.findUnique({ where: { id: reviewedByUserId }, select: { id: true } });
     if (!reviewer) throw new Error("USER_NOT_FOUND");
+
+    const hasReviewerRole = await hasWorkspaceRole(
+      tx,
+      milestone.payout.workspaceId,
+      reviewedByUserId,
+      ["owner", "ops", "reviewer"],
+    );
+    if (!hasReviewerRole) throw new Error("USER_NOT_ALLOWED_TO_REVIEW");
 
     const review = await tx.milestoneReview.create({
       data: {

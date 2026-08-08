@@ -19,6 +19,7 @@ export async function POST(
     if (error instanceof Error) {
       if (error.message === "MILESTONE_NOT_FOUND") return NextResponse.json({ error: "Milestone not found." }, { status: 404 });
       if (error.message === "USER_NOT_FOUND") return NextResponse.json({ error: "Release requester not found." }, { status: 404 });
+      if (error.message === "USER_NOT_ALLOWED_TO_RELEASE") return NextResponse.json({ error: "User is not allowed to release this milestone." }, { status: 403 });
       if (error.message === "MILESTONE_NOT_APPROVED") return NextResponse.json({ error: "Milestone must be approved before release." }, { status: 409 });
       if (error.message === "RELEASE_ALREADY_EXISTS") return NextResponse.json({ error: "A release already exists for this milestone." }, { status: 409 });
       if (error.message === "DESTINATION_WALLET_MISSING") return NextResponse.json({ error: "Destination wallet is missing." }, { status: 400 });

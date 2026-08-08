@@ -2,6 +2,7 @@ import { Decimal } from "@prisma/client/runtime/library";
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db/client";
 import type { ReleaseExecutionMode } from "@/lib/arc/types";
+import { hasWorkspaceRole } from "@/lib/repositories/permissions";
 
 export async function queueMilestoneRelease(
   milestoneId: string,
@@ -16,7 +17,7 @@ export async function queueMilestoneRelease(
         id: true,
         status: true,
         amountUsdc: true,
-        payout: { select: { id: true, targetWalletAddress: true } },
+        payout: { select: { id: true, workspaceId: true, targetWalletAddress: true } },
         releases: { select: { id: true }, take: 1 },
       },
     });
@@ -30,6 +31,14 @@ export async function queueMilestoneRelease(
 
     const user = await tx.user.findUnique({ where: { id: triggeredByUserId }, select: { id: true } });
     if (!user) throw new Error("USER_NOT_FOUND");
+
+    const hasReleaseRole = await hasWorkspaceRole(
+      tx,
+      milestone.payout.workspaceId,
+      triggeredByUserId,
+      ["owner", "ops"],
+    );
+    if (!hasReleaseRole) throw new Error("USER_NOT_ALLOWED_TO_RELEASE");
 
     const release = await tx.release.create({
       data: {

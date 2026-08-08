@@ -21,6 +21,7 @@ export async function POST(
     if (error instanceof SyntaxError) return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
     if (error instanceof Error && error.message === "MILESTONE_NOT_FOUND") return NextResponse.json({ error: "Milestone not found." }, { status: 404 });
     if (error instanceof Error && error.message === "USER_NOT_FOUND") return NextResponse.json({ error: "Submitter not found." }, { status: 404 });
+    if (error instanceof Error && error.message === "USER_NOT_ALLOWED_TO_SUBMIT") return NextResponse.json({ error: "User is not allowed to submit for this milestone." }, { status: 403 });
     if (error instanceof Error && error.message === "MILESTONE_NOT_SUBMITTABLE") return NextResponse.json({ error: "Milestone cannot be submitted in its current state." }, { status: 409 });
     return NextResponse.json({ error: "Unable to submit milestone." }, { status: 500 });
   }
