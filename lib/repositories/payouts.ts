@@ -119,7 +119,10 @@ export type PayoutDetailData = {
     network: string;
     status: "pending" | "confirmed" | "failed";
     explorerUrl: string;
+    blockNumber?: string;
+    failureReason?: string;
     confirmedAt?: string;
+    failedAt?: string;
   };
 };
 
@@ -167,7 +170,10 @@ export async function getPayoutDetail(id: string, workspaceId?: string): Promise
           network: true,
           status: true,
           explorerUrl: true,
+          blockNumber: true,
+          failureReason: true,
           confirmedAt: true,
+          failedAt: true,
         },
       },
     },
@@ -214,8 +220,12 @@ export async function getPayoutDetail(id: string, workspaceId?: string): Promise
           network: payout.transactionProofs[0].network ?? "Arc Testnet",
           status: payout.transactionProofs[0].status,
           explorerUrl: payout.transactionProofs[0].explorerUrl ?? "",
+          blockNumber: payout.transactionProofs[0].blockNumber?.toString() ?? undefined,
+          failureReason: payout.transactionProofs[0].failureReason ?? undefined,
           confirmedAt:
             payout.transactionProofs[0].confirmedAt?.toISOString() ?? undefined,
+          failedAt:
+            payout.transactionProofs[0].failedAt?.toISOString() ?? undefined,
         }
       : undefined,
   };
