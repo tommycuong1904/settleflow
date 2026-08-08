@@ -217,28 +217,37 @@ export function PayoutDetailClient({
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {[
-            { label: "Contributor", value: contributor?.name ?? payout.contributorId },
-            {
-              label: "Wallet",
-              value: contributor ? shortenAddress(contributor.walletAddress) : "Unknown",
-            },
-            { label: "Total amount", value: `${formatUsdc(payout.totalAmount)} USDC` },
-            {
-              label: "Payout status",
-              value: payoutStatusLabel,
-            },
-          ].map((item) => (
-            <div key={item.label} className="rounded-2xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.62)] p-4">
-              <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                {item.label}
-              </p>
-              <p className="mt-2 break-all text-sm font-semibold text-white">
-                {item.value}
-              </p>
-            </div>
-          ))}
-        </div>
+            {[
+              { label: "Contributor", value: contributor?.name ?? payout.contributorId },
+              {
+                label: "Wallet",
+                value: contributor ? shortenAddress(contributor.walletAddress) : "Unknown",
+              },
+              { label: "Total amount", value: `${formatUsdc(payout.totalAmount)} USDC` },
+              {
+                label: "Payout status",
+                value: payoutStatusLabel,
+              },
+            ].map((item) => (
+              <div key={item.label} className="rounded-2xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.62)] p-4">
+                <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                  {item.label}
+                </p>
+                <p className="mt-2 break-all text-sm font-semibold text-white">
+                  {item.value}
+                </p>
+              </div>
+            ))}
+          </div>
+          <p className="mt-4 text-sm text-[var(--text-secondary)]">
+            {effectivePayoutStatus === "draft"
+              ? "This payout is still a draft. Activate it to begin milestone submissions and reviews."
+              : effectivePayoutStatus === "active"
+                ? "This payout is active. Contributors can submit milestones and reviewers can approve or reject work."
+                : effectivePayoutStatus === "partially_released"
+                  ? "This payout has partial settlement progress. Continue reviewing and releasing approved milestones."
+                  : "This payout is fully settled and all milestone releases are complete."}
+          </p>
         </CardContent>
       </Card>
 
