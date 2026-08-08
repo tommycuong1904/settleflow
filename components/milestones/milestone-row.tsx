@@ -1,6 +1,12 @@
+"use client";
+
+import { useState } from "react";
+
 import { MilestoneStatusBadge } from "@/components/milestones/milestone-status-badge";
 import { ReviewControls } from "@/components/milestones/review-controls";
+import { Button } from "@/components/shared/button";
 import type { Milestone } from "@/lib/models/milestone";
+import { DEFAULT_PRODUCT_CONTEXT } from "@/lib/runtime/default-product-context";
 import { formatUsdc } from "@/lib/utils/format";
 
 type MilestoneRowProps = {
@@ -14,10 +20,39 @@ export function MilestoneRow({
   onApprove,
   onReject,
 }: MilestoneRowProps) {
-  const isSubmitted = milestone.status === "submitted";
-  const isApproved = milestone.status === "approved";
-  const isReleased = milestone.status === "released";
-  const isRejected = milestone.status === "rejected";
+  const [status, setStatus] = useState(milestone.status);
+  const [submitting, setSubmitting] = useState(false);
+  const [submissionError, setSubmissionError] = useState<string | null>(null);
+
+  const isSubmitted = status === "submitted";
+  const isApproved = status === "approved";
+  const isReleased = status === "released";
+  const isRejected = status === "rejected";
+  const isSubmittable = status === "pending" || status === "rejected";
+
+  async function handleSubmitMilestone() {
+    if (!isSubmittable || submitting) return;
+
+    setSubmissionError(null);
+    setSubmitting(true);
+    try {
+      const response = await fetch(`/api/v1/milestones/${milestone.id}/submit`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          submittedByUserId: DEFAULT_PRODUCT_CONTEXT.contributorUserId,
+          summary: `Submitted via SettleFlow payout detail for ${milestone.title}.`,
+        }),
+      });
+      const data = (await response.json()) as { error?: string; milestone?: { status?: Milestone["status"] } };
+      if (!response.ok) throw new Error(data.error ?? "Unable to submit milestone.");
+      setStatus(data.milestone?.status ?? "submitted");
+    } catch (error) {
+      setSubmissionError(error instanceof Error ? error.message : "Unable to submit milestone.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
 
   return (
     <div className="sf-shell rounded-3xl p-5">
@@ -25,7 +60,7 @@ export function MilestoneRow({
         <div className="space-y-3">
           <div className="flex flex-wrap items-center gap-3">
             <p className="font-semibold text-white">{milestone.title}</p>
-            <MilestoneStatusBadge status={milestone.status} />
+            <MilestoneStatusBadge status={status} />
           </div>
           <p className="max-w-2xl text-sm leading-6 text-[var(--text-primary)]">
             {milestone.description}
@@ -67,17 +102,31 @@ export function MilestoneRow({
           ) : null}
 
           {isRejected ? (
-            <div className="space-y-2">
-              <p className="font-semibold text-white">Revision requested</p>
-              <p>The contributor needs to resubmit this milestone before review can continue.</p>
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <p className="font-semibold text-white">Revision requested</p>
+                <p>The contributor needs to resubmit this milestone before review can continue.</p>
+              </div>
+              <Button onClick={() => { void handleSubmitMilestone(); }} disabled={submitting} variant="secondary">
+                {submitting ? "Submitting..." : "Resubmit milestone"}
+              </Button>
             </div>
           ) : null}
 
           {!isSubmitted && !isApproved && !isReleased && !isRejected ? (
-            <div className="space-y-2">
-              <p className="font-semibold text-white">Waiting for contributor submission</p>
-              <p>Review and release actions will unlock after work is submitted.</p>
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <p className="font-semibold text-white">Waiting for contributor submission</p>
+                <p>Review and release actions will unlock after work is submitted.</p>
+              </div>
+              <Button onClick={() => { void handleSubmitMilestone(); }} disabled={submitting} variant="secondary">
+                {submitting ? "Submitting..." : "Submit milestone"}
+              </Button>
             </div>
+          ) : null}
+
+          {submissionError ? (
+            <p className="mt-3 text-xs text-rose-300">{submissionError}</p>
           ) : null}
         </div>
       </div>
