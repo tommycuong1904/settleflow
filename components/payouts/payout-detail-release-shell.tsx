@@ -47,16 +47,16 @@ export function PayoutDetailReleaseShell({
   const statusText = useMemo(() => {
     switch (effectiveReleaseStatus) {
       case "submitting":
-        return "SettleFlow is preparing the Arc payout release and proof update.";
+        return "SettleFlow is preparing the Arc release and waiting for the settlement proof update.";
       case "confirmed":
-        return "Release completed. The latest milestone now shows a refreshed Arc settlement proof.";
+        return "Release completed. Review the proof below, then continue with the next approved milestone if one is ready.";
       case "failed":
-        return releaseError ?? "Release flow hit an error before proof could be attached.";
+        return releaseError ?? "Release failed before settlement proof could be attached. Retry after checking the current payout state.";
       case "idle":
       default:
         return nextReleasableMilestone
-          ? "This milestone is approved and ready for a sequential USDC release on Arc."
-          : "No approved milestone is ready for release yet.";
+          ? "This milestone is approved and can be released now. Trigger release here after confirming the recipient and amount."
+          : "No approved milestone is ready for release yet. Approve a submitted milestone first to unlock this panel.";
     }
   }, [effectiveReleaseStatus, nextReleasableMilestone, releaseError]);
 
