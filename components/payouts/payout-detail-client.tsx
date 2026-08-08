@@ -10,6 +10,7 @@ import type { Contributor } from "@/lib/models/contributor";
 import type { Milestone } from "@/lib/models/milestone";
 import type { Payout } from "@/lib/models/payout";
 import type { TransactionProof } from "@/lib/models/transaction-proof";
+import { DEFAULT_PRODUCT_CONTEXT } from "@/lib/runtime/default-product-context";
 import { formatUsdc, shortenAddress } from "@/lib/utils/format";
 
 type PersistedReleaseState = {
@@ -24,8 +25,6 @@ type PayoutDetailClientProps = {
   initialMilestones: Milestone[];
   initialReleaseProof?: TransactionProof;
 };
-
-const DEFAULT_REVIEWER_ID = "user-reviewer";
 
 function getStorageKey(payoutId: string) {
   return `settleflow:release:${payoutId}`;
@@ -117,7 +116,7 @@ export function PayoutDetailClient({
       const response = await fetch(`/api/v1/milestones/${milestoneId}/${decision === "approved" ? "approve" : "reject"}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reviewedByUserId: DEFAULT_REVIEWER_ID }),
+        body: JSON.stringify({ reviewedByUserId: DEFAULT_PRODUCT_CONTEXT.reviewerUserId }),
       });
       const data = (await response.json()) as { error?: string };
       if (!response.ok) throw new Error(data.error ?? `Unable to ${decision} milestone.`);

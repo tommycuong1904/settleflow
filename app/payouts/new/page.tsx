@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { DEFAULT_PRODUCT_CONTEXT } from "@/lib/runtime/default-product-context";
 import { formatUsdc, shortenAddress } from "@/lib/utils/format";
 
 type MilestoneDraft = {
@@ -65,9 +66,6 @@ function isLikelyWalletAddress(value: string) {
 function sanitizeAmountInput(value: string) {
   return value.replace(/[^0-9.]/g, "").replace(/(\..*)\./g, "$1");
 }
-
-const DEFAULT_WORKSPACE_ID = "ws-demo";
-const DEFAULT_CREATOR_ID = "user-owner";
 
 export default function CreatePayoutPage() {
   const router = useRouter();
@@ -218,8 +216,8 @@ export default function CreatePayoutPage() {
         headers: { "Content-Type": "application/json" },
         signal: controller.signal,
         body: JSON.stringify({
-          workspaceId: DEFAULT_WORKSPACE_ID,
-          createdByUserId: DEFAULT_CREATOR_ID,
+          workspaceId: DEFAULT_PRODUCT_CONTEXT.workspaceId,
+          createdByUserId: DEFAULT_PRODUCT_CONTEXT.ownerUserId,
           title: payoutTitle.trim(),
           contributorId,
           targetWalletAddress: walletAddress.trim(),

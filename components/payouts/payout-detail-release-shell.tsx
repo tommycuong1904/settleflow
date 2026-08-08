@@ -12,6 +12,7 @@ import { TransactionProofCard } from "@/components/payouts/transaction-proof-car
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Milestone } from "@/lib/models/milestone";
 import type { TransactionProof } from "@/lib/models/transaction-proof";
+import { DEFAULT_PRODUCT_CONTEXT } from "@/lib/runtime/default-product-context";
 import { formatUsdc } from "@/lib/utils/format";
 
 type PayoutDetailReleaseShellProps = {
@@ -25,8 +26,6 @@ type PayoutDetailReleaseShellProps = {
     releasedAt: string;
   }) => void;
 };
-
-const DEFAULT_RELEASE_ACTOR_ID = "user-owner";
 
 export function PayoutDetailReleaseShell({
   payoutId,
@@ -74,7 +73,7 @@ export function PayoutDetailReleaseShell({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          triggeredByUserId: DEFAULT_RELEASE_ACTOR_ID,
+          triggeredByUserId: DEFAULT_PRODUCT_CONTEXT.ownerUserId,
           amountUsdc: String(nextReleasableMilestone.amount),
         }),
       });
