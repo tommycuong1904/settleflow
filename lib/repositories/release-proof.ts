@@ -51,6 +51,18 @@ export async function refreshReleaseProof(
     if (release.status === "confirmed" || release.status === "cancelled") {
       throw new Error("RELEASE_NOT_REFRESHABLE");
     }
+
+    const latestForMilestone = release.milestoneId
+      ? await tx.release.findFirst({
+          where: { milestoneId: release.milestoneId },
+          orderBy: { createdAt: "desc" },
+          select: { id: true },
+        })
+      : null;
+    if (latestForMilestone && latestForMilestone.id !== release.id) {
+      throw new Error("STALE_PROOF_REFRESH");
+    }
+
     const proof = release.proofs[0];
     if (!proof) throw new Error("PROOF_NOT_FOUND");
     if (proof.status !== "pending") throw new Error("PROOF_NOT_PENDING");
