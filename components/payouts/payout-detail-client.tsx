@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { MilestoneRow } from "@/components/milestones/milestone-row";
 import { PayoutDetailReleaseShell } from "@/components/payouts/payout-detail-release-shell";
+import { Button } from "@/components/shared/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Contributor } from "@/lib/models/contributor";
 import type { Milestone } from "@/lib/models/milestone";
@@ -51,8 +52,10 @@ export function PayoutDetailClient({
     }
   });
   const [milestoneState, setMilestoneState] = useState(() => initialMilestones);
+  const [payoutStatusState, setPayoutStatusState] = useState(payout.status);
   const [reviewError, setReviewError] = useState<string | null>(null);
   const [reviewingMilestoneId, setReviewingMilestoneId] = useState<string | null>(null);
+  const [activatingPayout, setActivatingPayout] = useState(false);
 
   const milestones = useMemo(() => {
     if (!persistedRelease) {
@@ -98,7 +101,7 @@ export function PayoutDetailClient({
       ? "completed"
       : releasedCount > 0
         ? "partially_released"
-        : payout.status;
+        : payoutStatusState;
 
   const payoutStatusLabel =
     effectivePayoutStatus === "partially_released"
@@ -108,6 +111,30 @@ export function PayoutDetailClient({
           ? "Partially released"
           : "In progress"
         : effectivePayoutStatus.replace("_", " ");
+
+  async function activatePayout() {
+    if (activatingPayout || payoutStatusState !== "draft") return;
+
+    setReviewError(null);
+    setActivatingPayout(true);
+    try {
+      const response = await fetch(`/api/v1/payouts/${payout.id}/activate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          workspaceId: DEFAULT_PRODUCT_CONTEXT.workspaceId,
+          activatedByUserId: DEFAULT_PRODUCT_CONTEXT.ownerUserId,
+        }),
+      });
+      const data = (await response.json()) as { error?: string; payout?: { status?: Payout["status"] } };
+      if (!response.ok) throw new Error(data.error ?? "Unable to activate payout.");
+      setPayoutStatusState(data.payout?.status ?? "active");
+    } catch (error) {
+      setReviewError(error instanceof Error ? error.message : "Unable to activate payout.");
+    } finally {
+      setActivatingPayout(false);
+    }
+  }
 
   async function reviewMilestone(milestoneId: string, decision: "approved" | "rejected") {
     setReviewError(null);
@@ -180,8 +207,13 @@ export function PayoutDetailClient({
       </div>
 
       <Card className="sf-shell">
-        <CardHeader>
+        <CardHeader className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <CardTitle>Payout Summary</CardTitle>
+          {payoutStatusState === "draft" ? (
+            <Button onClick={() => { void activatePayout(); }} disabled={activatingPayout}>
+              {activatingPayout ? "Activating..." : "Activate payout"}
+            </Button>
+          ) : null}
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
