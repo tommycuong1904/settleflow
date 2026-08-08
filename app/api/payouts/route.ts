@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { listPayouts } from "@/lib/repositories/payouts";
+import { DEFAULT_PRODUCT_CONTEXT } from "@/lib/runtime/default-product-context";
 
 const payoutStatuses = ["draft", "active", "partially_released", "completed"] as const;
 
@@ -14,7 +15,7 @@ export async function GET(request: Request) {
   }
 
   const payouts = await listPayouts({
-    workspaceId: searchParams.get("workspaceId") ?? undefined,
+    workspaceId: searchParams.get("workspaceId") ?? DEFAULT_PRODUCT_CONTEXT.workspaceId,
     contributorId: searchParams.get("contributorId") ?? undefined,
     status: status as PayoutStatus | undefined,
   });

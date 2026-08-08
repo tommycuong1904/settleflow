@@ -7,7 +7,7 @@ export type PayoutListItem = {
   totalAmount: string;
   currency: "USDC";
   status: "draft" | "active" | "partially_released" | "completed";
-  createdAt: Date;
+  createdAt: string;
 };
 
 type PayoutRecord = {
@@ -32,7 +32,7 @@ function toListItem(payout: PayoutRecord): PayoutListItem {
     totalAmount: payout.totalAmountUsdc.toString(),
     currency: "USDC",
     status: payout.status,
-    createdAt: payout.createdAt,
+    createdAt: payout.createdAt.toISOString(),
   };
 }
 
@@ -43,9 +43,9 @@ export async function listPayouts(input?: {
 }): Promise<PayoutListItem[]> {
   const payouts = await db.payout.findMany({
     where: {
-      workspaceId: input?.workspaceId,
-      contributorId: input?.contributorId,
-      status: input?.status,
+      ...(input?.workspaceId ? { workspaceId: input.workspaceId } : {}),
+      ...(input?.contributorId ? { contributorId: input.contributorId } : {}),
+      ...(input?.status ? { status: input.status } : {}),
     },
     orderBy: { createdAt: "desc" },
     select: {
