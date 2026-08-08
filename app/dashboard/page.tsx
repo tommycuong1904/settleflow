@@ -223,28 +223,39 @@ export default async function DashboardPage() {
 
           <SectionCard title="Recent Settlement Proof">
             <div className="space-y-4">
-              {releasedMilestones.length === 0 ? (
+              {transactionProofs.length === 0 ? (
                 <EmptyState
                   title="No releases yet"
-                  description="Released milestones will surface Arc transaction proof here."
+                  description="Release proof events will surface here as milestones move through settlement."
                 />
               ) : (
-                releasedMilestones.slice(0, 2).map((milestone) => {
-                  const proof = transactionProofs.find(
-                    (item) => item.milestoneId === milestone.id,
+                transactionProofs.slice(0, 2).map((proof) => {
+                  const milestone = milestones.find(
+                    (item) => item.id === proof.milestoneId,
                   );
                   return (
                     <div
-                      key={milestone.id}
+                      key={proof.id}
                       className="rounded-3xl border border-[var(--border-soft)] bg-[rgba(8,15,31,0.72)] p-5"
                     >
                       <div className="space-y-2">
-                        <p className="text-lg font-semibold text-white">{milestone.title}</p>
+                        <div className="flex flex-wrap items-center gap-3">
+                          <p className="text-lg font-semibold text-white">
+                            {milestone?.title ?? "Settlement event"}
+                          </p>
+                          <MilestoneStatusBadge status={proof.status === "confirmed" ? "released" : proof.status === "failed" ? "rejected" : "submitted"} />
+                        </div>
                         <p className="text-sm text-[var(--text-primary)]">
-                          {formatUsdc(milestone.amount)} USDC · {proof?.network ?? "Arc Testnet"}
+                          {formatUsdc(milestone?.amount ?? 0)} USDC · {proof.network ?? "Arc Testnet"}
                         </p>
                         <p className="break-all font-mono text-xs leading-6 text-cyan-100">
-                          {proof ? shortenAddress(proof.txHash) : "Proof pending"}
+                          {proof.txHash
+                            ? shortenAddress(proof.txHash)
+                            : proof.status === "pending"
+                              ? "Hash pending / unavailable"
+                              : proof.status === "failed"
+                                ? "No confirmed transaction hash"
+                                : "Proof pending"}
                         </p>
                       </div>
                     </div>

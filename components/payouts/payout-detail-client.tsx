@@ -92,14 +92,21 @@ export function PayoutDetailClient({
     (milestone) => milestone.status === "approved",
   ).length;
 
+  const effectivePayoutStatus =
+    releasedCount === milestones.length && milestones.length > 0
+      ? "completed"
+      : releasedCount > 0
+        ? "partially_released"
+        : payout.status;
+
   const payoutStatusLabel =
-    payout.status === "partially_released"
+    effectivePayoutStatus === "partially_released"
       ? "Partially released"
-      : payout.status === "active"
+      : effectivePayoutStatus === "active"
         ? amountReleased > 0
           ? "Partially released"
           : "In progress"
-        : payout.status.replace("_", " ");
+        : effectivePayoutStatus.replace("_", " ");
 
   async function reviewMilestone(milestoneId: string, decision: "approved" | "rejected") {
     setReviewError(null);
