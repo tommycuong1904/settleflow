@@ -8,13 +8,16 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
-  const body = await request.json().catch(() => null) as Partial<RefreshProofInput> | null;
+  const body = await request.json().catch(() => null) as (Partial<RefreshProofInput> & { refreshedByUserId?: string }) | null;
   if (!body || typeof body.status !== "string" || !statuses.has(body.status)) {
     return NextResponse.json({ error: "status must be confirmed or failed." }, { status: 400 });
   }
+  if (typeof body.refreshedByUserId !== "string" || body.refreshedByUserId.trim().length === 0) {
+    return NextResponse.json({ error: "refreshedByUserId is required." }, { status: 400 });
+  }
 
   try {
-    const result = await refreshReleaseProof(id, body as RefreshProofInput);
+    const result = await refreshReleaseProof(id, body.refreshedByUserId, body as RefreshProofInput);
     return NextResponse.json({ data: result });
   } catch (error) {
     const code = error instanceof Error ? error.message : "UNKNOWN_ERROR";
@@ -22,6 +25,7 @@ export async function POST(
       RELEASE_NOT_FOUND: 404,
       MILESTONE_NOT_FOUND: 404,
       PROOF_NOT_FOUND: 404,
+      FORBIDDEN_PROOF_REFRESH: 403,
       RELEASE_NOT_REFRESHABLE: 409,
       PROOF_NOT_PENDING: 409,
       TX_HASH_REQUIRED: 422,

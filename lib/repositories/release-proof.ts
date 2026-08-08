@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db/client";
+import { hasWorkspaceRole } from "@/lib/repositories/permissions";
 import { recalculatePayoutStatus } from "@/lib/repositories/payout-status";
 
 export type RefreshProofInput = {
@@ -11,7 +12,11 @@ export type RefreshProofInput = {
   failureReason?: string;
 };
 
-export async function refreshReleaseProof(releaseId: string, input: RefreshProofInput) {
+export async function refreshReleaseProof(
+  releaseId: string,
+  refreshedByUserId: string,
+  input: RefreshProofInput,
+) {
   return db.$transaction(async (tx: Prisma.TransactionClient) => {
     const release = await tx.release.findUnique({
       where: { id: releaseId },
@@ -20,6 +25,7 @@ export async function refreshReleaseProof(releaseId: string, input: RefreshProof
         payoutId: true,
         milestoneId: true,
         status: true,
+        payout: { select: { workspaceId: true } },
         proofs: {
           orderBy: { createdAt: "desc" },
           take: 1,
@@ -33,6 +39,15 @@ export async function refreshReleaseProof(releaseId: string, input: RefreshProof
       },
     });
     if (!release) throw new Error("RELEASE_NOT_FOUND");
+
+    const canRefresh = await hasWorkspaceRole(
+      tx,
+      release.payout.workspaceId,
+      refreshedByUserId,
+      ["owner", "ops"],
+    );
+    if (!canRefresh) throw new Error("FORBIDDEN_PROOF_REFRESH");
+
     if (release.status === "confirmed" || release.status === "cancelled") {
       throw new Error("RELEASE_NOT_REFRESHABLE");
     }
