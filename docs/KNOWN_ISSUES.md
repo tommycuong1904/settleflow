@@ -10,10 +10,11 @@ This document lists issues, gaps, inconsistencies, and inspection risks visible 
 
 ## Confirmed Issues and Gaps
 
-### 1. No authentication or access control
+### 1. No full authentication system
 - No login flow, session handling, auth provider config, or middleware protection was found.
 - Search did not find `nextauth`, `clerk`, `getServerSession`, or middleware-based route protection.
-- All inspected routes appear public at the application layer.
+- The application surface is still public at the HTTP layer.
+- Core mutation routes now have a minimal repository-backed permission boundary for seeded workspace roles, but this is not a full auth/session model.
 
 ### 2. No automated tests
 - No unit, integration, or end-to-end test files were found using common naming patterns.
@@ -62,8 +63,8 @@ This document lists issues, gaps, inconsistencies, and inspection risks visible 
 ### 2. Release/retry/proof flows may still need broader failure-path verification
 - **Assumption**: once live execution becomes important, retry semantics, proof refresh behavior, and release state transitions will need deeper adversarial/manual validation.
 
-### 3. Public application surface may become risky as backend capabilities expand
-- **Assumption**: the lack of auth/permissions becomes more serious now that mutation routes and persistence exist.
+### 3. Public application surface still carries risk despite minimal permissions
+- **Assumption**: the current seeded-role permission checks reduce obvious mutation risk, but the lack of a real auth/session boundary will become more serious as backend capabilities expand.
 
 ## Unknown Areas Requiring Further Inspection
 
@@ -82,7 +83,7 @@ This document lists issues, gaps, inconsistencies, and inspection risks visible 
 ## Highest-Risk Areas
 
 ### Confirmed high-risk
-1. **No auth / no permissions model**
+1. **No full auth/session model**
 2. **No automated test coverage**
 3. **Production readiness of Arc release execution remains unverified**
 4. **Stale supporting docs can mislead future work**

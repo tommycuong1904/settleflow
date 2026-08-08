@@ -106,9 +106,10 @@ This repository is now a full-stack Next.js application for SettleFlow, an Arc-n
 
 ### Conclusion
 - **No authentication flow is currently implemented in the inspected repository.**
+- **Minimal route-level/repository-level permission checks now exist for core payout, milestone, and release mutations in the seeded workspace model, but this is not a full auth system.**
 
 ### Unknown
-- Whether auth is intentionally deferred until after the current backend/data wedge.
+- Whether the current permission boundary is intended only as a demo/dev safeguard or as the basis for a future production auth model.
 
 ## 5. Build, scripts, and tests
 
@@ -145,7 +146,15 @@ This repository is now a full-stack Next.js application for SettleFlow, an Arc-n
 ## 7. What appears unfinished
 
 ### Confirmed
-- Authentication and access control are still absent.
+- No login/session-based authentication flow is implemented.
+- Mutation routes now have a minimal repository-backed permission boundary for the seeded workspace roles:
+  - payout create
+  - payout activate
+  - milestone submit
+  - milestone approve/reject
+  - milestone release
+  - release proof refresh
+  - release retry
 - No automated tests were found.
 - Arc execution is not verified here as a production-safe live payment path; behavior still depends on execution mode.
 - Legacy mock-data files remain in the repository and may still represent transition-era coupling or fallback assumptions.
