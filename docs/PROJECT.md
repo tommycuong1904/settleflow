@@ -26,13 +26,13 @@ SettleFlow structures payouts around a single workflow:
 6. show settlement proof
 
 ## Current Product Shape
-The current repository implements a frontend-first demo of the product with:
+The current repository is being advanced as a real MVP with:
 - landing page
 - dashboard
 - create payout flow
 - payout detail flow
-- mock contributors, payouts, milestones, and settlement proof
-- Arc integration scaffolding
+- repository/API-backed payout, milestone, release, and proof state transitions
+- Arc integration scaffolding with a real execution boundary
 
 ## Primary User
 - founder
@@ -60,24 +60,22 @@ The current repository implements a frontend-first demo of the product with:
 
 ## Current State
 At the time of writing:
-- the product demo UI is implemented
-- the app is powered by mock data
-- no real backend or database has been confirmed in this repository
-- Arc send integration is scaffolded but not live
-- no authentication flow has been confirmed
+- the core product UI is implemented and is being treated as the real MVP surface
+- the repository now contains database-backed read/write paths for the payout workflow
+- auth/session is still incomplete and remains the main product gap
+- Arc send integration is scaffolded behind an execution boundary but is not yet verified as production-safe live settlement
+- legacy mock/demo artifacts still exist and should be treated as migration debt, not product direction
 
 ## Out of Scope for the Current Repository State
-The inspected repository does not currently confirm implementation of:
-- production-grade backend services
-- real payout persistence
-- auth / permissions
-- live onchain release execution
-- automated test coverage
+The repository still does not confirm full implementation of:
+- production-grade auth/session infrastructure
+- production-safe live onchain release execution
+- complete operational hardening for wallet/key management
+- comprehensive automated test coverage
 
 ## Success Definition for the Current Stage
-The repository should clearly demonstrate:
-- what SettleFlow is
-- who it is for
-- how the payout workflow works
-- why approval-gated release matters
-- how Arc and USDC fit into the settlement story
+The repository should now move toward proving:
+- a real payout can be created and read back from persistence
+- milestone review and release state transitions work through the application stack
+- permission boundaries are explicit enough for a usable MVP
+- Arc and USDC remain central to the settlement path without overstating live execution readiness

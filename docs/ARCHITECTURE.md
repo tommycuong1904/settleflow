@@ -1,14 +1,14 @@
 # ARCHITECTURE
 
 ## Overview
-SettleFlow is currently structured as a frontend-first Next.js application with a typed domain model, mock data, and a small Arc integration scaffold.
+SettleFlow is currently structured as a Next.js application moving toward a real MVP architecture: typed domain models, repository/API-backed workflow mutations, database persistence, and an Arc execution boundary.
 
 ## Architecture Style
 Current architecture is best described as:
-- presentation-first
-- mock-data-driven
-- checkpoint/demo oriented
-- prepared for later backend and integration work
+- product-first MVP
+- repository/API-driven for the core payout workflow
+- persistence-backed with transitional legacy artifacts still present
+- prepared for stricter auth/session and production-safe Arc execution work
 
 ## Main Layers
 
@@ -24,7 +24,7 @@ Confirmed routes:
 
 Responsibilities:
 - page composition
-- route-level data selection from mock sources
+- route-level data loading and mutation entry points
 - overall navigation and layout
 - product workflow presentation
 
@@ -60,18 +60,17 @@ Responsibilities:
 - provide typed contracts for UI and future backend integration
 
 ### 4. Data Layer
-Located in `lib/data/`.
+Primary runtime data now flows through the database, repositories, and API routes. Legacy mock files still exist in `lib/data/` as transitional artifacts and should not be treated as the target architecture.
 
-Confirmed data sources:
-- `mock-contributors.ts`
-- `mock-payouts.ts`
-- `mock-milestones.ts`
-- `mock-transaction-proofs.ts`
+Confirmed primary runtime pieces:
+- Prisma/database-backed repositories under `lib/repositories/`
+- route handlers under `app/api/v1/`
+- legacy mock files under `lib/data/` that still need cleanup or explicit dev-only positioning
 
 Current behavior:
-- application state is hard-coded
-- route views derive their content directly from mock arrays
-- no persistence or live mutation path is confirmed
+- core payout workflow supports persistence-backed reads and mutations
+- route views increasingly derive content from repository-backed data
+- some transitional/demo-era assumptions may still exist around seeded IDs, seeded roles, or mock/dev helper paths
 
 ### 5. Integration Layer
 Located in `lib/arc/`.
@@ -87,7 +86,7 @@ Responsibilities:
 - future settlement abstraction
 
 Current limitation:
-- `sendUsdcOnArc()` is still a placeholder and does not execute real transactions
+- `sendUsdcOnArc()` has a real-adapter boundary but live production-safe Arc execution is not yet fully verified against official requirements
 
 ### 6. Utility Layer
 Located in `lib/utils/`.
@@ -129,7 +128,7 @@ Security boundaries:
 Purpose:
 - product framing
 - workflow summary
-- reviewer/demo entry point
+- operator entry point into the payout workflow
 
 ### `/dashboard`
 Purpose:
@@ -173,15 +172,15 @@ Confirmed in code:
 
 ## Data Flow
 Current confirmed flow:
-1. route reads mock data from `lib/data/`
-2. route derives view-specific metrics or selected entities
-3. route passes typed data into presentational components
-4. components render status-specific UI blocks
+1. route or page triggers repository/API-backed reads and mutations
+2. repositories coordinate payout, milestone, release, and proof state transitions against persistence
+3. typed data flows into presentational components
+4. components render status-specific UI blocks and mutation results
 
-Current non-confirmed flow:
-- no confirmed mutation pipeline
-- no confirmed API round-trip
-- no confirmed database read/write path
+Current non-confirmed / incomplete flow:
+- no complete auth/session-backed actor resolution
+- no full production-safe onchain release verification path
+- some transitional seeded-role and seeded-workspace assumptions still remain
 
 ## Configuration
 
@@ -201,25 +200,21 @@ Confirmed public env usage:
 - ESLint
 
 ## What Is Not Present in the Current Architecture
-No confirmed implementation was found for:
-- server API routes
-- database layer
-- ORM
-- authentication provider
-- authorization middleware
-- automated test framework in source
+Still incomplete or not yet confirmed:
+- full authentication provider/session layer
+- authorization middleware tied to resolved user identity
+- production-safe live Arc release execution verification
+- comprehensive automated test coverage
 
 ## Architectural Risks
-- mock data is embedded directly into route-level UI composition
-- backend introduction will likely require data-access refactoring
-- mutation flows are not yet architected end-to-end
-- some route behavior is demo-friendly rather than production-safe
+- seeded/demo-era assumptions may still leak into UI and mutation entry points
+- actor resolution is still hardcoded in some surfaces instead of auth-derived
+- legacy mock files and wording can mislead future implementation decisions
+- live Arc execution safety requirements may force adapter or workflow changes
 
 ## Recommended Next Architecture Step
-Before implementing new product behavior, define:
-- data boundaries
-- mutation boundaries
-- API contract shapes
-- persistent storage model
-- auth/permission scope
-- release execution policy and adapter boundary (`browser_wallet` vs `circle_wallet`)
+Before expanding into new feature surfaces, prioritize:
+- removing seeded/demo assumptions from existing payout flows
+- replacing hardcoded actor/workspace values with real product boundaries
+- tightening auth/permission scope
+- validating the release execution policy and adapter boundary (`browser_wallet` vs `circle_wallet`) against official Arc constraints

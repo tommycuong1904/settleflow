@@ -33,20 +33,19 @@ This makes contributor payouts more legible, controllable, and onchain-native th
 The repository currently includes:
 - landing page for product framing
 - dashboard route for payout operations visibility
-- payout creation route with milestone split preview
-- payout detail route with review, release, and settlement proof blocks
+- payout creation route backed by repository/API flow
+- payout detail route with review, release, retry, and settlement proof surfaces
 - reusable milestone, proof, stat, and section components
-- mock contributors, payouts, milestones, and transaction proof data
-- canonical payout detail route at `/payouts/payout-detail`
-- interactive release wedge with settlement proof sync and reload persistence
-- Arc integration scaffold under `lib/arc/` with mode-aware execution plumbing (`mock`, `demo`, `real`)
+- database-backed payout, milestone, release, and proof workflow
+- API routes for payout creation, activation, milestone review, release, proof refresh, and retry
+- Arc integration scaffold under `lib/arc/` with execution-mode plumbing and a real-adapter boundary
 
 Current implementation state:
-- frontend-first demo application
-- mock/demo-safe workflow with interactive release state
-- no confirmed backend or database in this repository
-- no confirmed authentication flow
-- Arc payment path scaffolded with mode-aware execution plumbing, but not yet live for production payout execution
+- product is being advanced as a real MVP, not a demo artifact
+- persistence and mutation flow now exist in the repository
+- auth/session is still incomplete and remains a major gap
+- some legacy mock/demo artifacts and wording still need cleanup
+- Arc payment execution boundary exists, but production-safe live release execution is not yet fully verified against official Arc requirements
 
 ## MVP Scope
 
@@ -61,11 +60,11 @@ The MVP focuses on one core workflow:
 ## Current Progress
 
 - Product direction finalized around milestone-based contributor payouts
-- DeFi track positioning selected
-- MVP scope defined
+- MVP scope narrowed toward a real usable product surface
 - Repository structure and implementation plan established
-- Frontend-first demo flow implemented and verified with real build
-- Core UI flow and Arc integration scaffolding in place
+- Core payout workflow now has repository/API-backed mutation paths
+- Permission boundary V1 and mutation contract hardening are in progress
+- Arc integration scaffold and release execution boundary are in place
 
 ## Verified Checkpoint 2 State
 
@@ -109,7 +108,7 @@ Verified checks:
 - **Frontend:** Next.js
 - **Language:** TypeScript
 - **Styling:** Tailwind CSS
-- **Data layer:** local/mock state first
+- **Data layer:** PostgreSQL + Prisma-backed application state
 - **Blockchain target:** Arc Testnet
 - **Money layer:** USDC
 - **Payments integration:** App Kit Send
