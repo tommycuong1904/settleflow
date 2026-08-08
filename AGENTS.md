@@ -2,20 +2,40 @@
 
 ## Before starting
 
-Read these files, loading only as far as needed:
+Use this file as the single execution router.
 
-### Tier 1 — always (product goal + current state)
-1. docs/PROJECT.md
-2. docs/CURRENT_STATE.md
-3. The assigned task file (if one exists)
+Load docs progressively by task type. Do not read docs by default.
+Read only as far as needed, and only when the active workflow requires it.
 
-### Tier 2 — load if modifying routes, adding features, or changing data flow
-4. docs/ARCHITECTURE.md
+Task-based doc loading rules:
 
-### Tier 3 — load if unsure about naming, structure, or styling patterns
-5. docs/CONVENTIONS.md
+- `bug`
+  - default: no docs
+  - load `docs/CURRENT_STATE.md` only if the bug depends on current flow/state
+  - load `docs/CONVENTIONS.md` only if the fix depends on naming/structure conventions
+- `ui`
+  - default: no docs
+  - load `docs/CONVENTIONS.md` only when existing code does not make the design/style pattern clear
+  - load `docs/CURRENT_STATE.md` only if the UI depends on current flow/state
+- `feature`
+  - load first: `docs/PROJECT.md`, `docs/CURRENT_STATE.md`
+  - load `docs/ARCHITECTURE.md` only if needed
+  - load `docs/CONVENTIONS.md` only if needed
+- `investigate`
+  - default: no docs
+  - load `docs/CURRENT_STATE.md` or `docs/ARCHITECTURE.md` only if needed to explain behavior
+- `review`
+  - default: no docs
+  - load `docs/CONVENTIONS.md` only if needed for standards
+  - load `docs/PROJECT.md` only if needed for product-fit review
+- `release`
+  - load first: `docs/CURRENT_STATE.md`
+  - do not load `docs/CONVENTIONS.md` by default
+
+Also load the assigned task file if one exists and is relevant to the active task.
 
 Do not scan the entire repository unless necessary.
+Do not reread files already inspected during the current task unless they changed or a specific detail must be re-verified.
 
 ## Working rules
 
@@ -29,14 +49,17 @@ Do not scan the entire repository unless necessary.
 
 ## Execution process
 
-1. Restate the task.
-2. Identify relevant files.
-3. Propose a short implementation plan.
-4. Implement the smallest valid change.
-5. Run relevant tests.
-6. Run lint and build checks.
-7. Review the diff.
-8. Report the result.
+1. Route the task to one primary workflow.
+2. Identify only the nearest relevant files.
+3. Load docs only if the selected workflow requires them.
+4. Form a minimal implementation plan internally.
+5. Implement the smallest valid change.
+6. Validate the narrowest affected behavior first.
+7. Run lint and build only when required by the workflow or risk level.
+8. Review the relevant diff.
+9. Report the result briefly.
+
+Do not output an implementation plan for routine tasks unless requested.
 
 ## Stop conditions
 
@@ -45,19 +68,21 @@ Stop and ask for clarification when:
 - The task conflicts with architecture documentation.
 - Required credentials are missing.
 - A destructive database migration is required.
-- The implementation would affect unrelated modules.
+- The task requires significant changes outside the reasonably inferred scope.
 - The acceptance criteria cannot be verified.
 
 ## Completion report
+
+Keep the final report concise.
 
 Return:
 
 - Summary
 - Files changed
-- Tests executed
-- Test results
-- Assumptions
-- Remaining risks
+- Validation performed
+- Remaining risks, only if any
+
+Do not include empty sections.
 
 ## Existing project stabilization rules
 
@@ -69,3 +94,60 @@ Return:
 - Document inconsistencies instead of fixing all of them immediately.
 - Separate bug fixes from refactoring.
 - Make the smallest reversible change.
+
+## Specialized Workflows
+
+Use only ONE primary workflow per task.
+
+Primary workflows:
+
+- bug → `workflows/bug-fix.md`
+- ui → `workflows/ui-change.md`
+- feature → `workflows/feature.md`
+- investigate → `workflows/investigate.md`
+- review → `workflows/review.md`
+- release → `workflows/release.md`
+
+Supporting rules:
+
+- `workflows/search.md` is a supporting locate-code rule, not a primary workflow.
+- `workflows/testing.md` is a supporting validation rule, not a primary workflow.
+
+Short routing aliases:
+
+- `bug:` → `bug`
+- `ui:` → `ui`
+- `feature:` → `feature`
+- `investigate:` → `investigate`
+- `review:` → `review`
+- `release:` → `release`
+
+### Short command behavior
+
+User instructions may be intentionally brief and may be written in Vietnamese or English.
+
+When a short routing alias is present, select that workflow directly.
+Treat everything after the alias as the task instruction.
+
+Examples:
+
+- `ui: làm hero gọn hơn` → workflow: `ui`
+- `bug: sửa lỗi connect wallet` → workflow: `bug`
+- `feature: thêm transaction history` → workflow: `feature`
+- `investigate: tìm nguyên nhân balance không cập nhật` → workflow: `investigate`
+
+Do not ask the user to restate workflow rules already defined in this file.
+Do not ask the user to translate Vietnamese instructions.
+
+For short commands, infer the relevant scope from the nearest existing implementation.
+
+Ask for clarification only when a missing decision would materially change the implementation.
+
+Fallback routing:
+
+- broken behavior / fix request → `bug`
+- visual/layout/style change → `ui`
+- new capability / flow addition → `feature`
+- trace / diagnose / explain behavior → `investigate`
+- no-edit audit / assessment → `review`
+- pre-ship verification → `release`
