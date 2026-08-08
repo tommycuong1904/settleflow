@@ -13,12 +13,14 @@ type MilestoneRowProps = {
   milestone: Milestone;
   onApprove?: (milestoneId: string) => void;
   onReject?: (milestoneId: string) => void;
+  onStatusChange?: (milestoneId: string, status: Milestone["status"]) => void;
 };
 
 export function MilestoneRow({
   milestone,
   onApprove,
   onReject,
+  onStatusChange,
 }: MilestoneRowProps) {
   const [status, setStatus] = useState(milestone.status);
   const [submitting, setSubmitting] = useState(false);
@@ -46,7 +48,9 @@ export function MilestoneRow({
       });
       const data = (await response.json()) as { error?: string; milestone?: { status?: Milestone["status"] } };
       if (!response.ok) throw new Error(data.error ?? "Unable to submit milestone.");
-      setStatus(data.milestone?.status ?? "submitted");
+      const nextStatus = data.milestone?.status ?? "submitted";
+      setStatus(nextStatus);
+      onStatusChange?.(milestone.id, nextStatus);
     } catch (error) {
       setSubmissionError(error instanceof Error ? error.message : "Unable to submit milestone.");
     } finally {

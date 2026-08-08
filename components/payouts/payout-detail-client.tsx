@@ -136,6 +136,20 @@ export function PayoutDetailClient({
     }
   }
 
+  function handleMilestoneStatusChange(milestoneId: string, status: Milestone["status"]) {
+    setMilestoneState((current) =>
+      current.map((milestone) =>
+        milestone.id === milestoneId
+          ? {
+              ...milestone,
+              status,
+              submittedAt: status === "submitted" ? new Date().toISOString() : milestone.submittedAt,
+            }
+          : milestone,
+      ),
+    );
+  }
+
   async function reviewMilestone(milestoneId: string, decision: "approved" | "rejected") {
     setReviewError(null);
     setReviewingMilestoneId(milestoneId);
@@ -286,6 +300,7 @@ export function PayoutDetailClient({
                 milestone={milestone}
                 onApprove={handleApproveMilestone}
                 onReject={handleRejectMilestone}
+                onStatusChange={handleMilestoneStatusChange}
               />
             ))}
           </div>
