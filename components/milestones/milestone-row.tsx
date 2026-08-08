@@ -17,6 +17,7 @@ export function MilestoneRow({
   const isSubmitted = milestone.status === "submitted";
   const isApproved = milestone.status === "approved";
   const isReleased = milestone.status === "released";
+  const isRejected = milestone.status === "rejected";
 
   return (
     <div className="sf-shell rounded-3xl p-5">
@@ -35,16 +36,23 @@ export function MilestoneRow({
         </div>
         <div className="sf-panel min-w-[240px] rounded-3xl p-4 text-sm text-[var(--text-primary)]">
           {isSubmitted ? (
-            <ReviewControls
-              submittedAt={milestone.submittedAt}
-              onApprove={() => onApprove?.(milestone.id)}
-              onReject={() => onReject?.(milestone.id)}
-            />
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <p className="font-semibold text-white">Review needed</p>
+                <p>Submitted work is ready for an approve or reject decision.</p>
+              </div>
+              <ReviewControls
+                submittedAt={milestone.submittedAt}
+                onApprove={() => onApprove?.(milestone.id)}
+                onReject={() => onReject?.(milestone.id)}
+              />
+            </div>
           ) : null}
 
           {isApproved ? (
             <div className="space-y-2">
-              <p>Approved and unlocked for release on Arc.</p>
+              <p className="font-semibold text-white">Ready for release</p>
+              <p>Approved work can now move to the Arc release step from the side panel.</p>
             </div>
           ) : null}
 
@@ -58,10 +66,17 @@ export function MilestoneRow({
             </div>
           ) : null}
 
-          {!isSubmitted && !isApproved && !isReleased ? (
+          {isRejected ? (
+            <div className="space-y-2">
+              <p className="font-semibold text-white">Revision requested</p>
+              <p>The contributor needs to resubmit this milestone before review can continue.</p>
+            </div>
+          ) : null}
+
+          {!isSubmitted && !isApproved && !isReleased && !isRejected ? (
             <div className="space-y-2">
               <p className="font-semibold text-white">Waiting for contributor submission</p>
-              <p>Release becomes available after approval.</p>
+              <p>Review and release actions will unlock after work is submitted.</p>
             </div>
           ) : null}
         </div>
