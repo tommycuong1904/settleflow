@@ -191,6 +191,22 @@ export default async function DashboardPage() {
                 const releasedAmount = payoutMilestones
                   .filter((milestone) => milestone.status === "released")
                   .reduce((sum, milestone) => sum + milestone.amount, 0);
+                const nextPendingReview = payoutMilestones.find(
+                  (milestone) => milestone.status === "submitted",
+                );
+                const nextReleaseReady = payoutMilestones.find(
+                  (milestone) => milestone.status === "approved",
+                );
+                const payoutActionLabel = nextPendingReview
+                  ? "Review milestone"
+                  : nextReleaseReady
+                    ? "Release milestone"
+                    : "View payout detail";
+                const payoutActionHint = nextPendingReview
+                  ? `${nextPendingReview.title} is waiting for review.`
+                  : nextReleaseReady
+                    ? `${nextReleaseReady.title} is approved and ready for release.`
+                    : "Open the payout to continue milestone progress.";
 
                 return (
                   <div
@@ -227,9 +243,14 @@ export default async function DashboardPage() {
                           </p>
                         </div>
                       </div>
-                      <Button href={`/payouts/${payout.id}`} variant="ghost">
-                        View payout detail
-                      </Button>
+                      <div className="space-y-3">
+                        <Button href={`/payouts/${payout.id}`} variant="ghost">
+                          {payoutActionLabel}
+                        </Button>
+                        <div className="rounded-2xl border border-dashed border-[var(--border-soft)] px-4 py-3 text-sm text-[var(--text-muted)]">
+                          {payoutActionHint}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 );
