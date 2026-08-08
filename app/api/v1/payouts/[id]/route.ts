@@ -8,13 +8,29 @@ function isNonEmpty(value: unknown): value is string {
 }
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
-  const detail = await getPayoutDetail(id);
-  if (!detail) return apiError("PAYOUT_NOT_FOUND", { message: "Payout not found.", status: 404 });
-  return NextResponse.json({ data: detail });
+  const workspaceId = new URL(request.url).searchParams.get("workspaceId") ?? undefined;
+
+  try {
+    const detail = await getPayoutDetail(id, workspaceId);
+    if (!detail) return apiError("PAYOUT_NOT_FOUND", { message: "Payout not found.", status: 404 });
+    return NextResponse.json({ data: detail });
+  } catch (error) {
+    const code = error instanceof Error ? error.message : "UNABLE_TO_LOAD_PAYOUT";
+    return apiErrorFromCode(
+      code,
+      {
+        WORKSPACE_SCOPE_MISMATCH: 409,
+      },
+      {
+        WORKSPACE_SCOPE_MISMATCH: "workspaceId does not match the payout workspace.",
+      },
+      { message: "Unable to load payout.", status: 500 },
+    );
+  }
 }
 
 export async function PATCH(

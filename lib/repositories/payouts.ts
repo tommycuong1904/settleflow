@@ -127,11 +127,12 @@ export type PayoutDetailData = {
  * Fetch payout detail with milestones, contributor, and latest proof.
  * Returns null if payout not found.
  */
-export async function getPayoutDetail(id: string): Promise<PayoutDetailData | null> {
+export async function getPayoutDetail(id: string, workspaceId?: string): Promise<PayoutDetailData | null> {
   const payout = await db.payout.findUnique({
     where: { id },
     select: {
       id: true,
+      workspaceId: true,
       title: true,
       contributorId: true,
       totalAmountUsdc: true,
@@ -173,6 +174,7 @@ export async function getPayoutDetail(id: string): Promise<PayoutDetailData | nu
   });
 
   if (!payout) return null;
+  if (workspaceId && payout.workspaceId !== workspaceId) throw new Error("WORKSPACE_SCOPE_MISMATCH");
 
   return {
     payout: {
