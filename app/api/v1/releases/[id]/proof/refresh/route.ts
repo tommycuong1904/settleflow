@@ -26,7 +26,7 @@ export async function POST(
 
   try {
     const result = await refreshReleaseProof(id, actorUserId, body as RefreshProofInput);
-    return NextResponse.json({ data: result });
+    return NextResponse.json(result);
   } catch (error) {
     const code = error instanceof Error ? error.message : "UNKNOWN_ERROR";
     const status = {

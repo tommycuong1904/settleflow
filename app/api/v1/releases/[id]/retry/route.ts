@@ -22,7 +22,7 @@ export async function POST(
 
   try {
     const result = await retryFailedRelease(id, triggeredByUserId);
-    return NextResponse.json({ data: result }, { status: 201 });
+    return NextResponse.json(result, { status: 201 });
   } catch (error) {
     const code = error instanceof Error ? error.message : "UNKNOWN_ERROR";
     const status = {
