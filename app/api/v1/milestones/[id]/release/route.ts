@@ -10,21 +10,21 @@ export async function POST(
     const body = await request.json();
     if (typeof body.triggeredByUserId !== "string" || body.triggeredByUserId.trim().length === 0 ||
         typeof body.amountUsdc !== "string" || body.amountUsdc.trim().length === 0) {
-      return NextResponse.json({ error: "triggeredByUserId and amountUsdc are required." }, { status: 400 });
+      return NextResponse.json({ error: "triggeredByUserId and amountUsdc are required.", code: "INVALID_RELEASE_PAYLOAD" }, { status: 400 });
     }
     const result = await queueMilestoneRelease(id, body.triggeredByUserId, body.amountUsdc);
     return NextResponse.json(result, { status: 201 });
   } catch (error) {
-    if (error instanceof SyntaxError) return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
+    if (error instanceof SyntaxError) return NextResponse.json({ error: "Invalid JSON body.", code: "INVALID_JSON_BODY" }, { status: 400 });
     if (error instanceof Error) {
-      if (error.message === "MILESTONE_NOT_FOUND") return NextResponse.json({ error: "Milestone not found." }, { status: 404 });
-      if (error.message === "USER_NOT_FOUND") return NextResponse.json({ error: "Release requester not found." }, { status: 404 });
-      if (error.message === "USER_NOT_ALLOWED_TO_RELEASE") return NextResponse.json({ error: "User is not allowed to release this milestone." }, { status: 403 });
-      if (error.message === "MILESTONE_NOT_APPROVED") return NextResponse.json({ error: "Milestone must be approved before release." }, { status: 409 });
-      if (error.message === "RELEASE_ALREADY_EXISTS") return NextResponse.json({ error: "A release already exists for this milestone." }, { status: 409 });
-      if (error.message === "DESTINATION_WALLET_MISSING") return NextResponse.json({ error: "Destination wallet is missing." }, { status: 400 });
-      if (error.message === "RELEASE_AMOUNT_MISMATCH") return NextResponse.json({ error: "Release amount must match the milestone amount." }, { status: 400 });
+      if (error.message === "MILESTONE_NOT_FOUND") return NextResponse.json({ error: "Milestone not found.", code: error.message }, { status: 404 });
+      if (error.message === "USER_NOT_FOUND") return NextResponse.json({ error: "Release requester not found.", code: error.message }, { status: 404 });
+      if (error.message === "USER_NOT_ALLOWED_TO_RELEASE") return NextResponse.json({ error: "User is not allowed to release this milestone.", code: error.message }, { status: 403 });
+      if (error.message === "MILESTONE_NOT_APPROVED") return NextResponse.json({ error: "Milestone must be approved before release.", code: error.message }, { status: 409 });
+      if (error.message === "RELEASE_ALREADY_EXISTS") return NextResponse.json({ error: "A release already exists for this milestone.", code: error.message }, { status: 409 });
+      if (error.message === "DESTINATION_WALLET_MISSING") return NextResponse.json({ error: "Destination wallet is missing.", code: error.message }, { status: 400 });
+      if (error.message === "RELEASE_AMOUNT_MISMATCH") return NextResponse.json({ error: "Release amount must match the milestone amount.", code: error.message }, { status: 400 });
     }
-    return NextResponse.json({ error: "Unable to queue release." }, { status: 500 });
+    return NextResponse.json({ error: "Unable to queue release.", code: "UNABLE_TO_QUEUE_RELEASE" }, { status: 500 });
   }
 }
