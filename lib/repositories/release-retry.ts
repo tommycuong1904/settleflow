@@ -18,6 +18,11 @@ export async function retryFailedRelease(releaseId: string, triggeredByUserId: s
         payout: {
           select: { workspaceId: true },
         },
+        proofs: {
+          orderBy: { createdAt: "desc" },
+          take: 1,
+          select: { id: true, status: true },
+        },
       },
     });
 
@@ -33,6 +38,10 @@ export async function retryFailedRelease(releaseId: string, triggeredByUserId: s
     if (latestForMilestone && latestForMilestone.id !== previous.id) {
       throw new Error("STALE_RELEASE_RETRY");
     }
+
+    const latestProof = previous.proofs[0];
+    if (!latestProof) throw new Error("PROOF_NOT_FOUND");
+    if (latestProof.status !== "failed") throw new Error("RETRY_REQUIRES_FAILED_PROOF");
 
     const user = await tx.user.findUnique({
       where: { id: triggeredByUserId },
