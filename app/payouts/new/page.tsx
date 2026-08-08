@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -65,7 +66,11 @@ function sanitizeAmountInput(value: string) {
   return value.replace(/[^0-9.]/g, "").replace(/(\..*)\./g, "$1");
 }
 
+const DEFAULT_WORKSPACE_ID = "ws-demo";
+const DEFAULT_CREATOR_ID = "user-owner";
+
 export default function CreatePayoutPage() {
+  const router = useRouter();
   const [contributors, setContributors] = useState<ContributorOption[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [payoutTitle, setPayoutTitle] = useState("Community Campaign Design");
@@ -213,8 +218,8 @@ export default function CreatePayoutPage() {
         headers: { "Content-Type": "application/json" },
         signal: controller.signal,
         body: JSON.stringify({
-          workspaceId: "ws-demo",
-          createdByUserId: "user-owner",
+          workspaceId: DEFAULT_WORKSPACE_ID,
+          createdByUserId: DEFAULT_CREATOR_ID,
           title: payoutTitle.trim(),
           contributorId,
           targetWalletAddress: walletAddress.trim(),
@@ -230,14 +235,19 @@ export default function CreatePayoutPage() {
       });
       const data = (await response.json()) as { payout?: { id: string }; error?: string };
       if (!response.ok) throw new Error(data.error ?? "Unable to create payout.");
+      const payoutId = data.payout?.id ?? "";
       setCreatedSummary({
-        payoutId: data.payout?.id ?? "",
+        payoutId,
         title: payoutTitle.trim(),
         contributorName: selectedContributor?.displayName ?? "Contributor",
         totalAmount,
         milestoneCount: milestones.length,
       });
       setSubmitState("created");
+      if (payoutId) {
+        router.push(`/payouts/${payoutId}`);
+        return;
+      }
     } catch (error) {
       setErrors({
         submit:

@@ -25,6 +25,8 @@ type PayoutDetailClientProps = {
   initialReleaseProof?: TransactionProof;
 };
 
+const DEFAULT_REVIEWER_ID = "user-reviewer";
+
 function getStorageKey(payoutId: string) {
   return `settleflow:release:${payoutId}`;
 }
@@ -115,7 +117,7 @@ export function PayoutDetailClient({
       const response = await fetch(`/api/v1/milestones/${milestoneId}/${decision === "approved" ? "approve" : "reject"}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reviewedByUserId: "user-reviewer" }),
+        body: JSON.stringify({ reviewedByUserId: DEFAULT_REVIEWER_ID }),
       });
       const data = (await response.json()) as { error?: string };
       if (!response.ok) throw new Error(data.error ?? `Unable to ${decision} milestone.`);

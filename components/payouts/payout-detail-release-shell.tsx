@@ -26,6 +26,8 @@ type PayoutDetailReleaseShellProps = {
   }) => void;
 };
 
+const DEFAULT_RELEASE_ACTOR_ID = "user-owner";
+
 export function PayoutDetailReleaseShell({
   payoutId,
   recipientAddress,
@@ -72,7 +74,7 @@ export function PayoutDetailReleaseShell({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          triggeredByUserId: "user-owner",
+          triggeredByUserId: DEFAULT_RELEASE_ACTOR_ID,
           amountUsdc: String(nextReleasableMilestone.amount),
         }),
       });
@@ -167,11 +169,11 @@ export function PayoutDetailReleaseShell({
               {ARC_CONFIG.executionMode === "real"
                 ? "Arc Testnet • Live execution path"
                 : ARC_CONFIG.executionMode === "demo"
-                  ? "Arc Testnet • Demo-confirmed execution path"
+                  ? "Arc Testnet • Staged execution path"
                   : "Arc Testnet • Mock execution path"}
             </p>
             <p className="mt-1 text-xs text-[var(--text-muted)]">
-              Recipient: {recipientAddress ?? "Demo wallet not provided yet"}
+              Recipient: {recipientAddress ?? "Recipient address not resolved yet"}
             </p>
           </div>
           <ReleasePanel
@@ -201,10 +203,10 @@ export function PayoutDetailReleaseShell({
           <TransactionProofCard proof={resolvedProof} />
         <div className="mt-4 rounded-2xl border border-dashed border-[var(--border-soft)] px-4 py-3 text-sm text-[var(--text-muted)]">
           {ARC_CONFIG.executionMode === "real"
-            ? "Real wallet execution is the intended final path, but the live Arc transfer wiring is not complete in this repo yet."
+            ? "Real wallet execution is the intended final path, but the live Arc transfer wiring is not complete in this repository yet."
             : ARC_CONFIG.executionMode === "demo"
-              ? "This proof is generated through the demo-confirmed Arc path so judges can verify release sequencing, recipient context, and proof attachment end-to-end."
-              : "This proof is generated through the mock Arc path to keep the review-to-release story demo-safe while the live settlement path remains scaffolded."}
+              ? "This proof comes from the current staged Arc path while live settlement execution is still being completed."
+              : "This proof comes from the current mock Arc path while live settlement execution is still being completed."}
         </div>
         </CardContent>
       </Card>
