@@ -2,11 +2,13 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+import { ActivityTimeline } from "@/components/payouts/activity-timeline";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { MilestoneRow } from "@/components/milestones/milestone-row";
 import { PayoutDetailReleaseShell } from "@/components/payouts/payout-detail-release-shell";
 import { Button } from "@/components/shared/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import type { ActivityItem } from "@/lib/models/activity-item";
 import type { Contributor } from "@/lib/models/contributor";
 import type { Milestone } from "@/lib/models/milestone";
 import type { Payout } from "@/lib/models/payout";
@@ -25,6 +27,7 @@ type PayoutDetailClientProps = {
   contributor?: Contributor;
   initialMilestones: Milestone[];
   initialReleaseProof?: TransactionProof;
+  initialActivity: ActivityItem[];
 };
 
 function getStorageKey(payoutId: string) {
@@ -36,6 +39,7 @@ export function PayoutDetailClient({
   contributor,
   initialMilestones,
   initialReleaseProof,
+  initialActivity,
 }: PayoutDetailClientProps) {
   const productContext = useResolvedProductContext();
   const [persistedRelease, setPersistedRelease] = useState<PersistedReleaseState | null>(() => {
@@ -323,16 +327,16 @@ export function PayoutDetailClient({
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-            {milestones.map((milestone) => (
-              <MilestoneRow
-                key={milestone.id}
-                milestone={milestone}
-                onApprove={handleApproveMilestone}
-                onReject={handleRejectMilestone}
-                onStatusChange={handleMilestoneStatusChange}
-              />
-            ))}
-          </div>
+              {milestones.map((milestone) => (
+                <MilestoneRow
+                  key={milestone.id}
+                  milestone={milestone}
+                  onApprove={handleApproveMilestone}
+                  onReject={handleRejectMilestone}
+                  onStatusChange={handleMilestoneStatusChange}
+                />
+              ))}
+            </div>
           </CardContent>
         </Card>
 
@@ -344,6 +348,8 @@ export function PayoutDetailClient({
           onReleaseSuccess={handleReleaseSuccess}
         />
       </div>
+
+      <ActivityTimeline items={initialActivity} />
     </div>
   );
 }

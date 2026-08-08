@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { PayoutDetailClient } from "@/components/payouts/payout-detail-client";
+import { getPayoutActivity } from "@/lib/repositories/payout-activity";
 import { getPayoutDetail } from "@/lib/repositories/payouts";
 
 type PayoutDetailPageProps = {
@@ -12,6 +13,7 @@ export default async function PayoutDetailPage({
 }: PayoutDetailPageProps) {
   const { id } = await params;
   const detail = await getPayoutDetail(id);
+  const activity = await getPayoutActivity(id);
 
   if (!detail) {
     notFound();
@@ -23,6 +25,7 @@ export default async function PayoutDetailPage({
       contributor={detail.contributor}
       initialMilestones={detail.milestones}
       initialReleaseProof={detail.releaseProof}
+      initialActivity={activity}
     />
   );
 }
