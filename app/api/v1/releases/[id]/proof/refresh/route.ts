@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { apiError, apiErrorFromCode } from "@/lib/api/errors";
 import { refreshReleaseProof, type RefreshProofInput } from "@/lib/repositories/release-proof";
 
 const statuses = new Set(["confirmed", "failed"]);
@@ -13,7 +14,7 @@ export async function POST(
     triggeredByUserId?: string;
   }) | null;
   if (!body || typeof body.status !== "string" || !statuses.has(body.status)) {
-    return NextResponse.json({ error: "status must be confirmed or failed.", code: "INVALID_PROOF_STATUS" }, { status: 400 });
+    return apiError("INVALID_PROOF_STATUS", { message: "status must be confirmed or failed.", status: 400 });
   }
 
   const actorUserId = typeof body.triggeredByUserId === "string" && body.triggeredByUserId.trim().length > 0
@@ -21,7 +22,7 @@ export async function POST(
     : body.refreshedByUserId;
 
   if (typeof actorUserId !== "string" || actorUserId.trim().length === 0) {
-    return NextResponse.json({ error: "triggeredByUserId is required.", code: "INVALID_PROOF_REFRESH_PAYLOAD" }, { status: 400 });
+    return apiError("INVALID_PROOF_REFRESH_PAYLOAD", { message: "triggeredByUserId is required.", status: 400 });
   }
 
   try {
@@ -29,16 +30,20 @@ export async function POST(
     return NextResponse.json(result);
   } catch (error) {
     const code = error instanceof Error ? error.message : "UNKNOWN_ERROR";
-    const status = {
-      RELEASE_NOT_FOUND: 404,
-      MILESTONE_NOT_FOUND: 404,
-      PROOF_NOT_FOUND: 404,
-      FORBIDDEN_PROOF_REFRESH: 403,
-      RELEASE_NOT_REFRESHABLE: 409,
-      PROOF_NOT_PENDING: 409,
-      TX_HASH_REQUIRED: 422,
-      FAILURE_REASON_REQUIRED: 422,
-    }[code] ?? 500;
-    return NextResponse.json({ error: code, code }, { status });
+    return apiErrorFromCode(
+      code,
+      {
+        RELEASE_NOT_FOUND: 404,
+        MILESTONE_NOT_FOUND: 404,
+        PROOF_NOT_FOUND: 404,
+        FORBIDDEN_PROOF_REFRESH: 403,
+        RELEASE_NOT_REFRESHABLE: 409,
+        PROOF_NOT_PENDING: 409,
+        TX_HASH_REQUIRED: 422,
+        FAILURE_REASON_REQUIRED: 422,
+      },
+      {},
+      { status: 500 },
+    );
   }
 }
