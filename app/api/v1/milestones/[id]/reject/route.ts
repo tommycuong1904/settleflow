@@ -8,10 +8,15 @@ export async function POST(
   const { id } = await params;
   try {
     const body = await request.json();
-    if (typeof body.reviewedByUserId !== "string" || body.reviewedByUserId.trim().length === 0) {
+    const reviewedByUserId =
+      typeof body.reviewedByUserId === "string" && body.reviewedByUserId.trim().length > 0
+        ? body.reviewedByUserId
+        : body.triggeredByUserId;
+
+    if (typeof reviewedByUserId !== "string" || reviewedByUserId.trim().length === 0) {
       return NextResponse.json({ error: "reviewedByUserId is required.", code: "INVALID_REVIEW_PAYLOAD" }, { status: 400 });
     }
-    const result = await reviewMilestone(id, body.reviewedByUserId, "rejected", body.comment);
+    const result = await reviewMilestone(id, reviewedByUserId, "rejected", body.comment);
     return NextResponse.json(result);
   } catch (error) {
     if (error instanceof SyntaxError) return NextResponse.json({ error: "Invalid JSON body.", code: "INVALID_JSON_BODY" }, { status: 400 });

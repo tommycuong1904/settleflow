@@ -8,12 +8,17 @@ export async function POST(
   const { id } = await params;
   try {
     const body = await request.json();
+    const activatedByUserId =
+      typeof body.activatedByUserId === "string" && body.activatedByUserId.trim().length > 0
+        ? body.activatedByUserId
+        : body.triggeredByUserId;
+
     if (typeof body.workspaceId !== "string" || body.workspaceId.trim().length === 0 ||
-        typeof body.activatedByUserId !== "string" || body.activatedByUserId.trim().length === 0) {
+        typeof activatedByUserId !== "string" || activatedByUserId.trim().length === 0) {
       return NextResponse.json({ error: "workspaceId and activatedByUserId are required.", code: "INVALID_ACTIVATE_PAYLOAD" }, { status: 400 });
     }
 
-    const payout = await activatePayout(id, body.workspaceId, body.activatedByUserId);
+    const payout = await activatePayout(id, body.workspaceId, activatedByUserId);
     return NextResponse.json({ payout });
   } catch (error) {
     if (error instanceof SyntaxError) {

@@ -12,10 +12,14 @@ export async function POST(
   const { id } = await params;
   try {
     const body = await request.json();
-    if (!required(body.submittedByUserId) || !required(body.summary)) {
+    const submittedByUserId = required(body.submittedByUserId)
+      ? body.submittedByUserId
+      : body.triggeredByUserId;
+
+    if (!required(submittedByUserId) || !required(body.summary)) {
       return NextResponse.json({ error: "submittedByUserId and summary are required.", code: "INVALID_SUBMIT_PAYLOAD" }, { status: 400 });
     }
-    const result = await submitMilestone(id, body);
+    const result = await submitMilestone(id, { ...body, submittedByUserId });
     return NextResponse.json(result, { status: 201 });
   } catch (error) {
     if (error instanceof SyntaxError) return NextResponse.json({ error: "Invalid JSON body.", code: "INVALID_JSON_BODY" }, { status: 400 });
