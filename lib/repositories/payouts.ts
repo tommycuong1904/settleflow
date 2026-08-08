@@ -113,6 +113,7 @@ export type PayoutDetailData = {
   }[];
   releaseProof?: {
     id: string;
+    releaseId?: string;
     milestoneId: string;
     txHash: string;
     network: string;
@@ -159,6 +160,7 @@ export async function getPayoutDetail(id: string): Promise<PayoutDetailData | nu
         take: 1,
         select: {
           id: true,
+          releaseId: true,
           milestoneId: true,
           txHash: true,
           network: true,
@@ -204,6 +206,7 @@ export async function getPayoutDetail(id: string): Promise<PayoutDetailData | nu
     releaseProof: payout.transactionProofs[0]
       ? {
           id: payout.transactionProofs[0].id,
+          releaseId: payout.transactionProofs[0].releaseId ?? undefined,
           milestoneId: payout.transactionProofs[0].milestoneId ?? "",
           txHash: payout.transactionProofs[0].txHash ?? "",
           network: payout.transactionProofs[0].network ?? "Arc Testnet",

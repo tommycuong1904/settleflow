@@ -60,7 +60,7 @@ export async function retryFailedRelease(releaseId: string, triggeredByUserId: s
         releaseId: release.id,
         status: "pending",
       },
-      select: { id: true, status: true },
+      select: { id: true, releaseId: true, status: true },
     });
 
     return { release, proof, previousReleaseId: previous.id };

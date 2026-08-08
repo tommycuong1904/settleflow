@@ -2,14 +2,16 @@ import { Button } from "@/components/shared/button";
 
 type ReviewControlsProps = {
   submittedAt?: string;
-  onApprove?: () => void;
-  onReject?: () => void;
+  onApprove?: () => void | Promise<void>;
+  onReject?: () => void | Promise<void>;
+  busy?: boolean;
 };
 
 export function ReviewControls({
   submittedAt,
   onApprove,
   onReject,
+  busy = false,
 }: ReviewControlsProps) {
   return (
     <div className="space-y-4">
@@ -20,11 +22,11 @@ export function ReviewControls({
         </p>
       </div>
       <div className="flex flex-wrap gap-2">
-        <Button variant="primary" onClick={onApprove}>
-          Approve
+        <Button variant="primary" onClick={onApprove} disabled={busy}>
+          {busy ? "Processing..." : "Approve"}
         </Button>
-        <Button variant="secondary" onClick={onReject}>
-          Reject
+        <Button variant="secondary" onClick={onReject} disabled={busy}>
+          {busy ? "Processing..." : "Reject"}
         </Button>
       </div>
       <p className="text-xs leading-6 text-[var(--text-muted)]">

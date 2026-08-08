@@ -11,8 +11,8 @@ import { formatUsdc } from "@/lib/utils/format";
 
 type MilestoneRowProps = {
   milestone: Milestone;
-  onApprove?: (milestoneId: string) => void;
-  onReject?: (milestoneId: string) => void;
+  onApprove?: (milestoneId: string) => void | Promise<void>;
+  onReject?: (milestoneId: string) => void | Promise<void>;
   onStatusChange?: (milestoneId: string, status: Milestone["status"]) => void;
 };
 
@@ -24,6 +24,7 @@ export function MilestoneRow({
 }: MilestoneRowProps) {
   const [status, setStatus] = useState(milestone.status);
   const [submitting, setSubmitting] = useState(false);
+  const [reviewBusy, setReviewBusy] = useState(false);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
 
   const isSubmitted = status === "submitted";
@@ -58,6 +59,30 @@ export function MilestoneRow({
     }
   }
 
+  async function handleApprove() {
+    if (!onApprove || reviewBusy) return;
+    setReviewBusy(true);
+    try {
+      await onApprove(milestone.id);
+      setStatus("approved");
+      onStatusChange?.(milestone.id, "approved");
+    } finally {
+      setReviewBusy(false);
+    }
+  }
+
+  async function handleReject() {
+    if (!onReject || reviewBusy) return;
+    setReviewBusy(true);
+    try {
+      await onReject(milestone.id);
+      setStatus("rejected");
+      onStatusChange?.(milestone.id, "rejected");
+    } finally {
+      setReviewBusy(false);
+    }
+  }
+
   return (
     <div className="sf-shell rounded-3xl p-5">
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
@@ -82,8 +107,9 @@ export function MilestoneRow({
               </div>
               <ReviewControls
                 submittedAt={milestone.submittedAt}
-                onApprove={() => onApprove?.(milestone.id)}
-                onReject={() => onReject?.(milestone.id)}
+                onApprove={handleApprove}
+                onReject={handleReject}
+                busy={reviewBusy}
               />
             </div>
           ) : null}

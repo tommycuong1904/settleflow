@@ -9,7 +9,10 @@ import {
   type ReleasePanelStatus,
 } from "@/components/payouts/release-panel";
 import { TransactionProofCard } from "@/components/payouts/transaction-proof-card";
+import { Button } from "@/components/shared/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import type { Milestone } from "@/lib/models/milestone";
 import type { TransactionProof } from "@/lib/models/transaction-proof";
 import { DEFAULT_PRODUCT_CONTEXT } from "@/lib/runtime/default-product-context";
@@ -35,14 +38,34 @@ export function PayoutDetailReleaseShell({
   onReleaseSuccess,
 }: PayoutDetailReleaseShellProps) {
   const [releaseStatus, setReleaseStatus] = useState<ReleasePanelStatus>(
-    releaseProof ? "confirmed" : "idle",
+    releaseProof?.status === "failed"
+      ? "failed"
+      : releaseProof?.status === "pending"
+        ? "submitting"
+        : releaseProof?.status === "confirmed"
+          ? "confirmed"
+          : "idle",
   );
   const [releaseError, setReleaseError] = useState<string | null>(null);
+  const [retryingRelease, setRetryingRelease] = useState(false);
+  const [refreshingProof, setRefreshingProof] = useState(false);
+  const [confirmationTxHash, setConfirmationTxHash] = useState("");
+  const [failureReason, setFailureReason] = useState("");
   const [activeProof, setActiveProof] = useState<TransactionProof | undefined>(releaseProof);
 
   const resolvedProof = activeProof ?? releaseProof;
+  const proofMatchesCurrentMilestone =
+    resolvedProof && nextReleasableMilestone
+      ? resolvedProof.milestoneId === nextReleasableMilestone.id
+      : Boolean(resolvedProof);
   const effectiveReleaseStatus =
-    resolvedProof && releaseStatus !== "failed" ? "confirmed" : releaseStatus;
+    resolvedProof && proofMatchesCurrentMilestone
+      ? resolvedProof.status === "failed"
+        ? "failed"
+        : resolvedProof.status === "pending"
+          ? "submitting"
+          : "confirmed"
+      : releaseStatus;
 
   const statusText = useMemo(() => {
     switch (effectiveReleaseStatus) {
@@ -83,6 +106,7 @@ export function PayoutDetailReleaseShell({
         release?: { id: string; status: string; txHash?: string };
         proof?: {
           id: string;
+          releaseId?: string;
           milestoneId: string;
           txHash?: string;
           network?: string;
@@ -113,6 +137,7 @@ export function PayoutDetailReleaseShell({
             confirmedAt: data.proof?.confirmedAt,
           },
           milestoneId: nextReleasableMilestone.id,
+          releaseId: data.proof?.releaseId ?? data.release?.id,
         },
       );
 
@@ -131,12 +156,142 @@ export function PayoutDetailReleaseShell({
         releasedAt,
       });
 
-      setReleaseStatus("confirmed");
+      setReleaseStatus(result.status === "failed" ? "failed" : result.status === "pending" ? "submitting" : "confirmed");
     } catch (err) {
       setReleaseError(
         err instanceof Error ? err.message : "Release request failed.",
       );
       setReleaseStatus("failed");
+    }
+  }
+
+  async function handleRetryRelease() {
+    if (!resolvedProof?.releaseId || retryingRelease) {
+      return;
+    }
+
+    setReleaseError(null);
+    setRetryingRelease(true);
+
+    try {
+      const response = await fetch(`/api/v1/releases/${resolvedProof.releaseId}/retry`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ triggeredByUserId: DEFAULT_PRODUCT_CONTEXT.ownerUserId }),
+      });
+
+      const data = (await response.json()) as {
+        error?: string;
+        release?: { id: string; status: string };
+        proof?: { id: string; releaseId?: string; status: string };
+      };
+
+      if (!response.ok || data.error) {
+        throw new Error(data.error ?? "Retry release request failed.");
+      }
+
+      setActiveProof((current) =>
+        current
+          ? {
+              ...current,
+              id: data.proof?.id ?? current.id,
+              releaseId: data.proof?.releaseId ?? data.release?.id ?? current.releaseId,
+              status: "pending",
+              txHash: "",
+              explorerUrl: "",
+              confirmedAt: undefined,
+            }
+          : current,
+      );
+      setConfirmationTxHash("");
+      setFailureReason("");
+      setReleaseStatus("submitting");
+    } catch (err) {
+      setReleaseError(err instanceof Error ? err.message : "Retry release request failed.");
+      setReleaseStatus("failed");
+    } finally {
+      setRetryingRelease(false);
+    }
+  }
+
+  async function handleRefreshProof(status: "confirmed" | "failed") {
+    if (!resolvedProof?.releaseId || refreshingProof) {
+      return;
+    }
+
+    const txHash = confirmationTxHash.trim();
+    const reason = failureReason.trim();
+
+    if (status === "confirmed" && txHash.length === 0) {
+      setReleaseError("Tx hash is required to confirm settlement proof.");
+      return;
+    }
+
+    if (status === "failed" && reason.length === 0) {
+      setReleaseError("Failure reason is required to mark settlement proof as failed.");
+      return;
+    }
+
+    setReleaseError(null);
+    setRefreshingProof(true);
+
+    try {
+      const response = await fetch(`/api/v1/releases/${resolvedProof.releaseId}/proof/refresh`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          refreshedByUserId: DEFAULT_PRODUCT_CONTEXT.ownerUserId,
+          status,
+          txHash: status === "confirmed" ? txHash : undefined,
+          network: status === "confirmed" ? "Arc Testnet" : undefined,
+          failureReason: status === "failed" ? reason : undefined,
+        }),
+      });
+
+      const data = (await response.json()) as {
+        error?: string;
+        proof?: {
+          id: string;
+          releaseId?: string;
+          milestoneId?: string;
+          txHash?: string | null;
+          network?: string | null;
+          status: "pending" | "confirmed" | "failed";
+          explorerUrl?: string | null;
+          confirmedAt?: string | null;
+          failureReason?: string | null;
+        };
+      };
+
+      if (!response.ok || data.error || !data.proof) {
+        throw new Error(data.error ?? "Proof refresh request failed.");
+      }
+
+      const proof = data.proof;
+
+      setActiveProof((current) =>
+        current
+          ? {
+              ...current,
+              id: proof.id ?? current.id,
+              releaseId: proof.releaseId ?? resolvedProof.releaseId,
+              milestoneId: proof.milestoneId ?? current.milestoneId,
+              status: proof.status,
+              txHash: proof.txHash ?? "",
+              network: proof.network ?? current.network,
+              explorerUrl: proof.explorerUrl ?? "",
+              confirmedAt: proof.confirmedAt ?? undefined,
+            }
+          : current,
+      );
+      setReleaseStatus(status === "failed" ? "failed" : "confirmed");
+      if (status === "confirmed") setConfirmationTxHash("");
+      if (status === "failed") setFailureReason("");
+    } catch (err) {
+      setReleaseError(err instanceof Error ? err.message : "Proof refresh request failed.");
+      setReleaseStatus("failed");
+    } finally {
+      setRefreshingProof(false);
     }
   }
 
@@ -200,6 +355,67 @@ export function PayoutDetailReleaseShell({
         </CardHeader>
         <CardContent>
           <TransactionProofCard proof={resolvedProof} />
+          {resolvedProof?.status === "pending" && resolvedProof.releaseId ? (
+            <div className="mt-4 space-y-4 rounded-2xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.42)] p-4">
+              <div>
+                <p className="text-sm font-semibold text-white">Refresh pending settlement</p>
+                <p className="mt-1 text-sm text-[var(--text-muted)]">
+                  Confirm the proof when the Arc transfer lands, or mark it failed to unblock a retry.
+                </p>
+              </div>
+              <div className="grid gap-4 lg:grid-cols-2">
+                <div className="space-y-3">
+                  <label className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                    Confirm with tx hash
+                  </label>
+                  <Input
+                    value={confirmationTxHash}
+                    onChange={(event) => setConfirmationTxHash(event.target.value)}
+                    placeholder="0x..."
+                  />
+                  <Button
+                    variant="secondary"
+                    onClick={() => {
+                      void handleRefreshProof("confirmed");
+                    }}
+                    disabled={refreshingProof}
+                  >
+                    {refreshingProof ? "Updating..." : "Mark confirmed"}
+                  </Button>
+                </div>
+                <div className="space-y-3">
+                  <label className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                    Mark failed
+                  </label>
+                  <Textarea
+                    value={failureReason}
+                    onChange={(event) => setFailureReason(event.target.value)}
+                    placeholder="Why did this settlement fail?"
+                    className="min-h-24"
+                  />
+                  <Button
+                    variant="secondary"
+                    onClick={() => {
+                      void handleRefreshProof("failed");
+                    }}
+                    disabled={refreshingProof}
+                  >
+                    {refreshingProof ? "Updating..." : "Mark failed"}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ) : null}
+          {resolvedProof?.status === "failed" && resolvedProof.releaseId ? (
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <Button variant="secondary" onClick={() => { void handleRetryRelease(); }} disabled={retryingRelease}>
+                {retryingRelease ? "Retrying..." : "Retry release"}
+              </Button>
+              <p className="text-sm text-[var(--text-muted)]">
+                Queue a fresh release attempt for this failed settlement.
+              </p>
+            </div>
+          ) : null}
         <div className="mt-4 rounded-2xl border border-dashed border-[var(--border-soft)] px-4 py-3 text-sm text-[var(--text-muted)]">
           {ARC_CONFIG.executionMode === "real"
             ? "Real wallet execution is the intended final path, but the live Arc transfer wiring is not complete in this repository yet."

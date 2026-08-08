@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getPayoutById } from "@/lib/repositories/payouts";
+import { getPayoutDetail } from "@/lib/repositories/payouts";
 import { updatePayoutDraft } from "@/lib/repositories/payout-editing";
 
 function isNonEmpty(value: unknown): value is string {
@@ -7,14 +7,13 @@ function isNonEmpty(value: unknown): value is string {
 }
 
 export async function GET(
-  request: Request,
+  _request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
-  const { searchParams } = new URL(request.url);
-  const payout = await getPayoutById(id, searchParams.get("workspaceId") ?? undefined);
-  if (!payout) return NextResponse.json({ error: "Payout not found." }, { status: 404 });
-  return NextResponse.json({ data: payout });
+  const detail = await getPayoutDetail(id);
+  if (!detail) return NextResponse.json({ error: "Payout not found." }, { status: 404 });
+  return NextResponse.json({ data: detail });
 }
 
 export async function PATCH(

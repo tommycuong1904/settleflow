@@ -55,7 +55,7 @@ export async function queueMilestoneRelease(
     });
     const proof = await tx.transactionProof.create({
       data: { payoutId: milestone.payout.id, milestoneId, releaseId: release.id, status: "pending" },
-      select: { id: true, status: true },
+      select: { id: true, releaseId: true, status: true },
     });
     return { release, proof };
   });

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { StatCard } from "@/components/dashboard/stat-card";
 import { MilestoneRow } from "@/components/milestones/milestone-row";
@@ -38,7 +38,7 @@ export function PayoutDetailClient({
   initialReleaseProof,
 }: PayoutDetailClientProps) {
   const [persistedRelease, setPersistedRelease] = useState<PersistedReleaseState | null>(() => {
-    if (typeof window === "undefined") return null;
+    if (typeof window === "undefined" || initialReleaseProof) return null;
 
     const stored = window.sessionStorage.getItem(getStorageKey(payout.id));
     if (!stored) return null;
@@ -57,6 +57,19 @@ export function PayoutDetailClient({
   const [reviewingMilestoneId, setReviewingMilestoneId] = useState<string | null>(null);
   const [activatingPayout, setActivatingPayout] = useState(false);
 
+  useEffect(() => {
+    if (!initialReleaseProof || !persistedRelease) {
+      return;
+    }
+
+    if (persistedRelease.proof.id === initialReleaseProof.id) {
+      return;
+    }
+
+    setPersistedRelease(null);
+    window.sessionStorage.removeItem(getStorageKey(payout.id));
+  }, [initialReleaseProof, payout.id, persistedRelease]);
+
   const milestones = useMemo(() => {
     if (!persistedRelease) {
       return milestoneState;
@@ -73,7 +86,7 @@ export function PayoutDetailClient({
     );
   }, [milestoneState, persistedRelease]);
 
-  const releaseProof = persistedRelease?.proof ?? initialReleaseProof;
+  const releaseProof = initialReleaseProof ?? persistedRelease?.proof;
 
   const latestReleasedMilestone = releaseProof
     ? milestones.find((milestone) => milestone.id === releaseProof.milestoneId)
@@ -184,11 +197,11 @@ export function PayoutDetailClient({
   }
 
   function handleApproveMilestone(milestoneId: string) {
-    void reviewMilestone(milestoneId, "approved");
+    return reviewMilestone(milestoneId, "approved");
   }
 
   function handleRejectMilestone(milestoneId: string) {
-    void reviewMilestone(milestoneId, "rejected");
+    return reviewMilestone(milestoneId, "rejected");
   }
 
   function handleReleaseSuccess(payload: { milestoneId: string; proof: TransactionProof; releasedAt: string }) {
