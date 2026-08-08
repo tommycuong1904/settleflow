@@ -58,7 +58,7 @@ export default function Home() {
         <div className="grid gap-8 xl:grid-cols-[1.1fr_0.9fr] xl:items-center">
           <div className="max-w-3xl space-y-5">
             <span className="inline-flex rounded-full border border-cyan-300/30 bg-cyan-400/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-cyan-200">
-              Build on Arc · Payout workflow demo
+              Build on Arc · Milestone payout workflow
             </span>
             <div className="space-y-3">
               <h1 className="max-w-3xl text-4xl font-semibold tracking-tight text-white sm:text-5xl">

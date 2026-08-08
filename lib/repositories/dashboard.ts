@@ -155,7 +155,7 @@ function mapProof(row: {
  * so the dashboard page can render without any mock data.
  *
  * If workspaceId is provided, filters to that workspace only.
- * Otherwise returns all data (demo mode).
+ * Otherwise returns all available data for the current unscoped runtime.
  */
 export async function getDashboardData(
   workspaceId?: string,
