@@ -31,6 +31,14 @@ export default async function DashboardPage() {
     (sum, milestone) => sum + milestone.amount,
     0,
   );
+  const nextActionPayoutId = pendingApprovals[0]?.payoutId ?? releaseReadyMilestones[0]?.payoutId ?? activePayouts[0]?.id;
+  const nextActionLabel = pendingApprovals[0]
+    ? "Review next milestone"
+    : releaseReadyMilestones[0]
+      ? "Release approved milestone"
+      : activePayouts[0]
+        ? "Resume active payout"
+        : null;
 
   return (
     <div className="flex flex-col gap-8">
@@ -50,9 +58,16 @@ export default async function DashboardPage() {
             </p>
           </div>
         </div>
-        <Button href="/payouts/new" variant="primary">
-          New Payout
-        </Button>
+        <div className="flex flex-wrap gap-3">
+          {nextActionPayoutId && nextActionLabel ? (
+            <Button href={`/payouts/${nextActionPayoutId}`} variant="secondary">
+              {nextActionLabel}
+            </Button>
+          ) : null}
+          <Button href="/payouts/new" variant="primary">
+            New Payout
+          </Button>
+        </div>
       </div>
 
       <section className="sf-shell rounded-3xl p-6 md:p-7">
