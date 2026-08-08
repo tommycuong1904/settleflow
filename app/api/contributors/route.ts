@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { listContributors } from "@/lib/repositories/contributors";
-import { DEFAULT_PRODUCT_CONTEXT } from "@/lib/runtime/default-product-context";
+import { resolveWorkspaceId } from "@/lib/runtime/product-context-server";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -11,7 +11,7 @@ export async function GET(request: Request) {
   }
 
   const contributors = await listContributors({
-    workspaceId: searchParams.get("workspaceId") ?? DEFAULT_PRODUCT_CONTEXT.workspaceId,
+    workspaceId: resolveWorkspaceId(searchParams.get("workspaceId")),
     status: status as "active" | "archived" | undefined,
     search: searchParams.get("search") ?? undefined,
   });

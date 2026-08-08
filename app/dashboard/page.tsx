@@ -4,12 +4,18 @@ import { Button } from "@/components/shared/button";
 import { EmptyState } from "@/components/shared/empty-state";
 import { SectionCard } from "@/components/shared/section-card";
 import { getDashboardData } from "@/lib/repositories/dashboard";
-import { DEFAULT_PRODUCT_CONTEXT } from "@/lib/runtime/default-product-context";
+import { resolveWorkspaceId } from "@/lib/runtime/product-context-server";
 import { formatUsdc, shortenAddress } from "@/lib/utils/format";
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ workspaceId?: string }>;
+}) {
+  const params = await searchParams;
+  const workspaceId = resolveWorkspaceId(params?.workspaceId);
   const { payouts, milestones, contributors, transactionProofs } =
-    await getDashboardData(DEFAULT_PRODUCT_CONTEXT.workspaceId);
+    await getDashboardData(workspaceId);
 
   const activePayouts = payouts.filter((payout) =>
     ["active", "partially_released"].includes(payout.status),
@@ -60,11 +66,11 @@ export default async function DashboardPage() {
         </div>
         <div className="flex flex-wrap gap-3">
           {nextActionPayoutId && nextActionLabel ? (
-            <Button href={`/payouts/${nextActionPayoutId}`} variant="secondary">
+            <Button href={`/payouts/${nextActionPayoutId}?workspaceId=${encodeURIComponent(workspaceId)}`} variant="secondary">
               {nextActionLabel}
             </Button>
           ) : null}
-          <Button href="/payouts/new" variant="primary">
+          <Button href={`/payouts/new?workspaceId=${encodeURIComponent(workspaceId)}`} variant="primary">
             New Payout
           </Button>
         </div>
@@ -163,7 +169,7 @@ export default async function DashboardPage() {
                         </p>
                       </div>
                       <div className="flex min-w-[180px] flex-col gap-3">
-                        <Button href={`/payouts/${milestone.payoutId}`} variant="primary">
+                        <Button href={`/payouts/${milestone.payoutId}?workspaceId=${encodeURIComponent(workspaceId)}`} variant="primary">
                           Review milestone
                         </Button>
                         <div className="rounded-2xl border border-dashed border-[var(--border-soft)] px-4 py-3 text-sm text-[var(--text-muted)]">

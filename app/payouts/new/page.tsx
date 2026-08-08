@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { DEFAULT_PRODUCT_CONTEXT } from "@/lib/runtime/default-product-context";
+import { useResolvedProductContext } from "@/lib/runtime/product-context-client";
 import { formatUsdc, shortenAddress } from "@/lib/utils/format";
 
 type MilestoneDraft = {
@@ -67,8 +67,9 @@ function sanitizeAmountInput(value: string) {
   return value.replace(/[^0-9.]/g, "").replace(/(\..*)\./g, "$1");
 }
 
-export default function CreatePayoutPage() {
+function CreatePayoutPageContent() {
   const router = useRouter();
+  const productContext = useResolvedProductContext();
   const [contributors, setContributors] = useState<ContributorOption[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [payoutTitle, setPayoutTitle] = useState("Community Campaign Design");
@@ -89,7 +90,7 @@ export default function CreatePayoutPage() {
 
   useEffect(() => {
     let cancelled = false;
-    void fetch(`/api/v1/contributors?status=active&workspaceId=${DEFAULT_PRODUCT_CONTEXT.workspaceId}`)
+    void fetch(`/api/v1/contributors?status=active&workspaceId=${encodeURIComponent(productContext.workspaceId)}`)
       .then(async (response) => {
         const data = (await response.json()) as { data?: ContributorOption[]; error?: string };
         if (!response.ok) throw new Error(data.error ?? "Unable to load contributors.");
@@ -106,7 +107,7 @@ export default function CreatePayoutPage() {
         if (!cancelled) setLoadError(error instanceof Error ? error.message : "Unable to load contributors.");
       });
     return () => { cancelled = true; };
-  }, []);
+  }, [productContext.workspaceId]);
 
   const totalAmount = useMemo(
     () =>
@@ -216,8 +217,8 @@ export default function CreatePayoutPage() {
         headers: { "Content-Type": "application/json" },
         signal: controller.signal,
         body: JSON.stringify({
-          workspaceId: DEFAULT_PRODUCT_CONTEXT.workspaceId,
-          createdByUserId: DEFAULT_PRODUCT_CONTEXT.ownerUserId,
+          workspaceId: productContext.workspaceId,
+          createdByUserId: productContext.ownerUserId,
           title: payoutTitle.trim(),
           contributorId,
           targetWalletAddress: walletAddress.trim(),
@@ -243,7 +244,7 @@ export default function CreatePayoutPage() {
       });
       setSubmitState("created");
       if (payoutId) {
-        router.push(`/payouts/${payoutId}`);
+        router.push(`/payouts/${payoutId}?workspaceId=${encodeURIComponent(productContext.workspaceId)}`);
         return;
       }
     } catch (error) {
@@ -638,5 +639,13 @@ export default function CreatePayoutPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+export default function CreatePayoutPage() {
+  return (
+    <Suspense fallback={null}>
+      <CreatePayoutPageContent />
+    </Suspense>
   );
 }
