@@ -13,7 +13,7 @@ export async function POST(request: Request) {
       body.targetWalletAddress, body.totalAmountUsdc];
 
     if (required.some((value) => !isNonEmpty(value)) || milestones.length === 0) {
-      return NextResponse.json({ error: "Invalid payout payload." }, { status: 400 });
+      return NextResponse.json({ error: "Invalid payout payload.", code: "INVALID_PAYOUT_PAYLOAD" }, { status: 400 });
     }
 
     if (body.currency && body.currency !== "USDC") {
@@ -37,18 +37,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ payout }, { status: 201 });
   } catch (error) {
     if (error instanceof SyntaxError) {
-      return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
+      return NextResponse.json({ error: "Invalid JSON body.", code: "INVALID_JSON_BODY" }, { status: 400 });
     }
     if (error instanceof Error && error.message === "USER_NOT_FOUND") {
-      return NextResponse.json({ error: "Creator not found." }, { status: 404 });
+      return NextResponse.json({ error: "Creator not found.", code: error.message }, { status: 404 });
     }
     if (error instanceof Error && error.message === "USER_NOT_ALLOWED_TO_CREATE_PAYOUT") {
-      return NextResponse.json({ error: "User is not allowed to create payouts in this workspace." }, { status: 403 });
+      return NextResponse.json({ error: "User is not allowed to create payouts in this workspace.", code: error.message }, { status: 403 });
     }
     if (error instanceof Error && error.message === "CONTRIBUTOR_NOT_FOUND") {
-      return NextResponse.json({ error: "Contributor not found." }, { status: 404 });
+      return NextResponse.json({ error: "Contributor not found.", code: error.message }, { status: 404 });
     }
-    return NextResponse.json({ error: "Unable to create payout." }, { status: 500 });
+    return NextResponse.json({ error: "Unable to create payout.", code: "UNABLE_TO_CREATE_PAYOUT" }, { status: 500 });
   }
 }
 
