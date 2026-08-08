@@ -11,7 +11,7 @@ import type { Contributor } from "@/lib/models/contributor";
 import type { Milestone } from "@/lib/models/milestone";
 import type { Payout } from "@/lib/models/payout";
 import type { TransactionProof } from "@/lib/models/transaction-proof";
-import { DEFAULT_PRODUCT_CONTEXT } from "@/lib/runtime/default-product-context";
+import { useResolvedProductContext } from "@/lib/runtime/product-context-client";
 import { formatUsdc, shortenAddress } from "@/lib/utils/format";
 
 type PersistedReleaseState = {
@@ -37,6 +37,7 @@ export function PayoutDetailClient({
   initialMilestones,
   initialReleaseProof,
 }: PayoutDetailClientProps) {
+  const productContext = useResolvedProductContext();
   const [persistedRelease, setPersistedRelease] = useState<PersistedReleaseState | null>(() => {
     if (typeof window === "undefined" || initialReleaseProof) return null;
 
@@ -145,8 +146,8 @@ export function PayoutDetailClient({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          workspaceId: DEFAULT_PRODUCT_CONTEXT.workspaceId,
-          activatedByUserId: DEFAULT_PRODUCT_CONTEXT.ownerUserId,
+          workspaceId: productContext.workspaceId,
+          activatedByUserId: productContext.ownerUserId,
         }),
       });
       const data = (await response.json()) as { error?: string; payout?: { status?: Payout["status"] } };
@@ -180,7 +181,7 @@ export function PayoutDetailClient({
       const response = await fetch(`/api/v1/milestones/${milestoneId}/${decision === "approved" ? "approve" : "reject"}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reviewedByUserId: DEFAULT_PRODUCT_CONTEXT.reviewerUserId }),
+        body: JSON.stringify({ reviewedByUserId: productContext.reviewerUserId }),
       });
       const data = (await response.json()) as { error?: string };
       if (!response.ok) throw new Error(data.error ?? `Unable to ${decision} milestone.`);

@@ -6,7 +6,7 @@ import { MilestoneStatusBadge } from "@/components/milestones/milestone-status-b
 import { ReviewControls } from "@/components/milestones/review-controls";
 import { Button } from "@/components/shared/button";
 import type { Milestone } from "@/lib/models/milestone";
-import { DEFAULT_PRODUCT_CONTEXT } from "@/lib/runtime/default-product-context";
+import { useResolvedProductContext } from "@/lib/runtime/product-context-client";
 import { formatUsdc } from "@/lib/utils/format";
 
 type MilestoneRowProps = {
@@ -22,6 +22,7 @@ export function MilestoneRow({
   onReject,
   onStatusChange,
 }: MilestoneRowProps) {
+  const productContext = useResolvedProductContext();
   const [status, setStatus] = useState(milestone.status);
   const [submitting, setSubmitting] = useState(false);
   const [reviewBusy, setReviewBusy] = useState(false);
@@ -43,7 +44,7 @@ export function MilestoneRow({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          submittedByUserId: DEFAULT_PRODUCT_CONTEXT.contributorUserId,
+          submittedByUserId: productContext.contributorUserId,
           summary: `Submitted via SettleFlow payout detail for ${milestone.title}.`,
         }),
       });

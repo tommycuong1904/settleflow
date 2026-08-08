@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { Milestone } from "@/lib/models/milestone";
 import type { TransactionProof } from "@/lib/models/transaction-proof";
-import { DEFAULT_PRODUCT_CONTEXT } from "@/lib/runtime/default-product-context";
+import { useResolvedProductContext } from "@/lib/runtime/product-context-client";
 import { formatUsdc } from "@/lib/utils/format";
 
 type PayoutDetailReleaseShellProps = {
@@ -37,6 +37,7 @@ export function PayoutDetailReleaseShell({
   releaseProof,
   onReleaseSuccess,
 }: PayoutDetailReleaseShellProps) {
+  const productContext = useResolvedProductContext();
   const [releaseStatus, setReleaseStatus] = useState<ReleasePanelStatus>(
     releaseProof?.status === "failed"
       ? "failed"
@@ -96,7 +97,7 @@ export function PayoutDetailReleaseShell({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          triggeredByUserId: DEFAULT_PRODUCT_CONTEXT.ownerUserId,
+          triggeredByUserId: productContext.ownerUserId,
           amountUsdc: String(nextReleasableMilestone.amount),
         }),
       });
@@ -177,7 +178,7 @@ export function PayoutDetailReleaseShell({
       const response = await fetch(`/api/v1/releases/${resolvedProof.releaseId}/retry`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ triggeredByUserId: DEFAULT_PRODUCT_CONTEXT.ownerUserId }),
+        body: JSON.stringify({ triggeredByUserId: productContext.ownerUserId }),
       });
 
       const data = (await response.json()) as {
@@ -240,7 +241,7 @@ export function PayoutDetailReleaseShell({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          refreshedByUserId: DEFAULT_PRODUCT_CONTEXT.ownerUserId,
+          refreshedByUserId: productContext.ownerUserId,
           status,
           txHash: status === "confirmed" ? txHash : undefined,
           network: status === "confirmed" ? "Arc Testnet" : undefined,
