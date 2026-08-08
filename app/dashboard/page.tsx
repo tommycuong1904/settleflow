@@ -270,12 +270,22 @@ export default async function DashboardPage() {
                   const milestone = milestones.find(
                     (item) => item.id === proof.milestoneId,
                   );
+                  const proofActionLabel = proof.status === "failed"
+                    ? "Retry payout flow"
+                    : proof.status === "pending"
+                      ? "Track settlement"
+                      : "Open payout proof";
+                  const proofActionHint = proof.status === "failed"
+                    ? "Open the payout to inspect the failed release and decide whether to retry."
+                    : proof.status === "pending"
+                      ? "Open the payout to monitor confirmation and refresh proof state."
+                      : "Open the payout detail to review the full settlement record."
                   return (
                     <div
                       key={proof.id}
                       className="rounded-3xl border border-[var(--border-soft)] bg-[rgba(8,15,31,0.72)] p-5"
                     >
-                      <div className="space-y-2">
+                      <div className="space-y-3">
                         <div className="flex flex-wrap items-center gap-3">
                           <p className="text-lg font-semibold text-white">
                             {milestone?.title ?? "Settlement event"}
@@ -294,6 +304,16 @@ export default async function DashboardPage() {
                                 ? "No confirmed transaction hash"
                                 : "Proof pending"}
                         </p>
+                        {milestone?.payoutId ? (
+                          <div className="space-y-3 pt-1">
+                            <Button href={`/payouts/${milestone.payoutId}`} variant="ghost">
+                              {proofActionLabel}
+                            </Button>
+                            <div className="rounded-2xl border border-dashed border-[var(--border-soft)] px-4 py-3 text-sm text-[var(--text-muted)]">
+                              {proofActionHint}
+                            </div>
+                          </div>
+                        ) : null}
                       </div>
                     </div>
                   );
