@@ -17,7 +17,7 @@ export async function POST(request: Request) {
     }
 
     if (body.currency && body.currency !== "USDC") {
-      return NextResponse.json({ error: "Only USDC is supported." }, { status: 400 });
+      return NextResponse.json({ error: "Only USDC is supported.", code: "UNSUPPORTED_PAYOUT_CURRENCY" }, { status: 400 });
     }
 
     const milestonePayload = milestones as Array<{
@@ -30,7 +30,7 @@ export async function POST(request: Request) {
     if (milestonePayload.some((milestone) =>
       !isNonEmpty(milestone.title) || !isNonEmpty(milestone.description) ||
       !isNonEmpty(milestone.amountUsdc) || !Number.isInteger(milestone.sequence))) {
-      return NextResponse.json({ error: "Invalid milestone payload." }, { status: 400 });
+      return NextResponse.json({ error: "Invalid milestone payload.", code: "INVALID_MILESTONE_PAYLOAD" }, { status: 400 });
     }
 
     const payout = await createPayout({ ...body, currency: "USDC", milestones });
