@@ -8,11 +8,12 @@ export async function POST(
   const { id } = await params;
   try {
     const body = await request.json();
-    if (typeof body.workspaceId !== "string" || body.workspaceId.trim().length === 0) {
-      return NextResponse.json({ error: "workspaceId is required." }, { status: 400 });
+    if (typeof body.workspaceId !== "string" || body.workspaceId.trim().length === 0 ||
+        typeof body.activatedByUserId !== "string" || body.activatedByUserId.trim().length === 0) {
+      return NextResponse.json({ error: "workspaceId and activatedByUserId are required." }, { status: 400 });
     }
 
-    const payout = await activatePayout(id, body.workspaceId);
+    const payout = await activatePayout(id, body.workspaceId, body.activatedByUserId);
     return NextResponse.json({ payout });
   } catch (error) {
     if (error instanceof SyntaxError) {
@@ -21,6 +22,12 @@ export async function POST(
     if (error instanceof Error) {
       if (error.message === "PAYOUT_NOT_FOUND") {
         return NextResponse.json({ error: "Payout not found." }, { status: 404 });
+      }
+      if (error.message === "USER_NOT_FOUND") {
+        return NextResponse.json({ error: "Activator not found." }, { status: 404 });
+      }
+      if (error.message === "USER_NOT_ALLOWED_TO_ACTIVATE_PAYOUT") {
+        return NextResponse.json({ error: "User is not allowed to activate payouts in this workspace." }, { status: 403 });
       }
       if (error.message === "PAYOUT_NOT_DRAFT") {
         return NextResponse.json({ error: "Only draft payouts can be activated." }, { status: 409 });

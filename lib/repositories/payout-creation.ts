@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db/client";
+import { hasWorkspaceRole } from "@/lib/repositories/permissions";
 
 export type CreatePayoutInput = {
   workspaceId: string;
@@ -20,6 +21,15 @@ export type CreatePayoutInput = {
 
 export async function createPayout(input: CreatePayoutInput) {
   return db.$transaction(async (tx: Prisma.TransactionClient) => {
+    const creator = await tx.user.findUnique({
+      where: { id: input.createdByUserId },
+      select: { id: true },
+    });
+    if (!creator) throw new Error("USER_NOT_FOUND");
+
+    const canCreate = await hasWorkspaceRole(tx, input.workspaceId, input.createdByUserId, ["owner", "ops"]);
+    if (!canCreate) throw new Error("USER_NOT_ALLOWED_TO_CREATE_PAYOUT");
+
     const contributor = await tx.contributor.findFirst({
       where: { id: input.contributorId, workspaceId: input.workspaceId, status: "active" },
       select: { id: true },

@@ -39,6 +39,12 @@ export async function POST(request: Request) {
     if (error instanceof SyntaxError) {
       return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
     }
+    if (error instanceof Error && error.message === "USER_NOT_FOUND") {
+      return NextResponse.json({ error: "Creator not found." }, { status: 404 });
+    }
+    if (error instanceof Error && error.message === "USER_NOT_ALLOWED_TO_CREATE_PAYOUT") {
+      return NextResponse.json({ error: "User is not allowed to create payouts in this workspace." }, { status: 403 });
+    }
     if (error instanceof Error && error.message === "CONTRIBUTOR_NOT_FOUND") {
       return NextResponse.json({ error: "Contributor not found." }, { status: 404 });
     }
