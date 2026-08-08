@@ -4,11 +4,12 @@ import { Button } from "@/components/shared/button";
 import { EmptyState } from "@/components/shared/empty-state";
 import { SectionCard } from "@/components/shared/section-card";
 import { getDashboardData } from "@/lib/repositories/dashboard";
+import { DEFAULT_PRODUCT_CONTEXT } from "@/lib/runtime/default-product-context";
 import { formatUsdc, shortenAddress } from "@/lib/utils/format";
 
 export default async function DashboardPage() {
   const { payouts, milestones, contributors, transactionProofs } =
-    await getDashboardData();
+    await getDashboardData(DEFAULT_PRODUCT_CONTEXT.workspaceId);
 
   const activePayouts = payouts.filter((payout) =>
     ["active", "partially_released"].includes(payout.status),
