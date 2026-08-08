@@ -112,6 +112,16 @@ export function PayoutDetailClient({
           : "In progress"
         : effectivePayoutStatus.replace("_", " ");
 
+  const nextActionText = nextReleasableMilestone
+    ? `Release ${nextReleasableMilestone.title} to continue settlement.`
+    : submittedCount > 0
+      ? "Review submitted milestones to unlock the next release." 
+      : milestones.some((milestone) => milestone.status === "pending" || milestone.status === "rejected")
+        ? "Ask the contributor to submit the next milestone deliverable."
+        : effectivePayoutStatus === "completed"
+          ? "This payout is fully settled. Review the proof record or open another payout."
+          : "No immediate action is available yet on this payout.";
+
   async function activatePayout() {
     if (activatingPayout || payoutStatusState !== "draft") return;
 
@@ -265,26 +275,31 @@ export function PayoutDetailClient({
         </CardContent>
       </Card>
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-        <StatCard label="Milestones" value={milestones.length} />
-        <StatCard label="Awaiting review" value={submittedCount} />
-        <StatCard label="Ready to release" value={readyToReleaseCount} />
-        <StatCard
-          label="Released"
-          value={`${formatUsdc(amountReleased)} USDC`}
-          hint={`${releasedCount} milestone${releasedCount === 1 ? "" : "s"} already settled on Arc`}
-        />
-        <StatCard
-          label="Latest release"
-          value={latestReleasedMilestone ? latestReleasedMilestone.title : "Not released yet"}
-          hint={
-            releaseProof?.confirmedAt
-              ? `Confirmed ${new Date(releaseProof.confirmedAt).toLocaleString()}`
-              : releaseProof
-                ? "Proof attached to latest payout event"
-                : "Release the next approved milestone to attach proof"
-          }
-        />
+      <section className="space-y-4">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+          <StatCard label="Milestones" value={milestones.length} />
+          <StatCard label="Awaiting review" value={submittedCount} />
+          <StatCard label="Ready to release" value={readyToReleaseCount} />
+          <StatCard
+            label="Released"
+            value={`${formatUsdc(amountReleased)} USDC`}
+            hint={`${releasedCount} milestone${releasedCount === 1 ? "" : "s"} already settled on Arc`}
+          />
+          <StatCard
+            label="Latest release"
+            value={latestReleasedMilestone ? latestReleasedMilestone.title : "Not released yet"}
+            hint={
+              releaseProof?.confirmedAt
+                ? `Confirmed ${new Date(releaseProof.confirmedAt).toLocaleString()}`
+                : releaseProof
+                  ? "Proof attached to latest payout event"
+                  : "Release the next approved milestone to attach proof"
+            }
+          />
+        </div>
+        <div className="rounded-2xl border border-dashed border-[var(--border-soft)] px-4 py-3 text-sm text-[var(--text-muted)]">
+          <span className="font-semibold text-white">Next action:</span> {nextActionText}
+        </div>
       </section>
 
       <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
