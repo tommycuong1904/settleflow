@@ -27,7 +27,7 @@ const statusDescriptions: Record<TransactionProof["status"], string> = {
   confirmed:
     "The Arc settlement proof is confirmed and attached to this payout release.",
   failed:
-    "The release attempt returned an error and needs a retry or a safer execution mode.",
+    "The release attempt returned an error and needs a retry or proof refresh before settlement can continue.",
 };
 
 export function TransactionProofCard({ proof, milestoneTitle }: TransactionProofCardProps) {
@@ -81,7 +81,9 @@ export function TransactionProofCard({ proof, milestoneTitle }: TransactionProof
           <p className="mt-2 font-semibold text-white">
             {proof.confirmedAt
               ? new Date(proof.confirmedAt).toLocaleString()
-              : "Awaiting confirmation"}
+              : proof.status === "failed"
+                ? "Not confirmed"
+                : "Awaiting confirmation"}
           </p>
         </div>
         <div className="rounded-2xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.6)] p-4">
@@ -120,7 +122,13 @@ export function TransactionProofCard({ proof, milestoneTitle }: TransactionProof
               Transaction hash
             </p>
             <p className="mt-1 text-xs text-[var(--text-muted)]">
-              {proof.txHash ? `Short view: ${shortenAddress(proof.txHash)}` : "Hash will appear after settlement is confirmed."}
+              {proof.txHash
+                ? `Short view: ${shortenAddress(proof.txHash)}`
+                : proof.status === "failed"
+                  ? "No confirmed transaction hash is available for this failed settlement attempt."
+                  : proof.status === "pending"
+                    ? "Transaction hash will appear after settlement proof is confirmed."
+                    : "Confirmed settlement hash unavailable."}
             </p>
           </div>
           {proof.explorerUrl ? (
