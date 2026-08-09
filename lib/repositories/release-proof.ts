@@ -13,6 +13,55 @@ export type RefreshProofInput = {
   failureReason?: string;
 };
 
+type ProofRefreshUpdate = {
+  status: "confirmed" | "failed";
+  txHash: string | null;
+  network: string | null;
+  explorerUrl: string | null;
+  blockNumber: bigint | null | undefined;
+  failureReason: string | null;
+  confirmedAt: Date | null;
+  failedAt: Date | null;
+};
+
+type ReleaseRefreshUpdate = {
+  status: "confirmed" | "failed";
+  executedAt: Date | null;
+  failedAt: Date | null;
+  failureReason: string | null;
+};
+
+export function deriveProofRefreshUpdate(
+  input: RefreshProofInput,
+  now = new Date(),
+): ProofRefreshUpdate {
+  return {
+    status: input.status,
+    txHash: input.status === "confirmed" ? input.txHash ?? null : null,
+    network: input.status === "confirmed" ? input.network ?? null : null,
+    explorerUrl: input.status === "confirmed" ? input.explorerUrl ?? null : null,
+    blockNumber:
+      input.status === "confirmed"
+        ? (input.blockNumber === undefined ? undefined : BigInt(input.blockNumber))
+        : null,
+    failureReason: input.status === "failed" ? input.failureReason ?? null : null,
+    confirmedAt: input.status === "confirmed" ? now : null,
+    failedAt: input.status === "failed" ? now : null,
+  };
+}
+
+export function deriveReleaseRefreshUpdate(
+  input: RefreshProofInput,
+  now = new Date(),
+): ReleaseRefreshUpdate {
+  return {
+    status: input.status,
+    executedAt: input.status === "confirmed" ? now : null,
+    failedAt: input.status === "failed" ? now : null,
+    failureReason: input.status === "failed" ? input.failureReason ?? null : null,
+  };
+}
+
 export async function refreshReleaseProof(
   releaseId: string,
   refreshedByUserId: string,
@@ -79,29 +128,12 @@ export async function refreshReleaseProof(
     const now = new Date();
     const updatedProof = await tx.transactionProof.update({
       where: { id: proof.id },
-      data: {
-        status: input.status,
-        txHash: input.status === "confirmed" ? input.txHash : null,
-        network: input.status === "confirmed" ? input.network : null,
-        explorerUrl: input.status === "confirmed" ? input.explorerUrl : null,
-        blockNumber:
-          input.status === "confirmed"
-            ? (input.blockNumber === undefined ? undefined : BigInt(input.blockNumber))
-            : null,
-        failureReason: input.status === "failed" ? input.failureReason : null,
-        confirmedAt: input.status === "confirmed" ? now : null,
-        failedAt: input.status === "failed" ? now : null,
-      },
+      data: deriveProofRefreshUpdate(input, now),
       select: { id: true, status: true, txHash: true, network: true, explorerUrl: true, blockNumber: true, failureReason: true },
     });
     const updatedRelease = await tx.release.update({
       where: { id: release.id },
-      data: {
-        status: input.status,
-        executedAt: input.status === "confirmed" ? now : null,
-        failedAt: input.status === "failed" ? now : null,
-        failureReason: input.status === "failed" ? input.failureReason : null,
-      },
+      data: deriveReleaseRefreshUpdate(input, now),
       select: { id: true, status: true, milestoneId: true, payoutId: true, executedAt: true, failedAt: true, failureReason: true },
     });
 
