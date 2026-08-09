@@ -3,7 +3,7 @@ import { db } from "@/lib/db/client";
 import { recordActivity } from "@/lib/repositories/activity-log";
 import { hasWorkspaceRole } from "@/lib/repositories/permissions";
 
-export async function retryFailedRelease(releaseId: string, triggeredByUserId: string) {
+export async function retryFailedRelease(releaseId: string, ownerUserId: string) {
   return db.$transaction(async (tx: Prisma.TransactionClient) => {
     const previous = await tx.release.findUnique({
       where: { id: releaseId },
@@ -45,7 +45,7 @@ export async function retryFailedRelease(releaseId: string, triggeredByUserId: s
     if (latestProof.status !== "failed") throw new Error("RETRY_REQUIRES_FAILED_PROOF");
 
     const user = await tx.user.findUnique({
-      where: { id: triggeredByUserId },
+      where: { id: ownerUserId },
       select: { id: true },
     });
     if (!user) throw new Error("USER_NOT_FOUND");
@@ -53,7 +53,7 @@ export async function retryFailedRelease(releaseId: string, triggeredByUserId: s
     const canRetryRelease = await hasWorkspaceRole(
       tx,
       previous.payout.workspaceId,
-      triggeredByUserId,
+      ownerUserId,
       ["owner", "ops"],
     );
     if (!canRetryRelease) throw new Error("FORBIDDEN_RELEASE_RETRY");
@@ -62,7 +62,7 @@ export async function retryFailedRelease(releaseId: string, triggeredByUserId: s
       data: {
         payoutId: previous.payoutId,
         milestoneId: previous.milestoneId,
-        triggeredByUserId,
+        triggeredByUserId: ownerUserId,
         amountUsdc: previous.amountUsdc,
         executionMode: previous.executionMode,
         sourceWalletAddress: previous.sourceWalletAddress,
@@ -102,7 +102,7 @@ export async function retryFailedRelease(releaseId: string, triggeredByUserId: s
 
     await recordActivity(tx, {
       workspaceId: previous.payout.workspaceId,
-      actorUserId: triggeredByUserId,
+      actorUserId: ownerUserId,
       entityType: "release",
       entityId: release.id,
       payoutId: previous.payoutId,
