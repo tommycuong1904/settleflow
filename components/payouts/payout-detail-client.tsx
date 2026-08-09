@@ -250,10 +250,7 @@ export function PayoutDetailClient({
     const response = await fetch(`/api/v1/payouts/${payout.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        workspaceId: productContext.workspaceId,
-        ...fields,
-      }),
+      body: JSON.stringify(fields),
     });
     const data = (await response.json()) as {
       error?: string;
