@@ -1,11 +1,12 @@
 import { db } from "@/lib/db/client";
 
-export async function getReleaseById(id: string) {
+export async function getReleaseById(id: string, workspaceId?: string) {
   const release = await db.release.findUnique({
     where: { id },
     select: {
       id: true,
       payoutId: true,
+      payout: { select: { workspaceId: true } },
       milestoneId: true,
       triggeredByUserId: true,
       amountUsdc: true,
@@ -38,6 +39,7 @@ export async function getReleaseById(id: string) {
   });
 
   if (!release) return null;
+  if (workspaceId && release.payout.workspaceId !== workspaceId) return null;
   return {
     ...release,
     amountUsdc: release.amountUsdc.toString(),
