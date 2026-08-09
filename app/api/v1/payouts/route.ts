@@ -1,3 +1,4 @@
+import { Decimal } from "@prisma/client/runtime/library";
 import { NextResponse } from "next/server";
 import { apiError, apiErrorFromCode } from "@/lib/api/errors";
 import { createPayout } from "@/lib/repositories/payout-creation";
@@ -43,6 +44,15 @@ export async function POST(request: Request) {
       return apiError("INVALID_MILESTONE_PAYLOAD", { message: "Invalid milestone payload.", status: 400 });
     }
 
+    const milestoneTotal = milestonePayload.reduce(
+      (sum, milestone) => sum.plus(new Decimal(String(milestone.amountUsdc))),
+      new Decimal(0),
+    );
+
+    if (!milestoneTotal.equals(new Decimal(String(body.totalAmountUsdc)))) {
+      return apiError("PAYOUT_TOTAL_MISMATCH", { message: "totalAmountUsdc must equal the sum of milestone amounts.", status: 400 });
+    }
+
     const payout = await createPayout({
       ...body,
       workspaceId: productContext.workspaceId,
@@ -63,11 +73,13 @@ export async function POST(request: Request) {
         USER_NOT_FOUND: 404,
         USER_NOT_ALLOWED_TO_CREATE_PAYOUT: 403,
         CONTRIBUTOR_NOT_FOUND: 404,
+        PAYOUT_TOTAL_MISMATCH: 400,
       },
       {
         USER_NOT_FOUND: "Owner context user not found.",
         USER_NOT_ALLOWED_TO_CREATE_PAYOUT: "User is not allowed to create payouts in this workspace.",
         CONTRIBUTOR_NOT_FOUND: "Contributor not found.",
+        PAYOUT_TOTAL_MISMATCH: "totalAmountUsdc must equal the sum of milestone amounts.",
       },
       { message: "Unable to create payout.", status: 500 },
     );
