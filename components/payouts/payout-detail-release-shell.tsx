@@ -98,7 +98,6 @@ export function PayoutDetailReleaseShell({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          triggeredByUserId: productContext.ownerUserId,
           amountUsdc: String(nextReleasableMilestone.amount),
         }),
       });
@@ -179,7 +178,7 @@ export function PayoutDetailReleaseShell({
       const response = await fetch(`/api/v1/releases/${resolvedProof.releaseId}/retry`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ triggeredByUserId: productContext.ownerUserId }),
+        body: JSON.stringify({}),
       });
 
       const data = (await response.json()) as {
@@ -242,7 +241,6 @@ export function PayoutDetailReleaseShell({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          refreshedByUserId: productContext.ownerUserId,
           status,
           txHash: status === "confirmed" ? txHash : undefined,
           network: status === "confirmed" ? "Arc Testnet" : undefined,

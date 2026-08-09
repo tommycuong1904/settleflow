@@ -212,10 +212,7 @@ export function PayoutDetailClient({
       const response = await fetch(`/api/v1/payouts/${payout.id}/activate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          workspaceId: productContext.workspaceId,
-          activatedByUserId: productContext.ownerUserId,
-        }),
+        body: JSON.stringify({}),
       });
       const data = (await response.json()) as { error?: string; payout?: { status?: Payout["status"] } };
       if (!response.ok) throw new Error(data.error ?? "Unable to activate payout.");
@@ -255,7 +252,6 @@ export function PayoutDetailClient({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         workspaceId: productContext.workspaceId,
-        ownerUserId: productContext.ownerUserId,
         ...fields,
       }),
     });
@@ -407,7 +403,7 @@ export function PayoutDetailClient({
       const response = await fetch(`/api/v1/milestones/${milestoneId}/${decision === "approved" ? "approve" : "reject"}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reviewedByUserId: productContext.reviewerUserId }),
+        body: JSON.stringify({}),
       });
       const data = (await response.json()) as { error?: string };
       if (!response.ok) throw new Error(data.error ?? `Unable to ${decision} milestone.`);

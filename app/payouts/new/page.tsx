@@ -217,8 +217,6 @@ function CreatePayoutPageContent() {
         headers: { "Content-Type": "application/json" },
         signal: controller.signal,
         body: JSON.stringify({
-          workspaceId: productContext.workspaceId,
-          createdByUserId: productContext.ownerUserId,
           title: payoutTitle.trim(),
           contributorId,
           targetWalletAddress: walletAddress.trim(),
