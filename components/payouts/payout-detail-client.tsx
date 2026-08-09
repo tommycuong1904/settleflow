@@ -36,6 +36,17 @@ function getStorageKey(payoutId: string) {
   return `settleflow:release:${payoutId}`;
 }
 
+function normalizeDraftMilestones(
+  milestones: Array<{ id: string; title: string; description: string; amount: string }>,
+) {
+  return milestones.map((milestone) => ({
+    id: milestone.id,
+    title: milestone.title.trim(),
+    description: milestone.description.trim(),
+    amount: milestone.amount.trim(),
+  }));
+}
+
 export function PayoutDetailClient({
   payout,
   contributor,
@@ -161,6 +172,9 @@ export function PayoutDetailClient({
           ? "This payout is fully settled. Review the proof record or open another payout."
           : "No immediate action is available yet on this payout.";
 
+  const draftMilestonesDirty = JSON.stringify(normalizeDraftMilestones(draftMilestonesState)) !==
+    JSON.stringify(normalizeDraftMilestones(draftMilestonesCommitted));
+
   async function activatePayout() {
     if (activatingPayout || payoutStatusState !== "draft") return;
 
@@ -266,7 +280,7 @@ export function PayoutDetailClient({
   }
 
   async function saveDraftMilestones() {
-    if (savingDraftTitle || payoutStatusState !== "draft") return;
+    if (savingDraftTitle || payoutStatusState !== "draft" || !draftMilestonesDirty) return;
 
     const normalized = draftMilestonesState.map((milestone, index) => ({
       title: milestone.title.trim(),
@@ -503,7 +517,7 @@ export function PayoutDetailClient({
                   Refine milestone copy and amounts through the real payout draft PATCH path.
                 </p>
               </div>
-              <Button onClick={() => { void saveDraftMilestones(); }} disabled={savingDraftTitle}>
+              <Button onClick={() => { void saveDraftMilestones(); }} disabled={savingDraftTitle || !draftMilestonesDirty}>
                 {savingDraftTitle ? "Saving..." : "Save milestones"}
               </Button>
             </CardHeader>
