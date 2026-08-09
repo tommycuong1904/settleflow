@@ -218,6 +218,7 @@ export function PayoutDetailClient({
       const data = (await response.json()) as { error?: string; payout?: { status?: Payout["status"] } };
       if (!response.ok) throw new Error(data.error ?? "Unable to activate payout.");
       setPayoutStatusState(data.payout?.status ?? "active");
+      await refreshActivity();
     } catch (error) {
       setReviewError(error instanceof Error ? error.message : "Unable to activate payout.");
     } finally {
@@ -394,6 +395,7 @@ export function PayoutDetailClient({
           : milestone,
       ),
     );
+    void refreshActivity();
   }
 
   async function reviewMilestone(milestoneId: string, decision: "approved" | "rejected") {
@@ -412,6 +414,7 @@ export function PayoutDetailClient({
           ? { ...milestone, status: decision, ...(decision === "approved" ? { approvedAt: new Date().toISOString() } : {}) }
           : milestone,
       ));
+      await refreshActivity();
     } catch (error) {
       setReviewError(error instanceof Error ? error.message : "Review request failed.");
     } finally {
@@ -447,6 +450,7 @@ export function PayoutDetailClient({
       ),
     );
     window.sessionStorage.setItem(getStorageKey(payout.id), JSON.stringify(nextState));
+    void refreshActivity();
   }
 
   return (
