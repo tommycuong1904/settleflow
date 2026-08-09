@@ -115,6 +115,12 @@ export function PayoutDetailClient({
     window.sessionStorage.removeItem(getStorageKey(payout.id));
   }, [initialReleaseProof, payout.id, persistedRelease]);
 
+  useEffect(() => {
+    if (!draftSaveNotice) return;
+    const timeout = window.setTimeout(() => setDraftSaveNotice(null), 2500);
+    return () => window.clearTimeout(timeout);
+  }, [draftSaveNotice]);
+
   const milestones = useMemo(() => {
     if (!persistedRelease) {
       return milestoneState;
