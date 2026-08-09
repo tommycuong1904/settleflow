@@ -5,7 +5,7 @@ import { hasWorkspaceRole } from "@/lib/repositories/permissions";
 
 export async function reviewMilestone(
   milestoneId: string,
-  reviewedByUserId: string,
+  reviewerUserId: string,
   decision: "approved" | "rejected",
   comment?: string,
 ) {
@@ -26,13 +26,13 @@ export async function reviewMilestone(
     if (decision === "rejected" && (!comment || comment.trim().length === 0)) {
       throw new Error("REJECTION_COMMENT_REQUIRED");
     }
-    const reviewer = await tx.user.findUnique({ where: { id: reviewedByUserId }, select: { id: true } });
+    const reviewer = await tx.user.findUnique({ where: { id: reviewerUserId }, select: { id: true } });
     if (!reviewer) throw new Error("USER_NOT_FOUND");
 
     const hasReviewerRole = await hasWorkspaceRole(
       tx,
       milestone.payout.workspaceId,
-      reviewedByUserId,
+      reviewerUserId,
       ["owner", "ops", "reviewer"],
     );
     if (!hasReviewerRole) throw new Error("USER_NOT_ALLOWED_TO_REVIEW");
@@ -41,7 +41,7 @@ export async function reviewMilestone(
       data: {
         milestoneId,
         submissionId: milestone.submissions[0].id,
-        reviewedByUserId,
+        reviewedByUserId: reviewerUserId,
         decision,
         comment,
       },
@@ -61,7 +61,7 @@ export async function reviewMilestone(
     });
     await recordActivity(tx, {
       workspaceId: milestone.payout.workspaceId,
-      actorUserId: reviewedByUserId,
+      actorUserId: reviewerUserId,
       entityType: "milestone",
       entityId: milestoneId,
       milestoneId,
