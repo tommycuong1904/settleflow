@@ -39,7 +39,7 @@ export async function POST(
       },
       {
         MILESTONE_NOT_FOUND: "Milestone not found.",
-        USER_NOT_FOUND: "Reviewer not found.",
+        USER_NOT_FOUND: "Reviewer context user not found.",
         USER_NOT_ALLOWED_TO_REVIEW: "User is not allowed to review this milestone.",
         MILESTONE_NOT_REVIEWABLE: "Milestone has no submitted work to review.",
         REJECTION_COMMENT_REQUIRED: "A rejection comment is required.",
