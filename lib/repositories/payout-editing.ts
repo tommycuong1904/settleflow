@@ -3,9 +3,6 @@ import { db } from "@/lib/db/client";
 import { recordActivity } from "@/lib/repositories/activity-log";
 
 export type UpdatePayoutDraftInput = {
-  updatedByUserId?: string;
-  actorUserId?: string;
-  ownerUserId?: string;
   title?: string;
   description?: string;
   contributorId?: string;
@@ -23,6 +20,7 @@ export async function updatePayoutDraft(
   id: string,
   workspaceId: string,
   input: UpdatePayoutDraftInput,
+  actorUserId?: string,
 ) {
   return db.$transaction(async (tx: Prisma.TransactionClient) => {
     const current = await tx.payout.findUnique({
@@ -76,11 +74,8 @@ export async function updatePayoutDraft(
       },
     });
 
-    const actorUserId = input.updatedByUserId ?? input.actorUserId ?? input.ownerUserId;
     if (actorUserId) {
-      const changedFields = Object.keys(input).filter(
-        (key) => key !== "updatedByUserId" && key !== "actorUserId" && key !== "ownerUserId",
-      );
+      const changedFields = Object.keys(input);
       const headerChangedFields = changedFields.filter((key) => key !== "milestones");
 
       await recordActivity(tx, {

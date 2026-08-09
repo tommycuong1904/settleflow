@@ -45,7 +45,7 @@ export async function PATCH(
     if (!isNonEmpty(productContext.workspaceId)) {
       return apiError("INVALID_PAYOUT_UPDATE_PAYLOAD", { message: "workspace context is required.", status: 400 });
     }
-    const allowed = ["updatedByUserId", "actorUserId", "ownerUserId", "title", "description", "contributorId", "targetWalletAddress", "totalAmountUsdc", "milestones"];
+    const allowed = ["title", "description", "contributorId", "targetWalletAddress", "totalAmountUsdc", "milestones"];
     if (Object.keys(body).some((key) => !allowed.includes(key))) {
       return apiError("UNKNOWN_PAYOUT_FIELD", { message: "Unknown payout field.", status: 400 });
     }
@@ -56,7 +56,7 @@ export async function PATCH(
       return apiError("EMPTY_PAYOUT_MILESTONES", { message: "At least one milestone is required.", status: 400 });
     }
 
-    const payout = await updatePayoutDraft(id, productContext.workspaceId, body);
+    const payout = await updatePayoutDraft(id, productContext.workspaceId, body, productContext.ownerUserId);
     return NextResponse.json({ payout });
   } catch (error) {
     if (error instanceof SyntaxError) return apiError("INVALID_JSON_BODY", { message: "Invalid JSON body.", status: 400 });
