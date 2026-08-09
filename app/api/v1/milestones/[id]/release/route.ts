@@ -12,17 +12,17 @@ export async function POST(
   try {
     const productContext = resolveProductContextFromRequest(request);
     const body = await request.json();
-    const triggeredByUserId = productContext.ownerUserId;
-    if (typeof triggeredByUserId !== "string" || triggeredByUserId.trim().length === 0 ||
+    const ownerUserId = productContext.ownerUserId;
+    if (typeof ownerUserId !== "string" || ownerUserId.trim().length === 0 ||
         typeof body.amountUsdc !== "string" || body.amountUsdc.trim().length === 0) {
       return apiError("INVALID_RELEASE_PAYLOAD", { message: "owner context and amountUsdc are required.", status: 400 });
     }
 
-    const policyViolation = assertCanReleaseMilestone({ productContext, actorUserId: triggeredByUserId });
+    const policyViolation = assertCanReleaseMilestone({ productContext, actorUserId: ownerUserId });
     if (policyViolation) {
       return apiError(policyViolation.code, { message: policyViolation.message, status: policyViolation.status });
     }
-    const result = await queueMilestoneRelease(id, triggeredByUserId, body.amountUsdc);
+    const result = await queueMilestoneRelease(id, ownerUserId, body.amountUsdc);
     return NextResponse.json(result, { status: 201 });
   } catch (error) {
     if (error instanceof SyntaxError) return apiError("INVALID_JSON_BODY", { message: "Invalid JSON body.", status: 400 });
