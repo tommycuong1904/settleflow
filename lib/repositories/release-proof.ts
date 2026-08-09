@@ -27,6 +27,7 @@ export async function refreshReleaseProof(
         payoutId: true,
         milestoneId: true,
         status: true,
+        milestone: { select: { status: true } },
         payout: { select: { workspaceId: true } },
         proofs: {
           orderBy: { createdAt: "desc" },
@@ -69,6 +70,9 @@ export async function refreshReleaseProof(
     const proof = release.proofs[0];
     if (!proof) throw new Error("PROOF_NOT_FOUND");
     if (proof.status !== "pending") throw new Error("PROOF_NOT_PENDING");
+    if (input.status === "confirmed" && release.milestone?.status !== "approved") {
+      throw new Error("MILESTONE_NOT_APPROVED_FOR_CONFIRMATION");
+    }
     if (input.status === "confirmed" && !input.txHash) throw new Error("TX_HASH_REQUIRED");
     if (input.status === "failed" && !input.failureReason) throw new Error("FAILURE_REASON_REQUIRED");
 
