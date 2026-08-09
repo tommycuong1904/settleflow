@@ -182,6 +182,21 @@ Current non-confirmed / incomplete flow:
 - no full production-safe onchain release verification path
 - some transitional seeded-role and seeded-workspace assumptions still remain
 
+## Product Context Boundary
+
+SettleFlow now contains a dedicated product-context runtime boundary for seeded-role operation and auth-shaped workflow control.
+
+Confirmed behavior:
+- request context is resolved from header -> cookie -> query -> default fallback
+- proxy logic bridges context through request headers and cookie persistence
+- core workflow mutation routes derive actor identity from request context instead of trusting client-supplied actor IDs in JSON bodies
+- client UI surfaces mask controls by actor capability
+- a global actor switcher exists to exercise owner/reviewer/contributor flows without a real auth provider
+
+Current limitation:
+- this boundary is still seeded-context based, not session-authenticated identity
+- context integrity is not yet backed by signed session claims or a real authorization provider
+
 ## Configuration
 
 ### Environment
@@ -208,7 +223,7 @@ Still incomplete or not yet confirmed:
 
 ## Architectural Risks
 - seeded/demo-era assumptions may still leak into UI and mutation entry points
-- actor resolution is still hardcoded in some surfaces instead of auth-derived
+- actor resolution is now more centralized, but still seeded-context based instead of auth-derived
 - legacy mock files and wording can mislead future implementation decisions
 - live Arc execution safety requirements may force adapter or workflow changes
 
