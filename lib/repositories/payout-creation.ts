@@ -3,6 +3,13 @@ import { db } from "@/lib/db/client";
 import { recordActivity } from "@/lib/repositories/activity-log";
 import { hasWorkspaceRole } from "@/lib/repositories/permissions";
 
+export type CreatePayoutMilestoneInput = {
+  title: string;
+  description: string;
+  amountUsdc: string;
+  sequence: number;
+};
+
 export type CreatePayoutInput = {
   workspaceId: string;
   createdByUserId: string;
@@ -12,13 +19,19 @@ export type CreatePayoutInput = {
   targetWalletAddress: string;
   totalAmountUsdc: string;
   currency?: string;
-  milestones: Array<{
-    title: string;
-    description: string;
-    amountUsdc: string;
-    sequence: number;
-  }>;
+  milestones: Array<CreatePayoutMilestoneInput>;
 };
+
+export function deriveCreatePayoutMilestonePayloads(
+  milestones: Array<CreatePayoutMilestoneInput>,
+) {
+  return milestones.map((milestone) => ({
+    title: milestone.title,
+    description: milestone.description,
+    amountUsdc: milestone.amountUsdc,
+    sequence: milestone.sequence,
+  }));
+}
 
 export async function createPayout(input: CreatePayoutInput) {
   return db.$transaction(async (tx: Prisma.TransactionClient) => {
@@ -49,12 +62,7 @@ export async function createPayout(input: CreatePayoutInput) {
         currency: "USDC",
         status: "draft",
         milestones: {
-          create: input.milestones.map((milestone) => ({
-            title: milestone.title,
-            description: milestone.description,
-            amountUsdc: milestone.amountUsdc,
-            sequence: milestone.sequence,
-          })),
+          create: deriveCreatePayoutMilestonePayloads(input.milestones),
         },
       },
       select: { id: true, status: true },

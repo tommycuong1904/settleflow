@@ -16,6 +16,26 @@ export type UpdatePayoutDraftInput = {
   }>;
 };
 
+export function deriveDraftUpdateActivityMetadata(
+  input: UpdatePayoutDraftInput,
+  currentContributorId: string,
+) {
+  const changedFields = Object.keys(input);
+  const headerChangedFields = changedFields.filter((key) => key !== "milestones");
+
+  return {
+    changedFields,
+    headerChangedFields,
+    headerChanged: String(headerChangedFields.length > 0),
+    milestonesChanged: String(input.milestones !== undefined),
+    contributorChanged:
+      input.contributorId !== undefined
+        ? String(input.contributorId !== currentContributorId)
+        : undefined,
+    milestoneCount: input.milestones?.length,
+  };
+}
+
 export async function updatePayoutDraft(
   id: string,
   workspaceId: string,
@@ -76,9 +96,6 @@ export async function updatePayoutDraft(
     });
 
     if (actorUserId) {
-      const changedFields = Object.keys(input);
-      const headerChangedFields = changedFields.filter((key) => key !== "milestones");
-
       await recordActivity(tx, {
         workspaceId,
         actorUserId,
@@ -86,14 +103,7 @@ export async function updatePayoutDraft(
         entityId: id,
         payoutId: id,
         action: "payout_draft_updated",
-        metadata: {
-          changedFields,
-          headerChangedFields,
-          headerChanged: String(headerChangedFields.length > 0),
-          milestonesChanged: String(input.milestones !== undefined),
-          contributorChanged: input.contributorId !== undefined ? String(input.contributorId !== current.contributorId) : undefined,
-          milestoneCount: input.milestones?.length,
-        },
+        metadata: deriveDraftUpdateActivityMetadata(input, current.contributorId),
       });
     }
 
