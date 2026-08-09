@@ -90,7 +90,7 @@ function CreatePayoutPageContent() {
 
   useEffect(() => {
     let cancelled = false;
-    void fetch(`/api/v1/contributors?status=active&workspaceId=${encodeURIComponent(productContext.workspaceId)}`)
+    void fetch("/api/v1/contributors?status=active")
       .then(async (response) => {
         const data = (await response.json()) as { data?: ContributorOption[]; error?: string };
         if (!response.ok) throw new Error(data.error ?? "Unable to load contributors.");
