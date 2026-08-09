@@ -77,6 +77,7 @@ export function PayoutDetailClient({
     amount: milestone.amount.toString(),
   })));
   const [activityItems, setActivityItems] = useState(initialActivity);
+  const [draftSaveNotice, setDraftSaveNotice] = useState<string | null>(null);
   const [reviewError, setReviewError] = useState<string | null>(null);
   const [reviewingMilestoneId, setReviewingMilestoneId] = useState<string | null>(null);
   const [activatingPayout, setActivatingPayout] = useState(false);
@@ -227,11 +228,13 @@ export function PayoutDetailClient({
     if (!nextTitle || nextTitle === payoutTitleCommitted) return;
 
     setReviewError(null);
+    setDraftSaveNotice(null);
     setSavingDraftTitle(true);
     try {
       await saveDraftFields({ title: nextTitle });
       setPayoutTitleCommitted(nextTitle);
       setPayoutTitleState(nextTitle);
+      setDraftSaveNotice("Draft title saved.");
     } catch (error) {
       setReviewError(error instanceof Error ? error.message : "Unable to update payout draft.");
       setPayoutTitleState(payoutTitleCommitted);
@@ -247,11 +250,13 @@ export function PayoutDetailClient({
     if (nextDescription === payoutDescriptionCommitted) return;
 
     setReviewError(null);
+    setDraftSaveNotice(null);
     setSavingDraftTitle(true);
     try {
       await saveDraftFields({ description: nextDescription });
       setPayoutDescriptionCommitted(nextDescription);
       setPayoutDescriptionState(nextDescription);
+      setDraftSaveNotice("Draft description saved.");
     } catch (error) {
       setReviewError(error instanceof Error ? error.message : "Unable to update payout draft.");
       setPayoutDescriptionState(payoutDescriptionCommitted);
@@ -276,10 +281,12 @@ export function PayoutDetailClient({
     }
 
     setReviewError(null);
+    setDraftSaveNotice(null);
     setSavingDraftTitle(true);
     try {
       await saveDraftFields({ milestones: normalized });
       setDraftMilestonesCommitted(draftMilestonesState);
+      setDraftSaveNotice("Draft milestones saved.");
       setMilestoneState((current) =>
         current.map((milestone, index) => ({
           ...milestone,
@@ -428,6 +435,16 @@ export function PayoutDetailClient({
 
       {payoutStatusState === "draft" ? (
         <>
+          {reviewError ? (
+            <div className="rounded-2xl border border-rose-400/30 bg-rose-400/10 px-4 py-3 text-sm text-rose-100">
+              {reviewError}
+            </div>
+          ) : null}
+          {draftSaveNotice ? (
+            <div className="rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-100">
+              {draftSaveNotice}
+            </div>
+          ) : null}
           <Card className="sf-shell">
             <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
               <div>
