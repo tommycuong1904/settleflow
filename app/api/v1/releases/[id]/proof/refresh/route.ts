@@ -17,19 +17,19 @@ export async function POST(
   }
 
   const productContext = resolveProductContextFromRequest(request);
-  const actorUserId = productContext.ownerUserId;
+  const ownerUserId = productContext.ownerUserId;
 
-  if (typeof actorUserId !== "string" || actorUserId.trim().length === 0) {
+  if (typeof ownerUserId !== "string" || ownerUserId.trim().length === 0) {
     return apiError("INVALID_PROOF_REFRESH_PAYLOAD", { message: "owner context is required.", status: 400 });
   }
 
-  const policyViolation = assertCanRefreshProof({ productContext, actorUserId: actorUserId });
+  const policyViolation = assertCanRefreshProof({ productContext, actorUserId: ownerUserId });
   if (policyViolation) {
     return apiError(policyViolation.code, { message: policyViolation.message, status: policyViolation.status });
   }
 
   try {
-    const result = await refreshReleaseProof(id, actorUserId, body as RefreshProofInput);
+    const result = await refreshReleaseProof(id, ownerUserId, body as RefreshProofInput);
     return NextResponse.json(result);
   } catch (error) {
     const code = error instanceof Error ? error.message : "UNKNOWN_ERROR";
