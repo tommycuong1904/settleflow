@@ -15,7 +15,7 @@ export async function POST(
     const triggeredByUserId = productContext.ownerUserId;
     if (typeof triggeredByUserId !== "string" || triggeredByUserId.trim().length === 0 ||
         typeof body.amountUsdc !== "string" || body.amountUsdc.trim().length === 0) {
-      return apiError("INVALID_RELEASE_PAYLOAD", { message: "triggeredByUserId and amountUsdc are required.", status: 400 });
+      return apiError("INVALID_RELEASE_PAYLOAD", { message: "owner context and amountUsdc are required.", status: 400 });
     }
 
     const policyViolation = assertCanReleaseMilestone({ productContext, actorUserId: triggeredByUserId });

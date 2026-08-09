@@ -19,7 +19,7 @@ export async function POST(
     const submittedByUserId = productContext.activeUserId;
 
     if (!required(submittedByUserId) || !required(body.summary)) {
-      return apiError("INVALID_SUBMIT_PAYLOAD", { message: "submittedByUserId and summary are required.", status: 400 });
+      return apiError("INVALID_SUBMIT_PAYLOAD", { message: "contributor context and summary are required.", status: 400 });
     }
 
     const policyViolation = assertCanSubmitMilestone({ productContext, actorUserId: submittedByUserId });

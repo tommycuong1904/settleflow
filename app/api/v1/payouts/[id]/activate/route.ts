@@ -16,7 +16,7 @@ export async function POST(
 
     if (typeof productContext.workspaceId !== "string" || productContext.workspaceId.trim().length === 0 ||
         typeof activatedByUserId !== "string" || activatedByUserId.trim().length === 0) {
-      return apiError("INVALID_ACTIVATE_PAYLOAD", { message: "workspaceId and activatedByUserId are required.", status: 400 });
+      return apiError("INVALID_ACTIVATE_PAYLOAD", { message: "owner and workspace context are required.", status: 400 });
     }
 
     const policyViolation = assertCanActivatePayout({ productContext, actorUserId: activatedByUserId });
