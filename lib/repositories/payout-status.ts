@@ -19,9 +19,18 @@ export async function recalculatePayoutStatus(
     throw new Error("PAYOUT_NOT_FOUND");
   }
 
+  const totalMilestones = payout.milestones.length;
   const hasOnlyPendingMilestones = payout.milestones.every(
     (milestone) => milestone.status === "pending",
   );
+
+  if (totalMilestones === 0) {
+    return tx.payout.update({
+      where: { id: payoutId },
+      data: { status: "draft", completedAt: null },
+      select: { id: true, status: true, completedAt: true },
+    });
+  }
 
   if (payout.status === "draft" && hasOnlyPendingMilestones) {
     return tx.payout.findUnique({
@@ -33,7 +42,6 @@ export async function recalculatePayoutStatus(
   const releasedCount = payout.milestones.filter(
     (milestone) => milestone.status === "released",
   ).length;
-  const totalMilestones = payout.milestones.length;
 
   const nextStatus =
     totalMilestones > 0 && releasedCount === totalMilestones
