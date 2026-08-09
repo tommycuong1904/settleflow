@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
+import { apiError, apiErrorFromCode } from "@/lib/api/errors";
+import { hasReleaseAmountPayload } from "@/lib/api/release-payload";
 import { queueMilestoneRelease } from "@/lib/repositories/milestone-release";
+import { assertCanReleaseMilestone } from "@/lib/runtime/product-policy";
+import { resolveProductContextFromRequest } from "@/lib/runtime/product-context-server";
 
 export async function POST(
   request: Request,
@@ -7,24 +11,47 @@ export async function POST(
 ) {
   const { id } = await params;
   try {
+    const productContext = resolveProductContextFromRequest(request);
     const body = await request.json();
-    if (typeof body.triggeredByUserId !== "string" || body.triggeredByUserId.trim().length === 0 ||
-        typeof body.amountUsdc !== "string" || body.amountUsdc.trim().length === 0) {
-      return NextResponse.json({ error: "triggeredByUserId and amountUsdc are required.", code: "INVALID_RELEASE_PAYLOAD" }, { status: 400 });
+    const ownerUserId = productContext.ownerUserId;
+    if (!hasReleaseAmountPayload(body, ownerUserId)) {
+      return apiError("INVALID_RELEASE_PAYLOAD", { message: "owner context and amountUsdc are required.", status: 400 });
     }
-    const result = await queueMilestoneRelease(id, body.triggeredByUserId, body.amountUsdc);
+
+    const policyViolation = assertCanReleaseMilestone({ productContext, actorUserId: ownerUserId });
+    if (policyViolation) {
+      return apiError(policyViolation.code, { message: policyViolation.message, status: policyViolation.status });
+    }
+    const result = await queueMilestoneRelease(id, ownerUserId, productContext.workspaceId, body.amountUsdc);
     return NextResponse.json(result, { status: 201 });
   } catch (error) {
-    if (error instanceof SyntaxError) return NextResponse.json({ error: "Invalid JSON body.", code: "INVALID_JSON_BODY" }, { status: 400 });
-    if (error instanceof Error) {
-      if (error.message === "MILESTONE_NOT_FOUND") return NextResponse.json({ error: "Milestone not found.", code: error.message }, { status: 404 });
-      if (error.message === "USER_NOT_FOUND") return NextResponse.json({ error: "Release requester not found.", code: error.message }, { status: 404 });
-      if (error.message === "USER_NOT_ALLOWED_TO_RELEASE") return NextResponse.json({ error: "User is not allowed to release this milestone.", code: error.message }, { status: 403 });
-      if (error.message === "MILESTONE_NOT_APPROVED") return NextResponse.json({ error: "Milestone must be approved before release.", code: error.message }, { status: 409 });
-      if (error.message === "RELEASE_ALREADY_EXISTS") return NextResponse.json({ error: "A release already exists for this milestone.", code: error.message }, { status: 409 });
-      if (error.message === "DESTINATION_WALLET_MISSING") return NextResponse.json({ error: "Destination wallet is missing.", code: error.message }, { status: 400 });
-      if (error.message === "RELEASE_AMOUNT_MISMATCH") return NextResponse.json({ error: "Release amount must match the milestone amount.", code: error.message }, { status: 400 });
-    }
-    return NextResponse.json({ error: "Unable to queue release.", code: "UNABLE_TO_QUEUE_RELEASE" }, { status: 500 });
+    if (error instanceof SyntaxError) return apiError("INVALID_JSON_BODY", { message: "Invalid JSON body.", status: 400 });
+
+    const code = error instanceof Error ? error.message : "UNABLE_TO_QUEUE_RELEASE";
+    return apiErrorFromCode(
+      code,
+      {
+        MILESTONE_NOT_FOUND: 404,
+        WORKSPACE_SCOPE_MISMATCH: 409,
+        USER_NOT_FOUND: 404,
+        USER_NOT_ALLOWED_TO_RELEASE: 403,
+        MILESTONE_NOT_APPROVED: 409,
+        PAYOUT_NOT_RELEASE_READY: 409,
+        RELEASE_ALREADY_EXISTS: 409,
+        DESTINATION_WALLET_MISSING: 400,
+        RELEASE_AMOUNT_MISMATCH: 400,
+      },
+      {
+        MILESTONE_NOT_FOUND: "Milestone not found.",
+        USER_NOT_FOUND: "Owner context user not found.",
+        USER_NOT_ALLOWED_TO_RELEASE: "User is not allowed to release this milestone.",
+        MILESTONE_NOT_APPROVED: "Milestone must be approved before release.",
+        PAYOUT_NOT_RELEASE_READY: "Payout is not in a release-ready state for settlement.",
+        RELEASE_ALREADY_EXISTS: "A release already exists for this milestone.",
+        DESTINATION_WALLET_MISSING: "Destination wallet is missing.",
+        RELEASE_AMOUNT_MISMATCH: "Release amount must match the milestone amount.",
+      },
+      { message: "Unable to queue release.", status: 500 },
+    );
   }
 }

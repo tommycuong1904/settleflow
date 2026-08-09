@@ -1,15 +1,19 @@
+import { cookies } from "next/headers";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { MilestoneStatusBadge } from "@/components/milestones/milestone-status-badge";
 import { Button } from "@/components/shared/button";
 import { EmptyState } from "@/components/shared/empty-state";
 import { SectionCard } from "@/components/shared/section-card";
 import { getDashboardData } from "@/lib/repositories/dashboard";
-import { DEFAULT_PRODUCT_CONTEXT } from "@/lib/runtime/default-product-context";
+import { resolveProductContextFromCookies } from "@/lib/runtime/product-context-server";
 import { formatUsdc, shortenAddress } from "@/lib/utils/format";
 
 export default async function DashboardPage() {
+  const cookieStore = await cookies();
+  const productContext = resolveProductContextFromCookies(cookieStore);
+  const workspaceId = productContext.workspaceId;
   const { payouts, milestones, contributors, transactionProofs } =
-    await getDashboardData(DEFAULT_PRODUCT_CONTEXT.workspaceId);
+    await getDashboardData(workspaceId);
 
   const activePayouts = payouts.filter((payout) =>
     ["active", "partially_released"].includes(payout.status),
@@ -31,14 +35,52 @@ export default async function DashboardPage() {
     (sum, milestone) => sum + milestone.amount,
     0,
   );
-  const nextActionPayoutId = pendingApprovals[0]?.payoutId ?? releaseReadyMilestones[0]?.payoutId ?? activePayouts[0]?.id;
+  const outstandingExposure = Math.max(totalScheduled - releasedValue, 0);
+  const failedSettlementProof = transactionProofs.find((proof) => proof.status === "failed");
+  const pendingSettlementProof = transactionProofs.find((proof) => proof.status === "pending");
+  const pendingSettlementProofs = transactionProofs.filter((proof) => proof.status === "pending");
+  const failedSettlementMilestone = failedSettlementProof
+    ? milestones.find((milestone) => milestone.id === failedSettlementProof.milestoneId)
+    : undefined;
+  const pendingSettlementMilestone = pendingSettlementProof
+    ? milestones.find((milestone) => milestone.id === pendingSettlementProof.milestoneId)
+    : undefined;
+  const inFlightSettlementValue = pendingSettlementProofs.reduce((sum, proof) => {
+    const milestone = milestones.find((item) => item.id === proof.milestoneId);
+    return sum + (milestone?.amount ?? 0);
+  }, 0);
+  const nextActionPayoutId = pendingApprovals[0]?.payoutId
+    ?? failedSettlementMilestone?.payoutId
+    ?? pendingSettlementMilestone?.payoutId
+    ?? releaseReadyMilestones[0]?.payoutId
+    ?? activePayouts[0]?.id;
   const nextActionLabel = pendingApprovals[0]
     ? "Review next milestone"
-    : releaseReadyMilestones[0]
-      ? "Release approved milestone"
-      : activePayouts[0]
-        ? "Resume active payout"
-        : null;
+    : failedSettlementMilestone
+      ? "Retry failed settlement"
+      : pendingSettlementMilestone
+        ? "Update pending proof"
+        : releaseReadyMilestones[0]
+          ? "Release approved milestone"
+          : activePayouts[0]
+            ? "Resume active payout"
+            : null;
+  const priorityQueueTitle = pendingApprovals.length > 0
+    ? `${pendingApprovals.length} milestone${pendingApprovals.length === 1 ? "" : "s"} waiting for review`
+    : failedSettlementMilestone
+      ? `Retry settlement for ${failedSettlementMilestone.title}`
+      : pendingSettlementMilestone
+        ? `Update proof for ${pendingSettlementMilestone.title}`
+        : `${releaseReadyMilestones.length} milestone${releaseReadyMilestones.length === 1 ? "" : "s"} ready for release`;
+  const priorityQueueDescription = pendingApprovals.length > 0
+    ? "Review submitted work first so approved milestones can move into release-ready state without blocking the payout flow."
+    : failedSettlementMilestone
+      ? "A failed settlement is blocking payout progress. Retry the release or refresh proof state before moving on."
+      : pendingSettlementMilestone
+        ? "A release is already in flight. Confirm or fail the settlement proof before queuing more release work."
+        : releaseReadyMilestones.length > 0
+          ? "No review blockers remain. Move approved milestones into Arc settlement next."
+          : "No urgent payout blockers are open right now.";
 
   return (
     <div className="flex flex-col gap-8">
@@ -78,10 +120,10 @@ export default async function DashboardPage() {
             </div>
             <div className="space-y-2">
               <h2 className="text-2xl font-semibold tracking-tight text-white">
-                {pendingApprovals.length} milestone{pendingApprovals.length === 1 ? "" : "s"} waiting for review
+                {priorityQueueTitle}
               </h2>
               <p className="max-w-2xl text-sm leading-7 text-[var(--text-primary)]">
-                Review submitted work first so approved milestones can move into release-ready state without blocking the payout flow.
+                {priorityQueueDescription}
               </p>
             </div>
           </div>
@@ -116,11 +158,15 @@ export default async function DashboardPage() {
       <section className="grid gap-4 md:grid-cols-4">
         <StatCard label="Active payouts" value={activePayouts.length} />
         <StatCard label="Milestones awaiting review" value={pendingApprovals.length} />
-        <StatCard label="Milestones ready to release" value={releaseReadyMilestones.length} />
         <StatCard
-          label="Total scheduled"
-          value={`${formatUsdc(totalScheduled)} USDC`}
-          hint="Visible milestone commitments across all payouts"
+          label="Settlements in flight"
+          value={`${formatUsdc(inFlightSettlementValue)} USDC`}
+          hint={`${pendingSettlementProofs.length} milestone${pendingSettlementProofs.length === 1 ? "" : "s"} released and waiting for proof confirmation`}
+        />
+        <StatCard
+          label="Outstanding exposure"
+          value={`${formatUsdc(outstandingExposure)} USDC`}
+          hint="USDC still waiting on review, release, or proof confirmation across visible payouts"
         />
       </section>
 
@@ -197,16 +243,37 @@ export default async function DashboardPage() {
                 const nextReleaseReady = payoutMilestones.find(
                   (milestone) => milestone.status === "approved",
                 );
+                const currentReleaseProof = nextReleaseReady
+                  ? transactionProofs.find((proof) => proof.milestoneId === nextReleaseReady.id)
+                  : undefined;
+                const payoutStatusLabel =
+                  payout.status === "partially_released"
+                    ? "Partially released"
+                    : payout.status === "completed"
+                      ? "Completed"
+                      : payout.status === "active"
+                        ? "Active"
+                        : "Draft";
                 const payoutActionLabel = nextPendingReview
                   ? "Review milestone"
-                  : nextReleaseReady
-                    ? "Release milestone"
-                    : "View payout detail";
+                  : nextReleaseReady && currentReleaseProof?.status === "failed"
+                    ? "Retry settlement"
+                    : nextReleaseReady && currentReleaseProof?.status === "pending"
+                      ? "Update proof"
+                      : nextReleaseReady
+                        ? "Release milestone"
+                        : "View payout detail";
                 const payoutActionHint = nextPendingReview
                   ? `${nextPendingReview.title} is waiting for review.`
-                  : nextReleaseReady
-                    ? `${nextReleaseReady.title} is approved and ready for release.`
-                    : "Open the payout to continue milestone progress.";
+                  : nextReleaseReady && currentReleaseProof?.status === "pending"
+                    ? `${nextReleaseReady.title} is waiting for settlement proof confirmation.`
+                    : nextReleaseReady && currentReleaseProof?.status === "failed"
+                      ? `${nextReleaseReady.title} needs a retry or proof refresh before payout progress can continue.`
+                      : nextReleaseReady
+                        ? `${nextReleaseReady.title} is approved and ready for release.`
+                        : payout.status === "completed"
+                          ? "This payout is fully settled. Open the detail view to review final proof history."
+                          : "Open the payout to continue milestone progress.";
 
                 return (
                   <div
@@ -221,9 +288,9 @@ export default async function DashboardPage() {
                             {contributor?.name ?? payout.contributorId}
                           </p>
                         </div>
-                        <MilestoneStatusBadge
-                          status={payout.status === "partially_released" ? "approved" : "pending"}
-                        />
+                        <div className="inline-flex items-center rounded-full border border-cyan-300/20 bg-cyan-400/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-cyan-100">
+                          {payoutStatusLabel}
+                        </div>
                       </div>
                       <div className="grid gap-3 sm:grid-cols-2">
                         <div>

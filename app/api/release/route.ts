@@ -5,17 +5,16 @@ import { Prisma } from "@prisma/client";
 import { ARC_CONFIG } from "@/lib/arc/config";
 import { sendUsdcOnArc } from "@/lib/arc/send";
 import { db } from "@/lib/db/client";
+import {
+  getLegacyReleaseErrorStatus,
+  hasRequiredLegacyReleaseFields,
+  type ReleaseRequestBody,
+} from "@/lib/api/legacy-release";
+import { resolveWorkspaceIdFromRequest } from "@/lib/runtime/product-context-server";
 import type { ReleaseExecutionMode } from "@/lib/arc/types";
 
-type ReleaseRequestBody = {
-  payoutId: string;
-  milestoneId: string;
-  recipientAddress: string;
-  amount: string;
-  executionMode?: ReleaseExecutionMode;
-};
-
 export async function POST(request: Request) {
+  const workspaceId = resolveWorkspaceIdFromRequest(request);
   let body: ReleaseRequestBody;
 
   try {
@@ -24,10 +23,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const { payoutId, milestoneId, recipientAddress, amount, executionMode } =
-    body;
-
-  if (!payoutId || !milestoneId || !recipientAddress || !amount) {
+  if (!hasRequiredLegacyReleaseFields(body)) {
     return NextResponse.json(
       {
         error:
@@ -36,6 +32,9 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   }
+
+  const { payoutId, milestoneId, recipientAddress, amount, executionMode } =
+    body;
 
   // --- Step 1: Find or create a demo user (no auth yet) ---
   let user = await db.user.findFirst();
@@ -70,12 +69,14 @@ export async function POST(request: Request) {
           id: true,
           status: true,
           amountUsdc: true,
-          payout: { select: { id: true, targetWalletAddress: true } },
+          payout: { select: { id: true, workspaceId: true, targetWalletAddress: true } },
           releases: { select: { id: true }, take: 1 },
         },
       });
 
       if (!milestone) throw new Error("MILESTONE_NOT_FOUND");
+      if (milestone.payout.workspaceId !== workspaceId)
+        throw new Error("WORKSPACE_SCOPE_MISMATCH");
       if (milestone.payout.id !== payoutId)
         throw new Error("PAYOUT_MILESTONE_MISMATCH");
       if (milestone.status !== "approved")
@@ -130,7 +131,7 @@ export async function POST(request: Request) {
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "UNKNOWN_ERROR";
-    return NextResponse.json({ error: message }, { status: 400 });
+    return NextResponse.json({ error: message }, { status: getLegacyReleaseErrorStatus(message) });
   }
 
   // --- Step 3: Execute the Arc transfer ---

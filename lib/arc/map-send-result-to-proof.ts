@@ -12,18 +12,22 @@ export function mapSendResultToProof({
   milestoneId,
   releaseId,
 }: MapSendResultToProofParams): TransactionProof | null {
-  if (!result.txHash || !result.explorerUrl || !result.network) {
+  if (result.status === "confirmed" && (!result.txHash || !result.explorerUrl || !result.network)) {
+    return null;
+  }
+
+  if (result.status === "failed" && !result.network) {
     return null;
   }
 
   return {
-    id: `proof-${milestoneId}-${result.txHash}`,
+    id: `proof-${milestoneId}-${result.txHash ?? result.status}`,
     releaseId,
     milestoneId,
-    txHash: result.txHash,
-    network: result.network,
+    txHash: result.txHash ?? "",
+    network: result.network ?? "Arc Testnet",
     status: result.status,
-    explorerUrl: result.explorerUrl,
+    explorerUrl: result.explorerUrl ?? "",
     confirmedAt: result.confirmedAt,
   };
 }

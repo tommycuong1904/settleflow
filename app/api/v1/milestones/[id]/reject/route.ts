@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
+import { apiError, apiErrorFromCode } from "@/lib/api/errors";
+import { hasReviewerContext } from "@/lib/api/milestone-payload";
 import { reviewMilestone } from "@/lib/repositories/milestone-review";
+import { assertCanRejectMilestone } from "@/lib/runtime/product-policy";
+import { resolveProductContextFromRequest } from "@/lib/runtime/product-context-server";
 
 export async function POST(
   request: Request,
@@ -7,19 +11,42 @@ export async function POST(
 ) {
   const { id } = await params;
   try {
+    const productContext = resolveProductContextFromRequest(request);
     const body = await request.json();
-    if (typeof body.reviewedByUserId !== "string" || body.reviewedByUserId.trim().length === 0) {
-      return NextResponse.json({ error: "reviewedByUserId is required.", code: "INVALID_REVIEW_PAYLOAD" }, { status: 400 });
+    const reviewerUserId = productContext.activeUserId;
+
+    if (!hasReviewerContext(reviewerUserId)) {
+      return apiError("INVALID_REVIEW_PAYLOAD", { message: "reviewer context is required.", status: 400 });
     }
-    const result = await reviewMilestone(id, body.reviewedByUserId, "rejected", body.comment);
+
+    const policyViolation = assertCanRejectMilestone({ productContext, actorUserId: reviewerUserId });
+    if (policyViolation) {
+      return apiError(policyViolation.code, { message: policyViolation.message, status: policyViolation.status });
+    }
+    const result = await reviewMilestone(id, reviewerUserId, productContext.workspaceId, "rejected", body.comment);
     return NextResponse.json(result);
   } catch (error) {
-    if (error instanceof SyntaxError) return NextResponse.json({ error: "Invalid JSON body.", code: "INVALID_JSON_BODY" }, { status: 400 });
-    if (error instanceof Error && error.message === "MILESTONE_NOT_FOUND") return NextResponse.json({ error: "Milestone not found.", code: error.message }, { status: 404 });
-    if (error instanceof Error && error.message === "USER_NOT_FOUND") return NextResponse.json({ error: "Reviewer not found.", code: error.message }, { status: 404 });
-    if (error instanceof Error && error.message === "USER_NOT_ALLOWED_TO_REVIEW") return NextResponse.json({ error: "User is not allowed to review this milestone.", code: error.message }, { status: 403 });
-    if (error instanceof Error && error.message === "MILESTONE_NOT_REVIEWABLE") return NextResponse.json({ error: "Milestone has no submitted work to review.", code: error.message }, { status: 409 });
-    if (error instanceof Error && error.message === "REJECTION_COMMENT_REQUIRED") return NextResponse.json({ error: "A rejection comment is required.", code: error.message }, { status: 400 });
-    return NextResponse.json({ error: "Unable to reject milestone.", code: "UNABLE_TO_REJECT_MILESTONE" }, { status: 500 });
+    if (error instanceof SyntaxError) return apiError("INVALID_JSON_BODY", { message: "Invalid JSON body.", status: 400 });
+
+    const code = error instanceof Error ? error.message : "UNABLE_TO_REJECT_MILESTONE";
+    return apiErrorFromCode(
+      code,
+      {
+        MILESTONE_NOT_FOUND: 404,
+        WORKSPACE_SCOPE_MISMATCH: 409,
+        USER_NOT_FOUND: 404,
+        USER_NOT_ALLOWED_TO_REVIEW: 403,
+        MILESTONE_NOT_REVIEWABLE: 409,
+        REJECTION_COMMENT_REQUIRED: 400,
+      },
+      {
+        MILESTONE_NOT_FOUND: "Milestone not found.",
+        USER_NOT_FOUND: "Reviewer context user not found.",
+        USER_NOT_ALLOWED_TO_REVIEW: "User is not allowed to review this milestone.",
+        MILESTONE_NOT_REVIEWABLE: "Milestone has no submitted work to review.",
+        REJECTION_COMMENT_REQUIRED: "A rejection comment is required.",
+      },
+      { message: "Unable to reject milestone.", status: 500 },
+    );
   }
 }

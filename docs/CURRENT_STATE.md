@@ -103,13 +103,21 @@ This repository is now a full-stack Next.js application for SettleFlow, an Arc-n
 ### Confirmed facts
 - Search did not find auth-related flows such as `nextauth`, `clerk`, `getServerSession`, or `middleware` in application code.
 - No auth middleware or guarded route structure was found.
+- The repository now contains a request-derived product context boundary with:
+  - header/query/cookie-aware resolution
+  - proxy-based context bridging
+  - actor switch UX for seeded-role testing
+  - route-level permission checks for core mutations
+  - UI capability masking for owner / reviewer / contributor actions
 
 ### Conclusion
 - **No authentication flow is currently implemented in the inspected repository.**
-- **Minimal route-level/repository-level permission checks now exist for core payout, milestone, and release mutations in the seeded workspace model, but this is not a full auth system.**
+- **A stronger auth-shaped boundary now exists for the seeded workspace model, but it is still not a full auth system.**
+- **Actor identity for core workflow mutations is now derived from request product context rather than client-supplied body actor IDs.**
 
 ### Unknown
 - Whether the current permission boundary is intended only as a demo/dev safeguard or as the basis for a future production auth model.
+- Whether request-derived product context should later map directly to a real session/user principal or remain a separate testing boundary.
 
 ## 5. Build, scripts, and tests
 
@@ -147,14 +155,16 @@ This repository is now a full-stack Next.js application for SettleFlow, an Arc-n
 
 ### Confirmed
 - No login/session-based authentication flow is implemented.
-- Mutation routes now have a minimal repository-backed permission boundary for the seeded workspace roles:
+- Mutation routes now have a request-derived actor boundary for the seeded workspace roles:
   - payout create
   - payout activate
+  - payout draft edit
   - milestone submit
   - milestone approve/reject
   - milestone release
   - release proof refresh
   - release retry
+- Core UI surfaces now mask actions by actor role and include a header actor switcher for seeded-role testing.
 - No automated tests were found.
 - Arc execution is not verified here as a production-safe live payment path; behavior still depends on execution mode.
 - Legacy mock-data files remain in the repository and may still represent transition-era coupling or fallback assumptions.

@@ -8,5 +8,8 @@ export type TransactionProof = {
   network: string;
   status: TransactionProofStatus;
   explorerUrl: string;
+  blockNumber?: string;
+  failureReason?: string;
   confirmedAt?: string;
+  failedAt?: string;
 };

@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 
 import { ARC_CONFIG } from "@/lib/arc/config";
+import { sendUsdcWithBrowserWallet } from "@/lib/arc/browser-wallet";
 import { mapSendResultToProof } from "@/lib/arc/map-send-result-to-proof";
 import {
   ReleasePanel,
@@ -15,28 +16,37 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { Milestone } from "@/lib/models/milestone";
 import type { TransactionProof } from "@/lib/models/transaction-proof";
-import { DEFAULT_PRODUCT_CONTEXT } from "@/lib/runtime/default-product-context";
+import { useResolvedProductContext } from "@/lib/runtime/product-context-client";
+import { PRODUCT_CONTEXT_HEADER_NAMES, type ProductActor } from "@/lib/runtime/product-context";
 import { formatUsdc } from "@/lib/utils/format";
 
 type PayoutDetailReleaseShellProps = {
   payoutId: string;
   recipientAddress?: string;
   nextReleasableMilestone?: Milestone;
+  releaseMilestoneTitle?: string;
   releaseProof?: TransactionProof;
+  currentActor: ProductActor;
   onReleaseSuccess?: (payload: {
     milestoneId: string;
     proof: TransactionProof;
     releasedAt: string;
   }) => void;
+  onActivityChange?: () => void | Promise<void>;
 };
 
 export function PayoutDetailReleaseShell({
   payoutId,
   recipientAddress,
   nextReleasableMilestone,
+  releaseMilestoneTitle,
   releaseProof,
+  currentActor,
   onReleaseSuccess,
+  onActivityChange,
 }: PayoutDetailReleaseShellProps) {
+  const productContext = useResolvedProductContext();
+  const isOwnerActor = currentActor === "owner";
   const [releaseStatus, setReleaseStatus] = useState<ReleasePanelStatus>(
     releaseProof?.status === "failed"
       ? "failed"
@@ -66,13 +76,20 @@ export function PayoutDetailReleaseShell({
           ? "submitting"
           : "confirmed"
       : releaseStatus;
+  const releaseActionEnabled = effectiveReleaseStatus !== "failed";
+  const releaseActionLabel =
+    effectiveReleaseStatus === "failed"
+      ? "Retry from proof panel"
+      : undefined;
 
   const statusText = useMemo(() => {
     switch (effectiveReleaseStatus) {
       case "submitting":
         return "SettleFlow is preparing the Arc release and waiting for the settlement proof update.";
       case "confirmed":
-        return "Release completed. Review the proof below, then continue with the next approved milestone if one is ready.";
+        return nextReleasableMilestone
+          ? "Release completed. Review the proof below, then continue with the next approved milestone when you are ready."
+          : "Release completed. Review the proof below and return after the next milestone is approved for settlement.";
       case "failed":
         return releaseError ?? "Release failed before settlement proof could be attached. Retry after checking the current payout state.";
       case "idle":
@@ -83,8 +100,19 @@ export function PayoutDetailReleaseShell({
     }
   }, [effectiveReleaseStatus, nextReleasableMilestone, releaseError]);
 
+  const productContextHeaders = useMemo(
+    () => ({
+      [PRODUCT_CONTEXT_HEADER_NAMES.workspaceId]: productContext.workspaceId,
+      [PRODUCT_CONTEXT_HEADER_NAMES.ownerUserId]: productContext.ownerUserId,
+      [PRODUCT_CONTEXT_HEADER_NAMES.reviewerUserId]: productContext.reviewerUserId,
+      [PRODUCT_CONTEXT_HEADER_NAMES.contributorUserId]: productContext.contributorUserId,
+      [PRODUCT_CONTEXT_HEADER_NAMES.actor]: productContext.actor,
+    }),
+    [productContext.actor, productContext.contributorUserId, productContext.ownerUserId, productContext.reviewerUserId, productContext.workspaceId],
+  );
+
   async function handleRelease() {
-    if (!nextReleasableMilestone) {
+    if (!isOwnerActor || !nextReleasableMilestone) {
       return;
     }
 
@@ -94,9 +122,11 @@ export function PayoutDetailReleaseShell({
     try {
       const response = await fetch(`/api/v1/milestones/${nextReleasableMilestone.id}/release`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...productContextHeaders,
+        },
         body: JSON.stringify({
-          triggeredByUserId: DEFAULT_PRODUCT_CONTEXT.ownerUserId,
           amountUsdc: String(nextReleasableMilestone.amount),
         }),
       });
@@ -120,6 +150,60 @@ export function PayoutDetailReleaseShell({
         setReleaseError(data.error ?? "Release request failed.");
         setReleaseStatus("failed");
         return;
+      }
+
+      if (ARC_CONFIG.executionMode === "real" && data.release?.id) {
+        const walletResult = await sendUsdcWithBrowserWallet({
+          recipient: recipientAddress ?? "",
+          amount: String(nextReleasableMilestone.amount),
+        });
+
+        if (walletResult.state !== "success" || !walletResult.txHash) {
+          throw new Error("Arc browser-wallet send did not return a successful transaction.");
+        }
+
+        const proofResponse = await fetch(`/api/v1/releases/${data.release.id}/proof/refresh`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...productContextHeaders,
+          },
+          body: JSON.stringify({
+            status: "confirmed",
+            txHash: walletResult.txHash,
+            network: "Arc Testnet",
+          }),
+        });
+
+        const proofData = (await proofResponse.json()) as {
+          error?: string;
+          proof?: {
+            id: string;
+            releaseId?: string;
+            milestoneId?: string;
+            txHash?: string | null;
+            network?: string | null;
+            status: "pending" | "confirmed" | "failed";
+            explorerUrl?: string | null;
+            confirmedAt?: string | null;
+          };
+        };
+
+        if (!proofResponse.ok || proofData.error || !proofData.proof) {
+          throw new Error(proofData.error ?? "Unable to persist Arc settlement proof.");
+        }
+
+        data.release.status = "confirmed";
+        data.proof = {
+          id: proofData.proof.id,
+          releaseId: proofData.proof.releaseId,
+          milestoneId: proofData.proof.milestoneId ?? nextReleasableMilestone.id,
+          txHash: proofData.proof.txHash ?? walletResult.txHash,
+          network: proofData.proof.network ?? "Arc Testnet",
+          status: proofData.proof.status,
+          explorerUrl: proofData.proof.explorerUrl ?? walletResult.explorerUrl,
+          confirmedAt: proofData.proof.confirmedAt ?? new Date().toISOString(),
+        };
       }
 
       const result = mapSendResultToProof(
@@ -147,15 +231,16 @@ export function PayoutDetailReleaseShell({
         return;
       }
 
-      const releasedAt = result.confirmedAt ?? new Date().toISOString();
-
       setActiveProof(result);
-      onReleaseSuccess?.({
-        milestoneId: nextReleasableMilestone.id,
-        proof: result,
-        releasedAt,
-      });
+      if (result.status === "confirmed") {
+        onReleaseSuccess?.({
+          milestoneId: nextReleasableMilestone.id,
+          proof: result,
+          releasedAt: result.confirmedAt ?? new Date().toISOString(),
+        });
+      }
 
+      void onActivityChange?.();
       setReleaseStatus(result.status === "failed" ? "failed" : result.status === "pending" ? "submitting" : "confirmed");
     } catch (err) {
       setReleaseError(
@@ -166,7 +251,7 @@ export function PayoutDetailReleaseShell({
   }
 
   async function handleRetryRelease() {
-    if (!resolvedProof?.releaseId || retryingRelease) {
+    if (!isOwnerActor || !resolvedProof?.releaseId || retryingRelease) {
       return;
     }
 
@@ -176,8 +261,11 @@ export function PayoutDetailReleaseShell({
     try {
       const response = await fetch(`/api/v1/releases/${resolvedProof.releaseId}/retry`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ triggeredByUserId: DEFAULT_PRODUCT_CONTEXT.ownerUserId }),
+        headers: {
+          "Content-Type": "application/json",
+          ...productContextHeaders,
+        },
+        body: JSON.stringify({}),
       });
 
       const data = (await response.json()) as {
@@ -206,6 +294,7 @@ export function PayoutDetailReleaseShell({
       setConfirmationTxHash("");
       setFailureReason("");
       setReleaseStatus("submitting");
+      void onActivityChange?.();
     } catch (err) {
       setReleaseError(err instanceof Error ? err.message : "Retry release request failed.");
       setReleaseStatus("failed");
@@ -215,7 +304,7 @@ export function PayoutDetailReleaseShell({
   }
 
   async function handleRefreshProof(status: "confirmed" | "failed") {
-    if (!resolvedProof?.releaseId || refreshingProof) {
+    if (!isOwnerActor || !resolvedProof?.releaseId || refreshingProof) {
       return;
     }
 
@@ -238,9 +327,11 @@ export function PayoutDetailReleaseShell({
     try {
       const response = await fetch(`/api/v1/releases/${resolvedProof.releaseId}/proof/refresh`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...productContextHeaders,
+        },
         body: JSON.stringify({
-          refreshedByUserId: DEFAULT_PRODUCT_CONTEXT.ownerUserId,
           status,
           txHash: status === "confirmed" ? txHash : undefined,
           network: status === "confirmed" ? "Arc Testnet" : undefined,
@@ -268,25 +359,45 @@ export function PayoutDetailReleaseShell({
       }
 
       const proof = data.proof;
+      const resolvedMilestoneId = proof.milestoneId ?? resolvedProof.milestoneId;
+      const baseProof: TransactionProof = resolvedProof
+        ? resolvedProof
+        : {
+            id: proof.id,
+            releaseId: proof.releaseId,
+            milestoneId: resolvedMilestoneId,
+            txHash: "",
+            network: proof.network ?? "Arc Testnet",
+            status: proof.status,
+            explorerUrl: "",
+          };
+      const updatedProof: TransactionProof = {
+        ...baseProof,
+        id: proof.id,
+        releaseId: proof.releaseId ?? baseProof.releaseId,
+        milestoneId: resolvedMilestoneId,
+        status: proof.status,
+        txHash: proof.txHash ?? "",
+        network: proof.network ?? baseProof.network ?? "Arc Testnet",
+        explorerUrl: proof.explorerUrl ?? "",
+        confirmedAt: proof.confirmedAt ?? undefined,
+        failureReason: proof.failureReason ?? undefined,
+      };
 
-      setActiveProof((current) =>
-        current
-          ? {
-              ...current,
-              id: proof.id ?? current.id,
-              releaseId: proof.releaseId ?? resolvedProof.releaseId,
-              milestoneId: proof.milestoneId ?? current.milestoneId,
-              status: proof.status,
-              txHash: proof.txHash ?? "",
-              network: proof.network ?? current.network,
-              explorerUrl: proof.explorerUrl ?? "",
-              confirmedAt: proof.confirmedAt ?? undefined,
-            }
-          : current,
-      );
+      setActiveProof(updatedProof);
       setReleaseStatus(status === "failed" ? "failed" : "confirmed");
-      if (status === "confirmed") setConfirmationTxHash("");
-      if (status === "failed") setFailureReason("");
+      if (status === "confirmed") {
+        onReleaseSuccess?.({
+          milestoneId: resolvedMilestoneId,
+          proof: updatedProof,
+          releasedAt: proof.confirmedAt ?? new Date().toISOString(),
+        });
+        setConfirmationTxHash("");
+      }
+      if (status === "failed") {
+        setFailureReason("");
+        void onActivityChange?.();
+      }
     } catch (err) {
       setReleaseError(err instanceof Error ? err.message : "Proof refresh request failed.");
       setReleaseStatus("failed");
@@ -332,8 +443,11 @@ export function PayoutDetailReleaseShell({
           </div>
           <ReleasePanel
             amount={nextReleasableMilestone?.amount ?? 0}
-            network={`Arc Testnet (${ARC_CONFIG.executionMode})`}
-            enabled={Boolean(nextReleasableMilestone) || Boolean(resolvedProof)}
+            network="Arc Testnet"
+            modeLabel={ARC_CONFIG.executionMode}
+            enabled={isOwnerActor && (Boolean(nextReleasableMilestone) || Boolean(resolvedProof))}
+            actionEnabled={releaseActionEnabled}
+            actionLabel={releaseActionLabel}
             status={effectiveReleaseStatus}
             errorMessage={releaseError}
             onRelease={() => {
@@ -354,8 +468,8 @@ export function PayoutDetailReleaseShell({
           <CardTitle>Settlement Proof</CardTitle>
         </CardHeader>
         <CardContent>
-          <TransactionProofCard proof={resolvedProof} />
-          {resolvedProof?.status === "pending" && resolvedProof.releaseId ? (
+          <TransactionProofCard proof={resolvedProof} milestoneTitle={releaseMilestoneTitle} />
+          {resolvedProof?.status === "pending" && resolvedProof.releaseId && isOwnerActor ? (
             <div className="mt-4 space-y-4 rounded-2xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.42)] p-4">
               <div>
                 <p className="text-sm font-semibold text-white">Refresh pending settlement</p>
@@ -406,7 +520,7 @@ export function PayoutDetailReleaseShell({
               </div>
             </div>
           ) : null}
-          {resolvedProof?.status === "failed" && resolvedProof.releaseId ? (
+          {resolvedProof?.status === "failed" && resolvedProof.releaseId && isOwnerActor ? (
             <div className="mt-4 flex flex-wrap items-center gap-3">
               <Button variant="secondary" onClick={() => { void handleRetryRelease(); }} disabled={retryingRelease}>
                 {retryingRelease ? "Retrying..." : "Retry release"}
@@ -414,6 +528,11 @@ export function PayoutDetailReleaseShell({
               <p className="text-sm text-[var(--text-muted)]">
                 Queue a fresh release attempt for this failed settlement.
               </p>
+            </div>
+          ) : null}
+          {!isOwnerActor ? (
+            <div className="mt-4 rounded-2xl border border-dashed border-[var(--border-soft)] px-4 py-3 text-sm text-[var(--text-muted)]">
+              Release, proof refresh, and retry controls are only available in the owner view.
             </div>
           ) : null}
         <div className="mt-4 rounded-2xl border border-dashed border-[var(--border-soft)] px-4 py-3 text-sm text-[var(--text-muted)]">

@@ -88,6 +88,7 @@ export type PayoutDetailData = {
   payout: {
     id: string;
     title: string;
+    description?: string;
     contributorId: string;
     totalAmount: number;
     currency: "USDC";
@@ -119,7 +120,10 @@ export type PayoutDetailData = {
     network: string;
     status: "pending" | "confirmed" | "failed";
     explorerUrl: string;
+    blockNumber?: string;
+    failureReason?: string;
     confirmedAt?: string;
+    failedAt?: string;
   };
 };
 
@@ -127,12 +131,14 @@ export type PayoutDetailData = {
  * Fetch payout detail with milestones, contributor, and latest proof.
  * Returns null if payout not found.
  */
-export async function getPayoutDetail(id: string): Promise<PayoutDetailData | null> {
+export async function getPayoutDetail(id: string, workspaceId?: string): Promise<PayoutDetailData | null> {
   const payout = await db.payout.findUnique({
     where: { id },
     select: {
       id: true,
+      workspaceId: true,
       title: true,
+      description: true,
       contributorId: true,
       totalAmountUsdc: true,
       currency: true,
@@ -152,6 +158,7 @@ export async function getPayoutDetail(id: string): Promise<PayoutDetailData | nu
           status: true,
           submittedAt: true,
           approvedAt: true,
+          rejectedAt: true,
           releasedAt: true,
         },
       },
@@ -166,18 +173,23 @@ export async function getPayoutDetail(id: string): Promise<PayoutDetailData | nu
           network: true,
           status: true,
           explorerUrl: true,
+          blockNumber: true,
+          failureReason: true,
           confirmedAt: true,
+          failedAt: true,
         },
       },
     },
   });
 
   if (!payout) return null;
+  if (workspaceId && payout.workspaceId !== workspaceId) throw new Error("WORKSPACE_SCOPE_MISMATCH");
 
   return {
     payout: {
       id: payout.id,
       title: payout.title,
+      description: payout.description ?? undefined,
       contributorId: payout.contributorId,
       totalAmount: Number(payout.totalAmountUsdc.toString()),
       currency: "USDC",
@@ -201,6 +213,7 @@ export async function getPayoutDetail(id: string): Promise<PayoutDetailData | nu
       status: m.status,
       submittedAt: m.submittedAt?.toISOString() ?? undefined,
       approvedAt: m.approvedAt?.toISOString() ?? undefined,
+      rejectedAt: m.rejectedAt?.toISOString() ?? undefined,
       releasedAt: m.releasedAt?.toISOString() ?? undefined,
     })),
     releaseProof: payout.transactionProofs[0]
@@ -212,8 +225,12 @@ export async function getPayoutDetail(id: string): Promise<PayoutDetailData | nu
           network: payout.transactionProofs[0].network ?? "Arc Testnet",
           status: payout.transactionProofs[0].status,
           explorerUrl: payout.transactionProofs[0].explorerUrl ?? "",
+          blockNumber: payout.transactionProofs[0].blockNumber?.toString() ?? undefined,
+          failureReason: payout.transactionProofs[0].failureReason ?? undefined,
           confirmedAt:
             payout.transactionProofs[0].confirmedAt?.toISOString() ?? undefined,
+          failedAt:
+            payout.transactionProofs[0].failedAt?.toISOString() ?? undefined,
         }
       : undefined,
   };

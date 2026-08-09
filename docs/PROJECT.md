@@ -33,6 +33,7 @@ The current repository is being advanced as a real MVP with:
 - payout detail flow
 - repository/API-backed payout, milestone, release, and proof state transitions
 - Arc integration scaffolding with a real execution boundary
+- a seeded-role product-context boundary for owner / reviewer / contributor workflow testing
 
 ## Primary User
 - founder
@@ -63,6 +64,7 @@ At the time of writing:
 - the core product UI is implemented and is being treated as the real MVP surface
 - the repository now contains database-backed read/write paths for the payout workflow
 - auth/session is still incomplete and remains the main product gap
+- core workflow mutations now resolve actor identity from request product context rather than client body actor IDs
 - Arc send integration is scaffolded behind an execution boundary but is not yet verified as production-safe live settlement
 - legacy mock/demo artifacts still exist and should be treated as migration debt, not product direction
 

@@ -6,18 +6,24 @@ import { MilestoneStatusBadge } from "@/components/milestones/milestone-status-b
 import { ReviewControls } from "@/components/milestones/review-controls";
 import { Button } from "@/components/shared/button";
 import type { Milestone } from "@/lib/models/milestone";
-import { DEFAULT_PRODUCT_CONTEXT } from "@/lib/runtime/default-product-context";
+import type { ProductActor } from "@/lib/runtime/product-context";
 import { formatUsdc } from "@/lib/utils/format";
 
 type MilestoneRowProps = {
   milestone: Milestone;
+  currentActor: ProductActor;
   onApprove?: (milestoneId: string) => void | Promise<void>;
-  onReject?: (milestoneId: string) => void | Promise<void>;
-  onStatusChange?: (milestoneId: string, status: Milestone["status"]) => void;
+  onReject?: (milestoneId: string, comment?: string) => void | Promise<void>;
+  onStatusChange?: (
+    milestoneId: string,
+    status: Milestone["status"],
+    meta?: { submittedAt?: string; approvedAt?: string; rejectedAt?: string; releasedAt?: string },
+  ) => void;
 };
 
 export function MilestoneRow({
   milestone,
+  currentActor,
   onApprove,
   onReject,
   onStatusChange,
@@ -31,7 +37,10 @@ export function MilestoneRow({
   const isApproved = status === "approved";
   const isReleased = status === "released";
   const isRejected = status === "rejected";
-  const isSubmittable = status === "pending" || status === "rejected";
+  const isContributorActor = currentActor === "contributor";
+  const isReviewerActor = currentActor === "reviewer";
+  const isOwnerActor = currentActor === "owner";
+  const isSubmittable = (status === "pending" || status === "rejected") && isContributorActor;
 
   async function handleSubmitMilestone() {
     if (!isSubmittable || submitting) return;
@@ -43,15 +52,18 @@ export function MilestoneRow({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          submittedByUserId: DEFAULT_PRODUCT_CONTEXT.contributorUserId,
           summary: `Submitted via SettleFlow payout detail for ${milestone.title}.`,
         }),
       });
-      const data = (await response.json()) as { error?: string; milestone?: { status?: Milestone["status"] } };
+      const data = (await response.json()) as {
+        error?: string;
+        milestone?: { status?: Milestone["status"] };
+        submission?: { submittedAt?: string };
+      };
       if (!response.ok) throw new Error(data.error ?? "Unable to submit milestone.");
       const nextStatus = data.milestone?.status ?? "submitted";
       setStatus(nextStatus);
-      onStatusChange?.(milestone.id, nextStatus);
+      onStatusChange?.(milestone.id, nextStatus, { submittedAt: data.submission?.submittedAt });
     } catch (error) {
       setSubmissionError(error instanceof Error ? error.message : "Unable to submit milestone.");
     } finally {
@@ -73,9 +85,20 @@ export function MilestoneRow({
 
   async function handleReject() {
     if (!onReject || reviewBusy) return;
+    const comment = window.prompt(
+      `Why is ${milestone.title} being rejected?`,
+      "Please revise and resubmit with the requested changes.",
+    );
+    if (comment === null) return;
+    if (comment.trim().length === 0) {
+      setSubmissionError("A rejection comment is required.");
+      return;
+    }
+
     setReviewBusy(true);
+    setSubmissionError(null);
     try {
-      await onReject(milestone.id);
+      await onReject(milestone.id, comment.trim());
       setStatus("rejected");
       onStatusChange?.(milestone.id, "rejected");
     } finally {
@@ -105,19 +128,31 @@ export function MilestoneRow({
                 <p className="font-semibold text-white">Review needed</p>
                 <p>Submitted work is ready for an approve or reject decision.</p>
               </div>
-              <ReviewControls
-                submittedAt={milestone.submittedAt}
-                onApprove={handleApprove}
-                onReject={handleReject}
-                busy={reviewBusy}
-              />
+              {isReviewerActor ? (
+                <ReviewControls
+                  submittedAt={milestone.submittedAt}
+                  onApprove={handleApprove}
+                  onReject={handleReject}
+                  busy={reviewBusy}
+                />
+              ) : (
+                <p className="text-xs text-[var(--text-muted)]">Only the reviewer can approve or reject this milestone.</p>
+              )}
             </div>
           ) : null}
 
           {isApproved ? (
             <div className="space-y-2">
-              <p className="font-semibold text-white">Ready for release</p>
-              <p>Approved work can now move to the Arc release step from the side panel.</p>
+              <p className="font-semibold text-white">
+                {isOwnerActor ? "Ready for release" : isReviewerActor ? "Review complete" : "Waiting for release"}
+              </p>
+              <p>
+                {isOwnerActor
+                  ? "Approved work can now move to the Arc release step from the side panel."
+                  : isReviewerActor
+                    ? "Your review is complete. The owner can now release this approved milestone on Arc."
+                    : "This milestone has been approved and is now waiting for the owner to release it on Arc."}
+              </p>
             </div>
           ) : null}
 
@@ -137,9 +172,13 @@ export function MilestoneRow({
                 <p className="font-semibold text-white">Revision requested</p>
                 <p>The contributor needs to resubmit this milestone before review can continue.</p>
               </div>
-              <Button onClick={() => { void handleSubmitMilestone(); }} disabled={submitting} variant="secondary">
-                {submitting ? "Submitting..." : "Resubmit milestone"}
-              </Button>
+              {isContributorActor ? (
+                <Button onClick={() => { void handleSubmitMilestone(); }} disabled={submitting} variant="secondary">
+                  {submitting ? "Submitting..." : "Resubmit milestone"}
+                </Button>
+              ) : (
+                <p className="text-xs text-[var(--text-muted)]">Only the contributor can resubmit this milestone.</p>
+              )}
             </div>
           ) : null}
 
@@ -149,9 +188,13 @@ export function MilestoneRow({
                 <p className="font-semibold text-white">Waiting for contributor submission</p>
                 <p>Review and release actions will unlock after work is submitted.</p>
               </div>
-              <Button onClick={() => { void handleSubmitMilestone(); }} disabled={submitting} variant="secondary">
-                {submitting ? "Submitting..." : "Submit milestone"}
-              </Button>
+              {isContributorActor ? (
+                <Button onClick={() => { void handleSubmitMilestone(); }} disabled={submitting} variant="secondary">
+                  {submitting ? "Submitting..." : "Submit milestone"}
+                </Button>
+              ) : (
+                <p className="text-xs text-[var(--text-muted)]">Only the contributor can submit this milestone.</p>
+              )}
             </div>
           ) : null}
 

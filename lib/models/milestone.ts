@@ -14,5 +14,6 @@ export type Milestone = {
   status: MilestoneStatus;
   submittedAt?: string;
   approvedAt?: string;
+  rejectedAt?: string;
   releasedAt?: string;
 };

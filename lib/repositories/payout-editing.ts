@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db/client";
+import { recordActivity } from "@/lib/repositories/activity-log";
 
 export type UpdatePayoutDraftInput = {
   title?: string;
@@ -15,17 +16,39 @@ export type UpdatePayoutDraftInput = {
   }>;
 };
 
+export function deriveDraftUpdateActivityMetadata(
+  input: UpdatePayoutDraftInput,
+  currentContributorId: string,
+) {
+  const changedFields = Object.keys(input);
+  const headerChangedFields = changedFields.filter((key) => key !== "milestones");
+
+  return {
+    changedFields,
+    headerChangedFields,
+    headerChanged: String(headerChangedFields.length > 0),
+    milestonesChanged: String(input.milestones !== undefined),
+    contributorChanged:
+      input.contributorId !== undefined
+        ? String(input.contributorId !== currentContributorId)
+        : undefined,
+    milestoneCount: input.milestones?.length,
+  };
+}
+
 export async function updatePayoutDraft(
   id: string,
   workspaceId: string,
   input: UpdatePayoutDraftInput,
+  actorUserId?: string,
 ) {
   return db.$transaction(async (tx: Prisma.TransactionClient) => {
-    const current = await tx.payout.findFirst({
-      where: { id, workspaceId },
-      select: { status: true, contributorId: true },
+    const current = await tx.payout.findUnique({
+      where: { id },
+      select: { status: true, contributorId: true, workspaceId: true },
     });
     if (!current) throw new Error("PAYOUT_NOT_FOUND");
+    if (current.workspaceId !== workspaceId) throw new Error("WORKSPACE_SCOPE_MISMATCH");
     if (current.status !== "draft") throw new Error("PAYOUT_NOT_DRAFT");
 
     if (input.contributorId) {
@@ -36,7 +59,7 @@ export async function updatePayoutDraft(
       if (!contributor) throw new Error("CONTRIBUTOR_NOT_FOUND");
     }
 
-    return tx.payout.update({
+    const updated = await tx.payout.update({
       where: { id },
       data: {
         title: input.title,
@@ -53,7 +76,51 @@ export async function updatePayoutDraft(
             }
           : {}),
       },
-      select: { id: true, status: true },
+      select: {
+        id: true,
+        status: true,
+        title: true,
+        description: true,
+        totalAmountUsdc: true,
+        milestones: {
+          orderBy: { sequence: "asc" },
+          select: {
+            id: true,
+            title: true,
+            description: true,
+            amountUsdc: true,
+            sequence: true,
+          },
+        },
+      },
     });
+
+    if (actorUserId) {
+      await recordActivity(tx, {
+        workspaceId,
+        actorUserId,
+        entityType: "payout",
+        entityId: id,
+        payoutId: id,
+        action: "payout_draft_updated",
+        metadata: deriveDraftUpdateActivityMetadata(input, current.contributorId),
+      });
+    }
+
+    return {
+      id: updated.id,
+      status: updated.status,
+      title: updated.title,
+      description: updated.description,
+      totalAmountUsdc: updated.totalAmountUsdc.toString(),
+      milestoneCount: updated.milestones.length,
+      milestones: updated.milestones.map((milestone) => ({
+        id: milestone.id,
+        title: milestone.title,
+        description: milestone.description,
+        amountUsdc: milestone.amountUsdc.toString(),
+        sequence: milestone.sequence,
+      })),
+    };
   });
 }

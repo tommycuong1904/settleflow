@@ -63,7 +63,8 @@ The MVP focuses on one core workflow:
 - MVP scope narrowed toward a real usable product surface
 - Repository structure and implementation plan established
 - Core payout workflow now has repository/API-backed mutation paths
-- Permission boundary V1 and mutation contract hardening are in progress
+- Payout detail now supports draft edit, activate, submit, approve/reject, release, proof refresh, retry, and activity sync as a single workflow slice
+- Mutation responses and client sync have been hardened to reduce local-only state assumptions
 - Arc integration scaffold and release execution boundary are in place
 
 ## Verified Checkpoint 2 State
@@ -72,7 +73,7 @@ Verified routes:
 - `/`
 - `/dashboard`
 - `/payouts/new`
-- `/payouts/payout-detail`
+- `/payouts/[id]`
 
 Verified checks:
 - `npm run build` completed successfully

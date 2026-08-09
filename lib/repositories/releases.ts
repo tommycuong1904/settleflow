@@ -1,11 +1,61 @@
+import { Decimal } from "@prisma/client/runtime/library";
 import { db } from "@/lib/db/client";
 
-export async function getReleaseById(id: string) {
+type ReleaseProofRecord = {
+  id: string;
+  status: string;
+  txHash: string | null;
+  network: string | null;
+  explorerUrl: string | null;
+  blockNumber: bigint | null;
+  failureReason: string | null;
+  confirmedAt: Date | null;
+  failedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+type ReleaseRecord = {
+  id: string;
+  payoutId: string;
+  payout: { workspaceId: string };
+  milestoneId: string | null;
+  triggeredByUserId: string;
+  amountUsdc: Decimal;
+  status: string;
+  arcRequestId: string | null;
+  destinationWalletAddress: string;
+  failureReason: string | null;
+  requestedAt: Date | null;
+  executedAt: Date | null;
+  failedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+  proofs: ReleaseProofRecord[];
+};
+export function normalizeReleaseProof(proof: ReleaseProofRecord) {
+  return {
+    ...proof,
+    blockNumber: proof.blockNumber?.toString() ?? null,
+  };
+}
+
+export function normalizeReleaseRecord(release: ReleaseRecord) {
+  const { payout: _payout, ...releaseData } = release;
+  return {
+    ...releaseData,
+    amountUsdc: release.amountUsdc.toString(),
+    proofs: release.proofs.map(normalizeReleaseProof),
+  };
+}
+
+export async function getReleaseById(id: string, workspaceId?: string) {
   const release = await db.release.findUnique({
     where: { id },
     select: {
       id: true,
       payoutId: true,
+      payout: { select: { workspaceId: true } },
       milestoneId: true,
       triggeredByUserId: true,
       amountUsdc: true,
@@ -38,12 +88,6 @@ export async function getReleaseById(id: string) {
   });
 
   if (!release) return null;
-  return {
-    ...release,
-    amountUsdc: release.amountUsdc.toString(),
-    proofs: release.proofs.map((proof: (typeof release.proofs)[number]) => ({
-      ...proof,
-      blockNumber: proof.blockNumber?.toString() ?? null,
-    })),
-  };
+  if (workspaceId && release.payout.workspaceId !== workspaceId) return null;
+  return normalizeReleaseRecord(release);
 }

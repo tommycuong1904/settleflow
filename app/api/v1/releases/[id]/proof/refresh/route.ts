@@ -1,44 +1,76 @@
 import { NextResponse } from "next/server";
+import { apiError, apiErrorFromCode } from "@/lib/api/errors";
+import { hasOwnerWorkspaceContext, isValidProofRefreshStatus } from "@/lib/api/release-payload";
 import { refreshReleaseProof, type RefreshProofInput } from "@/lib/repositories/release-proof";
-
-const statuses = new Set(["confirmed", "failed"]);
+import { assertCanRefreshProof } from "@/lib/runtime/product-policy";
+import { resolveProductContextFromRequest } from "@/lib/runtime/product-context-server";
 
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
-  const body = await request.json().catch(() => null) as (Partial<RefreshProofInput> & {
-    refreshedByUserId?: string;
-    triggeredByUserId?: string;
-  }) | null;
-  if (!body || typeof body.status !== "string" || !statuses.has(body.status)) {
-    return NextResponse.json({ error: "status must be confirmed or failed.", code: "INVALID_PROOF_STATUS" }, { status: 400 });
+
+  let body: Partial<RefreshProofInput> | null;
+  try {
+    body = await request.json() as Partial<RefreshProofInput>;
+  } catch {
+    return apiError("INVALID_JSON_BODY", { message: "Invalid JSON body.", status: 400 });
   }
 
-  const actorUserId = typeof body.triggeredByUserId === "string" && body.triggeredByUserId.trim().length > 0
-    ? body.triggeredByUserId
-    : body.refreshedByUserId;
+  if (!body || !isValidProofRefreshStatus(body.status)) {
+    return apiError("INVALID_PROOF_STATUS", { message: "status must be confirmed or failed.", status: 400 });
+  }
 
-  if (typeof actorUserId !== "string" || actorUserId.trim().length === 0) {
-    return NextResponse.json({ error: "triggeredByUserId is required.", code: "INVALID_PROOF_REFRESH_PAYLOAD" }, { status: 400 });
+  const productContext = resolveProductContextFromRequest(request);
+  const ownerUserId = productContext.ownerUserId;
+
+  if (!hasOwnerWorkspaceContext({ workspaceId: productContext.workspaceId, ownerUserId })) {
+    return apiError("INVALID_PROOF_REFRESH_PAYLOAD", {
+      message: "owner and workspace context are required.",
+      status: 400,
+    });
+  }
+
+  const policyViolation = assertCanRefreshProof({ productContext, actorUserId: ownerUserId });
+  if (policyViolation) {
+    return apiError(policyViolation.code, { message: policyViolation.message, status: policyViolation.status });
   }
 
   try {
-    const result = await refreshReleaseProof(id, actorUserId, body as RefreshProofInput);
+    const result = await refreshReleaseProof(id, ownerUserId, productContext.workspaceId, body as RefreshProofInput);
     return NextResponse.json(result);
   } catch (error) {
     const code = error instanceof Error ? error.message : "UNKNOWN_ERROR";
-    const status = {
-      RELEASE_NOT_FOUND: 404,
-      MILESTONE_NOT_FOUND: 404,
-      PROOF_NOT_FOUND: 404,
-      FORBIDDEN_PROOF_REFRESH: 403,
-      RELEASE_NOT_REFRESHABLE: 409,
-      PROOF_NOT_PENDING: 409,
-      TX_HASH_REQUIRED: 422,
-      FAILURE_REASON_REQUIRED: 422,
-    }[code] ?? 500;
-    return NextResponse.json({ error: code, code }, { status });
+    return apiErrorFromCode(
+      code,
+      {
+        RELEASE_NOT_FOUND: 404,
+        WORKSPACE_SCOPE_MISMATCH: 409,
+        MILESTONE_NOT_FOUND: 404,
+        PROOF_NOT_FOUND: 404,
+        PROOF_NOT_PENDING: 409,
+        MILESTONE_NOT_APPROVED_FOR_CONFIRMATION: 409,
+        RELEASE_NOT_REFRESHABLE: 409,
+        STALE_PROOF_REFRESH: 409,
+        TX_HASH_REQUIRED: 400,
+        FAILURE_REASON_REQUIRED: 400,
+        FORBIDDEN_PROOF_REFRESH: 403,
+      },
+      {
+        RELEASE_NOT_FOUND: "Release not found.",
+        WORKSPACE_SCOPE_MISMATCH: "Workspace context does not match the release workspace.",
+        MILESTONE_NOT_FOUND: "Milestone not found for this release.",
+        PROOF_NOT_FOUND: "Settlement proof not found for this release.",
+        PROOF_NOT_PENDING: "Only pending proofs can be refreshed.",
+        MILESTONE_NOT_APPROVED_FOR_CONFIRMATION: "This milestone is no longer approved for settlement confirmation.",
+        RELEASE_NOT_REFRESHABLE: "This release is not in a refreshable state.",
+        STALE_PROOF_REFRESH: "This proof refresh no longer applies to the active release attempt.",
+        TX_HASH_REQUIRED: "A transaction hash is required when confirming settlement.",
+        FAILURE_REASON_REQUIRED: "A failure reason is required when marking settlement as failed.",
+        FORBIDDEN_PROOF_REFRESH: "User is not allowed to refresh this settlement proof.",
+      },
+      { message: "Unable to refresh settlement proof.", status: 500 },
+    );
   }
 }

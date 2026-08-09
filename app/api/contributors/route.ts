@@ -1,18 +1,24 @@
 import { NextResponse } from "next/server";
+import { apiError } from "@/lib/api/errors";
+import {
+  contributorStatuses,
+  isValidEnumQueryValue,
+  parseEnumQueryValue,
+} from "@/lib/api/list-query";
 import { listContributors } from "@/lib/repositories/contributors";
-import { DEFAULT_PRODUCT_CONTEXT } from "@/lib/runtime/default-product-context";
+import { resolveWorkspaceIdFromRequest } from "@/lib/runtime/product-context-server";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const status = searchParams.get("status");
 
-  if (status && status !== "active" && status !== "archived") {
-    return NextResponse.json({ error: "Invalid contributor status." }, { status: 400 });
+  if (!isValidEnumQueryValue(status, contributorStatuses)) {
+    return apiError("INVALID_CONTRIBUTOR_STATUS", { message: "Invalid contributor status.", status: 400 });
   }
 
   const contributors = await listContributors({
-    workspaceId: searchParams.get("workspaceId") ?? DEFAULT_PRODUCT_CONTEXT.workspaceId,
-    status: status as "active" | "archived" | undefined,
+    workspaceId: resolveWorkspaceIdFromRequest(request),
+    status: parseEnumQueryValue(status, contributorStatuses),
     search: searchParams.get("search") ?? undefined,
   });
 

@@ -2,11 +2,44 @@ import { Decimal } from "@prisma/client/runtime/library";
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db/client";
 import type { ReleaseExecutionMode } from "@/lib/arc/types";
+import { recordActivity } from "@/lib/repositories/activity-log";
 import { hasWorkspaceRole } from "@/lib/repositories/permissions";
+
+type QueueReleasePayload = {
+  payoutId: string;
+  milestoneId: string;
+  triggeredByUserId: string;
+  amountUsdc: Decimal;
+  executionMode: ReleaseExecutionMode;
+  sourceWalletAddress: null;
+  destinationWalletAddress: string;
+  status: "queued";
+};
+
+export function deriveQueuedReleasePayload(input: {
+  payoutId: string;
+  milestoneId: string;
+  triggeredByUserId: string;
+  amountUsdc: Decimal;
+  executionMode: ReleaseExecutionMode;
+  destinationWalletAddress: string;
+}): QueueReleasePayload {
+  return {
+    payoutId: input.payoutId,
+    milestoneId: input.milestoneId,
+    triggeredByUserId: input.triggeredByUserId,
+    amountUsdc: input.amountUsdc,
+    executionMode: input.executionMode,
+    sourceWalletAddress: null,
+    destinationWalletAddress: input.destinationWalletAddress,
+    status: "queued",
+  };
+}
 
 export async function queueMilestoneRelease(
   milestoneId: string,
-  triggeredByUserId: string,
+  ownerUserId: string,
+  workspaceId: string,
   amountUsdc: string,
   executionMode: ReleaseExecutionMode = "browser_wallet",
 ) {
@@ -17,45 +50,87 @@ export async function queueMilestoneRelease(
         id: true,
         status: true,
         amountUsdc: true,
-        payout: { select: { id: true, workspaceId: true, targetWalletAddress: true } },
+        payout: {
+          select: {
+            id: true,
+            workspaceId: true,
+            status: true,
+            targetWalletAddress: true,
+          },
+        },
         releases: { select: { id: true }, take: 1 },
       },
     });
     if (!milestone) throw new Error("MILESTONE_NOT_FOUND");
+    if (milestone.payout.workspaceId !== workspaceId) throw new Error("WORKSPACE_SCOPE_MISMATCH");
     if (milestone.status !== "approved") throw new Error("MILESTONE_NOT_APPROVED");
+    if (!["active", "partially_released"].includes(milestone.payout.status)) {
+      throw new Error("PAYOUT_NOT_RELEASE_READY");
+    }
     if (milestone.releases.length > 0) throw new Error("RELEASE_ALREADY_EXISTS");
     if (!milestone.payout.targetWalletAddress) throw new Error("DESTINATION_WALLET_MISSING");
 
     const requestedAmount = new Decimal(amountUsdc);
     if (!requestedAmount.equals(milestone.amountUsdc)) throw new Error("RELEASE_AMOUNT_MISMATCH");
 
-    const user = await tx.user.findUnique({ where: { id: triggeredByUserId }, select: { id: true } });
+    const user = await tx.user.findUnique({ where: { id: ownerUserId }, select: { id: true } });
     if (!user) throw new Error("USER_NOT_FOUND");
 
     const hasReleaseRole = await hasWorkspaceRole(
       tx,
       milestone.payout.workspaceId,
-      triggeredByUserId,
+      ownerUserId,
       ["owner", "ops"],
     );
     if (!hasReleaseRole) throw new Error("USER_NOT_ALLOWED_TO_RELEASE");
 
     const release = await tx.release.create({
-      data: {
+      data: deriveQueuedReleasePayload({
         payoutId: milestone.payout.id,
         milestoneId,
-        triggeredByUserId,
+        triggeredByUserId: ownerUserId,
         amountUsdc: requestedAmount,
         executionMode,
-        sourceWalletAddress: null,
         destinationWalletAddress: milestone.payout.targetWalletAddress,
-        status: "queued",
+      }),
+      select: {
+        id: true,
+        status: true,
+        amountUsdc: true,
+        milestoneId: true,
+        payoutId: true,
+        destinationWalletAddress: true,
+        executionMode: true,
       },
-      select: { id: true, status: true, amountUsdc: true },
     });
     const proof = await tx.transactionProof.create({
       data: { payoutId: milestone.payout.id, milestoneId, releaseId: release.id, status: "pending" },
-      select: { id: true, releaseId: true, status: true },
+      select: {
+        id: true,
+        releaseId: true,
+        milestoneId: true,
+        status: true,
+        txHash: true,
+        network: true,
+        explorerUrl: true,
+        confirmedAt: true,
+        failureReason: true,
+      },
+    });
+    await recordActivity(tx, {
+      workspaceId: milestone.payout.workspaceId,
+      actorUserId: ownerUserId,
+      entityType: "release",
+      entityId: release.id,
+      payoutId: milestone.payout.id,
+      milestoneId,
+      releaseId: release.id,
+      action: "release_queued",
+      metadata: {
+        proofId: proof.id,
+        amountUsdc,
+        executionMode,
+      },
     });
     return { release, proof };
   });
