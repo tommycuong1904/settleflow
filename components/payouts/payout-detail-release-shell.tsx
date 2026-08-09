@@ -150,15 +150,16 @@ export function PayoutDetailReleaseShell({
         return;
       }
 
-      const releasedAt = result.confirmedAt ?? new Date().toISOString();
-
       setActiveProof(result);
-      onReleaseSuccess?.({
-        milestoneId: nextReleasableMilestone.id,
-        proof: result,
-        releasedAt,
-      });
+      if (result.status === "confirmed") {
+        onReleaseSuccess?.({
+          milestoneId: nextReleasableMilestone.id,
+          proof: result,
+          releasedAt: result.confirmedAt ?? new Date().toISOString(),
+        });
+      }
 
+      void onActivityChange?.();
       setReleaseStatus(result.status === "failed" ? "failed" : result.status === "pending" ? "submitting" : "confirmed");
     } catch (err) {
       setReleaseError(
