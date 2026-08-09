@@ -72,6 +72,11 @@ export function PayoutDetailReleaseShell({
           ? "submitting"
           : "confirmed"
       : releaseStatus;
+  const releaseActionEnabled = effectiveReleaseStatus !== "failed";
+  const releaseActionLabel =
+    effectiveReleaseStatus === "failed"
+      ? "Retry from proof panel"
+      : undefined;
 
   const statusText = useMemo(() => {
     switch (effectiveReleaseStatus) {
@@ -360,6 +365,8 @@ export function PayoutDetailReleaseShell({
             amount={nextReleasableMilestone?.amount ?? 0}
             network={`Arc Testnet (${ARC_CONFIG.executionMode})`}
             enabled={isOwnerActor && (Boolean(nextReleasableMilestone) || Boolean(resolvedProof))}
+            actionEnabled={releaseActionEnabled}
+            actionLabel={releaseActionLabel}
             status={effectiveReleaseStatus}
             errorMessage={releaseError}
             onRelease={() => {

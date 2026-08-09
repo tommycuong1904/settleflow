@@ -6,6 +6,8 @@ type ReleasePanelProps = {
   amount: number;
   network?: string;
   enabled?: boolean;
+  actionEnabled?: boolean;
+  actionLabel?: string;
   status?: ReleasePanelStatus;
   errorMessage?: string | null;
   onRelease?: () => void;
@@ -29,11 +31,13 @@ export function ReleasePanel({
   amount,
   network = "Arc Testnet",
   enabled = false,
+  actionEnabled = true,
+  actionLabel,
   status = "idle",
   errorMessage = null,
   onRelease,
 }: ReleasePanelProps) {
-  const canRelease = enabled && status !== "submitting" && status !== "confirmed";
+  const canRelease = enabled && actionEnabled && status !== "submitting" && status !== "confirmed";
 
   const statusLine =
     status === "confirmed"
@@ -47,7 +51,7 @@ export function ReleasePanel({
   return enabled ? (
     <div className="space-y-3 text-sm text-[var(--text-primary)]">
       <Button variant="primary" onClick={onRelease} disabled={!canRelease}>
-        {getButtonLabel(status)}
+        {actionLabel ?? getButtonLabel(status)}
       </Button>
       <div className="rounded-2xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.48)] px-4 py-3 text-sm text-white">
         {statusLine}
