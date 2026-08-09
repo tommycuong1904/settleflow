@@ -48,10 +48,23 @@ function getLogDescription(action: string, metadata?: Record<string, unknown>) {
       return "Payout moved from draft to active state.";
     case "payout_draft_updated": {
       const changedFields = metadata?.changedFields;
+      const headerChangedFields = metadata?.headerChangedFields;
+      const milestonesChanged = asText(metadata?.milestonesChanged) === "true";
+      const milestoneCount = asText(metadata?.milestoneCount);
+
+      if (Array.isArray(headerChangedFields) && headerChangedFields.length > 0 && milestonesChanged) {
+        return `Updated payout fields (${headerChangedFields.join(", ")}) and reshaped ${milestoneCount ?? "the"} milestone draft${milestoneCount === "1" ? "" : "s"}.`;
+      }
+      if (Array.isArray(headerChangedFields) && headerChangedFields.length > 0) {
+        return `Updated payout fields: ${headerChangedFields.join(", ")}.`;
+      }
+      if (milestonesChanged) {
+        return `Updated ${milestoneCount ?? "the"} milestone draft${milestoneCount === "1" ? "" : "s"}.`;
+      }
       if (Array.isArray(changedFields) && changedFields.length > 0) {
         return `Updated fields: ${changedFields.join(", ")}.`;
       }
-      return "Payout draft details were updated.";
+      return "Draft payout details were updated.";
     }
     case "milestone_submitted":
       return asText(metadata?.summary) ?? "Contributor submitted milestone deliverables.";

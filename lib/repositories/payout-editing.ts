@@ -63,6 +63,11 @@ export async function updatePayoutDraft(
 
     const actorUserId = input.updatedByUserId ?? input.actorUserId ?? input.ownerUserId;
     if (actorUserId) {
+      const changedFields = Object.keys(input).filter(
+        (key) => key !== "updatedByUserId" && key !== "actorUserId" && key !== "ownerUserId",
+      );
+      const headerChangedFields = changedFields.filter((key) => key !== "milestones");
+
       await recordActivity(tx, {
         workspaceId,
         actorUserId,
@@ -71,9 +76,10 @@ export async function updatePayoutDraft(
         payoutId: id,
         action: "payout_draft_updated",
         metadata: {
-          changedFields: Object.keys(input).filter(
-            (key) => key !== "updatedByUserId" && key !== "actorUserId" && key !== "ownerUserId",
-          ),
+          changedFields,
+          headerChangedFields,
+          headerChanged: String(headerChangedFields.length > 0),
+          milestonesChanged: String(input.milestones !== undefined),
           contributorChanged: input.contributorId !== undefined ? String(input.contributorId !== current.contributorId) : undefined,
           milestoneCount: input.milestones?.length,
         },
