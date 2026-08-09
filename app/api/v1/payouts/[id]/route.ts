@@ -13,10 +13,10 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
-  const workspaceId = new URL(request.url).searchParams.get("workspaceId") ?? undefined;
+  const productContext = resolveProductContextFromRequest(request);
 
   try {
-    const detail = await getPayoutDetail(id, workspaceId);
+    const detail = await getPayoutDetail(id, productContext.workspaceId);
     if (!detail) return apiError("PAYOUT_NOT_FOUND", { message: "Payout not found.", status: 404 });
     return NextResponse.json({ data: detail });
   } catch (error) {
