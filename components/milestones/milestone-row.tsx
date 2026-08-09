@@ -13,7 +13,11 @@ type MilestoneRowProps = {
   milestone: Milestone;
   onApprove?: (milestoneId: string) => void | Promise<void>;
   onReject?: (milestoneId: string, comment?: string) => void | Promise<void>;
-  onStatusChange?: (milestoneId: string, status: Milestone["status"]) => void;
+  onStatusChange?: (
+    milestoneId: string,
+    status: Milestone["status"],
+    meta?: { submittedAt?: string; approvedAt?: string; rejectedAt?: string; releasedAt?: string },
+  ) => void;
 };
 
 export function MilestoneRow({
@@ -49,11 +53,15 @@ export function MilestoneRow({
           summary: `Submitted via SettleFlow payout detail for ${milestone.title}.`,
         }),
       });
-      const data = (await response.json()) as { error?: string; milestone?: { status?: Milestone["status"] } };
+      const data = (await response.json()) as {
+        error?: string;
+        milestone?: { status?: Milestone["status"] };
+        submission?: { submittedAt?: string };
+      };
       if (!response.ok) throw new Error(data.error ?? "Unable to submit milestone.");
       const nextStatus = data.milestone?.status ?? "submitted";
       setStatus(nextStatus);
-      onStatusChange?.(milestone.id, nextStatus);
+      onStatusChange?.(milestone.id, nextStatus, { submittedAt: data.submission?.submittedAt });
     } catch (error) {
       setSubmissionError(error instanceof Error ? error.message : "Unable to submit milestone.");
     } finally {

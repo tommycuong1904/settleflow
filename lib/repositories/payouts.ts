@@ -158,6 +158,7 @@ export async function getPayoutDetail(id: string, workspaceId?: string): Promise
           status: true,
           submittedAt: true,
           approvedAt: true,
+          rejectedAt: true,
           releasedAt: true,
         },
       },
@@ -212,6 +213,7 @@ export async function getPayoutDetail(id: string, workspaceId?: string): Promise
       status: m.status,
       submittedAt: m.submittedAt?.toISOString() ?? undefined,
       approvedAt: m.approvedAt?.toISOString() ?? undefined,
+      rejectedAt: m.rejectedAt?.toISOString() ?? undefined,
       releasedAt: m.releasedAt?.toISOString() ?? undefined,
     })),
     releaseProof: payout.transactionProofs[0]

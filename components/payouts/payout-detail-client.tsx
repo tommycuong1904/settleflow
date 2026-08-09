@@ -382,14 +382,24 @@ export function PayoutDetailClient({
     }
   }
 
-  function handleMilestoneStatusChange(milestoneId: string, status: Milestone["status"]) {
+  function handleMilestoneStatusChange(
+    milestoneId: string,
+    status: Milestone["status"],
+    meta?: { submittedAt?: string; approvedAt?: string; rejectedAt?: string; releasedAt?: string },
+  ) {
     setMilestoneState((current) =>
       current.map((milestone) =>
         milestone.id === milestoneId
           ? {
               ...milestone,
               status,
-              submittedAt: status === "submitted" ? new Date().toISOString() : milestone.submittedAt,
+              submittedAt:
+                status === "submitted"
+                  ? meta?.submittedAt ?? milestone.submittedAt
+                  : milestone.submittedAt,
+              approvedAt: status === "approved" ? meta?.approvedAt ?? milestone.approvedAt : milestone.approvedAt,
+              rejectedAt: status === "rejected" ? meta?.rejectedAt ?? milestone.rejectedAt : milestone.rejectedAt,
+              releasedAt: status === "released" ? meta?.releasedAt ?? milestone.releasedAt : milestone.releasedAt,
             }
           : milestone,
       ),
@@ -406,13 +416,33 @@ export function PayoutDetailClient({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(decision === "rejected" ? { comment } : {}),
       });
-      const data = (await response.json()) as { error?: string };
+      const data = (await response.json()) as {
+        error?: string;
+        milestone?: {
+          status: Milestone["status"];
+          approvedAt?: string | null;
+          rejectedAt?: string | null;
+        };
+      };
       if (!response.ok) throw new Error(data.error ?? `Unable to ${decision} milestone.`);
-      setMilestoneState((current) => current.map((milestone) =>
-        milestone.id === milestoneId
-          ? { ...milestone, status: decision, ...(decision === "approved" ? { approvedAt: new Date().toISOString() } : {}) }
-          : milestone,
-      ));
+      setMilestoneState((current) =>
+        current.map((milestone) =>
+          milestone.id === milestoneId
+            ? {
+                ...milestone,
+                status: data.milestone?.status ?? decision,
+                approvedAt:
+                  decision === "approved"
+                    ? (data.milestone?.approvedAt ?? milestone.approvedAt)
+                    : milestone.approvedAt,
+                rejectedAt:
+                  decision === "rejected"
+                    ? (data.milestone?.rejectedAt ?? milestone.rejectedAt)
+                    : milestone.rejectedAt,
+              }
+            : milestone,
+        ),
+      );
       await refreshActivity();
     } catch (error) {
       setReviewError(error instanceof Error ? error.message : "Review request failed.");
