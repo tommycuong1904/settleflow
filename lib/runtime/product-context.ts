@@ -33,6 +33,10 @@ export type ProductContextInput = {
   actor?: string | null;
 };
 
+export function canActorPerform(actor: ProductActor, allowedActors: ProductActor[]) {
+  return allowedActors.includes(actor);
+}
+
 export function readNonEmpty(value: string | null | undefined) {
   return typeof value === "string" && value.trim().length > 0 ? value.trim() : undefined;
 }

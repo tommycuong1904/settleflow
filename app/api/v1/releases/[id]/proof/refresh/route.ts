@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { apiError, apiErrorFromCode } from "@/lib/api/errors";
 import { refreshReleaseProof, type RefreshProofInput } from "@/lib/repositories/release-proof";
+import { canActorPerform } from "@/lib/runtime/product-context";
 import { resolveProductContext } from "@/lib/runtime/product-context-server";
 
 const statuses = new Set(["confirmed", "failed"]);
@@ -25,6 +26,10 @@ export async function POST(
 
   if (typeof actorUserId !== "string" || actorUserId.trim().length === 0) {
     return apiError("INVALID_PROOF_REFRESH_PAYLOAD", { message: "triggeredByUserId is required.", status: 400 });
+  }
+
+  if (!canActorPerform(productContext.actor, ["owner"])) {
+    return apiError("FORBIDDEN_PROOF_REFRESH_ACTOR", { message: "Only owners can refresh release proof in this flow.", status: 403 });
   }
 
   try {

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { apiError, apiErrorFromCode } from "@/lib/api/errors";
 import { queueMilestoneRelease } from "@/lib/repositories/milestone-release";
+import { canActorPerform } from "@/lib/runtime/product-context";
 import { resolveProductContext } from "@/lib/runtime/product-context-server";
 
 export async function POST(
@@ -18,6 +19,10 @@ export async function POST(
     if (typeof triggeredByUserId !== "string" || triggeredByUserId.trim().length === 0 ||
         typeof body.amountUsdc !== "string" || body.amountUsdc.trim().length === 0) {
       return apiError("INVALID_RELEASE_PAYLOAD", { message: "triggeredByUserId and amountUsdc are required.", status: 400 });
+    }
+
+    if (!canActorPerform(productContext.actor, ["owner"])) {
+      return apiError("FORBIDDEN_MILESTONE_RELEASE_ACTOR", { message: "Only owners can release milestone funds in this flow.", status: 403 });
     }
     const result = await queueMilestoneRelease(id, triggeredByUserId, body.amountUsdc);
     return NextResponse.json(result, { status: 201 });

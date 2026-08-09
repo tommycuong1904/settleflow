@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { apiError, apiErrorFromCode } from "@/lib/api/errors";
 import { reviewMilestone } from "@/lib/repositories/milestone-review";
+import { canActorPerform } from "@/lib/runtime/product-context";
 import { resolveProductContext } from "@/lib/runtime/product-context-server";
 
 export async function POST(
@@ -18,6 +19,10 @@ export async function POST(
 
     if (typeof reviewedByUserId !== "string" || reviewedByUserId.trim().length === 0) {
       return apiError("INVALID_REVIEW_PAYLOAD", { message: "reviewedByUserId is required.", status: 400 });
+    }
+
+    if (!canActorPerform(productContext.actor, ["reviewer"])) {
+      return apiError("FORBIDDEN_MILESTONE_APPROVE_ACTOR", { message: "Only reviewers can approve milestones in this flow.", status: 403 });
     }
     const result = await reviewMilestone(id, reviewedByUserId, "approved", body.comment);
     return NextResponse.json(result);

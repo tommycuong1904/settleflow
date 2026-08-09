@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { apiError, apiErrorFromCode } from "@/lib/api/errors";
 import { retryFailedRelease } from "@/lib/repositories/release-retry";
+import { canActorPerform } from "@/lib/runtime/product-context";
 import { resolveProductContext } from "@/lib/runtime/product-context-server";
 
 function isNonEmpty(value: unknown): value is string {
@@ -18,6 +19,10 @@ export async function POST(
 
   if (!isNonEmpty(triggeredByUserId)) {
     return apiError("INVALID_RELEASE_RETRY_PAYLOAD", { message: "triggeredByUserId is required.", status: 400 });
+  }
+
+  if (!canActorPerform(productContext.actor, ["owner"])) {
+    return apiError("FORBIDDEN_RELEASE_RETRY_ACTOR", { message: "Only owners can retry failed releases in this flow.", status: 403 });
   }
 
   try {
