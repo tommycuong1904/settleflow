@@ -26,7 +26,7 @@ export async function POST(
   }
 
   try {
-    const result = await retryFailedRelease(id, ownerUserId);
+    const result = await retryFailedRelease(id, ownerUserId, productContext.workspaceId);
     return NextResponse.json(result, { status: 201 });
   } catch (error) {
     const code = error instanceof Error ? error.message : "UNKNOWN_ERROR";
@@ -34,6 +34,7 @@ export async function POST(
       code,
       {
         RELEASE_NOT_FOUND: 404,
+        WORKSPACE_SCOPE_MISMATCH: 409,
         RELEASE_NOT_FAILED: 409,
         STALE_RELEASE_RETRY: 409,
         PROOF_NOT_FOUND: 404,

@@ -3,7 +3,7 @@ import { db } from "@/lib/db/client";
 import { recordActivity } from "@/lib/repositories/activity-log";
 import { hasWorkspaceRole } from "@/lib/repositories/permissions";
 
-export async function retryFailedRelease(releaseId: string, ownerUserId: string) {
+export async function retryFailedRelease(releaseId: string, ownerUserId: string, workspaceId: string) {
   return db.$transaction(async (tx: Prisma.TransactionClient) => {
     const previous = await tx.release.findUnique({
       where: { id: releaseId },
@@ -28,6 +28,7 @@ export async function retryFailedRelease(releaseId: string, ownerUserId: string)
     });
 
     if (!previous) throw new Error("RELEASE_NOT_FOUND");
+    if (previous.payout.workspaceId !== workspaceId) throw new Error("WORKSPACE_SCOPE_MISMATCH");
     if (previous.status !== "failed") throw new Error("RELEASE_NOT_FAILED");
     if (!previous.destinationWalletAddress) throw new Error("DESTINATION_WALLET_MISSING");
 
