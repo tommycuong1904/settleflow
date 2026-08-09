@@ -19,6 +19,9 @@ export async function retryFailedRelease(releaseId: string, ownerUserId: string,
         payout: {
           select: { workspaceId: true },
         },
+        milestone: {
+          select: { status: true },
+        },
         proofs: {
           orderBy: { createdAt: "desc" },
           take: 1,
@@ -30,6 +33,7 @@ export async function retryFailedRelease(releaseId: string, ownerUserId: string,
     if (!previous) throw new Error("RELEASE_NOT_FOUND");
     if (previous.payout.workspaceId !== workspaceId) throw new Error("WORKSPACE_SCOPE_MISMATCH");
     if (previous.status !== "failed") throw new Error("RELEASE_NOT_FAILED");
+    if (previous.milestone?.status !== "approved") throw new Error("MILESTONE_NOT_APPROVED_FOR_RETRY");
     if (!previous.destinationWalletAddress) throw new Error("DESTINATION_WALLET_MISSING");
 
     const latestForMilestone = await tx.release.findFirst({
