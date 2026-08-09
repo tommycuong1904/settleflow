@@ -35,6 +35,7 @@ export default async function DashboardPage() {
     (sum, milestone) => sum + milestone.amount,
     0,
   );
+  const outstandingExposure = Math.max(totalScheduled - releasedValue, 0);
   const failedSettlementProof = transactionProofs.find((proof) => proof.status === "failed");
   const pendingSettlementProof = transactionProofs.find((proof) => proof.status === "pending");
   const failedSettlementMilestone = failedSettlementProof
@@ -154,9 +155,9 @@ export default async function DashboardPage() {
         <StatCard label="Milestones awaiting review" value={pendingApprovals.length} />
         <StatCard label="Milestones ready to release" value={releaseReadyMilestones.length} />
         <StatCard
-          label="Total scheduled"
-          value={`${formatUsdc(totalScheduled)} USDC`}
-          hint="Visible milestone commitments across all payouts"
+          label="Outstanding exposure"
+          value={`${formatUsdc(outstandingExposure)} USDC`}
+          hint="USDC still waiting on review, release, or proof confirmation across visible payouts"
         />
       </section>
 
