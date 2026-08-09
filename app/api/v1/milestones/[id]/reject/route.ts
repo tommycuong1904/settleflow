@@ -22,7 +22,7 @@ export async function POST(
     if (policyViolation) {
       return apiError(policyViolation.code, { message: policyViolation.message, status: policyViolation.status });
     }
-    const result = await reviewMilestone(id, reviewerUserId, "rejected", body.comment);
+    const result = await reviewMilestone(id, reviewerUserId, productContext.workspaceId, "rejected", body.comment);
     return NextResponse.json(result);
   } catch (error) {
     if (error instanceof SyntaxError) return apiError("INVALID_JSON_BODY", { message: "Invalid JSON body.", status: 400 });
@@ -32,6 +32,7 @@ export async function POST(
       code,
       {
         MILESTONE_NOT_FOUND: 404,
+        WORKSPACE_SCOPE_MISMATCH: 409,
         USER_NOT_FOUND: 404,
         USER_NOT_ALLOWED_TO_REVIEW: 403,
         MILESTONE_NOT_REVIEWABLE: 409,

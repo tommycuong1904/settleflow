@@ -6,6 +6,7 @@ import { hasWorkspaceRole } from "@/lib/repositories/permissions";
 export async function reviewMilestone(
   milestoneId: string,
   reviewerUserId: string,
+  workspaceId: string,
   decision: "approved" | "rejected",
   comment?: string,
 ) {
@@ -20,6 +21,7 @@ export async function reviewMilestone(
       },
     });
     if (!milestone) throw new Error("MILESTONE_NOT_FOUND");
+    if (milestone.payout.workspaceId !== workspaceId) throw new Error("WORKSPACE_SCOPE_MISMATCH");
     if (milestone.status !== "submitted" || milestone.submissions.length === 0) {
       throw new Error("MILESTONE_NOT_REVIEWABLE");
     }

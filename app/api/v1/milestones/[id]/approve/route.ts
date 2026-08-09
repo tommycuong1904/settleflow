@@ -21,7 +21,7 @@ export async function POST(
     if (policyViolation) {
       return apiError(policyViolation.code, { message: policyViolation.message, status: policyViolation.status });
     }
-    const result = await reviewMilestone(id, reviewerUserId, "approved", undefined);
+    const result = await reviewMilestone(id, reviewerUserId, productContext.workspaceId, "approved", undefined);
     return NextResponse.json(result);
   } catch (error) {
     const code = error instanceof Error ? error.message : "UNABLE_TO_APPROVE_MILESTONE";
@@ -29,6 +29,7 @@ export async function POST(
       code,
       {
         MILESTONE_NOT_FOUND: 404,
+        WORKSPACE_SCOPE_MISMATCH: 409,
         USER_NOT_FOUND: 404,
         USER_NOT_ALLOWED_TO_REVIEW: 403,
         MILESTONE_NOT_REVIEWABLE: 409,
