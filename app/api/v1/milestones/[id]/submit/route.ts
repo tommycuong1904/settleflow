@@ -42,7 +42,7 @@ export async function POST(
       },
       {
         MILESTONE_NOT_FOUND: "Milestone not found.",
-        USER_NOT_FOUND: "Submitter not found.",
+        USER_NOT_FOUND: "Contributor context user not found.",
         USER_NOT_ALLOWED_TO_SUBMIT: "User is not allowed to submit for this milestone.",
         MILESTONE_NOT_SUBMITTABLE: "Milestone cannot be submitted in its current state.",
       },

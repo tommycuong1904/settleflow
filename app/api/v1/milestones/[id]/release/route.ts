@@ -41,7 +41,7 @@ export async function POST(
       },
       {
         MILESTONE_NOT_FOUND: "Milestone not found.",
-        USER_NOT_FOUND: "Release requester not found.",
+        USER_NOT_FOUND: "Owner context user not found.",
         USER_NOT_ALLOWED_TO_RELEASE: "User is not allowed to release this milestone.",
         MILESTONE_NOT_APPROVED: "Milestone must be approved before release.",
         RELEASE_ALREADY_EXISTS: "A release already exists for this milestone.",

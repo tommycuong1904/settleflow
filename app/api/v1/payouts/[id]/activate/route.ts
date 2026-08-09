@@ -41,7 +41,7 @@ export async function POST(
       {
         PAYOUT_NOT_FOUND: "Payout not found.",
         WORKSPACE_SCOPE_MISMATCH: "workspace context does not match the payout workspace.",
-        USER_NOT_FOUND: "Activator not found.",
+        USER_NOT_FOUND: "Owner context user not found.",
         USER_NOT_ALLOWED_TO_ACTIVATE_PAYOUT: "User is not allowed to activate payouts in this workspace.",
         PAYOUT_NOT_DRAFT: "Only draft payouts can be activated.",
         PAYOUT_INCOMPLETE: "Payout is missing a target wallet or milestone.",

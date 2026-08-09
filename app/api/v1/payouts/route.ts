@@ -65,7 +65,7 @@ export async function POST(request: Request) {
         CONTRIBUTOR_NOT_FOUND: 404,
       },
       {
-        USER_NOT_FOUND: "Creator not found.",
+        USER_NOT_FOUND: "Owner context user not found.",
         USER_NOT_ALLOWED_TO_CREATE_PAYOUT: "User is not allowed to create payouts in this workspace.",
         CONTRIBUTOR_NOT_FOUND: "Contributor not found.",
       },
