@@ -8,6 +8,7 @@ import { MilestoneRow } from "@/components/milestones/milestone-row";
 import { PayoutDetailReleaseShell } from "@/components/payouts/payout-detail-release-shell";
 import { Button } from "@/components/shared/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import type { ActivityItem } from "@/lib/models/activity-item";
 import type { Contributor } from "@/lib/models/contributor";
 import type { Milestone } from "@/lib/models/milestone";
@@ -58,9 +59,12 @@ export function PayoutDetailClient({
   });
   const [milestoneState, setMilestoneState] = useState(() => initialMilestones);
   const [payoutStatusState, setPayoutStatusState] = useState(payout.status);
+  const [payoutTitleCommitted, setPayoutTitleCommitted] = useState(payout.title);
+  const [payoutTitleState, setPayoutTitleState] = useState(payout.title);
   const [reviewError, setReviewError] = useState<string | null>(null);
   const [reviewingMilestoneId, setReviewingMilestoneId] = useState<string | null>(null);
   const [activatingPayout, setActivatingPayout] = useState(false);
+  const [savingDraftTitle, setSavingDraftTitle] = useState(false);
 
   useEffect(() => {
     if (!initialReleaseProof || !persistedRelease) {
@@ -164,6 +168,36 @@ export function PayoutDetailClient({
     }
   }
 
+  async function saveDraftTitle() {
+    if (savingDraftTitle || payoutStatusState !== "draft") return;
+
+    const nextTitle = payoutTitleState.trim();
+    if (!nextTitle || nextTitle === payoutTitleCommitted) return;
+
+    setReviewError(null);
+    setSavingDraftTitle(true);
+    try {
+      const response = await fetch(`/api/v1/payouts/${payout.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          workspaceId: productContext.workspaceId,
+          ownerUserId: productContext.ownerUserId,
+          title: nextTitle,
+        }),
+      });
+      const data = (await response.json()) as { error?: string };
+      if (!response.ok) throw new Error(data.error ?? "Unable to update payout draft.");
+      setPayoutTitleCommitted(nextTitle);
+      setPayoutTitleState(nextTitle);
+    } catch (error) {
+      setReviewError(error instanceof Error ? error.message : "Unable to update payout draft.");
+      setPayoutTitleState(payoutTitleCommitted);
+    } finally {
+      setSavingDraftTitle(false);
+    }
+  }
+
   function handleMilestoneStatusChange(milestoneId: string, status: Milestone["status"]) {
     setMilestoneState((current) =>
       current.map((milestone) =>
@@ -239,7 +273,7 @@ export function PayoutDetailClient({
         </p>
         <div className="space-y-2">
           <h1 className="text-3xl font-semibold tracking-tight text-white md:text-4xl">
-            {payout.title}
+            {payoutTitleState}
           </h1>
           <p className="max-w-3xl text-sm leading-7 text-[var(--text-primary)] md:text-base">
             Review milestone submissions, approve release in sequence, and keep
@@ -292,6 +326,37 @@ export function PayoutDetailClient({
           </p>
         </CardContent>
       </Card>
+
+      {payoutStatusState === "draft" ? (
+        <Card className="sf-shell">
+          <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+            <div>
+              <CardTitle>Draft editing harness</CardTitle>
+              <p className="mt-2 text-sm text-[var(--text-secondary)]">
+                Lightweight draft update flow to exercise the real PATCH path and audit logging.
+              </p>
+            </div>
+            <Button
+              onClick={() => { void saveDraftTitle(); }}
+              disabled={savingDraftTitle || payoutTitleState.trim().length === 0 || payoutTitleState.trim() === payoutTitleCommitted}
+            >
+              {savingDraftTitle ? "Saving..." : "Save draft title"}
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <label className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                Draft title
+              </label>
+              <Input
+                value={payoutTitleState}
+                onChange={(event) => setPayoutTitleState(event.target.value)}
+                placeholder="Refine the payout title"
+              />
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
 
       <section className="space-y-4">
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
