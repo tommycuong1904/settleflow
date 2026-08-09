@@ -1,12 +1,9 @@
 import { NextResponse } from "next/server";
 import { apiError, apiErrorFromCode } from "@/lib/api/errors";
+import { hasContributorSubmissionPayload } from "@/lib/api/milestone-payload";
 import { submitMilestone } from "@/lib/repositories/milestone-submission";
 import { assertCanSubmitMilestone } from "@/lib/runtime/product-policy";
 import { resolveProductContextFromRequest } from "@/lib/runtime/product-context-server";
-
-function required(value: unknown): value is string {
-  return typeof value === "string" && value.trim().length > 0;
-}
 
 export async function POST(
   request: Request,
@@ -18,7 +15,7 @@ export async function POST(
     const body = await request.json();
     const contributorUserId = productContext.activeUserId;
 
-    if (!required(contributorUserId) || !required(body.summary)) {
+    if (!hasContributorSubmissionPayload({ contributorUserId, summary: body.summary })) {
       return apiError("INVALID_SUBMIT_PAYLOAD", { message: "contributor context and summary are required.", status: 400 });
     }
 

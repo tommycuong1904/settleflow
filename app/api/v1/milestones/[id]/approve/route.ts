@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { apiError, apiErrorFromCode } from "@/lib/api/errors";
+import { hasReviewerContext } from "@/lib/api/milestone-payload";
 import { reviewMilestone } from "@/lib/repositories/milestone-review";
 import { assertCanApproveMilestone } from "@/lib/runtime/product-policy";
 import { resolveProductContextFromRequest } from "@/lib/runtime/product-context-server";
@@ -13,7 +14,7 @@ export async function POST(
     const productContext = resolveProductContextFromRequest(request);
     const reviewerUserId = productContext.activeUserId;
 
-    if (typeof reviewerUserId !== "string" || reviewerUserId.trim().length === 0) {
+    if (!hasReviewerContext(reviewerUserId)) {
       return apiError("INVALID_REVIEW_PAYLOAD", { message: "reviewer context is required.", status: 400 });
     }
 
