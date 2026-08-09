@@ -29,7 +29,7 @@ export async function POST(
   }
 
   try {
-    const result = await refreshReleaseProof(id, ownerUserId, body as RefreshProofInput);
+    const result = await refreshReleaseProof(id, ownerUserId, productContext.workspaceId, body as RefreshProofInput);
     return NextResponse.json(result);
   } catch (error) {
     const code = error instanceof Error ? error.message : "UNKNOWN_ERROR";
@@ -37,6 +37,7 @@ export async function POST(
       code,
       {
         RELEASE_NOT_FOUND: 404,
+        WORKSPACE_SCOPE_MISMATCH: 409,
         MILESTONE_NOT_FOUND: 404,
         PROOF_NOT_FOUND: 404,
         PROOF_NOT_PENDING: 409,

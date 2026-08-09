@@ -16,6 +16,7 @@ export type RefreshProofInput = {
 export async function refreshReleaseProof(
   releaseId: string,
   refreshedByUserId: string,
+  workspaceId: string,
   input: RefreshProofInput,
 ) {
   return db.$transaction(async (tx: Prisma.TransactionClient) => {
@@ -40,6 +41,7 @@ export async function refreshReleaseProof(
       },
     });
     if (!release) throw new Error("RELEASE_NOT_FOUND");
+    if (release.payout.workspaceId !== workspaceId) throw new Error("WORKSPACE_SCOPE_MISMATCH");
 
     const canRefresh = await hasWorkspaceRole(
       tx,
