@@ -69,7 +69,15 @@ export async function retryFailedRelease(releaseId: string, triggeredByUserId: s
         destinationWalletAddress: previous.destinationWalletAddress,
         status: "queued",
       },
-      select: { id: true, status: true, amountUsdc: true },
+      select: {
+        id: true,
+        status: true,
+        amountUsdc: true,
+        milestoneId: true,
+        payoutId: true,
+        destinationWalletAddress: true,
+        executionMode: true,
+      },
     });
 
     const proof = await tx.transactionProof.create({
@@ -79,7 +87,17 @@ export async function retryFailedRelease(releaseId: string, triggeredByUserId: s
         releaseId: release.id,
         status: "pending",
       },
-      select: { id: true, releaseId: true, status: true },
+      select: {
+        id: true,
+        releaseId: true,
+        milestoneId: true,
+        status: true,
+        txHash: true,
+        network: true,
+        explorerUrl: true,
+        confirmedAt: true,
+        failureReason: true,
+      },
     });
 
     await recordActivity(tx, {

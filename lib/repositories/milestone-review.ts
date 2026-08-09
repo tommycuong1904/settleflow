@@ -52,7 +52,12 @@ export async function reviewMilestone(
       data: decision === "approved"
         ? { status: "approved", approvedAt: new Date() }
         : { status: "rejected", rejectedAt: new Date() },
-      select: { id: true, status: true },
+      select: {
+        id: true,
+        status: true,
+        approvedAt: true,
+        rejectedAt: true,
+      },
     });
     await recordActivity(tx, {
       workspaceId: milestone.payout.workspaceId,

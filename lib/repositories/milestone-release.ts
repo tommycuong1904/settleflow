@@ -52,11 +52,29 @@ export async function queueMilestoneRelease(
         destinationWalletAddress: milestone.payout.targetWalletAddress,
         status: "queued",
       },
-      select: { id: true, status: true, amountUsdc: true },
+      select: {
+        id: true,
+        status: true,
+        amountUsdc: true,
+        milestoneId: true,
+        payoutId: true,
+        destinationWalletAddress: true,
+        executionMode: true,
+      },
     });
     const proof = await tx.transactionProof.create({
       data: { payoutId: milestone.payout.id, milestoneId, releaseId: release.id, status: "pending" },
-      select: { id: true, releaseId: true, status: true },
+      select: {
+        id: true,
+        releaseId: true,
+        milestoneId: true,
+        status: true,
+        txHash: true,
+        network: true,
+        explorerUrl: true,
+        confirmedAt: true,
+        failureReason: true,
+      },
     });
     await recordActivity(tx, {
       workspaceId: milestone.payout.workspaceId,

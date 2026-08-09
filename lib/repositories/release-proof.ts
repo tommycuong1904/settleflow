@@ -93,7 +93,7 @@ export async function refreshReleaseProof(
         failedAt: input.status === "failed" ? now : null,
         failureReason: input.status === "failed" ? input.failureReason : null,
       },
-      select: { id: true, status: true, executedAt: true, failedAt: true },
+      select: { id: true, status: true, milestoneId: true, payoutId: true, executedAt: true, failedAt: true, failureReason: true },
     });
 
     if (input.status === "confirmed") {
