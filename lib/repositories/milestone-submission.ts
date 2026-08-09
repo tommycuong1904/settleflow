@@ -11,7 +11,7 @@ export type SubmitMilestoneInput = {
   notes?: string;
 };
 
-export async function submitMilestone(milestoneId: string, input: SubmitMilestoneInput) {
+export async function submitMilestone(milestoneId: string, workspaceId: string, input: SubmitMilestoneInput) {
   return db.$transaction(async (tx: Prisma.TransactionClient) => {
     const milestone = await tx.milestone.findUnique({
       where: { id: milestoneId },
@@ -27,6 +27,7 @@ export async function submitMilestone(milestoneId: string, input: SubmitMileston
       },
     });
     if (!milestone) throw new Error("MILESTONE_NOT_FOUND");
+    if (milestone.payout.workspaceId !== workspaceId) throw new Error("WORKSPACE_SCOPE_MISMATCH");
     if (milestone.status !== "pending" && milestone.status !== "rejected") {
       throw new Error("MILESTONE_NOT_SUBMITTABLE");
     }
