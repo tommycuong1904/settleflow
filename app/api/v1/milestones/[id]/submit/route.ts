@@ -16,17 +16,17 @@ export async function POST(
   try {
     const productContext = resolveProductContextFromRequest(request);
     const body = await request.json();
-    const submittedByUserId = productContext.activeUserId;
+    const contributorUserId = productContext.activeUserId;
 
-    if (!required(submittedByUserId) || !required(body.summary)) {
+    if (!required(contributorUserId) || !required(body.summary)) {
       return apiError("INVALID_SUBMIT_PAYLOAD", { message: "contributor context and summary are required.", status: 400 });
     }
 
-    const policyViolation = assertCanSubmitMilestone({ productContext, actorUserId: submittedByUserId });
+    const policyViolation = assertCanSubmitMilestone({ productContext, actorUserId: contributorUserId });
     if (policyViolation) {
       return apiError(policyViolation.code, { message: policyViolation.message, status: policyViolation.status });
     }
-    const result = await submitMilestone(id, { ...body, submittedByUserId });
+    const result = await submitMilestone(id, { ...body, submittedByUserId: contributorUserId });
     return NextResponse.json(result, { status: 201 });
   } catch (error) {
     if (error instanceof SyntaxError) return apiError("INVALID_JSON_BODY", { message: "Invalid JSON body.", status: 400 });
