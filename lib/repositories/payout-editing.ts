@@ -1,7 +1,10 @@
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db/client";
+import { recordActivity } from "@/lib/repositories/activity-log";
 
 export type UpdatePayoutDraftInput = {
+  updatedByUserId?: string;
+  actorUserId?: string;
   title?: string;
   description?: string;
   contributorId?: string;
@@ -37,7 +40,7 @@ export async function updatePayoutDraft(
       if (!contributor) throw new Error("CONTRIBUTOR_NOT_FOUND");
     }
 
-    return tx.payout.update({
+    const updated = await tx.payout.update({
       where: { id },
       data: {
         title: input.title,
@@ -56,5 +59,24 @@ export async function updatePayoutDraft(
       },
       select: { id: true, status: true },
     });
+
+    const actorUserId = input.updatedByUserId ?? input.actorUserId;
+    if (actorUserId) {
+      await recordActivity(tx, {
+        workspaceId,
+        actorUserId,
+        entityType: "payout",
+        entityId: id,
+        payoutId: id,
+        action: "payout_draft_updated",
+        metadata: {
+          changedFields: Object.keys(input).filter((key) => key !== "updatedByUserId" && key !== "actorUserId"),
+          contributorChanged: input.contributorId !== undefined ? String(input.contributorId !== current.contributorId) : undefined,
+          milestoneCount: input.milestones?.length,
+        },
+      });
+    }
+
+    return updated;
   });
 }

@@ -43,7 +43,7 @@ export async function PATCH(
     if (!isNonEmpty(body.workspaceId)) {
       return apiError("INVALID_PAYOUT_UPDATE_PAYLOAD", { message: "workspaceId is required.", status: 400 });
     }
-    const allowed = ["title", "description", "contributorId", "targetWalletAddress", "totalAmountUsdc", "milestones"];
+    const allowed = ["updatedByUserId", "actorUserId", "title", "description", "contributorId", "targetWalletAddress", "totalAmountUsdc", "milestones"];
     if (Object.keys(body).some((key) => key !== "workspaceId" && !allowed.includes(key))) {
       return apiError("UNKNOWN_PAYOUT_FIELD", { message: "Unknown payout field.", status: 400 });
     }

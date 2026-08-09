@@ -15,6 +15,8 @@ function getLogTitle(action: string, milestoneTitle?: string) {
       return "Payout created";
     case "payout_activated":
       return "Payout activated";
+    case "payout_draft_updated":
+      return "Payout draft updated";
     case "milestone_submitted":
       return `Submitted ${milestoneTitle ?? "milestone"}`;
     case "milestone_approved":
@@ -44,6 +46,13 @@ function getLogDescription(action: string, metadata?: Record<string, unknown>) {
       return "Initial payout draft was created.";
     case "payout_activated":
       return "Payout moved from draft to active state.";
+    case "payout_draft_updated": {
+      const changedFields = metadata?.changedFields;
+      if (Array.isArray(changedFields) && changedFields.length > 0) {
+        return `Updated fields: ${changedFields.join(", ")}.`;
+      }
+      return "Payout draft details were updated.";
+    }
     case "milestone_submitted":
       return asText(metadata?.summary) ?? "Contributor submitted milestone deliverables.";
     case "milestone_approved":
