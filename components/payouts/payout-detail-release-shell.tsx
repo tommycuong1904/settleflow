@@ -365,7 +365,8 @@ export function PayoutDetailReleaseShell({
           </div>
           <ReleasePanel
             amount={nextReleasableMilestone?.amount ?? 0}
-            network={`Arc Testnet (${ARC_CONFIG.executionMode})`}
+            network="Arc Testnet"
+            modeLabel={ARC_CONFIG.executionMode}
             enabled={isOwnerActor && (Boolean(nextReleasableMilestone) || Boolean(resolvedProof))}
             actionEnabled={releaseActionEnabled}
             actionLabel={releaseActionLabel}
