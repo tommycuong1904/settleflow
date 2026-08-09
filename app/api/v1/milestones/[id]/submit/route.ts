@@ -26,7 +26,7 @@ export async function POST(
     if (policyViolation) {
       return apiError(policyViolation.code, { message: policyViolation.message, status: policyViolation.status });
     }
-    const result = await submitMilestone(id, { ...body, submittedByUserId: contributorUserId });
+    const result = await submitMilestone(id, { ...body, contributorUserId });
     return NextResponse.json(result, { status: 201 });
   } catch (error) {
     if (error instanceof SyntaxError) return apiError("INVALID_JSON_BODY", { message: "Invalid JSON body.", status: 400 });

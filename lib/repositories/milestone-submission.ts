@@ -4,7 +4,7 @@ import { recordActivity } from "@/lib/repositories/activity-log";
 import { hasWorkspaceRole } from "@/lib/repositories/permissions";
 
 export type SubmitMilestoneInput = {
-  submittedByUserId: string;
+  contributorUserId: string;
   summary: string;
   artifactUrl?: string;
   artifactLabel?: string;
@@ -31,14 +31,14 @@ export async function submitMilestone(milestoneId: string, input: SubmitMileston
       throw new Error("MILESTONE_NOT_SUBMITTABLE");
     }
 
-    const submitter = await tx.user.findUnique({ where: { id: input.submittedByUserId }, select: { id: true } });
+    const submitter = await tx.user.findUnique({ where: { id: input.contributorUserId }, select: { id: true } });
     if (!submitter) throw new Error("USER_NOT_FOUND");
 
-    const isLinkedContributor = milestone.payout.contributor.linkedUserId === input.submittedByUserId;
+    const isLinkedContributor = milestone.payout.contributor.linkedUserId === input.contributorUserId;
     const hasContributorRole = await hasWorkspaceRole(
       tx,
       milestone.payout.workspaceId,
-      input.submittedByUserId,
+      input.contributorUserId,
       ["owner", "ops", "contributor"],
     );
     if (!isLinkedContributor && !hasContributorRole) {
@@ -49,7 +49,7 @@ export async function submitMilestone(milestoneId: string, input: SubmitMileston
     const submission = await tx.milestoneSubmission.create({
       data: {
         milestoneId,
-        submittedByUserId: input.submittedByUserId,
+        submittedByUserId: input.contributorUserId,
         summary: input.summary,
         artifactUrl: input.artifactUrl,
         artifactLabel: input.artifactLabel,
@@ -65,7 +65,7 @@ export async function submitMilestone(milestoneId: string, input: SubmitMileston
     });
     await recordActivity(tx, {
       workspaceId: milestone.payout.workspaceId,
-      actorUserId: input.submittedByUserId,
+      actorUserId: input.contributorUserId,
       entityType: "milestone",
       entityId: milestoneId,
       milestoneId,
