@@ -579,16 +579,16 @@ export function PayoutDetailClient({
           <Card className="sf-shell">
             <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
               <div>
-                <CardTitle>Draft editing harness</CardTitle>
+                <CardTitle>Draft details</CardTitle>
                 <p className="mt-2 text-sm text-[var(--text-secondary)]">
-                  Lightweight draft update flow to exercise the real PATCH path and audit logging.
+                  Refine the payout title and description before activation so the agreement is ready for review and milestone work.
                 </p>
               </div>
               <Button
                 onClick={() => { void saveDraftTitle(); }}
                 disabled={savingDraftTitle || payoutTitleState.trim().length === 0 || !draftTitleDirty}
               >
-                {savingDraftTitle ? "Saving..." : "Save draft title"}
+                {savingDraftTitle ? "Saving..." : "Save payout details"}
               </Button>
             </CardHeader>
             <CardContent>
@@ -633,9 +633,9 @@ export function PayoutDetailClient({
           <Card className="sf-shell">
             <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
               <div>
-                <CardTitle>Milestone draft harness</CardTitle>
+                <CardTitle>Milestone plan</CardTitle>
                 <p className="mt-2 text-sm text-[var(--text-secondary)]">
-                  Refine milestone copy and amounts through the real payout draft PATCH path.
+                  Finalize milestone titles, scope, and amounts before this payout moves into active review and release work.
                 </p>
               </div>
               <Button onClick={() => { void saveDraftMilestones(); }} disabled={savingDraftTitle || !draftMilestonesDirty || hasMilestoneAmountError}>
