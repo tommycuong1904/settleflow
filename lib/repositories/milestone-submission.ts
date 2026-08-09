@@ -61,7 +61,13 @@ export async function submitMilestone(milestoneId: string, workspaceId: string, 
     });
     const updatedMilestone = await tx.milestone.update({
       where: { id: milestoneId },
-      data: { status: "submitted", submittedAt: submission.submittedAt, rejectedAt: null },
+      data: {
+        status: "submitted",
+        submittedAt: submission.submittedAt,
+        approvedAt: null,
+        rejectedAt: null,
+        releasedAt: null,
+      },
       select: { id: true, status: true },
     });
     await recordActivity(tx, {
