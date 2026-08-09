@@ -7,7 +7,7 @@ import { hasWorkspaceRole } from "@/lib/repositories/permissions";
 
 export async function queueMilestoneRelease(
   milestoneId: string,
-  triggeredByUserId: string,
+  ownerUserId: string,
   amountUsdc: string,
   executionMode: ReleaseExecutionMode = "browser_wallet",
 ) {
@@ -30,13 +30,13 @@ export async function queueMilestoneRelease(
     const requestedAmount = new Decimal(amountUsdc);
     if (!requestedAmount.equals(milestone.amountUsdc)) throw new Error("RELEASE_AMOUNT_MISMATCH");
 
-    const user = await tx.user.findUnique({ where: { id: triggeredByUserId }, select: { id: true } });
+    const user = await tx.user.findUnique({ where: { id: ownerUserId }, select: { id: true } });
     if (!user) throw new Error("USER_NOT_FOUND");
 
     const hasReleaseRole = await hasWorkspaceRole(
       tx,
       milestone.payout.workspaceId,
-      triggeredByUserId,
+      ownerUserId,
       ["owner", "ops"],
     );
     if (!hasReleaseRole) throw new Error("USER_NOT_ALLOWED_TO_RELEASE");
@@ -45,7 +45,7 @@ export async function queueMilestoneRelease(
       data: {
         payoutId: milestone.payout.id,
         milestoneId,
-        triggeredByUserId,
+        triggeredByUserId: ownerUserId,
         amountUsdc: requestedAmount,
         executionMode,
         sourceWalletAddress: null,
@@ -78,7 +78,7 @@ export async function queueMilestoneRelease(
     });
     await recordActivity(tx, {
       workspaceId: milestone.payout.workspaceId,
-      actorUserId: triggeredByUserId,
+      actorUserId: ownerUserId,
       entityType: "release",
       entityId: release.id,
       payoutId: milestone.payout.id,
