@@ -1,6 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { PRODUCT_CONTEXT_HEADER_NAMES, readNonEmpty } from "@/lib/runtime/product-context";
+import {
+  PRODUCT_CONTEXT_COOKIE_NAMES,
+  PRODUCT_CONTEXT_HEADER_NAMES,
+  readNonEmpty,
+} from "@/lib/runtime/product-context";
 
 function shouldHandle(pathname: string) {
   if (pathname.startsWith("/_next") || pathname.startsWith("/favicon") || pathname.startsWith("/public")) {
@@ -30,26 +34,32 @@ export function proxy(request: NextRequest) {
 
   const requestHeaders = new Headers(request.headers);
   const searchParams = request.nextUrl.searchParams;
+  const cookies = request.cookies;
 
   const contextValues = {
     workspaceId: firstDefined(
       request.headers.get(PRODUCT_CONTEXT_HEADER_NAMES.workspaceId),
+      cookies.get(PRODUCT_CONTEXT_COOKIE_NAMES.workspaceId)?.value,
       searchParams.get("workspaceId"),
     ),
     ownerUserId: firstDefined(
       request.headers.get(PRODUCT_CONTEXT_HEADER_NAMES.ownerUserId),
+      cookies.get(PRODUCT_CONTEXT_COOKIE_NAMES.ownerUserId)?.value,
       searchParams.get("ownerUserId"),
     ),
     reviewerUserId: firstDefined(
       request.headers.get(PRODUCT_CONTEXT_HEADER_NAMES.reviewerUserId),
+      cookies.get(PRODUCT_CONTEXT_COOKIE_NAMES.reviewerUserId)?.value,
       searchParams.get("reviewerUserId"),
     ),
     contributorUserId: firstDefined(
       request.headers.get(PRODUCT_CONTEXT_HEADER_NAMES.contributorUserId),
+      cookies.get(PRODUCT_CONTEXT_COOKIE_NAMES.contributorUserId)?.value,
       searchParams.get("contributorUserId"),
     ),
     actor: firstDefined(
       request.headers.get(PRODUCT_CONTEXT_HEADER_NAMES.actor),
+      cookies.get(PRODUCT_CONTEXT_COOKIE_NAMES.actor)?.value,
       searchParams.get("actor"),
     ),
   };
@@ -70,11 +80,29 @@ export function proxy(request: NextRequest) {
     requestHeaders.set(PRODUCT_CONTEXT_HEADER_NAMES.actor, contextValues.actor);
   }
 
-  return NextResponse.next({
+  const response = NextResponse.next({
     request: {
       headers: requestHeaders,
     },
   });
+
+  if (contextValues.workspaceId) {
+    response.cookies.set(PRODUCT_CONTEXT_COOKIE_NAMES.workspaceId, contextValues.workspaceId, { path: "/", sameSite: "lax" });
+  }
+  if (contextValues.ownerUserId) {
+    response.cookies.set(PRODUCT_CONTEXT_COOKIE_NAMES.ownerUserId, contextValues.ownerUserId, { path: "/", sameSite: "lax" });
+  }
+  if (contextValues.reviewerUserId) {
+    response.cookies.set(PRODUCT_CONTEXT_COOKIE_NAMES.reviewerUserId, contextValues.reviewerUserId, { path: "/", sameSite: "lax" });
+  }
+  if (contextValues.contributorUserId) {
+    response.cookies.set(PRODUCT_CONTEXT_COOKIE_NAMES.contributorUserId, contextValues.contributorUserId, { path: "/", sameSite: "lax" });
+  }
+  if (contextValues.actor) {
+    response.cookies.set(PRODUCT_CONTEXT_COOKIE_NAMES.actor, contextValues.actor, { path: "/", sameSite: "lax" });
+  }
+
+  return response;
 }
 
 export const config = {

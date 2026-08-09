@@ -8,6 +8,14 @@ export const PRODUCT_CONTEXT_HEADER_NAMES = {
   actor: "x-settleflow-actor",
 } as const;
 
+export const PRODUCT_CONTEXT_COOKIE_NAMES = {
+  workspaceId: "sf_workspace_id",
+  ownerUserId: "sf_owner_user_id",
+  reviewerUserId: "sf_reviewer_user_id",
+  contributorUserId: "sf_contributor_user_id",
+  actor: "sf_actor",
+} as const;
+
 export type ProductContext = {
   workspaceId: string;
   ownerUserId: string;
