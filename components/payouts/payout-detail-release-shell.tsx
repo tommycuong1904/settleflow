@@ -22,6 +22,7 @@ type PayoutDetailReleaseShellProps = {
   payoutId: string;
   recipientAddress?: string;
   nextReleasableMilestone?: Milestone;
+  releaseMilestoneTitle?: string;
   releaseProof?: TransactionProof;
   onReleaseSuccess?: (payload: {
     milestoneId: string;
@@ -35,6 +36,7 @@ export function PayoutDetailReleaseShell({
   payoutId,
   recipientAddress,
   nextReleasableMilestone,
+  releaseMilestoneTitle,
   releaseProof,
   onReleaseSuccess,
   onActivityChange,
@@ -378,7 +380,7 @@ export function PayoutDetailReleaseShell({
           <CardTitle>Settlement Proof</CardTitle>
         </CardHeader>
         <CardContent>
-          <TransactionProofCard proof={resolvedProof} />
+          <TransactionProofCard proof={resolvedProof} milestoneTitle={releaseMilestoneTitle} />
           {resolvedProof?.status === "pending" && resolvedProof.releaseId && isOwnerActor ? (
             <div className="mt-4 space-y-4 rounded-2xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.42)] p-4">
               <div>

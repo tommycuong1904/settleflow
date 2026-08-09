@@ -3,6 +3,7 @@ import { shortenAddress } from "@/lib/utils/format";
 
 type TransactionProofCardProps = {
   proof?: TransactionProof;
+  milestoneTitle?: string;
 };
 
 const statusStyles: Record<TransactionProof["status"], string> = {
@@ -29,7 +30,7 @@ const statusDescriptions: Record<TransactionProof["status"], string> = {
     "The release attempt returned an error and needs a retry or a safer execution mode.",
 };
 
-export function TransactionProofCard({ proof }: TransactionProofCardProps) {
+export function TransactionProofCard({ proof, milestoneTitle }: TransactionProofCardProps) {
   if (!proof) {
     return (
       <div className="space-y-4 text-sm text-[var(--text-primary)]">
@@ -71,7 +72,7 @@ export function TransactionProofCard({ proof }: TransactionProofCardProps) {
           <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
             Milestone proof
           </p>
-          <p className="mt-2 font-semibold text-white">{proof.milestoneId}</p>
+          <p className="mt-2 font-semibold text-white">{milestoneTitle ?? proof.milestoneId}</p>
         </div>
         <div className="rounded-2xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.6)] p-4">
           <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">

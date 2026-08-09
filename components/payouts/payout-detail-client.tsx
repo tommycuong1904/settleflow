@@ -733,6 +733,7 @@ export function PayoutDetailClient({
           payoutId={payout.id}
           recipientAddress={contributor?.walletAddress}
           nextReleasableMilestone={nextReleasableMilestone}
+          releaseMilestoneTitle={nextReleasableMilestone?.title ?? latestReleasedMilestone?.title}
           releaseProof={releaseProof}
           onReleaseSuccess={handleReleaseSuccess}
           onActivityChange={() => { void refreshActivity(); }}
