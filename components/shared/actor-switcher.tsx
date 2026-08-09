@@ -5,7 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useResolvedProductContext } from "@/lib/runtime/product-context-client";
-import type { ProductActor } from "@/lib/runtime/product-context";
+import { PRODUCT_CONTEXT_COOKIE_NAMES, type ProductActor } from "@/lib/runtime/product-context";
 
 const actorOptions: Array<{ value: ProductActor; label: string; hint: string }> = [
   { value: "owner", label: "Owner", hint: "Create, activate, release" },
@@ -26,9 +26,14 @@ export function ActorSwitcher() {
 
   function handleValueChange(nextActor: string) {
     const params = new URLSearchParams(searchParams.toString());
-    params.set("actor", nextActor);
-    params.set("workspaceId", productContext.workspaceId);
-    router.replace(`${pathname}?${params.toString()}`);
+    params.delete("actor");
+    params.delete("workspaceId");
+    params.delete("ownerUserId");
+    params.delete("reviewerUserId");
+    params.delete("contributorUserId");
+    document.cookie = `${PRODUCT_CONTEXT_COOKIE_NAMES.actor}=${encodeURIComponent(nextActor)}; path=/; max-age=31536000; samesite=lax`;
+    const nextQuery = params.toString();
+    router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname);
   }
 
   return (
