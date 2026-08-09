@@ -182,7 +182,17 @@ export function PayoutDetailClient({
 
   const draftMilestonesDirty = JSON.stringify(normalizeDraftMilestones(draftMilestonesState)) !==
     JSON.stringify(normalizeDraftMilestones(draftMilestonesCommitted));
+  const draftTitleDirty = payoutTitleState.trim() !== payoutTitleCommitted;
+  const draftDescriptionDirty = payoutDescriptionState.trim() !== payoutDescriptionCommitted;
   const milestoneAmountErrors = draftMilestonesState.map((milestone) => getMilestoneAmountError(milestone.amount));
+  const milestoneDirtyStates = normalizeDraftMilestones(draftMilestonesState).map((milestone, index) => {
+    const committed = normalizeDraftMilestones(draftMilestonesCommitted)[index];
+    return {
+      title: milestone.title !== committed?.title,
+      description: milestone.description !== committed?.description,
+      amount: milestone.amount !== committed?.amount,
+    };
+  });
   const hasMilestoneAmountError = milestoneAmountErrors.some((error) => error !== null);
 
   async function activatePayout() {
@@ -479,7 +489,7 @@ export function PayoutDetailClient({
               </div>
               <Button
                 onClick={() => { void saveDraftTitle(); }}
-                disabled={savingDraftTitle || payoutTitleState.trim().length === 0 || payoutTitleState.trim() === payoutTitleCommitted}
+                disabled={savingDraftTitle || payoutTitleState.trim().length === 0 || !draftTitleDirty}
               >
                 {savingDraftTitle ? "Saving..." : "Save draft title"}
               </Button>
@@ -487,9 +497,12 @@ export function PayoutDetailClient({
             <CardContent>
               <div className="space-y-6">
                 <div className="space-y-3">
-                  <label className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                    Draft title
-                  </label>
+                  <div className="flex items-center justify-between gap-3">
+                    <label className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                      Draft title
+                    </label>
+                    {draftTitleDirty ? <span className="text-[11px] uppercase tracking-[0.16em] text-cyan-200">Changed</span> : null}
+                  </div>
                   <Input
                     value={payoutTitleState}
                     onChange={(event) => setPayoutTitleState(event.target.value)}
@@ -501,10 +514,11 @@ export function PayoutDetailClient({
                     <label className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
                       Draft description
                     </label>
+                    {draftDescriptionDirty ? <span className="text-[11px] uppercase tracking-[0.16em] text-cyan-200">Changed</span> : null}
                     <Button
                       variant="secondary"
                       onClick={() => { void saveDraftDescription(); }}
-                      disabled={savingDraftTitle || payoutDescriptionState.trim() === payoutDescriptionCommitted}
+                      disabled={savingDraftTitle || !draftDescriptionDirty}
                     >
                       Save description
                     </Button>
@@ -534,16 +548,22 @@ export function PayoutDetailClient({
             <CardContent>
               <div className="space-y-4">
                 {draftMilestonesState.map((milestone, index) => (
-                  <div key={milestone.id} className="rounded-2xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.62)] p-4">
-                    <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                      Milestone {index + 1}
-                    </p>
+                  <div key={milestone.id} className={`rounded-2xl border bg-[rgba(15,23,42,0.62)] p-4 ${milestoneDirtyStates[index]?.title || milestoneDirtyStates[index]?.description || milestoneDirtyStates[index]?.amount ? "border-cyan-300/40" : "border-[var(--border-soft)]"}`}>
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                        Milestone {index + 1}
+                      </p>
+                      {milestoneDirtyStates[index]?.title || milestoneDirtyStates[index]?.description || milestoneDirtyStates[index]?.amount ? <span className="text-[11px] uppercase tracking-[0.16em] text-cyan-200">Changed</span> : null}
+                    </div>
                     <div className="mt-3 grid gap-3 md:grid-cols-[1fr_180px]">
-                      <Input
-                        value={milestone.title}
-                        onChange={(event) => setDraftMilestonesState((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, title: event.target.value } : item))}
-                        placeholder="Milestone title"
-                      />
+                      <div className="space-y-2">
+                        <Input
+                          value={milestone.title}
+                          onChange={(event) => setDraftMilestonesState((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, title: event.target.value } : item))}
+                          placeholder="Milestone title"
+                        />
+                        {milestoneDirtyStates[index]?.title ? <p className="text-xs text-cyan-200">Title changed.</p> : null}
+                      </div>
                       <div className="space-y-2">
                         <Input
                           value={milestone.amount}
@@ -552,15 +572,17 @@ export function PayoutDetailClient({
                         />
                         {milestoneAmountErrors[index] ? (
                           <p className="text-xs text-rose-200">{milestoneAmountErrors[index]}</p>
-                        ) : null}
+                        ) : milestoneDirtyStates[index]?.amount ? <p className="text-xs text-cyan-200">Amount changed.</p> : null}
                       </div>
                     </div>
-                    <Textarea
-                      className="mt-3"
-                      value={milestone.description}
-                      onChange={(event) => setDraftMilestonesState((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, description: event.target.value } : item))}
-                      placeholder="Milestone description"
-                    />
+                    <div className="mt-3 space-y-2">
+                      <Textarea
+                        value={milestone.description}
+                        onChange={(event) => setDraftMilestonesState((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, description: event.target.value } : item))}
+                        placeholder="Milestone description"
+                      />
+                      {milestoneDirtyStates[index]?.description ? <p className="text-xs text-cyan-200">Description changed.</p> : null}
+                    </div>
                   </div>
                 ))}
               </div>
