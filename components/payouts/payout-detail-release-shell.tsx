@@ -83,7 +83,9 @@ export function PayoutDetailReleaseShell({
       case "submitting":
         return "SettleFlow is preparing the Arc release and waiting for the settlement proof update.";
       case "confirmed":
-        return "Release completed. Review the proof below, then continue with the next approved milestone if one is ready.";
+        return nextReleasableMilestone
+          ? "Release completed. Review the proof below, then continue with the next approved milestone when you are ready."
+          : "Release completed. Review the proof below and return after the next milestone is approved for settlement.";
       case "failed":
         return releaseError ?? "Release failed before settlement proof could be attached. Retry after checking the current payout state.";
       case "idle":
