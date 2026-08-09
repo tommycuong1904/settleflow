@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { apiError, apiErrorFromCode } from "@/lib/api/errors";
 import { reviewMilestone } from "@/lib/repositories/milestone-review";
+import { resolveProductContext } from "@/lib/runtime/product-context-server";
 
 export async function POST(
   request: Request,
@@ -9,10 +10,11 @@ export async function POST(
   const { id } = await params;
   try {
     const body = await request.json();
+    const productContext = resolveProductContext(body ?? {});
     const reviewedByUserId =
       typeof body.reviewedByUserId === "string" && body.reviewedByUserId.trim().length > 0
         ? body.reviewedByUserId
-        : body.triggeredByUserId;
+        : body.triggeredByUserId ?? productContext.reviewerUserId;
 
     if (typeof reviewedByUserId !== "string" || reviewedByUserId.trim().length === 0) {
       return apiError("INVALID_REVIEW_PAYLOAD", { message: "reviewedByUserId is required.", status: 400 });

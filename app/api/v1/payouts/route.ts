@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { apiError, apiErrorFromCode } from "@/lib/api/errors";
 import { createPayout } from "@/lib/repositories/payout-creation";
+import { resolveProductContext } from "@/lib/runtime/product-context-server";
 
 function isNonEmpty(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
@@ -10,7 +11,8 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const milestones = Array.isArray(body.milestones) ? body.milestones : [];
-    const required = [body.workspaceId, body.createdByUserId, body.title, body.contributorId,
+    const productContext = resolveProductContext(body ?? {});
+    const required = [productContext.workspaceId, productContext.ownerUserId, body.title, body.contributorId,
       body.targetWalletAddress, body.totalAmountUsdc];
 
     if (required.some((value) => !isNonEmpty(value)) || milestones.length === 0) {
@@ -34,7 +36,13 @@ export async function POST(request: Request) {
       return apiError("INVALID_MILESTONE_PAYLOAD", { message: "Invalid milestone payload.", status: 400 });
     }
 
-    const payout = await createPayout({ ...body, currency: "USDC", milestones });
+    const payout = await createPayout({
+      ...body,
+      workspaceId: productContext.workspaceId,
+      createdByUserId: body.createdByUserId ?? body.triggeredByUserId ?? productContext.ownerUserId,
+      currency: "USDC",
+      milestones,
+    });
     return NextResponse.json({ payout }, { status: 201 });
   } catch (error) {
     if (error instanceof SyntaxError) {

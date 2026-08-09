@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { apiError, apiErrorFromCode } from "@/lib/api/errors";
 import { queueMilestoneRelease } from "@/lib/repositories/milestone-release";
+import { resolveProductContext } from "@/lib/runtime/product-context-server";
 
 export async function POST(
   request: Request,
@@ -9,11 +10,16 @@ export async function POST(
   const { id } = await params;
   try {
     const body = await request.json();
-    if (typeof body.triggeredByUserId !== "string" || body.triggeredByUserId.trim().length === 0 ||
+    const productContext = resolveProductContext(body ?? {});
+    const triggeredByUserId =
+      typeof body.triggeredByUserId === "string" && body.triggeredByUserId.trim().length > 0
+        ? body.triggeredByUserId
+        : productContext.ownerUserId;
+    if (typeof triggeredByUserId !== "string" || triggeredByUserId.trim().length === 0 ||
         typeof body.amountUsdc !== "string" || body.amountUsdc.trim().length === 0) {
       return apiError("INVALID_RELEASE_PAYLOAD", { message: "triggeredByUserId and amountUsdc are required.", status: 400 });
     }
-    const result = await queueMilestoneRelease(id, body.triggeredByUserId, body.amountUsdc);
+    const result = await queueMilestoneRelease(id, triggeredByUserId, body.amountUsdc);
     return NextResponse.json(result, { status: 201 });
   } catch (error) {
     if (error instanceof SyntaxError) return apiError("INVALID_JSON_BODY", { message: "Invalid JSON body.", status: 400 });

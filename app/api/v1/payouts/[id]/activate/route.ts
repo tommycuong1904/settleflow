@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { apiError, apiErrorFromCode } from "@/lib/api/errors";
 import { activatePayout } from "@/lib/repositories/payout-activation";
+import { resolveProductContext } from "@/lib/runtime/product-context-server";
 
 export async function POST(
   request: Request,
@@ -9,17 +10,18 @@ export async function POST(
   const { id } = await params;
   try {
     const body = await request.json();
+    const productContext = resolveProductContext(body ?? {});
     const activatedByUserId =
       typeof body.activatedByUserId === "string" && body.activatedByUserId.trim().length > 0
         ? body.activatedByUserId
-        : body.triggeredByUserId;
+        : body.triggeredByUserId ?? productContext.ownerUserId;
 
-    if (typeof body.workspaceId !== "string" || body.workspaceId.trim().length === 0 ||
+    if (typeof productContext.workspaceId !== "string" || productContext.workspaceId.trim().length === 0 ||
         typeof activatedByUserId !== "string" || activatedByUserId.trim().length === 0) {
       return apiError("INVALID_ACTIVATE_PAYLOAD", { message: "workspaceId and activatedByUserId are required.", status: 400 });
     }
 
-    const payout = await activatePayout(id, body.workspaceId, activatedByUserId);
+    const payout = await activatePayout(id, productContext.workspaceId, activatedByUserId);
     return NextResponse.json({ payout });
   } catch (error) {
     if (error instanceof SyntaxError) {

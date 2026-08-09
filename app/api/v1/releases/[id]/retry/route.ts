@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { apiError, apiErrorFromCode } from "@/lib/api/errors";
 import { retryFailedRelease } from "@/lib/repositories/release-retry";
+import { resolveProductContext } from "@/lib/runtime/product-context-server";
 
 function isNonEmpty(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
@@ -12,7 +13,8 @@ export async function POST(
 ) {
   const { id } = await params;
   const body = await request.json().catch(() => null);
-  const triggeredByUserId = body?.triggeredByUserId;
+  const productContext = resolveProductContext({ ownerUserId: body?.triggeredByUserId });
+  const triggeredByUserId = body?.triggeredByUserId ?? productContext.ownerUserId;
 
   if (!isNonEmpty(triggeredByUserId)) {
     return apiError("INVALID_RELEASE_RETRY_PAYLOAD", { message: "triggeredByUserId is required.", status: 400 });
