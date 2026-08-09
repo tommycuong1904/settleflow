@@ -19,13 +19,23 @@ export async function queueMilestoneRelease(
         id: true,
         status: true,
         amountUsdc: true,
-        payout: { select: { id: true, workspaceId: true, targetWalletAddress: true } },
+        payout: {
+          select: {
+            id: true,
+            workspaceId: true,
+            status: true,
+            targetWalletAddress: true,
+          },
+        },
         releases: { select: { id: true }, take: 1 },
       },
     });
     if (!milestone) throw new Error("MILESTONE_NOT_FOUND");
     if (milestone.payout.workspaceId !== workspaceId) throw new Error("WORKSPACE_SCOPE_MISMATCH");
     if (milestone.status !== "approved") throw new Error("MILESTONE_NOT_APPROVED");
+    if (!["active", "partially_released"].includes(milestone.payout.status)) {
+      throw new Error("PAYOUT_NOT_RELEASE_READY");
+    }
     if (milestone.releases.length > 0) throw new Error("RELEASE_ALREADY_EXISTS");
     if (!milestone.payout.targetWalletAddress) throw new Error("DESTINATION_WALLET_MISSING");
 
