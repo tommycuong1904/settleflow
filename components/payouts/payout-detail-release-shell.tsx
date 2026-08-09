@@ -38,6 +38,7 @@ export function PayoutDetailReleaseShell({
   onReleaseSuccess,
 }: PayoutDetailReleaseShellProps) {
   const productContext = useResolvedProductContext();
+  const isOwnerActor = productContext.actor === "owner";
   const [releaseStatus, setReleaseStatus] = useState<ReleasePanelStatus>(
     releaseProof?.status === "failed"
       ? "failed"
@@ -334,7 +335,7 @@ export function PayoutDetailReleaseShell({
           <ReleasePanel
             amount={nextReleasableMilestone?.amount ?? 0}
             network={`Arc Testnet (${ARC_CONFIG.executionMode})`}
-            enabled={Boolean(nextReleasableMilestone) || Boolean(resolvedProof)}
+            enabled={isOwnerActor && (Boolean(nextReleasableMilestone) || Boolean(resolvedProof))}
             status={effectiveReleaseStatus}
             errorMessage={releaseError}
             onRelease={() => {
@@ -356,7 +357,7 @@ export function PayoutDetailReleaseShell({
         </CardHeader>
         <CardContent>
           <TransactionProofCard proof={resolvedProof} />
-          {resolvedProof?.status === "pending" && resolvedProof.releaseId ? (
+          {resolvedProof?.status === "pending" && resolvedProof.releaseId && isOwnerActor ? (
             <div className="mt-4 space-y-4 rounded-2xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.42)] p-4">
               <div>
                 <p className="text-sm font-semibold text-white">Refresh pending settlement</p>
@@ -407,7 +408,7 @@ export function PayoutDetailReleaseShell({
               </div>
             </div>
           ) : null}
-          {resolvedProof?.status === "failed" && resolvedProof.releaseId ? (
+          {resolvedProof?.status === "failed" && resolvedProof.releaseId && isOwnerActor ? (
             <div className="mt-4 flex flex-wrap items-center gap-3">
               <Button variant="secondary" onClick={() => { void handleRetryRelease(); }} disabled={retryingRelease}>
                 {retryingRelease ? "Retrying..." : "Retry release"}
@@ -415,6 +416,11 @@ export function PayoutDetailReleaseShell({
               <p className="text-sm text-[var(--text-muted)]">
                 Queue a fresh release attempt for this failed settlement.
               </p>
+            </div>
+          ) : null}
+          {!isOwnerActor ? (
+            <div className="mt-4 rounded-2xl border border-dashed border-[var(--border-soft)] px-4 py-3 text-sm text-[var(--text-muted)]">
+              Release, proof refresh, and retry controls are only available in the owner view.
             </div>
           ) : null}
         <div className="mt-4 rounded-2xl border border-dashed border-[var(--border-soft)] px-4 py-3 text-sm text-[var(--text-muted)]">

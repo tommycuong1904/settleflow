@@ -63,6 +63,8 @@ export function PayoutDetailClient({
   initialActivity,
 }: PayoutDetailClientProps) {
   const productContext = useResolvedProductContext();
+  const isOwnerActor = productContext.actor === "owner";
+  const isReviewerActor = productContext.actor === "reviewer";
   const [persistedRelease, setPersistedRelease] = useState<PersistedReleaseState | null>(() => {
     if (typeof window === "undefined" || initialReleaseProof) return null;
 
@@ -474,7 +476,7 @@ export function PayoutDetailClient({
       <Card className="sf-shell">
         <CardHeader className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <CardTitle>Payout Summary</CardTitle>
-          {payoutStatusState === "draft" ? (
+          {payoutStatusState === "draft" && isOwnerActor ? (
             <Button onClick={() => { void activatePayout(); }} disabled={activatingPayout}>
               {activatingPayout ? "Activating..." : "Activate payout"}
             </Button>
@@ -516,7 +518,7 @@ export function PayoutDetailClient({
         </CardContent>
       </Card>
 
-      {payoutStatusState === "draft" ? (
+      {payoutStatusState === "draft" && isOwnerActor ? (
         <>
           {reviewError ? (
             <div className="rounded-2xl border border-rose-400/30 bg-rose-400/10 px-4 py-3 text-sm text-rose-100">
@@ -678,10 +680,10 @@ export function PayoutDetailClient({
                 <MilestoneRow
                   key={milestone.id}
                   milestone={milestone}
-                  onApprove={handleApproveMilestone}
-                  onReject={handleRejectMilestone}
+                  onApprove={isReviewerActor ? () => handleApproveMilestone(milestone.id) : undefined}
+                  onReject={isReviewerActor ? () => handleRejectMilestone(milestone.id) : undefined}
                   onStatusChange={handleMilestoneStatusChange}
-                />
+                  />
               ))}
             </div>
           </CardContent>
