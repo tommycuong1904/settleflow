@@ -31,3 +31,23 @@ export function sumMilestoneAmounts(milestones: Array<{ amountUsdc: unknown }>) 
     new Decimal(0),
   );
 }
+
+const ALLOWED_PAYOUT_UPDATE_FIELDS = [
+  "title",
+  "description",
+  "contributorId",
+  "targetWalletAddress",
+  "totalAmountUsdc",
+  "milestones",
+] as const;
+
+export function hasOnlyAllowedPayoutUpdateFields(body: Record<string, unknown>) {
+  return Object.keys(body).every((key) => ALLOWED_PAYOUT_UPDATE_FIELDS.includes(key as (typeof ALLOWED_PAYOUT_UPDATE_FIELDS)[number]));
+}
+
+export function derivePatchedTotalAmountUsdc(
+  milestones: Array<{ amountUsdc: unknown }> | undefined,
+) {
+  if (!Array.isArray(milestones)) return undefined;
+  return sumMilestoneAmounts(milestones).toString();
+}

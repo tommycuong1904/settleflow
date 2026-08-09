@@ -1,18 +1,16 @@
 import { NextResponse } from "next/server";
 import { apiError, apiErrorFromCode } from "@/lib/api/errors";
+import {
+  derivePatchedTotalAmountUsdc,
+  hasContiguousMilestoneSequences,
+  hasOnlyAllowedPayoutUpdateFields,
+  hasValidMilestoneShape,
+  isNonEmptyString,
+} from "@/lib/api/payout-payload";
 import { getPayoutDetail } from "@/lib/repositories/payouts";
 import { updatePayoutDraft } from "@/lib/repositories/payout-editing";
 import { assertCanEditPayoutDraft } from "@/lib/runtime/product-policy";
 import { resolveProductContextFromRequest } from "@/lib/runtime/product-context-server";
-import { Decimal } from "@prisma/client/runtime/library";
-
-function isNonEmpty(value: unknown): value is string {
-  return typeof value === "string" && value.trim().length > 0;
-}
-
-function hasContiguousSequences(milestones: Array<{ sequence: unknown }>) {
-  return milestones.every((milestone, index) => milestone.sequence === index + 1);
-}
 
 export async function GET(
   request: Request,
@@ -48,14 +46,13 @@ export async function PATCH(
   try {
     const productContext = resolveProductContextFromRequest(request);
     const body = await request.json();
-    if (!isNonEmpty(productContext.workspaceId)) {
+    if (!isNonEmptyString(productContext.workspaceId)) {
       return apiError("INVALID_PAYOUT_UPDATE_PAYLOAD", { message: "workspace context is required.", status: 400 });
     }
-    const allowed = ["title", "description", "contributorId", "targetWalletAddress", "totalAmountUsdc", "milestones"];
-    if (Object.keys(body).some((key) => !allowed.includes(key))) {
+    if (!hasOnlyAllowedPayoutUpdateFields(body)) {
       return apiError("UNKNOWN_PAYOUT_FIELD", { message: "Unknown payout field.", status: 400 });
     }
-    if (body.title !== undefined && !isNonEmpty(body.title)) {
+    if (body.title !== undefined && !isNonEmptyString(body.title)) {
       return apiError("EMPTY_PAYOUT_TITLE", { message: "title must not be empty.", status: 400 });
     }
     if (body.milestones !== undefined && (!Array.isArray(body.milestones) || body.milestones.length === 0)) {
@@ -70,24 +67,15 @@ export async function PATCH(
         sequence: unknown;
       }>;
 
-      if (milestonePayload.some((milestone) =>
-        !isNonEmpty(milestone.title) ||
-        !isNonEmpty(milestone.description) ||
-        !isNonEmpty(milestone.amountUsdc) ||
-        !Number.isInteger(milestone.sequence))) {
+      if (!hasValidMilestoneShape(milestonePayload)) {
         return apiError("INVALID_MILESTONE_PAYLOAD", { message: "Invalid milestone payload.", status: 400 });
       }
 
-      if (!hasContiguousSequences(milestonePayload)) {
+      if (!hasContiguousMilestoneSequences(milestonePayload)) {
         return apiError("INVALID_MILESTONE_SEQUENCE", { message: "Milestone sequence must start at 1 and stay contiguous.", status: 400 });
       }
 
-      const totalAmountUsdc = milestonePayload.reduce(
-        (sum, milestone) => sum.plus(new Decimal(String(milestone.amountUsdc))),
-        new Decimal(0),
-      );
-
-      body.totalAmountUsdc = totalAmountUsdc.toString();
+      body.totalAmountUsdc = derivePatchedTotalAmountUsdc(milestonePayload);
     }
 
     const policyViolation = assertCanEditPayoutDraft({ productContext, actorUserId: productContext.ownerUserId });
