@@ -13,7 +13,6 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
-  const body = await request.json().catch(() => null);
   const productContext = resolveProductContextFromRequest(request);
   const triggeredByUserId = productContext.ownerUserId;
 

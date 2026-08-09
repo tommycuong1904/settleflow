@@ -11,7 +11,6 @@ export async function POST(
   const { id } = await params;
   try {
     const productContext = resolveProductContextFromRequest(request);
-    const body = await request.json();
     const reviewedByUserId = productContext.activeUserId;
 
     if (typeof reviewedByUserId !== "string" || reviewedByUserId.trim().length === 0) {
@@ -22,11 +21,9 @@ export async function POST(
     if (policyViolation) {
       return apiError(policyViolation.code, { message: policyViolation.message, status: policyViolation.status });
     }
-    const result = await reviewMilestone(id, reviewedByUserId, "approved", body.comment);
+    const result = await reviewMilestone(id, reviewedByUserId, "approved", undefined);
     return NextResponse.json(result);
   } catch (error) {
-    if (error instanceof SyntaxError) return apiError("INVALID_JSON_BODY", { message: "Invalid JSON body.", status: 400 });
-
     const code = error instanceof Error ? error.message : "UNABLE_TO_APPROVE_MILESTONE";
     return apiErrorFromCode(
       code,

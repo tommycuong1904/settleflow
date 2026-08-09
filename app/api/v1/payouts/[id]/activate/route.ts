@@ -11,7 +11,6 @@ export async function POST(
   const { id } = await params;
   try {
     const productContext = resolveProductContextFromRequest(request);
-    const body = await request.json();
     const activatedByUserId = productContext.ownerUserId;
 
     if (typeof productContext.workspaceId !== "string" || productContext.workspaceId.trim().length === 0 ||
@@ -27,10 +26,6 @@ export async function POST(
     const payout = await activatePayout(id, productContext.workspaceId, activatedByUserId);
     return NextResponse.json({ payout });
   } catch (error) {
-    if (error instanceof SyntaxError) {
-      return apiError("INVALID_JSON_BODY", { message: "Invalid JSON body.", status: 400 });
-    }
-
     const code = error instanceof Error ? error.message : "UNABLE_TO_ACTIVATE_PAYOUT";
     return apiErrorFromCode(
       code,
