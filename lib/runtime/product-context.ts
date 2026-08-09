@@ -1,5 +1,13 @@
 export type ProductActor = "owner" | "reviewer" | "contributor";
 
+export const PRODUCT_CONTEXT_HEADER_NAMES = {
+  workspaceId: "x-settleflow-workspace-id",
+  ownerUserId: "x-settleflow-owner-user-id",
+  reviewerUserId: "x-settleflow-reviewer-user-id",
+  contributorUserId: "x-settleflow-contributor-user-id",
+  actor: "x-settleflow-actor",
+} as const;
+
 export type ProductContext = {
   workspaceId: string;
   ownerUserId: string;
