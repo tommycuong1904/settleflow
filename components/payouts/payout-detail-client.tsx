@@ -149,6 +149,15 @@ export function PayoutDetailClient({
   const nextReleasableMilestone = milestones.find(
     (milestone) => milestone.status === "approved",
   );
+  const currentReleasableMilestoneId = nextReleasableMilestone?.id;
+  const releasePendingForCurrentMilestone =
+    releaseProof?.status === "pending" &&
+    Boolean(currentReleasableMilestoneId) &&
+    releaseProof.milestoneId === currentReleasableMilestoneId;
+  const releaseFailedForCurrentMilestone =
+    releaseProof?.status === "failed" &&
+    Boolean(currentReleasableMilestoneId) &&
+    releaseProof.milestoneId === currentReleasableMilestoneId;
 
   const releasedCount = milestones.filter(
     (milestone) => milestone.status === "released",
@@ -179,15 +188,19 @@ export function PayoutDetailClient({
           : "In progress"
         : effectivePayoutStatus.replace("_", " ");
 
-  const nextActionText = nextReleasableMilestone
-    ? `Release ${nextReleasableMilestone.title} to continue settlement.`
-    : submittedCount > 0
-      ? "Review submitted milestones to unlock the next release." 
-      : milestones.some((milestone) => milestone.status === "pending" || milestone.status === "rejected")
-        ? "Ask the contributor to submit the next milestone deliverable."
-        : effectivePayoutStatus === "completed"
-          ? "This payout is fully settled. Review the proof record or open another payout."
-          : "No immediate action is available yet on this payout.";
+  const nextActionText = releasePendingForCurrentMilestone
+    ? `Settlement proof for ${nextReleasableMilestone?.title ?? "the approved milestone"} is still pending. Confirm or fail the proof update before queuing another release.`
+    : releaseFailedForCurrentMilestone
+      ? `Settlement proof for ${nextReleasableMilestone?.title ?? "the approved milestone"} failed. Retry the release or refresh the proof status before moving on.`
+      : nextReleasableMilestone
+        ? `Release ${nextReleasableMilestone.title} to continue settlement.`
+        : submittedCount > 0
+          ? "Review submitted milestones to unlock the next release."
+          : milestones.some((milestone) => milestone.status === "pending" || milestone.status === "rejected")
+            ? "Ask the contributor to submit the next milestone deliverable."
+            : effectivePayoutStatus === "completed"
+              ? "This payout is fully settled. Review the proof record or open another payout."
+              : "No immediate action is available yet on this payout.";
 
   const draftMilestonesDirty = JSON.stringify(normalizeDraftMilestones(draftMilestonesState)) !==
     JSON.stringify(normalizeDraftMilestones(draftMilestonesCommitted));
