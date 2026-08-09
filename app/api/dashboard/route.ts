@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 
 import { getDashboardSummary } from "@/lib/repositories/dashboard";
-import { resolveWorkspaceId } from "@/lib/runtime/product-context-server";
+import { resolveWorkspaceIdFromRequest } from "@/lib/runtime/product-context-server";
 
 export async function GET(request: Request) {
-  const workspaceId = resolveWorkspaceId(new URL(request.url).searchParams.get("workspaceId"));
+  const workspaceId = resolveWorkspaceIdFromRequest(request);
 
   try {
     return NextResponse.json(await getDashboardSummary(workspaceId));
