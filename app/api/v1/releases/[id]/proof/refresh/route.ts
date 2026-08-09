@@ -11,10 +11,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
-  const body = await request.json().catch(() => null) as (Partial<RefreshProofInput> & {
-    refreshedByUserId?: string;
-    triggeredByUserId?: string;
-  }) | null;
+  const body = await request.json().catch(() => null) as Partial<RefreshProofInput> | null;
   if (!body || typeof body.status !== "string" || !statuses.has(body.status)) {
     return apiError("INVALID_PROOF_STATUS", { message: "status must be confirmed or failed.", status: 400 });
   }
