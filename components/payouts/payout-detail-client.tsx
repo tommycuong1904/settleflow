@@ -256,9 +256,26 @@ export function PayoutDetailClient({
         ...fields,
       }),
     });
-    const data = (await response.json()) as { error?: string };
+    const data = (await response.json()) as {
+      error?: string;
+      payout?: {
+        id: string;
+        status: Payout["status"];
+        title: string;
+        description: string | null;
+        milestoneCount: number;
+        milestones: Array<{
+          id: string;
+          title: string;
+          description: string;
+          amountUsdc: string;
+          sequence: number;
+        }>;
+      };
+    };
     if (!response.ok) throw new Error(data.error ?? "Unable to update payout draft.");
     await refreshActivity();
+    return data.payout;
   }
 
   async function saveDraftTitle() {
@@ -271,9 +288,13 @@ export function PayoutDetailClient({
     setDraftSaveNotice(null);
     setSavingDraftTitle(true);
     try {
-      await saveDraftFields({ title: nextTitle });
-      setPayoutTitleCommitted(nextTitle);
-      setPayoutTitleState(nextTitle);
+      const updated = await saveDraftFields({ title: nextTitle });
+      const resolvedTitle = updated?.title ?? nextTitle;
+      const resolvedDescription = updated?.description ?? payoutDescriptionState;
+      setPayoutTitleCommitted(resolvedTitle);
+      setPayoutTitleState(resolvedTitle);
+      setPayoutDescriptionCommitted(resolvedDescription);
+      setPayoutDescriptionState(resolvedDescription);
       setDraftSaveNotice("Draft title saved.");
     } catch (error) {
       setReviewError(error instanceof Error ? error.message : "Unable to update payout draft.");
@@ -293,9 +314,13 @@ export function PayoutDetailClient({
     setDraftSaveNotice(null);
     setSavingDraftTitle(true);
     try {
-      await saveDraftFields({ description: nextDescription });
-      setPayoutDescriptionCommitted(nextDescription);
-      setPayoutDescriptionState(nextDescription);
+      const updated = await saveDraftFields({ description: nextDescription });
+      const resolvedTitle = updated?.title ?? payoutTitleState;
+      const resolvedDescription = updated?.description ?? nextDescription;
+      setPayoutTitleCommitted(resolvedTitle);
+      setPayoutTitleState(resolvedTitle);
+      setPayoutDescriptionCommitted(resolvedDescription);
+      setPayoutDescriptionState(resolvedDescription);
       setDraftSaveNotice("Draft description saved.");
     } catch (error) {
       setReviewError(error instanceof Error ? error.message : "Unable to update payout draft.");
@@ -324,15 +349,29 @@ export function PayoutDetailClient({
     setDraftSaveNotice(null);
     setSavingDraftTitle(true);
     try {
-      await saveDraftFields({ milestones: normalized });
-      setDraftMilestonesCommitted(draftMilestonesState);
+      const updated = await saveDraftFields({ milestones: normalized });
+      const resolvedMilestones = updated?.milestones?.map((milestone) => ({
+        id: milestone.id,
+        title: milestone.title,
+        description: milestone.description,
+        amount: milestone.amountUsdc,
+      })) ?? draftMilestonesState;
+      setDraftMilestonesCommitted(resolvedMilestones);
+      setDraftMilestonesState(resolvedMilestones);
       setDraftSaveNotice("Draft milestones saved.");
+      if (updated?.title) {
+        setPayoutTitleCommitted(updated.title);
+        setPayoutTitleState(updated.title);
+      }
+      setPayoutDescriptionCommitted(updated?.description ?? payoutDescriptionState);
+      setPayoutDescriptionState(updated?.description ?? payoutDescriptionState);
       setMilestoneState((current) =>
         current.map((milestone, index) => ({
           ...milestone,
-          title: draftMilestonesState[index]?.title.trim() || milestone.title,
-          description: draftMilestonesState[index]?.description.trim() || milestone.description,
-          amount: Number(draftMilestonesState[index]?.amount ?? milestone.amount),
+          id: updated?.milestones?.[index]?.id ?? milestone.id,
+          title: updated?.milestones?.[index]?.title ?? milestone.title,
+          description: updated?.milestones?.[index]?.description ?? milestone.description,
+          amount: Number(updated?.milestones?.[index]?.amountUsdc ?? milestone.amount),
         })),
       );
     } catch (error) {

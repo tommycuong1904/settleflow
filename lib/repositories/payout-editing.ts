@@ -58,7 +58,22 @@ export async function updatePayoutDraft(
             }
           : {}),
       },
-      select: { id: true, status: true },
+      select: {
+        id: true,
+        status: true,
+        title: true,
+        description: true,
+        milestones: {
+          orderBy: { sequence: "asc" },
+          select: {
+            id: true,
+            title: true,
+            description: true,
+            amountUsdc: true,
+            sequence: true,
+          },
+        },
+      },
     });
 
     const actorUserId = input.updatedByUserId ?? input.actorUserId ?? input.ownerUserId;
@@ -86,6 +101,19 @@ export async function updatePayoutDraft(
       });
     }
 
-    return updated;
+    return {
+      id: updated.id,
+      status: updated.status,
+      title: updated.title,
+      description: updated.description,
+      milestoneCount: updated.milestones.length,
+      milestones: updated.milestones.map((milestone) => ({
+        id: milestone.id,
+        title: milestone.title,
+        description: milestone.description,
+        amountUsdc: milestone.amountUsdc.toString(),
+        sequence: milestone.sequence,
+      })),
+    };
   });
 }
