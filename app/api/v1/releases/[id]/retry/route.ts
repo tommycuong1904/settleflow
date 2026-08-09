@@ -1,12 +1,9 @@
 import { NextResponse } from "next/server";
 import { apiError, apiErrorFromCode } from "@/lib/api/errors";
+import { hasOwnerWorkspaceContext } from "@/lib/api/release-payload";
 import { retryFailedRelease } from "@/lib/repositories/release-retry";
 import { assertCanRetryRelease } from "@/lib/runtime/product-policy";
 import { resolveProductContextFromRequest } from "@/lib/runtime/product-context-server";
-
-function isNonEmpty(value: unknown): value is string {
-  return typeof value === "string" && value.trim().length > 0;
-}
 
 export async function POST(
   request: Request,
@@ -16,7 +13,7 @@ export async function POST(
   const productContext = resolveProductContextFromRequest(request);
   const ownerUserId = productContext.ownerUserId;
 
-  if (!isNonEmpty(productContext.workspaceId) || !isNonEmpty(ownerUserId)) {
+  if (!hasOwnerWorkspaceContext({ workspaceId: productContext.workspaceId, ownerUserId })) {
     return apiError("INVALID_RELEASE_RETRY_PAYLOAD", {
       message: "owner and workspace context are required.",
       status: 400,

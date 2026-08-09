@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { apiError, apiErrorFromCode } from "@/lib/api/errors";
+import { hasReleaseAmountPayload } from "@/lib/api/release-payload";
 import { queueMilestoneRelease } from "@/lib/repositories/milestone-release";
 import { assertCanReleaseMilestone } from "@/lib/runtime/product-policy";
 import { resolveProductContextFromRequest } from "@/lib/runtime/product-context-server";
@@ -13,8 +14,7 @@ export async function POST(
     const productContext = resolveProductContextFromRequest(request);
     const body = await request.json();
     const ownerUserId = productContext.ownerUserId;
-    if (typeof ownerUserId !== "string" || ownerUserId.trim().length === 0 ||
-        typeof body.amountUsdc !== "string" || body.amountUsdc.trim().length === 0) {
+    if (!hasReleaseAmountPayload(body, ownerUserId)) {
       return apiError("INVALID_RELEASE_PAYLOAD", { message: "owner context and amountUsdc are required.", status: 400 });
     }
 

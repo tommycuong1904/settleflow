@@ -1,10 +1,9 @@
 import { NextResponse } from "next/server";
 import { apiError, apiErrorFromCode } from "@/lib/api/errors";
+import { hasOwnerWorkspaceContext, isValidProofRefreshStatus } from "@/lib/api/release-payload";
 import { refreshReleaseProof, type RefreshProofInput } from "@/lib/repositories/release-proof";
 import { assertCanRefreshProof } from "@/lib/runtime/product-policy";
 import { resolveProductContextFromRequest } from "@/lib/runtime/product-context-server";
-
-const statuses = new Set(["confirmed", "failed"]);
 
 export async function POST(
   request: Request,
@@ -19,19 +18,14 @@ export async function POST(
     return apiError("INVALID_JSON_BODY", { message: "Invalid JSON body.", status: 400 });
   }
 
-  if (!body || typeof body.status !== "string" || !statuses.has(body.status)) {
+  if (!body || !isValidProofRefreshStatus(body.status)) {
     return apiError("INVALID_PROOF_STATUS", { message: "status must be confirmed or failed.", status: 400 });
   }
 
   const productContext = resolveProductContextFromRequest(request);
   const ownerUserId = productContext.ownerUserId;
 
-  if (
-    typeof productContext.workspaceId !== "string"
-    || productContext.workspaceId.trim().length === 0
-    || typeof ownerUserId !== "string"
-    || ownerUserId.trim().length === 0
-  ) {
+  if (!hasOwnerWorkspaceContext({ workspaceId: productContext.workspaceId, ownerUserId })) {
     return apiError("INVALID_PROOF_REFRESH_PAYLOAD", {
       message: "owner and workspace context are required.",
       status: 400,
