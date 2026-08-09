@@ -9,6 +9,10 @@ function isNonEmpty(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
 }
 
+function hasContiguousSequences(milestones: Array<{ sequence: unknown }>) {
+  return milestones.every((milestone, index) => milestone.sequence === index + 1);
+}
+
 export async function POST(request: Request) {
   try {
     const productContext = resolveProductContextFromRequest(request);
@@ -44,6 +48,10 @@ export async function POST(request: Request) {
       return apiError("INVALID_MILESTONE_PAYLOAD", { message: "Invalid milestone payload.", status: 400 });
     }
 
+    if (!hasContiguousSequences(milestonePayload)) {
+      return apiError("INVALID_MILESTONE_SEQUENCE", { message: "Milestone sequence must start at 1 and stay contiguous.", status: 400 });
+    }
+
     const milestoneTotal = milestonePayload.reduce(
       (sum, milestone) => sum.plus(new Decimal(String(milestone.amountUsdc))),
       new Decimal(0),
@@ -73,12 +81,14 @@ export async function POST(request: Request) {
         USER_NOT_FOUND: 404,
         USER_NOT_ALLOWED_TO_CREATE_PAYOUT: 403,
         CONTRIBUTOR_NOT_FOUND: 404,
+        INVALID_MILESTONE_SEQUENCE: 400,
         PAYOUT_TOTAL_MISMATCH: 400,
       },
       {
         USER_NOT_FOUND: "Owner context user not found.",
         USER_NOT_ALLOWED_TO_CREATE_PAYOUT: "User is not allowed to create payouts in this workspace.",
         CONTRIBUTOR_NOT_FOUND: "Contributor not found.",
+        INVALID_MILESTONE_SEQUENCE: "Milestone sequence must start at 1 and stay contiguous.",
         PAYOUT_TOTAL_MISMATCH: "totalAmountUsdc must equal the sum of milestone amounts.",
       },
       { message: "Unable to create payout.", status: 500 },

@@ -4,9 +4,14 @@ import { getPayoutDetail } from "@/lib/repositories/payouts";
 import { updatePayoutDraft } from "@/lib/repositories/payout-editing";
 import { assertCanEditPayoutDraft } from "@/lib/runtime/product-policy";
 import { resolveProductContextFromRequest } from "@/lib/runtime/product-context-server";
+import { Decimal } from "@prisma/client/runtime/library";
 
 function isNonEmpty(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
+}
+
+function hasContiguousSequences(milestones: Array<{ sequence: unknown }>) {
+  return milestones.every((milestone, index) => milestone.sequence === index + 1);
 }
 
 export async function GET(
@@ -57,6 +62,34 @@ export async function PATCH(
       return apiError("EMPTY_PAYOUT_MILESTONES", { message: "At least one milestone is required.", status: 400 });
     }
 
+    if (Array.isArray(body.milestones)) {
+      const milestonePayload = body.milestones as Array<{
+        title: unknown;
+        description: unknown;
+        amountUsdc: unknown;
+        sequence: unknown;
+      }>;
+
+      if (milestonePayload.some((milestone) =>
+        !isNonEmpty(milestone.title) ||
+        !isNonEmpty(milestone.description) ||
+        !isNonEmpty(milestone.amountUsdc) ||
+        !Number.isInteger(milestone.sequence))) {
+        return apiError("INVALID_MILESTONE_PAYLOAD", { message: "Invalid milestone payload.", status: 400 });
+      }
+
+      if (!hasContiguousSequences(milestonePayload)) {
+        return apiError("INVALID_MILESTONE_SEQUENCE", { message: "Milestone sequence must start at 1 and stay contiguous.", status: 400 });
+      }
+
+      const totalAmountUsdc = milestonePayload.reduce(
+        (sum, milestone) => sum.plus(new Decimal(String(milestone.amountUsdc))),
+        new Decimal(0),
+      );
+
+      body.totalAmountUsdc = totalAmountUsdc.toString();
+    }
+
     const policyViolation = assertCanEditPayoutDraft({ productContext, actorUserId: productContext.ownerUserId });
     if (policyViolation) {
       return apiError(policyViolation.code, { message: policyViolation.message, status: policyViolation.status });
@@ -75,6 +108,8 @@ export async function PATCH(
         WORKSPACE_SCOPE_MISMATCH: 409,
         PAYOUT_NOT_DRAFT: 409,
         CONTRIBUTOR_NOT_FOUND: 404,
+        INVALID_MILESTONE_PAYLOAD: 400,
+        INVALID_MILESTONE_SEQUENCE: 400,
         FORBIDDEN_PAYOUT_EDIT_ACTOR: 403,
         FORBIDDEN_PAYOUT_EDIT_CONTEXT: 403,
       },
@@ -83,6 +118,8 @@ export async function PATCH(
         WORKSPACE_SCOPE_MISMATCH: "workspace context does not match the payout workspace.",
         PAYOUT_NOT_DRAFT: "Only draft payouts can be edited.",
         CONTRIBUTOR_NOT_FOUND: "Contributor not found.",
+        INVALID_MILESTONE_PAYLOAD: "Invalid milestone payload.",
+        INVALID_MILESTONE_SEQUENCE: "Milestone sequence must start at 1 and stay contiguous.",
         FORBIDDEN_PAYOUT_EDIT_ACTOR: "Only owners can edit draft payouts in this flow.",
         FORBIDDEN_PAYOUT_EDIT_CONTEXT: "Edit payout context does not match the active owner.",
       },

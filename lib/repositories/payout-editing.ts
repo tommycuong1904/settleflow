@@ -61,6 +61,7 @@ export async function updatePayoutDraft(
         status: true,
         title: true,
         description: true,
+        totalAmountUsdc: true,
         milestones: {
           orderBy: { sequence: "asc" },
           select: {
@@ -101,6 +102,7 @@ export async function updatePayoutDraft(
       status: updated.status,
       title: updated.title,
       description: updated.description,
+      totalAmountUsdc: updated.totalAmountUsdc.toString(),
       milestoneCount: updated.milestones.length,
       milestones: updated.milestones.map((milestone) => ({
         id: milestone.id,

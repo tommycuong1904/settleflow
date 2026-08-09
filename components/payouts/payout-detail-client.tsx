@@ -81,6 +81,7 @@ export function PayoutDetailClient({
   });
   const [milestoneState, setMilestoneState] = useState(() => initialMilestones);
   const [payoutStatusState, setPayoutStatusState] = useState(payout.status);
+  const [payoutTotalAmountState, setPayoutTotalAmountState] = useState(payout.totalAmount);
   const [payoutTitleCommitted, setPayoutTitleCommitted] = useState(payout.title);
   const [payoutTitleState, setPayoutTitleState] = useState(payout.title);
   const [payoutDescriptionCommitted, setPayoutDescriptionCommitted] = useState(payout.description ?? "");
@@ -259,6 +260,7 @@ export function PayoutDetailClient({
         status: Payout["status"];
         title: string;
         description: string | null;
+        totalAmountUsdc: string;
         milestoneCount: number;
         milestones: Array<{
           id: string;
@@ -317,6 +319,7 @@ export function PayoutDetailClient({
       setPayoutTitleState(resolvedTitle);
       setPayoutDescriptionCommitted(resolvedDescription);
       setPayoutDescriptionState(resolvedDescription);
+      setPayoutTotalAmountState(Number(updated?.totalAmountUsdc ?? payoutTotalAmountState));
       setDraftSaveNotice("Draft description saved.");
     } catch (error) {
       setReviewError(error instanceof Error ? error.message : "Unable to update payout draft.");
@@ -354,6 +357,7 @@ export function PayoutDetailClient({
       })) ?? draftMilestonesState;
       setDraftMilestonesCommitted(resolvedMilestones);
       setDraftMilestonesState(resolvedMilestones);
+      setPayoutTotalAmountState(Number(updated?.totalAmountUsdc ?? payoutTotalAmountState));
       setDraftSaveNotice("Draft milestones saved.");
       if (updated?.title) {
         setPayoutTitleCommitted(updated.title);
@@ -483,7 +487,7 @@ export function PayoutDetailClient({
                 label: "Wallet",
                 value: contributor ? shortenAddress(contributor.walletAddress) : "Unknown",
               },
-              { label: "Total amount", value: `${formatUsdc(payout.totalAmount)} USDC` },
+              { label: "Total amount", value: `${formatUsdc(payoutTotalAmountState)} USDC` },
               {
                 label: "Payout status",
                 value: payoutStatusLabel,
