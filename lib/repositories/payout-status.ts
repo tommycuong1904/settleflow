@@ -9,6 +9,7 @@ export async function recalculatePayoutStatus(
     select: {
       id: true,
       status: true,
+      completedAt: true,
       milestones: {
         select: { status: true },
       },
@@ -54,7 +55,10 @@ export async function recalculatePayoutStatus(
     where: { id: payoutId },
     data: {
       status: nextStatus,
-      completedAt: nextStatus === "completed" ? new Date() : null,
+      completedAt:
+        nextStatus === "completed"
+          ? (payout.status === "completed" ? payout.completedAt ?? new Date() : new Date())
+          : null,
     },
     select: { id: true, status: true, completedAt: true },
   });
