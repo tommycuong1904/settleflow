@@ -8,9 +8,13 @@ export const DEFAULT_CONTRIBUTOR_USER_ID = "user-contrib";
  * are still being implemented. Existing product surfaces should import these
  * from one place instead of scattering seeded IDs across the app.
  */
-export const DEFAULT_PRODUCT_CONTEXT = {
+import type { ProductContext } from "@/lib/runtime/product-context";
+
+export const DEFAULT_PRODUCT_CONTEXT: ProductContext = {
   workspaceId: DEFAULT_WORKSPACE_ID,
   ownerUserId: DEFAULT_OWNER_USER_ID,
   reviewerUserId: DEFAULT_REVIEWER_USER_ID,
   contributorUserId: DEFAULT_CONTRIBUTOR_USER_ID,
-} as const;
+  actor: "owner",
+  activeUserId: DEFAULT_OWNER_USER_ID,
+};

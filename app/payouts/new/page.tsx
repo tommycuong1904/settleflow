@@ -244,7 +244,11 @@ function CreatePayoutPageContent() {
       });
       setSubmitState("created");
       if (payoutId) {
-        router.push(`/payouts/${payoutId}?workspaceId=${encodeURIComponent(productContext.workspaceId)}`);
+        const nextParams = new URLSearchParams({
+          workspaceId: productContext.workspaceId,
+          actor: productContext.actor,
+        });
+        router.push(`/payouts/${payoutId}?${nextParams.toString()}`);
         return;
       }
     } catch (error) {

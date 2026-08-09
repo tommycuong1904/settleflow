@@ -44,7 +44,7 @@ export function MilestoneRow({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          submittedByUserId: productContext.contributorUserId,
+          submittedByUserId: productContext.activeUserId,
           summary: `Submitted via SettleFlow payout detail for ${milestone.title}.`,
         }),
       });
