@@ -76,6 +76,7 @@ export function PayoutDetailClient({
     description: milestone.description,
     amount: milestone.amount.toString(),
   })));
+  const [activityItems, setActivityItems] = useState(initialActivity);
   const [reviewError, setReviewError] = useState<string | null>(null);
   const [reviewingMilestoneId, setReviewingMilestoneId] = useState<string | null>(null);
   const [activatingPayout, setActivatingPayout] = useState(false);
@@ -183,6 +184,18 @@ export function PayoutDetailClient({
     }
   }
 
+  async function refreshActivity() {
+    const response = await fetch(`/api/v1/payouts/${payout.id}/activity`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+    });
+    if (!response.ok) return;
+    const data = (await response.json()) as { data?: ActivityItem[] };
+    if (Array.isArray(data.data)) {
+      setActivityItems(data.data);
+    }
+  }
+
   async function saveDraftFields(fields: {
     title?: string;
     description?: string;
@@ -204,6 +217,7 @@ export function PayoutDetailClient({
     });
     const data = (await response.json()) as { error?: string };
     if (!response.ok) throw new Error(data.error ?? "Unable to update payout draft.");
+    await refreshActivity();
   }
 
   async function saveDraftTitle() {
@@ -565,7 +579,7 @@ export function PayoutDetailClient({
         />
       </div>
 
-      <ActivityTimeline items={initialActivity} />
+      <ActivityTimeline items={activityItems} />
     </div>
   );
 }
