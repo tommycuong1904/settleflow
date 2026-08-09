@@ -86,7 +86,7 @@ export function PayoutDetailReleaseShell({
   }, [effectiveReleaseStatus, nextReleasableMilestone, releaseError]);
 
   async function handleRelease() {
-    if (!nextReleasableMilestone) {
+    if (!isOwnerActor || !nextReleasableMilestone) {
       return;
     }
 
@@ -167,7 +167,7 @@ export function PayoutDetailReleaseShell({
   }
 
   async function handleRetryRelease() {
-    if (!resolvedProof?.releaseId || retryingRelease) {
+    if (!isOwnerActor || !resolvedProof?.releaseId || retryingRelease) {
       return;
     }
 
@@ -216,7 +216,7 @@ export function PayoutDetailReleaseShell({
   }
 
   async function handleRefreshProof(status: "confirmed" | "failed") {
-    if (!resolvedProof?.releaseId || refreshingProof) {
+    if (!isOwnerActor || !resolvedProof?.releaseId || refreshingProof) {
       return;
     }
 
