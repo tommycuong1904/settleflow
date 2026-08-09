@@ -19,7 +19,11 @@ export async function recalculatePayoutStatus(
     throw new Error("PAYOUT_NOT_FOUND");
   }
 
-  if (payout.status === "draft") {
+  const hasOnlyPendingMilestones = payout.milestones.every(
+    (milestone) => milestone.status === "pending",
+  );
+
+  if (payout.status === "draft" && hasOnlyPendingMilestones) {
     return tx.payout.findUnique({
       where: { id: payoutId },
       select: { id: true, status: true, completedAt: true },
