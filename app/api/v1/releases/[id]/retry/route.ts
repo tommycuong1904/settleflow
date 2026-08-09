@@ -16,8 +16,11 @@ export async function POST(
   const productContext = resolveProductContextFromRequest(request);
   const ownerUserId = productContext.ownerUserId;
 
-  if (!isNonEmpty(ownerUserId)) {
-    return apiError("INVALID_RELEASE_RETRY_PAYLOAD", { message: "owner context is required.", status: 400 });
+  if (!isNonEmpty(productContext.workspaceId) || !isNonEmpty(ownerUserId)) {
+    return apiError("INVALID_RELEASE_RETRY_PAYLOAD", {
+      message: "owner and workspace context are required.",
+      status: 400,
+    });
   }
 
   const policyViolation = assertCanRetryRelease({ productContext, actorUserId: ownerUserId });
@@ -43,8 +46,18 @@ export async function POST(
         USER_NOT_FOUND: 404,
         FORBIDDEN_RELEASE_RETRY: 403,
       },
-      {},
-      { status: 500 },
+      {
+        RELEASE_NOT_FOUND: "Release not found.",
+        WORKSPACE_SCOPE_MISMATCH: "Workspace context does not match the release workspace.",
+        RELEASE_NOT_FAILED: "Only failed releases can be retried.",
+        STALE_RELEASE_RETRY: "This release was already retried and is no longer the active failed attempt.",
+        PROOF_NOT_FOUND: "Settlement proof not found for this release.",
+        RETRY_REQUIRES_FAILED_PROOF: "Only releases with a failed proof can be retried.",
+        DESTINATION_WALLET_MISSING: "Destination wallet is missing.",
+        USER_NOT_FOUND: "Owner context user not found.",
+        FORBIDDEN_RELEASE_RETRY: "User is not allowed to retry this release.",
+      },
+      { message: "Unable to retry release.", status: 500 },
     );
   }
 }
