@@ -12,6 +12,19 @@ type CookieStoreLike = {
   get(name: string): { value: string } | undefined;
 };
 
+function parseCookieHeader(cookieHeader: string | null) {
+  const cookies = new Map<string, string>();
+  if (!cookieHeader) return cookies;
+
+  for (const segment of cookieHeader.split(";")) {
+    const [name, ...rest] = segment.trim().split("=");
+    if (!name || rest.length === 0) continue;
+    cookies.set(name, decodeURIComponent(rest.join("=")));
+  }
+
+  return cookies;
+}
+
 export function resolveWorkspaceId(value: string | null | undefined) {
   return readNonEmpty(value) ?? DEFAULT_PRODUCT_CONTEXT.workspaceId;
 }
@@ -46,16 +59,7 @@ export function resolveProductContextFromCookies(cookieStore: CookieStoreLike) {
 export function resolveProductContextFromRequest(request: Request) {
   const { searchParams } = new URL(request.url);
 
-  const cookieHeader = request.headers.get("cookie");
-  const cookies = new Map<string, string>();
-
-  if (cookieHeader) {
-    for (const segment of cookieHeader.split(";")) {
-      const [name, ...rest] = segment.trim().split("=");
-      if (!name || rest.length === 0) continue;
-      cookies.set(name, decodeURIComponent(rest.join("=")));
-    }
-  }
+  const cookies = parseCookieHeader(request.headers.get("cookie"));
 
   return resolveProductContext({
     workspaceId:
