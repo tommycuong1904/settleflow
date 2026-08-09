@@ -11,19 +11,19 @@ export async function POST(
   const { id } = await params;
   try {
     const productContext = resolveProductContextFromRequest(request);
-    const activatedByUserId = productContext.ownerUserId;
+    const ownerUserId = productContext.ownerUserId;
 
     if (typeof productContext.workspaceId !== "string" || productContext.workspaceId.trim().length === 0 ||
-        typeof activatedByUserId !== "string" || activatedByUserId.trim().length === 0) {
+        typeof ownerUserId !== "string" || ownerUserId.trim().length === 0) {
       return apiError("INVALID_ACTIVATE_PAYLOAD", { message: "owner and workspace context are required.", status: 400 });
     }
 
-    const policyViolation = assertCanActivatePayout({ productContext, actorUserId: activatedByUserId });
+    const policyViolation = assertCanActivatePayout({ productContext, actorUserId: ownerUserId });
     if (policyViolation) {
       return apiError(policyViolation.code, { message: policyViolation.message, status: policyViolation.status });
     }
 
-    const payout = await activatePayout(id, productContext.workspaceId, activatedByUserId);
+    const payout = await activatePayout(id, productContext.workspaceId, ownerUserId);
     return NextResponse.json({ payout });
   } catch (error) {
     const code = error instanceof Error ? error.message : "UNABLE_TO_ACTIVATE_PAYOUT";
