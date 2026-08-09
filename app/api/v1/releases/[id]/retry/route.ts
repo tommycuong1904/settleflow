@@ -14,19 +14,19 @@ export async function POST(
 ) {
   const { id } = await params;
   const productContext = resolveProductContextFromRequest(request);
-  const triggeredByUserId = productContext.ownerUserId;
+  const ownerUserId = productContext.ownerUserId;
 
-  if (!isNonEmpty(triggeredByUserId)) {
+  if (!isNonEmpty(ownerUserId)) {
     return apiError("INVALID_RELEASE_RETRY_PAYLOAD", { message: "owner context is required.", status: 400 });
   }
 
-  const policyViolation = assertCanRetryRelease({ productContext, actorUserId: triggeredByUserId });
+  const policyViolation = assertCanRetryRelease({ productContext, actorUserId: ownerUserId });
   if (policyViolation) {
     return apiError(policyViolation.code, { message: policyViolation.message, status: policyViolation.status });
   }
 
   try {
-    const result = await retryFailedRelease(id, triggeredByUserId);
+    const result = await retryFailedRelease(id, ownerUserId);
     return NextResponse.json(result, { status: 201 });
   } catch (error) {
     const code = error instanceof Error ? error.message : "UNKNOWN_ERROR";
