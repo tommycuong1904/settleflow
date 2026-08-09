@@ -319,8 +319,27 @@ async function getDerivedPayoutActivity(payoutId: string): Promise<ActivityItem[
   return items.sort((a, b) => new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime());
 }
 
+function getActivityDedupKey(item: ActivityItem) {
+  return [item.action, item.entityType, item.entityId].join(":");
+}
+
 export async function getPayoutActivity(payoutId: string): Promise<ActivityItem[]> {
-  const logged = await getLoggedPayoutActivity(payoutId);
-  if (logged.length > 0) return logged;
-  return getDerivedPayoutActivity(payoutId);
+  const [logged, derived] = await Promise.all([
+    getLoggedPayoutActivity(payoutId),
+    getDerivedPayoutActivity(payoutId),
+  ]);
+
+  const merged = new Map<string, ActivityItem>();
+
+  for (const item of derived) {
+    merged.set(getActivityDedupKey(item), item);
+  }
+
+  for (const item of logged) {
+    merged.set(getActivityDedupKey(item), item);
+  }
+
+  return Array.from(merged.values()).sort(
+    (a, b) => new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime(),
+  );
 }
