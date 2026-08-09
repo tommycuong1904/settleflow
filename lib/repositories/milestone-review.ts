@@ -49,11 +49,21 @@ export async function reviewMilestone(
       },
       select: { id: true, decision: true },
     });
+    const reviewedAt = new Date();
     const updatedMilestone = await tx.milestone.update({
       where: { id: milestoneId },
       data: decision === "approved"
-        ? { status: "approved", approvedAt: new Date() }
-        : { status: "rejected", rejectedAt: new Date() },
+        ? {
+            status: "approved",
+            approvedAt: reviewedAt,
+            rejectedAt: null,
+          }
+        : {
+            status: "rejected",
+            approvedAt: null,
+            rejectedAt: reviewedAt,
+            releasedAt: null,
+          },
       select: {
         id: true,
         status: true,
