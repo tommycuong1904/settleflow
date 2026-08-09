@@ -15,7 +15,7 @@ import type { Contributor } from "@/lib/models/contributor";
 import type { Milestone } from "@/lib/models/milestone";
 import type { Payout } from "@/lib/models/payout";
 import type { TransactionProof } from "@/lib/models/transaction-proof";
-import { useResolvedProductContext } from "@/lib/runtime/product-context-client";
+import type { ProductActor } from "@/lib/runtime/product-context";
 import { formatUsdc, shortenAddress } from "@/lib/utils/format";
 
 type PersistedReleaseState = {
@@ -30,6 +30,7 @@ type PayoutDetailClientProps = {
   initialMilestones: Milestone[];
   initialReleaseProof?: TransactionProof;
   initialActivity: ActivityItem[];
+  currentActor: ProductActor;
 };
 
 function getStorageKey(payoutId: string) {
@@ -61,10 +62,10 @@ export function PayoutDetailClient({
   initialMilestones,
   initialReleaseProof,
   initialActivity,
+  currentActor,
 }: PayoutDetailClientProps) {
-  const productContext = useResolvedProductContext();
-  const isOwnerActor = productContext.actor === "owner";
-  const isReviewerActor = productContext.actor === "reviewer";
+  const isOwnerActor = currentActor === "owner";
+  const isReviewerActor = currentActor === "reviewer";
   const [persistedRelease, setPersistedRelease] = useState<PersistedReleaseState | null>(() => {
     if (typeof window === "undefined" || initialReleaseProof) return null;
 
@@ -117,6 +118,37 @@ export function PayoutDetailClient({
     setPersistedRelease(null);
     window.sessionStorage.removeItem(getStorageKey(payout.id));
   }, [initialReleaseProof, payout.id, persistedRelease]);
+
+  useEffect(() => {
+    setMilestoneState(initialMilestones);
+    setPayoutStatusState(payout.status);
+    setPayoutTotalAmountState(payout.totalAmount);
+    setPayoutTitleCommitted(payout.title);
+    setPayoutTitleState(payout.title);
+    setPayoutDescriptionCommitted(payout.description ?? "");
+    setPayoutDescriptionState(payout.description ?? "");
+    setDraftMilestonesCommitted(
+      initialMilestones.map((milestone) => ({
+        id: milestone.id,
+        title: milestone.title,
+        description: milestone.description,
+        amount: milestone.amount.toString(),
+      })),
+    );
+    setDraftMilestonesState(
+      initialMilestones.map((milestone) => ({
+        id: milestone.id,
+        title: milestone.title,
+        description: milestone.description,
+        amount: milestone.amount.toString(),
+      })),
+    );
+    setActivityItems(initialActivity);
+    setReviewError(null);
+    setReviewingMilestoneId(null);
+    setActivatingPayout(false);
+    setSavingDraftTitle(false);
+  }, [initialActivity, initialMilestones, payout.description, payout.status, payout.title, payout.totalAmount]);
 
   useEffect(() => {
     if (!draftSaveNotice) return;
@@ -726,10 +758,11 @@ export function PayoutDetailClient({
                 <MilestoneRow
                   key={milestone.id}
                   milestone={milestone}
+                  currentActor={currentActor}
                   onApprove={isReviewerActor ? () => handleApproveMilestone(milestone.id) : undefined}
                   onReject={isReviewerActor ? (_milestoneId, comment) => handleRejectMilestone(milestone.id, comment) : undefined}
                   onStatusChange={handleMilestoneStatusChange}
-                  />
+                />
               ))}
             </div>
           </CardContent>
@@ -739,10 +772,11 @@ export function PayoutDetailClient({
           payoutId={payout.id}
           recipientAddress={contributor?.walletAddress}
           nextReleasableMilestone={nextReleasableMilestone}
-          releaseMilestoneTitle={nextReleasableMilestone?.title ?? latestReleasedMilestone?.title}
+          releaseMilestoneTitle={latestReleasedMilestone?.title}
           releaseProof={releaseProof}
+          currentActor={currentActor}
           onReleaseSuccess={handleReleaseSuccess}
-          onActivityChange={() => { void refreshActivity(); }}
+          onActivityChange={refreshActivity}
         />
       </div>
 

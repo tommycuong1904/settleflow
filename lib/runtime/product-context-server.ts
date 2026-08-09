@@ -46,13 +46,17 @@ export function resolveProductContext(input: ProductContextInput) {
   };
 }
 
-export function resolveProductContextFromCookies(cookieStore: CookieStoreLike) {
+export function resolveProductContextFromCookies(
+  cookieStore: CookieStoreLike,
+  overrides: ProductContextInput = {},
+) {
   return resolveProductContext({
-    workspaceId: cookieStore.get(PRODUCT_CONTEXT_COOKIE_NAMES.workspaceId)?.value,
-    ownerUserId: cookieStore.get(PRODUCT_CONTEXT_COOKIE_NAMES.ownerUserId)?.value,
-    reviewerUserId: cookieStore.get(PRODUCT_CONTEXT_COOKIE_NAMES.reviewerUserId)?.value,
-    contributorUserId: cookieStore.get(PRODUCT_CONTEXT_COOKIE_NAMES.contributorUserId)?.value,
-    actor: cookieStore.get(PRODUCT_CONTEXT_COOKIE_NAMES.actor)?.value,
+    workspaceId: overrides.workspaceId ?? cookieStore.get(PRODUCT_CONTEXT_COOKIE_NAMES.workspaceId)?.value,
+    ownerUserId: overrides.ownerUserId ?? cookieStore.get(PRODUCT_CONTEXT_COOKIE_NAMES.ownerUserId)?.value,
+    reviewerUserId: overrides.reviewerUserId ?? cookieStore.get(PRODUCT_CONTEXT_COOKIE_NAMES.reviewerUserId)?.value,
+    contributorUserId:
+      overrides.contributorUserId ?? cookieStore.get(PRODUCT_CONTEXT_COOKIE_NAMES.contributorUserId)?.value,
+    actor: overrides.actor ?? cookieStore.get(PRODUCT_CONTEXT_COOKIE_NAMES.actor)?.value,
   });
 }
 

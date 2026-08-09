@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 
 import { ARC_CONFIG } from "@/lib/arc/config";
+import { sendUsdcWithBrowserWallet } from "@/lib/arc/browser-wallet";
 import { mapSendResultToProof } from "@/lib/arc/map-send-result-to-proof";
 import {
   ReleasePanel,
@@ -16,6 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import type { Milestone } from "@/lib/models/milestone";
 import type { TransactionProof } from "@/lib/models/transaction-proof";
 import { useResolvedProductContext } from "@/lib/runtime/product-context-client";
+import { PRODUCT_CONTEXT_HEADER_NAMES, type ProductActor } from "@/lib/runtime/product-context";
 import { formatUsdc } from "@/lib/utils/format";
 
 type PayoutDetailReleaseShellProps = {
@@ -24,6 +26,7 @@ type PayoutDetailReleaseShellProps = {
   nextReleasableMilestone?: Milestone;
   releaseMilestoneTitle?: string;
   releaseProof?: TransactionProof;
+  currentActor: ProductActor;
   onReleaseSuccess?: (payload: {
     milestoneId: string;
     proof: TransactionProof;
@@ -38,11 +41,12 @@ export function PayoutDetailReleaseShell({
   nextReleasableMilestone,
   releaseMilestoneTitle,
   releaseProof,
+  currentActor,
   onReleaseSuccess,
   onActivityChange,
 }: PayoutDetailReleaseShellProps) {
   const productContext = useResolvedProductContext();
-  const isOwnerActor = productContext.actor === "owner";
+  const isOwnerActor = currentActor === "owner";
   const [releaseStatus, setReleaseStatus] = useState<ReleasePanelStatus>(
     releaseProof?.status === "failed"
       ? "failed"
@@ -96,6 +100,17 @@ export function PayoutDetailReleaseShell({
     }
   }, [effectiveReleaseStatus, nextReleasableMilestone, releaseError]);
 
+  const productContextHeaders = useMemo(
+    () => ({
+      [PRODUCT_CONTEXT_HEADER_NAMES.workspaceId]: productContext.workspaceId,
+      [PRODUCT_CONTEXT_HEADER_NAMES.ownerUserId]: productContext.ownerUserId,
+      [PRODUCT_CONTEXT_HEADER_NAMES.reviewerUserId]: productContext.reviewerUserId,
+      [PRODUCT_CONTEXT_HEADER_NAMES.contributorUserId]: productContext.contributorUserId,
+      [PRODUCT_CONTEXT_HEADER_NAMES.actor]: productContext.actor,
+    }),
+    [productContext.actor, productContext.contributorUserId, productContext.ownerUserId, productContext.reviewerUserId, productContext.workspaceId],
+  );
+
   async function handleRelease() {
     if (!isOwnerActor || !nextReleasableMilestone) {
       return;
@@ -107,7 +122,10 @@ export function PayoutDetailReleaseShell({
     try {
       const response = await fetch(`/api/v1/milestones/${nextReleasableMilestone.id}/release`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...productContextHeaders,
+        },
         body: JSON.stringify({
           amountUsdc: String(nextReleasableMilestone.amount),
         }),
@@ -132,6 +150,60 @@ export function PayoutDetailReleaseShell({
         setReleaseError(data.error ?? "Release request failed.");
         setReleaseStatus("failed");
         return;
+      }
+
+      if (ARC_CONFIG.executionMode === "real" && data.release?.id) {
+        const walletResult = await sendUsdcWithBrowserWallet({
+          recipient: recipientAddress ?? "",
+          amount: String(nextReleasableMilestone.amount),
+        });
+
+        if (walletResult.state !== "success" || !walletResult.txHash) {
+          throw new Error("Arc browser-wallet send did not return a successful transaction.");
+        }
+
+        const proofResponse = await fetch(`/api/v1/releases/${data.release.id}/proof/refresh`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...productContextHeaders,
+          },
+          body: JSON.stringify({
+            status: "confirmed",
+            txHash: walletResult.txHash,
+            network: "Arc Testnet",
+          }),
+        });
+
+        const proofData = (await proofResponse.json()) as {
+          error?: string;
+          proof?: {
+            id: string;
+            releaseId?: string;
+            milestoneId?: string;
+            txHash?: string | null;
+            network?: string | null;
+            status: "pending" | "confirmed" | "failed";
+            explorerUrl?: string | null;
+            confirmedAt?: string | null;
+          };
+        };
+
+        if (!proofResponse.ok || proofData.error || !proofData.proof) {
+          throw new Error(proofData.error ?? "Unable to persist Arc settlement proof.");
+        }
+
+        data.release.status = "confirmed";
+        data.proof = {
+          id: proofData.proof.id,
+          releaseId: proofData.proof.releaseId,
+          milestoneId: proofData.proof.milestoneId ?? nextReleasableMilestone.id,
+          txHash: proofData.proof.txHash ?? walletResult.txHash,
+          network: proofData.proof.network ?? "Arc Testnet",
+          status: proofData.proof.status,
+          explorerUrl: proofData.proof.explorerUrl ?? walletResult.explorerUrl,
+          confirmedAt: proofData.proof.confirmedAt ?? new Date().toISOString(),
+        };
       }
 
       const result = mapSendResultToProof(
@@ -189,7 +261,10 @@ export function PayoutDetailReleaseShell({
     try {
       const response = await fetch(`/api/v1/releases/${resolvedProof.releaseId}/retry`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...productContextHeaders,
+        },
         body: JSON.stringify({}),
       });
 
@@ -252,7 +327,10 @@ export function PayoutDetailReleaseShell({
     try {
       const response = await fetch(`/api/v1/releases/${resolvedProof.releaseId}/proof/refresh`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...productContextHeaders,
+        },
         body: JSON.stringify({
           status,
           txHash: status === "confirmed" ? txHash : undefined,

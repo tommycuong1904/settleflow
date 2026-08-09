@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 
 import { DEFAULT_PRODUCT_CONTEXT } from "@/lib/runtime/default-product-context";
 import {
@@ -23,28 +23,32 @@ function readCookie(name: string) {
 }
 
 export function useResolvedProductContext() {
-  const searchParams = useSearchParams();
+  const pathname = usePathname();
 
   return useMemo(() => {
+    const searchParams = typeof window === "undefined"
+      ? new URLSearchParams()
+      : new URLSearchParams(window.location.search);
+
     const actor =
-      resolveActor(readCookie(PRODUCT_CONTEXT_COOKIE_NAMES.actor)) ??
       resolveActor(searchParams.get("actor")) ??
+      resolveActor(readCookie(PRODUCT_CONTEXT_COOKIE_NAMES.actor)) ??
       DEFAULT_PRODUCT_CONTEXT.actor;
     const ownerUserId =
-      readNonEmpty(readCookie(PRODUCT_CONTEXT_COOKIE_NAMES.ownerUserId)) ??
       readNonEmpty(searchParams.get("ownerUserId")) ??
+      readNonEmpty(readCookie(PRODUCT_CONTEXT_COOKIE_NAMES.ownerUserId)) ??
       DEFAULT_PRODUCT_CONTEXT.ownerUserId;
     const reviewerUserId =
-      readNonEmpty(readCookie(PRODUCT_CONTEXT_COOKIE_NAMES.reviewerUserId)) ??
       readNonEmpty(searchParams.get("reviewerUserId")) ??
+      readNonEmpty(readCookie(PRODUCT_CONTEXT_COOKIE_NAMES.reviewerUserId)) ??
       DEFAULT_PRODUCT_CONTEXT.reviewerUserId;
     const contributorUserId =
-      readNonEmpty(readCookie(PRODUCT_CONTEXT_COOKIE_NAMES.contributorUserId)) ??
       readNonEmpty(searchParams.get("contributorUserId")) ??
+      readNonEmpty(readCookie(PRODUCT_CONTEXT_COOKIE_NAMES.contributorUserId)) ??
       DEFAULT_PRODUCT_CONTEXT.contributorUserId;
     const workspaceId =
-      readNonEmpty(readCookie(PRODUCT_CONTEXT_COOKIE_NAMES.workspaceId)) ??
       readNonEmpty(searchParams.get("workspaceId")) ??
+      readNonEmpty(readCookie(PRODUCT_CONTEXT_COOKIE_NAMES.workspaceId)) ??
       DEFAULT_PRODUCT_CONTEXT.workspaceId;
 
     return {
@@ -55,5 +59,5 @@ export function useResolvedProductContext() {
       actor,
       activeUserId: getActiveUserId({ actor, ownerUserId, reviewerUserId, contributorUserId }),
     };
-  }, [searchParams]);
+  }, [pathname]);
 }

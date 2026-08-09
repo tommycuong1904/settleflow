@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -18,44 +18,55 @@ export function ActorSwitcher() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const productContext = useResolvedProductContext();
+  const [isPending, startTransition] = useTransition();
 
-  const selected = useMemo(
-    () => actorOptions.find((option) => option.value === productContext.actor) ?? actorOptions[0],
-    [productContext.actor],
+  const selectedActor = useMemo(
+    () => {
+      const actorFromQuery = searchParams.get("actor");
+      if (actorFromQuery === "owner" || actorFromQuery === "reviewer" || actorFromQuery === "contributor") {
+        return actorFromQuery;
+      }
+      return productContext.actor;
+    },
+    [productContext.actor, searchParams],
   );
 
   function handleValueChange(nextActor: string) {
     const params = new URLSearchParams(searchParams.toString());
-    params.delete("actor");
+    params.set("actor", nextActor);
     params.delete("workspaceId");
     params.delete("ownerUserId");
     params.delete("reviewerUserId");
     params.delete("contributorUserId");
     document.cookie = `${PRODUCT_CONTEXT_COOKIE_NAMES.actor}=${encodeURIComponent(nextActor)}; path=/; max-age=31536000; samesite=lax`;
     const nextQuery = params.toString();
-    router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname);
+    const nextUrl = nextQuery ? `${pathname}?${nextQuery}` : pathname;
+    startTransition(() => {
+      router.replace(nextUrl, { scroll: false });
+      router.refresh();
+    });
   }
 
   return (
-    <div className="flex min-w-[220px] flex-col gap-1">
-      <span className="text-[11px] uppercase tracking-[0.18em] text-[var(--text-muted)]">
-        Active role
+    <div className="flex min-w-0 items-center gap-2 rounded-full border border-[rgba(148,163,184,0.18)] bg-[rgba(8,15,31,0.58)] px-2 py-1.5">
+      <span className="shrink-0 rounded-full border border-[rgba(34,211,238,0.24)] bg-[rgba(34,211,238,0.12)] px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.16em] text-[var(--accent-cyan)]">
+        Role
       </span>
-      <Select value={productContext.actor} onValueChange={handleValueChange}>
-        <SelectTrigger className="h-10 min-w-[220px] bg-[rgba(8,15,31,0.68)] text-left text-sm">
+      <Select value={selectedActor} onValueChange={handleValueChange}>
+        <SelectTrigger
+          className="h-8 min-w-[132px] border-0 bg-transparent px-2 text-left text-sm text-white shadow-none focus:ring-0"
+          aria-busy={isPending}
+        >
           <SelectValue placeholder="Select actor" />
         </SelectTrigger>
         <SelectContent>
           {actorOptions.map((option) => (
             <SelectItem key={option.value} value={option.value}>
-              {option.label} · {option.hint}
+              {option.label}
             </SelectItem>
           ))}
         </SelectContent>
       </Select>
-      <span className="text-xs text-[var(--text-muted)]">
-        Current actor: <span className="text-white">{selected.label}</span>
-      </span>
     </div>
   );
 }

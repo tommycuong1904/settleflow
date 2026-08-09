@@ -6,11 +6,12 @@ import { MilestoneStatusBadge } from "@/components/milestones/milestone-status-b
 import { ReviewControls } from "@/components/milestones/review-controls";
 import { Button } from "@/components/shared/button";
 import type { Milestone } from "@/lib/models/milestone";
-import { useResolvedProductContext } from "@/lib/runtime/product-context-client";
+import type { ProductActor } from "@/lib/runtime/product-context";
 import { formatUsdc } from "@/lib/utils/format";
 
 type MilestoneRowProps = {
   milestone: Milestone;
+  currentActor: ProductActor;
   onApprove?: (milestoneId: string) => void | Promise<void>;
   onReject?: (milestoneId: string, comment?: string) => void | Promise<void>;
   onStatusChange?: (
@@ -22,11 +23,11 @@ type MilestoneRowProps = {
 
 export function MilestoneRow({
   milestone,
+  currentActor,
   onApprove,
   onReject,
   onStatusChange,
 }: MilestoneRowProps) {
-  const productContext = useResolvedProductContext();
   const [status, setStatus] = useState(milestone.status);
   const [submitting, setSubmitting] = useState(false);
   const [reviewBusy, setReviewBusy] = useState(false);
@@ -36,8 +37,9 @@ export function MilestoneRow({
   const isApproved = status === "approved";
   const isReleased = status === "released";
   const isRejected = status === "rejected";
-  const isContributorActor = productContext.actor === "contributor";
-  const isReviewerActor = productContext.actor === "reviewer";
+  const isContributorActor = currentActor === "contributor";
+  const isReviewerActor = currentActor === "reviewer";
+  const isOwnerActor = currentActor === "owner";
   const isSubmittable = (status === "pending" || status === "rejected") && isContributorActor;
 
   async function handleSubmitMilestone() {
@@ -141,8 +143,16 @@ export function MilestoneRow({
 
           {isApproved ? (
             <div className="space-y-2">
-              <p className="font-semibold text-white">Ready for release</p>
-              <p>Approved work can now move to the Arc release step from the side panel.</p>
+              <p className="font-semibold text-white">
+                {isOwnerActor ? "Ready for release" : isReviewerActor ? "Review complete" : "Waiting for release"}
+              </p>
+              <p>
+                {isOwnerActor
+                  ? "Approved work can now move to the Arc release step from the side panel."
+                  : isReviewerActor
+                    ? "Your review is complete. The owner can now release this approved milestone on Arc."
+                    : "This milestone has been approved and is now waiting for the owner to release it on Arc."}
+              </p>
             </div>
           ) : null}
 
