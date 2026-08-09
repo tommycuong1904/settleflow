@@ -66,11 +66,11 @@ export default async function DashboardPage({
         </div>
         <div className="flex flex-wrap gap-3">
           {nextActionPayoutId && nextActionLabel ? (
-            <Button href={`/payouts/${nextActionPayoutId}?workspaceId=${encodeURIComponent(workspaceId)}`} variant="secondary">
+            <Button href={`/payouts/${nextActionPayoutId}`} variant="secondary">
               {nextActionLabel}
             </Button>
           ) : null}
-          <Button href={`/payouts/new?workspaceId=${encodeURIComponent(workspaceId)}`} variant="primary">
+          <Button href="/payouts/new" variant="primary">
             New Payout
           </Button>
         </div>
@@ -169,7 +169,7 @@ export default async function DashboardPage({
                         </p>
                       </div>
                       <div className="flex min-w-[180px] flex-col gap-3">
-                        <Button href={`/payouts/${milestone.payoutId}?workspaceId=${encodeURIComponent(workspaceId)}`} variant="primary">
+                        <Button href={`/payouts/${milestone.payoutId}`} variant="primary">
                           Review milestone
                         </Button>
                         <div className="rounded-2xl border border-dashed border-[var(--border-soft)] px-4 py-3 text-sm text-[var(--text-muted)]">
