@@ -11,17 +11,17 @@ export async function POST(
   const { id } = await params;
   try {
     const productContext = resolveProductContextFromRequest(request);
-    const reviewedByUserId = productContext.activeUserId;
+    const reviewerUserId = productContext.activeUserId;
 
-    if (typeof reviewedByUserId !== "string" || reviewedByUserId.trim().length === 0) {
+    if (typeof reviewerUserId !== "string" || reviewerUserId.trim().length === 0) {
       return apiError("INVALID_REVIEW_PAYLOAD", { message: "reviewer context is required.", status: 400 });
     }
 
-    const policyViolation = assertCanApproveMilestone({ productContext, actorUserId: reviewedByUserId });
+    const policyViolation = assertCanApproveMilestone({ productContext, actorUserId: reviewerUserId });
     if (policyViolation) {
       return apiError(policyViolation.code, { message: policyViolation.message, status: policyViolation.status });
     }
-    const result = await reviewMilestone(id, reviewedByUserId, "approved", undefined);
+    const result = await reviewMilestone(id, reviewerUserId, "approved", undefined);
     return NextResponse.json(result);
   } catch (error) {
     const code = error instanceof Error ? error.message : "UNABLE_TO_APPROVE_MILESTONE";

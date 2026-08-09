@@ -12,17 +12,17 @@ export async function POST(
   try {
     const productContext = resolveProductContextFromRequest(request);
     const body = await request.json();
-    const reviewedByUserId = productContext.activeUserId;
+    const reviewerUserId = productContext.activeUserId;
 
-    if (typeof reviewedByUserId !== "string" || reviewedByUserId.trim().length === 0) {
+    if (typeof reviewerUserId !== "string" || reviewerUserId.trim().length === 0) {
       return apiError("INVALID_REVIEW_PAYLOAD", { message: "reviewer context is required.", status: 400 });
     }
 
-    const policyViolation = assertCanRejectMilestone({ productContext, actorUserId: reviewedByUserId });
+    const policyViolation = assertCanRejectMilestone({ productContext, actorUserId: reviewerUserId });
     if (policyViolation) {
       return apiError(policyViolation.code, { message: policyViolation.message, status: policyViolation.status });
     }
-    const result = await reviewMilestone(id, reviewedByUserId, "rejected", body.comment);
+    const result = await reviewMilestone(id, reviewerUserId, "rejected", body.comment);
     return NextResponse.json(result);
   } catch (error) {
     if (error instanceof SyntaxError) return apiError("INVALID_JSON_BODY", { message: "Invalid JSON body.", status: 400 });
