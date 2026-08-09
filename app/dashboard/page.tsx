@@ -35,14 +35,46 @@ export default async function DashboardPage() {
     (sum, milestone) => sum + milestone.amount,
     0,
   );
-  const nextActionPayoutId = pendingApprovals[0]?.payoutId ?? releaseReadyMilestones[0]?.payoutId ?? activePayouts[0]?.id;
+  const failedSettlementProof = transactionProofs.find((proof) => proof.status === "failed");
+  const pendingSettlementProof = transactionProofs.find((proof) => proof.status === "pending");
+  const failedSettlementMilestone = failedSettlementProof
+    ? milestones.find((milestone) => milestone.id === failedSettlementProof.milestoneId)
+    : undefined;
+  const pendingSettlementMilestone = pendingSettlementProof
+    ? milestones.find((milestone) => milestone.id === pendingSettlementProof.milestoneId)
+    : undefined;
+  const nextActionPayoutId = pendingApprovals[0]?.payoutId
+    ?? failedSettlementMilestone?.payoutId
+    ?? pendingSettlementMilestone?.payoutId
+    ?? releaseReadyMilestones[0]?.payoutId
+    ?? activePayouts[0]?.id;
   const nextActionLabel = pendingApprovals[0]
     ? "Review next milestone"
-    : releaseReadyMilestones[0]
-      ? "Release approved milestone"
-      : activePayouts[0]
-        ? "Resume active payout"
-        : null;
+    : failedSettlementMilestone
+      ? "Retry failed settlement"
+      : pendingSettlementMilestone
+        ? "Update pending proof"
+        : releaseReadyMilestones[0]
+          ? "Release approved milestone"
+          : activePayouts[0]
+            ? "Resume active payout"
+            : null;
+  const priorityQueueTitle = pendingApprovals.length > 0
+    ? `${pendingApprovals.length} milestone${pendingApprovals.length === 1 ? "" : "s"} waiting for review`
+    : failedSettlementMilestone
+      ? `Retry settlement for ${failedSettlementMilestone.title}`
+      : pendingSettlementMilestone
+        ? `Update proof for ${pendingSettlementMilestone.title}`
+        : `${releaseReadyMilestones.length} milestone${releaseReadyMilestones.length === 1 ? "" : "s"} ready for release`;
+  const priorityQueueDescription = pendingApprovals.length > 0
+    ? "Review submitted work first so approved milestones can move into release-ready state without blocking the payout flow."
+    : failedSettlementMilestone
+      ? "A failed settlement is blocking payout progress. Retry the release or refresh proof state before moving on."
+      : pendingSettlementMilestone
+        ? "A release is already in flight. Confirm or fail the settlement proof before queuing more release work."
+        : releaseReadyMilestones.length > 0
+          ? "No review blockers remain. Move approved milestones into Arc settlement next."
+          : "No urgent payout blockers are open right now.";
 
   return (
     <div className="flex flex-col gap-8">
@@ -82,10 +114,10 @@ export default async function DashboardPage() {
             </div>
             <div className="space-y-2">
               <h2 className="text-2xl font-semibold tracking-tight text-white">
-                {pendingApprovals.length} milestone{pendingApprovals.length === 1 ? "" : "s"} waiting for review
+                {priorityQueueTitle}
               </h2>
               <p className="max-w-2xl text-sm leading-7 text-[var(--text-primary)]">
-                Review submitted work first so approved milestones can move into release-ready state without blocking the payout flow.
+                {priorityQueueDescription}
               </p>
             </div>
           </div>
