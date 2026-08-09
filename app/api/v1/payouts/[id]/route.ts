@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { apiError, apiErrorFromCode } from "@/lib/api/errors";
 import { getPayoutDetail } from "@/lib/repositories/payouts";
 import { updatePayoutDraft } from "@/lib/repositories/payout-editing";
+import { assertCanEditPayoutDraft } from "@/lib/runtime/product-policy";
 import { resolveProductContextFromRequest } from "@/lib/runtime/product-context-server";
 
 function isNonEmpty(value: unknown): value is string {
@@ -56,6 +57,11 @@ export async function PATCH(
       return apiError("EMPTY_PAYOUT_MILESTONES", { message: "At least one milestone is required.", status: 400 });
     }
 
+    const policyViolation = assertCanEditPayoutDraft({ productContext, actorUserId: productContext.ownerUserId });
+    if (policyViolation) {
+      return apiError(policyViolation.code, { message: policyViolation.message, status: policyViolation.status });
+    }
+
     const payout = await updatePayoutDraft(id, productContext.workspaceId, body, productContext.ownerUserId);
     return NextResponse.json({ payout });
   } catch (error) {
@@ -69,12 +75,16 @@ export async function PATCH(
         WORKSPACE_SCOPE_MISMATCH: 409,
         PAYOUT_NOT_DRAFT: 409,
         CONTRIBUTOR_NOT_FOUND: 404,
+        FORBIDDEN_PAYOUT_EDIT_ACTOR: 403,
+        FORBIDDEN_PAYOUT_EDIT_CONTEXT: 403,
       },
       {
         PAYOUT_NOT_FOUND: "Payout not found.",
         WORKSPACE_SCOPE_MISMATCH: "workspace context does not match the payout workspace.",
         PAYOUT_NOT_DRAFT: "Only draft payouts can be edited.",
         CONTRIBUTOR_NOT_FOUND: "Contributor not found.",
+        FORBIDDEN_PAYOUT_EDIT_ACTOR: "Only owners can edit draft payouts in this flow.",
+        FORBIDDEN_PAYOUT_EDIT_CONTEXT: "Edit payout context does not match the active owner.",
       },
       { message: "Unable to update payout.", status: 500 },
     );

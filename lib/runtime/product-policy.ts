@@ -46,6 +46,13 @@ export function assertCanActivatePayout({ productContext, actorUserId }: PolicyI
   );
 }
 
+export function assertCanEditPayoutDraft({ productContext, actorUserId }: PolicyInput) {
+  return (
+    assertActor(productContext, "owner", "FORBIDDEN_PAYOUT_EDIT_ACTOR", "Only owners can edit draft payouts in this flow.") ??
+    assertActorUserAlignment(productContext, actorUserId, "FORBIDDEN_PAYOUT_EDIT_CONTEXT", "Edit payout context does not match the active owner.")
+  );
+}
+
 export function assertCanSubmitMilestone({ productContext, actorUserId }: PolicyInput) {
   return (
     assertActor(productContext, "contributor", "FORBIDDEN_MILESTONE_SUBMIT_ACTOR", "Only contributors can submit milestones in this flow.") ??
