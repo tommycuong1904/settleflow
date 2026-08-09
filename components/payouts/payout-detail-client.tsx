@@ -206,6 +206,7 @@ export function PayoutDetailClient({
     JSON.stringify(normalizeDraftMilestones(draftMilestonesCommitted));
   const draftTitleDirty = payoutTitleState.trim() !== payoutTitleCommitted;
   const draftDescriptionDirty = payoutDescriptionState.trim() !== payoutDescriptionCommitted;
+  const hasUnsavedDraftChanges = draftTitleDirty || draftDescriptionDirty || draftMilestonesDirty;
   const milestoneAmountErrors = draftMilestonesState.map((milestone) => getMilestoneAmountError(milestone.amount));
   const milestoneDirtyStates = normalizeDraftMilestones(draftMilestonesState).map((milestone, index) => {
     const committed = normalizeDraftMilestones(draftMilestonesCommitted)[index];
@@ -517,7 +518,10 @@ export function PayoutDetailClient({
         <CardHeader className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <CardTitle>Payout Summary</CardTitle>
           {payoutStatusState === "draft" && isOwnerActor ? (
-            <Button onClick={() => { void activatePayout(); }} disabled={activatingPayout}>
+            <Button
+              onClick={() => { void activatePayout(); }}
+              disabled={activatingPayout || hasUnsavedDraftChanges || hasMilestoneAmountError || payoutTitleState.trim().length === 0}
+            >
               {activatingPayout ? "Activating..." : "Activate payout"}
             </Button>
           ) : null}
@@ -548,7 +552,9 @@ export function PayoutDetailClient({
           </div>
           <p className="mt-4 text-sm text-[var(--text-secondary)]">
             {effectivePayoutStatus === "draft"
-              ? "This payout is still a draft. Activate it to begin milestone submissions and reviews."
+              ? hasUnsavedDraftChanges
+                ? "This payout is still a draft. Save your draft changes before activating milestone submissions and reviews."
+                : "This payout is still a draft. Activate it to begin milestone submissions and reviews."
               : effectivePayoutStatus === "active"
                 ? "This payout is active. Contributors can submit milestones and reviewers can approve or reject work."
                 : effectivePayoutStatus === "partially_released"
