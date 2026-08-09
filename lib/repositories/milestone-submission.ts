@@ -11,6 +11,26 @@ export type SubmitMilestoneInput = {
   notes?: string;
 };
 
+type SubmissionStatusUpdate = {
+  status: "submitted";
+  submittedAt: Date;
+  approvedAt: null;
+  rejectedAt: null;
+  releasedAt: null;
+};
+
+export function deriveMilestoneSubmissionUpdate(
+  submittedAt: Date,
+): SubmissionStatusUpdate {
+  return {
+    status: "submitted",
+    submittedAt,
+    approvedAt: null,
+    rejectedAt: null,
+    releasedAt: null,
+  };
+}
+
 export async function submitMilestone(milestoneId: string, workspaceId: string, input: SubmitMilestoneInput) {
   return db.$transaction(async (tx: Prisma.TransactionClient) => {
     const milestone = await tx.milestone.findUnique({
@@ -61,13 +81,7 @@ export async function submitMilestone(milestoneId: string, workspaceId: string, 
     });
     const updatedMilestone = await tx.milestone.update({
       where: { id: milestoneId },
-      data: {
-        status: "submitted",
-        submittedAt: submission.submittedAt,
-        approvedAt: null,
-        rejectedAt: null,
-        releasedAt: null,
-      },
+      data: deriveMilestoneSubmissionUpdate(submission.submittedAt),
       select: { id: true, status: true },
     });
     await recordActivity(tx, {

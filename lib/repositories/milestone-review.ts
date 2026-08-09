@@ -3,6 +3,31 @@ import { db } from "@/lib/db/client";
 import { recordActivity } from "@/lib/repositories/activity-log";
 import { hasWorkspaceRole } from "@/lib/repositories/permissions";
 
+type ReviewDecisionUpdate = {
+  status: "approved" | "rejected";
+  approvedAt: Date | null;
+  rejectedAt: Date | null;
+  releasedAt?: Date | null;
+};
+
+export function deriveMilestoneReviewUpdate(
+  decision: "approved" | "rejected",
+  reviewedAt = new Date(),
+): ReviewDecisionUpdate {
+  return decision === "approved"
+    ? {
+        status: "approved",
+        approvedAt: reviewedAt,
+        rejectedAt: null,
+      }
+    : {
+        status: "rejected",
+        approvedAt: null,
+        rejectedAt: reviewedAt,
+        releasedAt: null,
+      };
+}
+
 export async function reviewMilestone(
   milestoneId: string,
   reviewerUserId: string,
@@ -52,18 +77,7 @@ export async function reviewMilestone(
     const reviewedAt = new Date();
     const updatedMilestone = await tx.milestone.update({
       where: { id: milestoneId },
-      data: decision === "approved"
-        ? {
-            status: "approved",
-            approvedAt: reviewedAt,
-            rejectedAt: null,
-          }
-        : {
-            status: "rejected",
-            approvedAt: null,
-            rejectedAt: reviewedAt,
-            releasedAt: null,
-          },
+      data: deriveMilestoneReviewUpdate(decision, reviewedAt),
       select: {
         id: true,
         status: true,
