@@ -21,7 +21,7 @@ export async function POST(
       return apiError("INVALID_RELEASE_PAYLOAD", { message: "triggeredByUserId and amountUsdc are required.", status: 400 });
     }
 
-    const policyViolation = assertCanReleaseMilestone(productContext.actor);
+    const policyViolation = assertCanReleaseMilestone({ productContext, actorUserId: triggeredByUserId });
     if (policyViolation) {
       return apiError(policyViolation.code, { message: policyViolation.message, status: policyViolation.status });
     }

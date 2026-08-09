@@ -21,7 +21,7 @@ export async function POST(
     return apiError("INVALID_RELEASE_RETRY_PAYLOAD", { message: "triggeredByUserId is required.", status: 400 });
   }
 
-  const policyViolation = assertCanRetryRelease(productContext.actor);
+  const policyViolation = assertCanRetryRelease({ productContext, actorUserId: triggeredByUserId });
   if (policyViolation) {
     return apiError(policyViolation.code, { message: policyViolation.message, status: policyViolation.status });
   }

@@ -24,7 +24,8 @@ export async function POST(request: Request) {
       return apiError("UNSUPPORTED_PAYOUT_CURRENCY", { message: "Only USDC is supported.", status: 400 });
     }
 
-    const policyViolation = assertCanCreatePayout(productContext.actor);
+    const createdByUserId = body.createdByUserId ?? body.triggeredByUserId ?? productContext.ownerUserId;
+    const policyViolation = assertCanCreatePayout({ productContext, actorUserId: createdByUserId });
     if (policyViolation) {
       return apiError(policyViolation.code, { message: policyViolation.message, status: policyViolation.status });
     }
@@ -45,7 +46,7 @@ export async function POST(request: Request) {
     const payout = await createPayout({
       ...body,
       workspaceId: productContext.workspaceId,
-      createdByUserId: body.createdByUserId ?? body.triggeredByUserId ?? productContext.ownerUserId,
+      createdByUserId,
       currency: "USDC",
       milestones,
     });

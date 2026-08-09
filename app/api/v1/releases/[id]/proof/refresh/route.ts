@@ -28,7 +28,7 @@ export async function POST(
     return apiError("INVALID_PROOF_REFRESH_PAYLOAD", { message: "triggeredByUserId is required.", status: 400 });
   }
 
-  const policyViolation = assertCanRefreshProof(productContext.actor);
+  const policyViolation = assertCanRefreshProof({ productContext, actorUserId: actorUserId });
   if (policyViolation) {
     return apiError(policyViolation.code, { message: policyViolation.message, status: policyViolation.status });
   }

@@ -21,7 +21,7 @@ export async function POST(
       return apiError("INVALID_REVIEW_PAYLOAD", { message: "reviewedByUserId is required.", status: 400 });
     }
 
-    const policyViolation = assertCanApproveMilestone(productContext.actor);
+    const policyViolation = assertCanApproveMilestone({ productContext, actorUserId: reviewedByUserId });
     if (policyViolation) {
       return apiError(policyViolation.code, { message: policyViolation.message, status: policyViolation.status });
     }

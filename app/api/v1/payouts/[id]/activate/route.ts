@@ -22,7 +22,7 @@ export async function POST(
       return apiError("INVALID_ACTIVATE_PAYLOAD", { message: "workspaceId and activatedByUserId are required.", status: 400 });
     }
 
-    const policyViolation = assertCanActivatePayout(productContext.actor);
+    const policyViolation = assertCanActivatePayout({ productContext, actorUserId: activatedByUserId });
     if (policyViolation) {
       return apiError(policyViolation.code, { message: policyViolation.message, status: policyViolation.status });
     }
