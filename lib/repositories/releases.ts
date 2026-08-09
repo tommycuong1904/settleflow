@@ -40,8 +40,9 @@ export async function getReleaseById(id: string, workspaceId?: string) {
 
   if (!release) return null;
   if (workspaceId && release.payout.workspaceId !== workspaceId) return null;
+  const { payout: _payout, ...releaseData } = release;
   return {
-    ...release,
+    ...releaseData,
     amountUsdc: release.amountUsdc.toString(),
     proofs: release.proofs.map((proof: (typeof release.proofs)[number]) => ({
       ...proof,
