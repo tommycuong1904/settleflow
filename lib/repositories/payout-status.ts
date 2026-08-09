@@ -1,5 +1,64 @@
 import { Prisma } from "@prisma/client";
 
+type PayoutStatusValue = "draft" | "active" | "partially_released" | "completed";
+type MilestoneStatusValue = "pending" | "submitted" | "approved" | "released" | "rejected";
+
+type PayoutStatusSnapshot = {
+  status: PayoutStatusValue;
+  completedAt: Date | null;
+  milestones: Array<{ status: MilestoneStatusValue }>;
+};
+
+type PayoutStatusDecision = {
+  status: PayoutStatusValue;
+  completedAt: Date | null;
+  shouldPersist: boolean;
+};
+
+export function derivePayoutStatusDecision(
+  payout: PayoutStatusSnapshot,
+  now = new Date(),
+): PayoutStatusDecision {
+  const totalMilestones = payout.milestones.length;
+  const hasOnlyPendingMilestones = payout.milestones.every(
+    (milestone) => milestone.status === "pending",
+  );
+
+  if (totalMilestones === 0) {
+    return { status: "draft", completedAt: null, shouldPersist: true };
+  }
+
+  if (payout.status === "draft" && hasOnlyPendingMilestones) {
+    return {
+      status: payout.status,
+      completedAt: payout.completedAt,
+      shouldPersist: false,
+    };
+  }
+
+  const someMilestonesReleased = payout.milestones.some(
+    (milestone) => milestone.status === "released",
+  );
+  const allMilestonesReleased = payout.milestones.every(
+    (milestone) => milestone.status === "released",
+  );
+
+  const nextStatus = allMilestonesReleased
+    ? "completed"
+    : someMilestonesReleased
+      ? "partially_released"
+      : "active";
+
+  return {
+    status: nextStatus,
+    completedAt:
+      nextStatus === "completed"
+        ? (payout.status === "completed" ? payout.completedAt ?? now : now)
+        : null,
+    shouldPersist: true,
+  };
+}
+
 export async function recalculatePayoutStatus(
   tx: Prisma.TransactionClient,
   payoutId: string,
@@ -20,47 +79,20 @@ export async function recalculatePayoutStatus(
     throw new Error("PAYOUT_NOT_FOUND");
   }
 
-  const totalMilestones = payout.milestones.length;
-  const hasOnlyPendingMilestones = payout.milestones.every(
-    (milestone) => milestone.status === "pending",
-  );
+  const decision = derivePayoutStatusDecision(payout);
 
-  if (totalMilestones === 0) {
-    return tx.payout.update({
-      where: { id: payoutId },
-      data: { status: "draft", completedAt: null },
-      select: { id: true, status: true, completedAt: true },
-    });
-  }
-
-  if (payout.status === "draft" && hasOnlyPendingMilestones) {
+  if (!decision.shouldPersist) {
     return tx.payout.findUnique({
       where: { id: payoutId },
       select: { id: true, status: true, completedAt: true },
     });
   }
 
-  const someMilestonesReleased = payout.milestones.some(
-    (milestone) => milestone.status === "released",
-  );
-  const allMilestonesReleased = payout.milestones.every(
-    (milestone) => milestone.status === "released",
-  );
-
-  const nextStatus = allMilestonesReleased
-    ? "completed"
-    : someMilestonesReleased
-      ? "partially_released"
-      : "active";
-
   return tx.payout.update({
     where: { id: payoutId },
     data: {
-      status: nextStatus,
-      completedAt:
-        nextStatus === "completed"
-          ? (payout.status === "completed" ? payout.completedAt ?? new Date() : new Date())
-          : null,
+      status: decision.status,
+      completedAt: decision.completedAt,
     },
     select: { id: true, status: true, completedAt: true },
   });
