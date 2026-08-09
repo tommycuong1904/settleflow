@@ -64,6 +64,18 @@ export function PayoutDetailClient({
   const [payoutTitleState, setPayoutTitleState] = useState(payout.title);
   const [payoutDescriptionCommitted, setPayoutDescriptionCommitted] = useState(payout.description ?? "");
   const [payoutDescriptionState, setPayoutDescriptionState] = useState(payout.description ?? "");
+  const [draftMilestonesCommitted, setDraftMilestonesCommitted] = useState(() => initialMilestones.map((milestone) => ({
+    id: milestone.id,
+    title: milestone.title,
+    description: milestone.description,
+    amount: milestone.amount.toString(),
+  })));
+  const [draftMilestonesState, setDraftMilestonesState] = useState(() => initialMilestones.map((milestone) => ({
+    id: milestone.id,
+    title: milestone.title,
+    description: milestone.description,
+    amount: milestone.amount.toString(),
+  })));
   const [reviewError, setReviewError] = useState<string | null>(null);
   const [reviewingMilestoneId, setReviewingMilestoneId] = useState<string | null>(null);
   const [activatingPayout, setActivatingPayout] = useState(false);
@@ -171,7 +183,16 @@ export function PayoutDetailClient({
     }
   }
 
-  async function saveDraftFields(fields: { title?: string; description?: string }) {
+  async function saveDraftFields(fields: {
+    title?: string;
+    description?: string;
+    milestones?: Array<{
+      title: string;
+      description: string;
+      amountUsdc: string;
+      sequence: number;
+    }>;
+  }) {
     const response = await fetch(`/api/v1/payouts/${payout.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -220,6 +241,42 @@ export function PayoutDetailClient({
     } catch (error) {
       setReviewError(error instanceof Error ? error.message : "Unable to update payout draft.");
       setPayoutDescriptionState(payoutDescriptionCommitted);
+    } finally {
+      setSavingDraftTitle(false);
+    }
+  }
+
+  async function saveDraftMilestones() {
+    if (savingDraftTitle || payoutStatusState !== "draft") return;
+
+    const normalized = draftMilestonesState.map((milestone, index) => ({
+      title: milestone.title.trim(),
+      description: milestone.description.trim(),
+      amountUsdc: milestone.amount.trim(),
+      sequence: index + 1,
+    }));
+
+    if (normalized.some((milestone) => !milestone.title || !milestone.description || !milestone.amountUsdc)) {
+      setReviewError("Each draft milestone needs a title, description, and amount.");
+      return;
+    }
+
+    setReviewError(null);
+    setSavingDraftTitle(true);
+    try {
+      await saveDraftFields({ milestones: normalized });
+      setDraftMilestonesCommitted(draftMilestonesState);
+      setMilestoneState((current) =>
+        current.map((milestone, index) => ({
+          ...milestone,
+          title: draftMilestonesState[index]?.title.trim() || milestone.title,
+          description: draftMilestonesState[index]?.description.trim() || milestone.description,
+          amount: Number(draftMilestonesState[index]?.amount ?? milestone.amount),
+        })),
+      );
+    } catch (error) {
+      setReviewError(error instanceof Error ? error.message : "Unable to update payout draft.");
+      setDraftMilestonesState(draftMilestonesCommitted);
     } finally {
       setSavingDraftTitle(false);
     }
@@ -356,55 +413,100 @@ export function PayoutDetailClient({
       </Card>
 
       {payoutStatusState === "draft" ? (
-        <Card className="sf-shell">
-          <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-            <div>
-              <CardTitle>Draft editing harness</CardTitle>
-              <p className="mt-2 text-sm text-[var(--text-secondary)]">
-                Lightweight draft update flow to exercise the real PATCH path and audit logging.
-              </p>
-            </div>
-            <Button
-              onClick={() => { void saveDraftTitle(); }}
-              disabled={savingDraftTitle || payoutTitleState.trim().length === 0 || payoutTitleState.trim() === payoutTitleCommitted}
-            >
-              {savingDraftTitle ? "Saving..." : "Save draft title"}
-            </Button>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-6">
-              <div className="space-y-3">
-                <label className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                  Draft title
-                </label>
-                <Input
-                  value={payoutTitleState}
-                  onChange={(event) => setPayoutTitleState(event.target.value)}
-                  placeholder="Refine the payout title"
-                />
+        <>
+          <Card className="sf-shell">
+            <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+              <div>
+                <CardTitle>Draft editing harness</CardTitle>
+                <p className="mt-2 text-sm text-[var(--text-secondary)]">
+                  Lightweight draft update flow to exercise the real PATCH path and audit logging.
+                </p>
               </div>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between gap-3">
+              <Button
+                onClick={() => { void saveDraftTitle(); }}
+                disabled={savingDraftTitle || payoutTitleState.trim().length === 0 || payoutTitleState.trim() === payoutTitleCommitted}
+              >
+                {savingDraftTitle ? "Saving..." : "Save draft title"}
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <div className="space-y-3">
                   <label className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                    Draft description
+                    Draft title
                   </label>
-                  <Button
-                    variant="secondary"
-                    onClick={() => { void saveDraftDescription(); }}
-                    disabled={savingDraftTitle || payoutDescriptionState.trim() === payoutDescriptionCommitted}
-                  >
-                    Save description
-                  </Button>
+                  <Input
+                    value={payoutTitleState}
+                    onChange={(event) => setPayoutTitleState(event.target.value)}
+                    placeholder="Refine the payout title"
+                  />
                 </div>
-                <Textarea
-                  value={payoutDescriptionState}
-                  onChange={(event) => setPayoutDescriptionState(event.target.value)}
-                  placeholder="Add more context for this payout agreement"
-                />
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <label className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                      Draft description
+                    </label>
+                    <Button
+                      variant="secondary"
+                      onClick={() => { void saveDraftDescription(); }}
+                      disabled={savingDraftTitle || payoutDescriptionState.trim() === payoutDescriptionCommitted}
+                    >
+                      Save description
+                    </Button>
+                  </div>
+                  <Textarea
+                    value={payoutDescriptionState}
+                    onChange={(event) => setPayoutDescriptionState(event.target.value)}
+                    placeholder="Add more context for this payout agreement"
+                  />
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+
+          <Card className="sf-shell">
+            <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+              <div>
+                <CardTitle>Milestone draft harness</CardTitle>
+                <p className="mt-2 text-sm text-[var(--text-secondary)]">
+                  Refine milestone copy and amounts through the real payout draft PATCH path.
+                </p>
+              </div>
+              <Button onClick={() => { void saveDraftMilestones(); }} disabled={savingDraftTitle}>
+                {savingDraftTitle ? "Saving..." : "Save milestones"}
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {draftMilestonesState.map((milestone, index) => (
+                  <div key={milestone.id} className="rounded-2xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.62)] p-4">
+                    <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                      Milestone {index + 1}
+                    </p>
+                    <div className="mt-3 grid gap-3 md:grid-cols-[1fr_180px]">
+                      <Input
+                        value={milestone.title}
+                        onChange={(event) => setDraftMilestonesState((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, title: event.target.value } : item))}
+                        placeholder="Milestone title"
+                      />
+                      <Input
+                        value={milestone.amount}
+                        onChange={(event) => setDraftMilestonesState((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, amount: event.target.value } : item))}
+                        placeholder="Amount in USDC"
+                      />
+                    </div>
+                    <Textarea
+                      className="mt-3"
+                      value={milestone.description}
+                      onChange={(event) => setDraftMilestonesState((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, description: event.target.value } : item))}
+                      placeholder="Milestone description"
+                    />
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </>
       ) : null}
 
       <section className="space-y-4">
