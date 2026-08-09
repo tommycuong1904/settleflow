@@ -27,7 +27,7 @@ export async function GET(
         WORKSPACE_SCOPE_MISMATCH: 409,
       },
       {
-        WORKSPACE_SCOPE_MISMATCH: "workspaceId does not match the payout workspace.",
+        WORKSPACE_SCOPE_MISMATCH: "workspace context does not match the payout workspace.",
       },
       { message: "Unable to load payout.", status: 500 },
     );
@@ -72,7 +72,7 @@ export async function PATCH(
       },
       {
         PAYOUT_NOT_FOUND: "Payout not found.",
-        WORKSPACE_SCOPE_MISMATCH: "workspaceId does not match the payout workspace.",
+        WORKSPACE_SCOPE_MISMATCH: "workspace context does not match the payout workspace.",
         PAYOUT_NOT_DRAFT: "Only draft payouts can be edited.",
         CONTRIBUTOR_NOT_FOUND: "Contributor not found.",
       },
