@@ -1,5 +1,17 @@
 # HANDOFF
 
+## Branch Ready Note
+
+- Branch: `feat/auth-boundary-v1`
+- Status: ready for broad-scope merge prep
+- Ready references:
+  - `docs/MERGE_PREP_AUTH_BOUNDARY_V1.md`
+  - `docs/PR_BODY_AUTH_BOUNDARY_V1.md`
+- Last confirmed checks:
+  - `npx tsc --noEmit`
+  - `npm run build`
+- Important scope note: this branch is broader than auth-boundary-only work and also includes adjacent workflow-hardening wedges already present on the branch.
+
 ## Current Product Checkpoint
 
 SettleFlow is now a website-testable MVP for an Arc-native milestone-based USDC payout workflow.
