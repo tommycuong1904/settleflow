@@ -55,7 +55,7 @@ const initialMilestoneDrafts: MilestoneDraft[] = [
     title: "Draft campaign concepts",
     description: "Create 3 visual directions for review and first approval.",
     amount: "80",
-    state: "Review milestone",
+    state: "Planned milestone",
   },
 ];
 
@@ -148,7 +148,7 @@ function CreatePayoutPageContent() {
         title: "",
         description: "",
         amount: "",
-        state: current.length % 2 === 0 ? "Review milestone" : "Release milestone",
+        state: "Planned milestone",
       },
     ]);
   }
@@ -490,7 +490,7 @@ function CreatePayoutPageContent() {
             </p>
             <div className="mt-4 flex flex-wrap gap-3">
               <Button asChild>
-                <Link href={`/payouts/${createdSummary.payoutId}`}>Open payout detail flow</Link>
+                <Link href={`/payouts/${createdSummary.payoutId}`}>Open payout detail</Link>
               </Button>
               <Button asChild variant="secondary">
                 <Link href="/dashboard">Return to dashboard</Link>
