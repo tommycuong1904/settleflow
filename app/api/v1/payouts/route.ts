@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { apiError, apiErrorFromCode } from "@/lib/api/errors";
 import { createPayout } from "@/lib/repositories/payout-creation";
-import { canActorPerform } from "@/lib/runtime/product-context";
+import { assertCanCreatePayout } from "@/lib/runtime/product-policy";
 import { resolveProductContext } from "@/lib/runtime/product-context-server";
 
 function isNonEmpty(value: unknown): value is string {
@@ -24,8 +24,9 @@ export async function POST(request: Request) {
       return apiError("UNSUPPORTED_PAYOUT_CURRENCY", { message: "Only USDC is supported.", status: 400 });
     }
 
-    if (!canActorPerform(productContext.actor, ["owner"])) {
-      return apiError("FORBIDDEN_PAYOUT_CREATE_ACTOR", { message: "Only owners can create payouts in this flow.", status: 403 });
+    const policyViolation = assertCanCreatePayout(productContext.actor);
+    if (policyViolation) {
+      return apiError(policyViolation.code, { message: policyViolation.message, status: policyViolation.status });
     }
 
     const milestonePayload = milestones as Array<{

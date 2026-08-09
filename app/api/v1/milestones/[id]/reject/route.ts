@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { apiError, apiErrorFromCode } from "@/lib/api/errors";
 import { reviewMilestone } from "@/lib/repositories/milestone-review";
-import { canActorPerform } from "@/lib/runtime/product-context";
+import { assertCanRejectMilestone } from "@/lib/runtime/product-policy";
 import { resolveProductContext } from "@/lib/runtime/product-context-server";
 
 export async function POST(
@@ -21,8 +21,9 @@ export async function POST(
       return apiError("INVALID_REVIEW_PAYLOAD", { message: "reviewedByUserId is required.", status: 400 });
     }
 
-    if (!canActorPerform(productContext.actor, ["reviewer"])) {
-      return apiError("FORBIDDEN_MILESTONE_REJECT_ACTOR", { message: "Only reviewers can reject milestones in this flow.", status: 403 });
+    const policyViolation = assertCanRejectMilestone(productContext.actor);
+    if (policyViolation) {
+      return apiError(policyViolation.code, { message: policyViolation.message, status: policyViolation.status });
     }
     const result = await reviewMilestone(id, reviewedByUserId, "rejected", body.comment);
     return NextResponse.json(result);

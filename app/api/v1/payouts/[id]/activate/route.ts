@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { apiError, apiErrorFromCode } from "@/lib/api/errors";
 import { activatePayout } from "@/lib/repositories/payout-activation";
-import { canActorPerform } from "@/lib/runtime/product-context";
+import { assertCanActivatePayout } from "@/lib/runtime/product-policy";
 import { resolveProductContext } from "@/lib/runtime/product-context-server";
 
 export async function POST(
@@ -22,8 +22,9 @@ export async function POST(
       return apiError("INVALID_ACTIVATE_PAYLOAD", { message: "workspaceId and activatedByUserId are required.", status: 400 });
     }
 
-    if (!canActorPerform(productContext.actor, ["owner"])) {
-      return apiError("FORBIDDEN_PAYOUT_ACTIVATE_ACTOR", { message: "Only owners can activate payouts in this flow.", status: 403 });
+    const policyViolation = assertCanActivatePayout(productContext.actor);
+    if (policyViolation) {
+      return apiError(policyViolation.code, { message: policyViolation.message, status: policyViolation.status });
     }
 
     const payout = await activatePayout(id, productContext.workspaceId, activatedByUserId);

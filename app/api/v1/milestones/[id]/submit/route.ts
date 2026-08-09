@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { apiError, apiErrorFromCode } from "@/lib/api/errors";
 import { submitMilestone } from "@/lib/repositories/milestone-submission";
-import { canActorPerform } from "@/lib/runtime/product-context";
+import { assertCanSubmitMilestone } from "@/lib/runtime/product-policy";
 import { resolveProductContext } from "@/lib/runtime/product-context-server";
 
 function required(value: unknown): value is string {
@@ -24,8 +24,9 @@ export async function POST(
       return apiError("INVALID_SUBMIT_PAYLOAD", { message: "submittedByUserId and summary are required.", status: 400 });
     }
 
-    if (!canActorPerform(productContext.actor, ["contributor"])) {
-      return apiError("FORBIDDEN_MILESTONE_SUBMIT_ACTOR", { message: "Only contributors can submit milestones in this flow.", status: 403 });
+    const policyViolation = assertCanSubmitMilestone(productContext.actor);
+    if (policyViolation) {
+      return apiError(policyViolation.code, { message: policyViolation.message, status: policyViolation.status });
     }
     const result = await submitMilestone(id, { ...body, submittedByUserId });
     return NextResponse.json(result, { status: 201 });

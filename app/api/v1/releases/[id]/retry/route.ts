@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { apiError, apiErrorFromCode } from "@/lib/api/errors";
 import { retryFailedRelease } from "@/lib/repositories/release-retry";
-import { canActorPerform } from "@/lib/runtime/product-context";
+import { assertCanRetryRelease } from "@/lib/runtime/product-policy";
 import { resolveProductContext } from "@/lib/runtime/product-context-server";
 
 function isNonEmpty(value: unknown): value is string {
@@ -21,8 +21,9 @@ export async function POST(
     return apiError("INVALID_RELEASE_RETRY_PAYLOAD", { message: "triggeredByUserId is required.", status: 400 });
   }
 
-  if (!canActorPerform(productContext.actor, ["owner"])) {
-    return apiError("FORBIDDEN_RELEASE_RETRY_ACTOR", { message: "Only owners can retry failed releases in this flow.", status: 403 });
+  const policyViolation = assertCanRetryRelease(productContext.actor);
+  if (policyViolation) {
+    return apiError(policyViolation.code, { message: policyViolation.message, status: policyViolation.status });
   }
 
   try {
