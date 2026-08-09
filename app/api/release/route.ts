@@ -5,16 +5,13 @@ import { Prisma } from "@prisma/client";
 import { ARC_CONFIG } from "@/lib/arc/config";
 import { sendUsdcOnArc } from "@/lib/arc/send";
 import { db } from "@/lib/db/client";
+import {
+  getLegacyReleaseErrorStatus,
+  hasRequiredLegacyReleaseFields,
+  type ReleaseRequestBody,
+} from "@/lib/api/legacy-release";
 import { resolveWorkspaceIdFromRequest } from "@/lib/runtime/product-context-server";
 import type { ReleaseExecutionMode } from "@/lib/arc/types";
-
-type ReleaseRequestBody = {
-  payoutId: string;
-  milestoneId: string;
-  recipientAddress: string;
-  amount: string;
-  executionMode?: ReleaseExecutionMode;
-};
 
 export async function POST(request: Request) {
   const workspaceId = resolveWorkspaceIdFromRequest(request);
@@ -26,10 +23,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const { payoutId, milestoneId, recipientAddress, amount, executionMode } =
-    body;
-
-  if (!payoutId || !milestoneId || !recipientAddress || !amount) {
+  if (!hasRequiredLegacyReleaseFields(body)) {
     return NextResponse.json(
       {
         error:
@@ -38,6 +32,9 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   }
+
+  const { payoutId, milestoneId, recipientAddress, amount, executionMode } =
+    body;
 
   // --- Step 1: Find or create a demo user (no auth yet) ---
   let user = await db.user.findFirst();
@@ -134,7 +131,7 @@ export async function POST(request: Request) {
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "UNKNOWN_ERROR";
-    return NextResponse.json({ error: message }, { status: message === "WORKSPACE_SCOPE_MISMATCH" ? 409 : 400 });
+    return NextResponse.json({ error: message }, { status: getLegacyReleaseErrorStatus(message) });
   }
 
   // --- Step 3: Execute the Arc transfer ---
