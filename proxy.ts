@@ -1,10 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server";
-
 import {
   PRODUCT_CONTEXT_COOKIE_NAMES,
   PRODUCT_CONTEXT_HEADER_NAMES,
   readNonEmpty,
 } from "@/lib/runtime/product-context";
+
+const PRODUCT_CONTEXT_COOKIE_OPTIONS = { path: "/", sameSite: "lax" as const, maxAge: 60 * 60 * 24 * 365 };
 
 function shouldHandle(pathname: string) {
   if (pathname.startsWith("/_next") || pathname.startsWith("/favicon") || pathname.startsWith("/public")) {
@@ -87,19 +88,19 @@ export function proxy(request: NextRequest) {
   });
 
   if (contextValues.workspaceId) {
-    response.cookies.set(PRODUCT_CONTEXT_COOKIE_NAMES.workspaceId, contextValues.workspaceId, { path: "/", sameSite: "lax" });
+    response.cookies.set(PRODUCT_CONTEXT_COOKIE_NAMES.workspaceId, contextValues.workspaceId, PRODUCT_CONTEXT_COOKIE_OPTIONS);
   }
   if (contextValues.ownerUserId) {
-    response.cookies.set(PRODUCT_CONTEXT_COOKIE_NAMES.ownerUserId, contextValues.ownerUserId, { path: "/", sameSite: "lax" });
+    response.cookies.set(PRODUCT_CONTEXT_COOKIE_NAMES.ownerUserId, contextValues.ownerUserId, PRODUCT_CONTEXT_COOKIE_OPTIONS);
   }
   if (contextValues.reviewerUserId) {
-    response.cookies.set(PRODUCT_CONTEXT_COOKIE_NAMES.reviewerUserId, contextValues.reviewerUserId, { path: "/", sameSite: "lax" });
+    response.cookies.set(PRODUCT_CONTEXT_COOKIE_NAMES.reviewerUserId, contextValues.reviewerUserId, PRODUCT_CONTEXT_COOKIE_OPTIONS);
   }
   if (contextValues.contributorUserId) {
-    response.cookies.set(PRODUCT_CONTEXT_COOKIE_NAMES.contributorUserId, contextValues.contributorUserId, { path: "/", sameSite: "lax" });
+    response.cookies.set(PRODUCT_CONTEXT_COOKIE_NAMES.contributorUserId, contextValues.contributorUserId, PRODUCT_CONTEXT_COOKIE_OPTIONS);
   }
   if (contextValues.actor) {
-    response.cookies.set(PRODUCT_CONTEXT_COOKIE_NAMES.actor, contextValues.actor, { path: "/", sameSite: "lax" });
+    response.cookies.set(PRODUCT_CONTEXT_COOKIE_NAMES.actor, contextValues.actor, PRODUCT_CONTEXT_COOKIE_OPTIONS);
   }
 
   return response;
