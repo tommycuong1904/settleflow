@@ -692,6 +692,7 @@ export function PayoutDetailClient({
           nextReleasableMilestone={nextReleasableMilestone}
           releaseProof={releaseProof}
           onReleaseSuccess={handleReleaseSuccess}
+          onActivityChange={() => { void refreshActivity(); }}
         />
       </div>
 

@@ -28,6 +28,7 @@ type PayoutDetailReleaseShellProps = {
     proof: TransactionProof;
     releasedAt: string;
   }) => void;
+  onActivityChange?: () => void | Promise<void>;
 };
 
 export function PayoutDetailReleaseShell({
@@ -36,6 +37,7 @@ export function PayoutDetailReleaseShell({
   nextReleasableMilestone,
   releaseProof,
   onReleaseSuccess,
+  onActivityChange,
 }: PayoutDetailReleaseShellProps) {
   const productContext = useResolvedProductContext();
   const isOwnerActor = productContext.actor === "owner";
@@ -207,6 +209,7 @@ export function PayoutDetailReleaseShell({
       setConfirmationTxHash("");
       setFailureReason("");
       setReleaseStatus("submitting");
+      void onActivityChange?.();
     } catch (err) {
       setReleaseError(err instanceof Error ? err.message : "Retry release request failed.");
       setReleaseStatus("failed");
@@ -268,25 +271,45 @@ export function PayoutDetailReleaseShell({
       }
 
       const proof = data.proof;
+      const resolvedMilestoneId = proof.milestoneId ?? resolvedProof.milestoneId;
+      const baseProof: TransactionProof = resolvedProof
+        ? resolvedProof
+        : {
+            id: proof.id,
+            releaseId: proof.releaseId,
+            milestoneId: resolvedMilestoneId,
+            txHash: "",
+            network: proof.network ?? "Arc Testnet",
+            status: proof.status,
+            explorerUrl: "",
+          };
+      const updatedProof: TransactionProof = {
+        ...baseProof,
+        id: proof.id,
+        releaseId: proof.releaseId ?? baseProof.releaseId,
+        milestoneId: resolvedMilestoneId,
+        status: proof.status,
+        txHash: proof.txHash ?? "",
+        network: proof.network ?? baseProof.network ?? "Arc Testnet",
+        explorerUrl: proof.explorerUrl ?? "",
+        confirmedAt: proof.confirmedAt ?? undefined,
+        failureReason: proof.failureReason ?? undefined,
+      };
 
-      setActiveProof((current) =>
-        current
-          ? {
-              ...current,
-              id: proof.id ?? current.id,
-              releaseId: proof.releaseId ?? resolvedProof.releaseId,
-              milestoneId: proof.milestoneId ?? current.milestoneId,
-              status: proof.status,
-              txHash: proof.txHash ?? "",
-              network: proof.network ?? current.network,
-              explorerUrl: proof.explorerUrl ?? "",
-              confirmedAt: proof.confirmedAt ?? undefined,
-            }
-          : current,
-      );
+      setActiveProof(updatedProof);
       setReleaseStatus(status === "failed" ? "failed" : "confirmed");
-      if (status === "confirmed") setConfirmationTxHash("");
-      if (status === "failed") setFailureReason("");
+      if (status === "confirmed") {
+        onReleaseSuccess?.({
+          milestoneId: resolvedMilestoneId,
+          proof: updatedProof,
+          releasedAt: proof.confirmedAt ?? new Date().toISOString(),
+        });
+        setConfirmationTxHash("");
+      }
+      if (status === "failed") {
+        setFailureReason("");
+        void onActivityChange?.();
+      }
     } catch (err) {
       setReleaseError(err instanceof Error ? err.message : "Proof refresh request failed.");
       setReleaseStatus("failed");
