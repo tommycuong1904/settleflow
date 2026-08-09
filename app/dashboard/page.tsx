@@ -1,19 +1,24 @@
+import { cookies } from "next/headers";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { MilestoneStatusBadge } from "@/components/milestones/milestone-status-badge";
 import { Button } from "@/components/shared/button";
 import { EmptyState } from "@/components/shared/empty-state";
 import { SectionCard } from "@/components/shared/section-card";
 import { getDashboardData } from "@/lib/repositories/dashboard";
-import { resolveWorkspaceId } from "@/lib/runtime/product-context-server";
+import { PRODUCT_CONTEXT_COOKIE_NAMES } from "@/lib/runtime/product-context";
+import { resolveProductContext } from "@/lib/runtime/product-context-server";
 import { formatUsdc, shortenAddress } from "@/lib/utils/format";
 
-export default async function DashboardPage({
-  searchParams,
-}: {
-  searchParams?: Promise<{ workspaceId?: string }>;
-}) {
-  const params = await searchParams;
-  const workspaceId = resolveWorkspaceId(params?.workspaceId);
+export default async function DashboardPage() {
+  const cookieStore = await cookies();
+  const productContext = resolveProductContext({
+    workspaceId: cookieStore.get(PRODUCT_CONTEXT_COOKIE_NAMES.workspaceId)?.value,
+    ownerUserId: cookieStore.get(PRODUCT_CONTEXT_COOKIE_NAMES.ownerUserId)?.value,
+    reviewerUserId: cookieStore.get(PRODUCT_CONTEXT_COOKIE_NAMES.reviewerUserId)?.value,
+    contributorUserId: cookieStore.get(PRODUCT_CONTEXT_COOKIE_NAMES.contributorUserId)?.value,
+    actor: cookieStore.get(PRODUCT_CONTEXT_COOKIE_NAMES.actor)?.value,
+  });
+  const workspaceId = productContext.workspaceId;
   const { payouts, milestones, contributors, transactionProofs } =
     await getDashboardData(workspaceId);
 
