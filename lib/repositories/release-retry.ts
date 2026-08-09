@@ -1,7 +1,40 @@
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db/client";
+import type { ReleaseExecutionMode } from "@/lib/arc/types";
 import { recordActivity } from "@/lib/repositories/activity-log";
 import { hasWorkspaceRole } from "@/lib/repositories/permissions";
+
+type RetryReleasePayload = {
+  payoutId: string;
+  milestoneId: string | null;
+  triggeredByUserId: string;
+  amountUsdc: Prisma.Decimal;
+  executionMode: ReleaseExecutionMode;
+  sourceWalletAddress: string | null;
+  destinationWalletAddress: string;
+  status: "queued";
+};
+
+export function deriveRetryReleasePayload(input: {
+  payoutId: string;
+  milestoneId: string | null;
+  triggeredByUserId: string;
+  amountUsdc: Prisma.Decimal;
+  executionMode: ReleaseExecutionMode;
+  sourceWalletAddress: string | null;
+  destinationWalletAddress: string;
+}): RetryReleasePayload {
+  return {
+    payoutId: input.payoutId,
+    milestoneId: input.milestoneId,
+    triggeredByUserId: input.triggeredByUserId,
+    amountUsdc: input.amountUsdc,
+    executionMode: input.executionMode,
+    sourceWalletAddress: input.sourceWalletAddress,
+    destinationWalletAddress: input.destinationWalletAddress,
+    status: "queued",
+  };
+}
 
 export async function retryFailedRelease(releaseId: string, ownerUserId: string, workspaceId: string) {
   return db.$transaction(async (tx: Prisma.TransactionClient) => {
@@ -64,7 +97,7 @@ export async function retryFailedRelease(releaseId: string, ownerUserId: string,
     if (!canRetryRelease) throw new Error("FORBIDDEN_RELEASE_RETRY");
 
     const release = await tx.release.create({
-      data: {
+      data: deriveRetryReleasePayload({
         payoutId: previous.payoutId,
         milestoneId: previous.milestoneId,
         triggeredByUserId: ownerUserId,
@@ -72,8 +105,7 @@ export async function retryFailedRelease(releaseId: string, ownerUserId: string,
         executionMode: previous.executionMode,
         sourceWalletAddress: previous.sourceWalletAddress,
         destinationWalletAddress: previous.destinationWalletAddress,
-        status: "queued",
-      },
+      }),
       select: {
         id: true,
         status: true,

@@ -5,6 +5,37 @@ import type { ReleaseExecutionMode } from "@/lib/arc/types";
 import { recordActivity } from "@/lib/repositories/activity-log";
 import { hasWorkspaceRole } from "@/lib/repositories/permissions";
 
+type QueueReleasePayload = {
+  payoutId: string;
+  milestoneId: string;
+  triggeredByUserId: string;
+  amountUsdc: Decimal;
+  executionMode: ReleaseExecutionMode;
+  sourceWalletAddress: null;
+  destinationWalletAddress: string;
+  status: "queued";
+};
+
+export function deriveQueuedReleasePayload(input: {
+  payoutId: string;
+  milestoneId: string;
+  triggeredByUserId: string;
+  amountUsdc: Decimal;
+  executionMode: ReleaseExecutionMode;
+  destinationWalletAddress: string;
+}): QueueReleasePayload {
+  return {
+    payoutId: input.payoutId,
+    milestoneId: input.milestoneId,
+    triggeredByUserId: input.triggeredByUserId,
+    amountUsdc: input.amountUsdc,
+    executionMode: input.executionMode,
+    sourceWalletAddress: null,
+    destinationWalletAddress: input.destinationWalletAddress,
+    status: "queued",
+  };
+}
+
 export async function queueMilestoneRelease(
   milestoneId: string,
   ownerUserId: string,
@@ -54,16 +85,14 @@ export async function queueMilestoneRelease(
     if (!hasReleaseRole) throw new Error("USER_NOT_ALLOWED_TO_RELEASE");
 
     const release = await tx.release.create({
-      data: {
+      data: deriveQueuedReleasePayload({
         payoutId: milestone.payout.id,
         milestoneId,
         triggeredByUserId: ownerUserId,
         amountUsdc: requestedAmount,
         executionMode,
-        sourceWalletAddress: null,
         destinationWalletAddress: milestone.payout.targetWalletAddress,
-        status: "queued",
-      },
+      }),
       select: {
         id: true,
         status: true,
