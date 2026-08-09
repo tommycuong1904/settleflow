@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { apiError, apiErrorFromCode } from "@/lib/api/errors";
 import { createPayout } from "@/lib/repositories/payout-creation";
 import { assertCanCreatePayout } from "@/lib/runtime/product-policy";
-import { resolveProductContext } from "@/lib/runtime/product-context-server";
+import { resolveProductContextFromRequest } from "@/lib/runtime/product-context-server";
 
 function isNonEmpty(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
@@ -10,9 +10,9 @@ function isNonEmpty(value: unknown): value is string {
 
 export async function POST(request: Request) {
   try {
+    const productContext = resolveProductContextFromRequest(request);
     const body = await request.json();
     const milestones = Array.isArray(body.milestones) ? body.milestones : [];
-    const productContext = resolveProductContext(body ?? {});
     const required = [productContext.workspaceId, productContext.ownerUserId, body.title, body.contributorId,
       body.targetWalletAddress, body.totalAmountUsdc];
 
@@ -24,7 +24,7 @@ export async function POST(request: Request) {
       return apiError("UNSUPPORTED_PAYOUT_CURRENCY", { message: "Only USDC is supported.", status: 400 });
     }
 
-    const createdByUserId = body.createdByUserId ?? body.triggeredByUserId ?? productContext.ownerUserId;
+    const createdByUserId = productContext.ownerUserId;
     const policyViolation = assertCanCreatePayout({ productContext, actorUserId: createdByUserId });
     if (policyViolation) {
       return apiError(policyViolation.code, { message: policyViolation.message, status: policyViolation.status });

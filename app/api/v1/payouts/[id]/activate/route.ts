@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { apiError, apiErrorFromCode } from "@/lib/api/errors";
 import { activatePayout } from "@/lib/repositories/payout-activation";
 import { assertCanActivatePayout } from "@/lib/runtime/product-policy";
-import { resolveProductContext } from "@/lib/runtime/product-context-server";
+import { resolveProductContextFromRequest } from "@/lib/runtime/product-context-server";
 
 export async function POST(
   request: Request,
@@ -10,12 +10,9 @@ export async function POST(
 ) {
   const { id } = await params;
   try {
+    const productContext = resolveProductContextFromRequest(request);
     const body = await request.json();
-    const productContext = resolveProductContext(body ?? {});
-    const activatedByUserId =
-      typeof body.activatedByUserId === "string" && body.activatedByUserId.trim().length > 0
-        ? body.activatedByUserId
-        : body.triggeredByUserId ?? productContext.ownerUserId;
+    const activatedByUserId = productContext.ownerUserId;
 
     if (typeof productContext.workspaceId !== "string" || productContext.workspaceId.trim().length === 0 ||
         typeof activatedByUserId !== "string" || activatedByUserId.trim().length === 0) {

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { apiError, apiErrorFromCode } from "@/lib/api/errors";
 import { submitMilestone } from "@/lib/repositories/milestone-submission";
 import { assertCanSubmitMilestone } from "@/lib/runtime/product-policy";
-import { resolveProductContext } from "@/lib/runtime/product-context-server";
+import { resolveProductContextFromRequest } from "@/lib/runtime/product-context-server";
 
 function required(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
@@ -14,11 +14,9 @@ export async function POST(
 ) {
   const { id } = await params;
   try {
+    const productContext = resolveProductContextFromRequest(request);
     const body = await request.json();
-    const productContext = resolveProductContext(body ?? {});
-    const submittedByUserId = required(body.submittedByUserId)
-      ? body.submittedByUserId
-      : body.triggeredByUserId ?? productContext.activeUserId;
+    const submittedByUserId = productContext.activeUserId;
 
     if (!required(submittedByUserId) || !required(body.summary)) {
       return apiError("INVALID_SUBMIT_PAYLOAD", { message: "submittedByUserId and summary are required.", status: 400 });
