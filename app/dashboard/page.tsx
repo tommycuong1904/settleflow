@@ -38,12 +38,17 @@ export default async function DashboardPage() {
   const outstandingExposure = Math.max(totalScheduled - releasedValue, 0);
   const failedSettlementProof = transactionProofs.find((proof) => proof.status === "failed");
   const pendingSettlementProof = transactionProofs.find((proof) => proof.status === "pending");
+  const pendingSettlementProofs = transactionProofs.filter((proof) => proof.status === "pending");
   const failedSettlementMilestone = failedSettlementProof
     ? milestones.find((milestone) => milestone.id === failedSettlementProof.milestoneId)
     : undefined;
   const pendingSettlementMilestone = pendingSettlementProof
     ? milestones.find((milestone) => milestone.id === pendingSettlementProof.milestoneId)
     : undefined;
+  const inFlightSettlementValue = pendingSettlementProofs.reduce((sum, proof) => {
+    const milestone = milestones.find((item) => item.id === proof.milestoneId);
+    return sum + (milestone?.amount ?? 0);
+  }, 0);
   const nextActionPayoutId = pendingApprovals[0]?.payoutId
     ?? failedSettlementMilestone?.payoutId
     ?? pendingSettlementMilestone?.payoutId
@@ -153,7 +158,11 @@ export default async function DashboardPage() {
       <section className="grid gap-4 md:grid-cols-4">
         <StatCard label="Active payouts" value={activePayouts.length} />
         <StatCard label="Milestones awaiting review" value={pendingApprovals.length} />
-        <StatCard label="Milestones ready to release" value={releaseReadyMilestones.length} />
+        <StatCard
+          label="Settlements in flight"
+          value={`${formatUsdc(inFlightSettlementValue)} USDC`}
+          hint={`${pendingSettlementProofs.length} milestone${pendingSettlementProofs.length === 1 ? "" : "s"} released and waiting for proof confirmation`}
+        />
         <StatCard
           label="Outstanding exposure"
           value={`${formatUsdc(outstandingExposure)} USDC`}
