@@ -27,24 +27,24 @@ export function useResolvedProductContext() {
 
   return useMemo(() => {
     const actor =
-      resolveActor(searchParams.get("actor")) ??
       resolveActor(readCookie(PRODUCT_CONTEXT_COOKIE_NAMES.actor)) ??
+      resolveActor(searchParams.get("actor")) ??
       DEFAULT_PRODUCT_CONTEXT.actor;
     const ownerUserId =
-      readNonEmpty(searchParams.get("ownerUserId")) ??
       readNonEmpty(readCookie(PRODUCT_CONTEXT_COOKIE_NAMES.ownerUserId)) ??
+      readNonEmpty(searchParams.get("ownerUserId")) ??
       DEFAULT_PRODUCT_CONTEXT.ownerUserId;
     const reviewerUserId =
-      readNonEmpty(searchParams.get("reviewerUserId")) ??
       readNonEmpty(readCookie(PRODUCT_CONTEXT_COOKIE_NAMES.reviewerUserId)) ??
+      readNonEmpty(searchParams.get("reviewerUserId")) ??
       DEFAULT_PRODUCT_CONTEXT.reviewerUserId;
     const contributorUserId =
-      readNonEmpty(searchParams.get("contributorUserId")) ??
       readNonEmpty(readCookie(PRODUCT_CONTEXT_COOKIE_NAMES.contributorUserId)) ??
+      readNonEmpty(searchParams.get("contributorUserId")) ??
       DEFAULT_PRODUCT_CONTEXT.contributorUserId;
     const workspaceId =
-      readNonEmpty(searchParams.get("workspaceId")) ??
       readNonEmpty(readCookie(PRODUCT_CONTEXT_COOKIE_NAMES.workspaceId)) ??
+      readNonEmpty(searchParams.get("workspaceId")) ??
       DEFAULT_PRODUCT_CONTEXT.workspaceId;
 
     return {
