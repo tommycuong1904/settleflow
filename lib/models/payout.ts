@@ -7,6 +7,7 @@ export type PayoutStatus =
 export type Payout = {
   id: string;
   title: string;
+  description?: string;
   contributorId: string;
   totalAmount: number;
   currency: "USDC";

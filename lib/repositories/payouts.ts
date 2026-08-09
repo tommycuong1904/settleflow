@@ -88,6 +88,7 @@ export type PayoutDetailData = {
   payout: {
     id: string;
     title: string;
+    description?: string;
     contributorId: string;
     totalAmount: number;
     currency: "USDC";
@@ -137,6 +138,7 @@ export async function getPayoutDetail(id: string, workspaceId?: string): Promise
       id: true,
       workspaceId: true,
       title: true,
+      description: true,
       contributorId: true,
       totalAmountUsdc: true,
       currency: true,
@@ -186,6 +188,7 @@ export async function getPayoutDetail(id: string, workspaceId?: string): Promise
     payout: {
       id: payout.id,
       title: payout.title,
+      description: payout.description ?? undefined,
       contributorId: payout.contributorId,
       totalAmount: Number(payout.totalAmountUsdc.toString()),
       currency: "USDC",

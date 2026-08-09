@@ -9,6 +9,7 @@ import { PayoutDetailReleaseShell } from "@/components/payouts/payout-detail-rel
 import { Button } from "@/components/shared/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import type { ActivityItem } from "@/lib/models/activity-item";
 import type { Contributor } from "@/lib/models/contributor";
 import type { Milestone } from "@/lib/models/milestone";
@@ -61,6 +62,8 @@ export function PayoutDetailClient({
   const [payoutStatusState, setPayoutStatusState] = useState(payout.status);
   const [payoutTitleCommitted, setPayoutTitleCommitted] = useState(payout.title);
   const [payoutTitleState, setPayoutTitleState] = useState(payout.title);
+  const [payoutDescriptionCommitted, setPayoutDescriptionCommitted] = useState(payout.description ?? "");
+  const [payoutDescriptionState, setPayoutDescriptionState] = useState(payout.description ?? "");
   const [reviewError, setReviewError] = useState<string | null>(null);
   const [reviewingMilestoneId, setReviewingMilestoneId] = useState<string | null>(null);
   const [activatingPayout, setActivatingPayout] = useState(false);
@@ -168,6 +171,20 @@ export function PayoutDetailClient({
     }
   }
 
+  async function saveDraftFields(fields: { title?: string; description?: string }) {
+    const response = await fetch(`/api/v1/payouts/${payout.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        workspaceId: productContext.workspaceId,
+        ownerUserId: productContext.ownerUserId,
+        ...fields,
+      }),
+    });
+    const data = (await response.json()) as { error?: string };
+    if (!response.ok) throw new Error(data.error ?? "Unable to update payout draft.");
+  }
+
   async function saveDraftTitle() {
     if (savingDraftTitle || payoutStatusState !== "draft") return;
 
@@ -177,22 +194,32 @@ export function PayoutDetailClient({
     setReviewError(null);
     setSavingDraftTitle(true);
     try {
-      const response = await fetch(`/api/v1/payouts/${payout.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          workspaceId: productContext.workspaceId,
-          ownerUserId: productContext.ownerUserId,
-          title: nextTitle,
-        }),
-      });
-      const data = (await response.json()) as { error?: string };
-      if (!response.ok) throw new Error(data.error ?? "Unable to update payout draft.");
+      await saveDraftFields({ title: nextTitle });
       setPayoutTitleCommitted(nextTitle);
       setPayoutTitleState(nextTitle);
     } catch (error) {
       setReviewError(error instanceof Error ? error.message : "Unable to update payout draft.");
       setPayoutTitleState(payoutTitleCommitted);
+    } finally {
+      setSavingDraftTitle(false);
+    }
+  }
+
+  async function saveDraftDescription() {
+    if (savingDraftTitle || payoutStatusState !== "draft") return;
+
+    const nextDescription = payoutDescriptionState.trim();
+    if (nextDescription === payoutDescriptionCommitted) return;
+
+    setReviewError(null);
+    setSavingDraftTitle(true);
+    try {
+      await saveDraftFields({ description: nextDescription });
+      setPayoutDescriptionCommitted(nextDescription);
+      setPayoutDescriptionState(nextDescription);
+    } catch (error) {
+      setReviewError(error instanceof Error ? error.message : "Unable to update payout draft.");
+      setPayoutDescriptionState(payoutDescriptionCommitted);
     } finally {
       setSavingDraftTitle(false);
     }
@@ -276,8 +303,9 @@ export function PayoutDetailClient({
             {payoutTitleState}
           </h1>
           <p className="max-w-3xl text-sm leading-7 text-[var(--text-primary)] md:text-base">
-            Review milestone submissions, approve release in sequence, and keep
-            Arc settlement proof attached to the payout flow.
+            {payoutDescriptionState.trim().length > 0
+              ? payoutDescriptionState
+              : "Review milestone submissions, approve release in sequence, and keep Arc settlement proof attached to the payout flow."}
           </p>
         </div>
       </div>
@@ -344,15 +372,36 @@ export function PayoutDetailClient({
             </Button>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              <label className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                Draft title
-              </label>
-              <Input
-                value={payoutTitleState}
-                onChange={(event) => setPayoutTitleState(event.target.value)}
-                placeholder="Refine the payout title"
-              />
+            <div className="space-y-6">
+              <div className="space-y-3">
+                <label className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                  Draft title
+                </label>
+                <Input
+                  value={payoutTitleState}
+                  onChange={(event) => setPayoutTitleState(event.target.value)}
+                  placeholder="Refine the payout title"
+                />
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <label className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                    Draft description
+                  </label>
+                  <Button
+                    variant="secondary"
+                    onClick={() => { void saveDraftDescription(); }}
+                    disabled={savingDraftTitle || payoutDescriptionState.trim() === payoutDescriptionCommitted}
+                  >
+                    Save description
+                  </Button>
+                </div>
+                <Textarea
+                  value={payoutDescriptionState}
+                  onChange={(event) => setPayoutDescriptionState(event.target.value)}
+                  placeholder="Add more context for this payout agreement"
+                />
+              </div>
             </div>
           </CardContent>
         </Card>
