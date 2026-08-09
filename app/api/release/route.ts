@@ -5,6 +5,7 @@ import { Prisma } from "@prisma/client";
 import { ARC_CONFIG } from "@/lib/arc/config";
 import { sendUsdcOnArc } from "@/lib/arc/send";
 import { db } from "@/lib/db/client";
+import { resolveWorkspaceIdFromRequest } from "@/lib/runtime/product-context-server";
 import type { ReleaseExecutionMode } from "@/lib/arc/types";
 
 type ReleaseRequestBody = {
@@ -16,6 +17,7 @@ type ReleaseRequestBody = {
 };
 
 export async function POST(request: Request) {
+  const workspaceId = resolveWorkspaceIdFromRequest(request);
   let body: ReleaseRequestBody;
 
   try {
@@ -70,12 +72,14 @@ export async function POST(request: Request) {
           id: true,
           status: true,
           amountUsdc: true,
-          payout: { select: { id: true, targetWalletAddress: true } },
+          payout: { select: { id: true, workspaceId: true, targetWalletAddress: true } },
           releases: { select: { id: true }, take: 1 },
         },
       });
 
       if (!milestone) throw new Error("MILESTONE_NOT_FOUND");
+      if (milestone.payout.workspaceId !== workspaceId)
+        throw new Error("WORKSPACE_SCOPE_MISMATCH");
       if (milestone.payout.id !== payoutId)
         throw new Error("PAYOUT_MILESTONE_MISMATCH");
       if (milestone.status !== "approved")
@@ -130,7 +134,7 @@ export async function POST(request: Request) {
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "UNKNOWN_ERROR";
-    return NextResponse.json({ error: message }, { status: 400 });
+    return NextResponse.json({ error: message }, { status: message === "WORKSPACE_SCOPE_MISMATCH" ? 409 : 400 });
   }
 
   // --- Step 3: Execute the Arc transfer ---
