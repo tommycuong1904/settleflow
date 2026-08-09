@@ -23,6 +23,8 @@ function getLogTitle(action: string, milestoneTitle?: string) {
       return `Rejected ${milestoneTitle ?? "milestone"}`;
     case "release_queued":
       return `Queued release for ${milestoneTitle ?? "milestone"}`;
+    case "release_retried":
+      return `Retried release for ${milestoneTitle ?? "milestone"}`;
     case "release_failed":
       return `Release failed for ${milestoneTitle ?? "milestone"}`;
     case "release_confirmed":
@@ -52,6 +54,12 @@ function getLogDescription(action: string, metadata?: Record<string, unknown>) {
       const executionMode = asText(metadata?.executionMode);
       if (amountUsdc && executionMode) return `Requested ${amountUsdc} USDC via ${executionMode}.`;
       return amountUsdc ? `Requested ${amountUsdc} USDC.` : "Release was queued.";
+    }
+    case "release_retried": {
+      const amountUsdc = asText(metadata?.amountUsdc);
+      const executionMode = asText(metadata?.executionMode);
+      if (amountUsdc && executionMode) return `Retried ${amountUsdc} USDC via ${executionMode}.`;
+      return amountUsdc ? `Retried ${amountUsdc} USDC.` : "Release retry was queued.";
     }
     case "release_failed":
     case "proof_failed":

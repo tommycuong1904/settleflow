@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db/client";
+import { recordActivity } from "@/lib/repositories/activity-log";
 import { hasWorkspaceRole } from "@/lib/repositories/permissions";
 import { recalculatePayoutStatus } from "@/lib/repositories/payout-status";
 
@@ -107,6 +108,39 @@ export async function refreshReleaseProof(
         },
       });
     }
+
+    await recordActivity(tx, {
+      workspaceId: release.payout.workspaceId,
+      actorUserId: refreshedByUserId,
+      entityType: "proof",
+      entityId: proof.id,
+      payoutId: release.payoutId,
+      milestoneId: release.milestoneId ?? proof.milestoneId ?? undefined,
+      releaseId: release.id,
+      action: input.status === "confirmed" ? "proof_confirmed" : "proof_failed",
+      metadata: {
+        txHash: input.txHash,
+        network: input.network,
+        explorerUrl: input.explorerUrl,
+        blockNumber: input.blockNumber,
+        failureReason: input.failureReason,
+      },
+    });
+
+    await recordActivity(tx, {
+      workspaceId: release.payout.workspaceId,
+      actorUserId: refreshedByUserId,
+      entityType: "release",
+      entityId: release.id,
+      payoutId: release.payoutId,
+      milestoneId: release.milestoneId ?? proof.milestoneId ?? undefined,
+      releaseId: release.id,
+      action: input.status === "confirmed" ? "release_confirmed" : "release_failed",
+      metadata: {
+        txHash: input.txHash,
+        failureReason: input.failureReason,
+      },
+    });
 
     const payout = await recalculatePayoutStatus(tx, release.payoutId);
 

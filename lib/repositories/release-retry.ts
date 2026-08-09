@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db/client";
+import { recordActivity } from "@/lib/repositories/activity-log";
 import { hasWorkspaceRole } from "@/lib/repositories/permissions";
 
 export async function retryFailedRelease(releaseId: string, triggeredByUserId: string) {
@@ -79,6 +80,23 @@ export async function retryFailedRelease(releaseId: string, triggeredByUserId: s
         status: "pending",
       },
       select: { id: true, releaseId: true, status: true },
+    });
+
+    await recordActivity(tx, {
+      workspaceId: previous.payout.workspaceId,
+      actorUserId: triggeredByUserId,
+      entityType: "release",
+      entityId: release.id,
+      payoutId: previous.payoutId,
+      milestoneId: previous.milestoneId ?? undefined,
+      releaseId: release.id,
+      action: "release_retried",
+      metadata: {
+        previousReleaseId: previous.id,
+        proofId: proof.id,
+        amountUsdc: previous.amountUsdc.toString(),
+        executionMode: previous.executionMode,
+      },
     });
 
     return { release, proof, previousReleaseId: previous.id };
