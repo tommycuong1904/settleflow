@@ -12,7 +12,7 @@ import { formatUsdc } from "@/lib/utils/format";
 type MilestoneRowProps = {
   milestone: Milestone;
   onApprove?: (milestoneId: string) => void | Promise<void>;
-  onReject?: (milestoneId: string) => void | Promise<void>;
+  onReject?: (milestoneId: string, comment?: string) => void | Promise<void>;
   onStatusChange?: (milestoneId: string, status: Milestone["status"]) => void;
 };
 
@@ -75,9 +75,20 @@ export function MilestoneRow({
 
   async function handleReject() {
     if (!onReject || reviewBusy) return;
+    const comment = window.prompt(
+      `Why is ${milestone.title} being rejected?`,
+      "Please revise and resubmit with the requested changes.",
+    );
+    if (comment === null) return;
+    if (comment.trim().length === 0) {
+      setSubmissionError("A rejection comment is required.");
+      return;
+    }
+
     setReviewBusy(true);
+    setSubmissionError(null);
     try {
-      await onReject(milestone.id);
+      await onReject(milestone.id, comment.trim());
       setStatus("rejected");
       onStatusChange?.(milestone.id, "rejected");
     } finally {

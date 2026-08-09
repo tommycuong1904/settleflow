@@ -393,14 +393,14 @@ export function PayoutDetailClient({
     void refreshActivity();
   }
 
-  async function reviewMilestone(milestoneId: string, decision: "approved" | "rejected") {
+  async function reviewMilestone(milestoneId: string, decision: "approved" | "rejected", comment?: string) {
     setReviewError(null);
     setReviewingMilestoneId(milestoneId);
     try {
       const response = await fetch(`/api/v1/milestones/${milestoneId}/${decision === "approved" ? "approve" : "reject"}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
+        body: JSON.stringify(decision === "rejected" ? { comment } : {}),
       });
       const data = (await response.json()) as { error?: string };
       if (!response.ok) throw new Error(data.error ?? `Unable to ${decision} milestone.`);
@@ -421,8 +421,8 @@ export function PayoutDetailClient({
     return reviewMilestone(milestoneId, "approved");
   }
 
-  function handleRejectMilestone(milestoneId: string) {
-    return reviewMilestone(milestoneId, "rejected");
+  function handleRejectMilestone(milestoneId: string, comment?: string) {
+    return reviewMilestone(milestoneId, "rejected", comment);
   }
 
   function handleReleaseSuccess(payload: { milestoneId: string; proof: TransactionProof; releasedAt: string }) {
@@ -674,7 +674,7 @@ export function PayoutDetailClient({
                   key={milestone.id}
                   milestone={milestone}
                   onApprove={isReviewerActor ? () => handleApproveMilestone(milestone.id) : undefined}
-                  onReject={isReviewerActor ? () => handleRejectMilestone(milestone.id) : undefined}
+                  onReject={isReviewerActor ? (_milestoneId, comment) => handleRejectMilestone(milestone.id, comment) : undefined}
                   onStatusChange={handleMilestoneStatusChange}
                   />
               ))}
