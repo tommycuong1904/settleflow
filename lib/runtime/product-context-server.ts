@@ -8,6 +8,10 @@ import {
   type ProductContextInput,
 } from "@/lib/runtime/product-context";
 
+type CookieStoreLike = {
+  get(name: string): { value: string } | undefined;
+};
+
 export function resolveWorkspaceId(value: string | null | undefined) {
   return readNonEmpty(value) ?? DEFAULT_PRODUCT_CONTEXT.workspaceId;
 }
@@ -27,6 +31,16 @@ export function resolveProductContext(input: ProductContextInput) {
     actor,
     activeUserId: getActiveUserId({ actor, ownerUserId, reviewerUserId, contributorUserId }),
   };
+}
+
+export function resolveProductContextFromCookies(cookieStore: CookieStoreLike) {
+  return resolveProductContext({
+    workspaceId: cookieStore.get(PRODUCT_CONTEXT_COOKIE_NAMES.workspaceId)?.value,
+    ownerUserId: cookieStore.get(PRODUCT_CONTEXT_COOKIE_NAMES.ownerUserId)?.value,
+    reviewerUserId: cookieStore.get(PRODUCT_CONTEXT_COOKIE_NAMES.reviewerUserId)?.value,
+    contributorUserId: cookieStore.get(PRODUCT_CONTEXT_COOKIE_NAMES.contributorUserId)?.value,
+    actor: cookieStore.get(PRODUCT_CONTEXT_COOKIE_NAMES.actor)?.value,
+  });
 }
 
 export function resolveProductContextFromRequest(request: Request) {
