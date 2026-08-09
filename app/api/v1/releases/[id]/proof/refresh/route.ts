@@ -11,7 +11,14 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
-  const body = await request.json().catch(() => null) as Partial<RefreshProofInput> | null;
+
+  let body: Partial<RefreshProofInput> | null;
+  try {
+    body = await request.json() as Partial<RefreshProofInput>;
+  } catch {
+    return apiError("INVALID_JSON_BODY", { message: "Invalid JSON body.", status: 400 });
+  }
+
   if (!body || typeof body.status !== "string" || !statuses.has(body.status)) {
     return apiError("INVALID_PROOF_STATUS", { message: "status must be confirmed or failed.", status: 400 });
   }
@@ -19,8 +26,16 @@ export async function POST(
   const productContext = resolveProductContextFromRequest(request);
   const ownerUserId = productContext.ownerUserId;
 
-  if (typeof ownerUserId !== "string" || ownerUserId.trim().length === 0) {
-    return apiError("INVALID_PROOF_REFRESH_PAYLOAD", { message: "owner context is required.", status: 400 });
+  if (
+    typeof productContext.workspaceId !== "string"
+    || productContext.workspaceId.trim().length === 0
+    || typeof ownerUserId !== "string"
+    || ownerUserId.trim().length === 0
+  ) {
+    return apiError("INVALID_PROOF_REFRESH_PAYLOAD", {
+      message: "owner and workspace context are required.",
+      status: 400,
+    });
   }
 
   const policyViolation = assertCanRefreshProof({ productContext, actorUserId: ownerUserId });
@@ -47,8 +62,19 @@ export async function POST(
         FAILURE_REASON_REQUIRED: 400,
         FORBIDDEN_PROOF_REFRESH: 403,
       },
-      {},
-      { status: 500 },
+      {
+        RELEASE_NOT_FOUND: "Release not found.",
+        WORKSPACE_SCOPE_MISMATCH: "Workspace context does not match the release workspace.",
+        MILESTONE_NOT_FOUND: "Milestone not found for this release.",
+        PROOF_NOT_FOUND: "Settlement proof not found for this release.",
+        PROOF_NOT_PENDING: "Only pending proofs can be refreshed.",
+        RELEASE_NOT_REFRESHABLE: "This release is not in a refreshable state.",
+        STALE_PROOF_REFRESH: "This proof refresh no longer applies to the active release attempt.",
+        TX_HASH_REQUIRED: "A transaction hash is required when confirming settlement.",
+        FAILURE_REASON_REQUIRED: "A failure reason is required when marking settlement as failed.",
+        FORBIDDEN_PROOF_REFRESH: "User is not allowed to refresh this settlement proof.",
+      },
+      { message: "Unable to refresh settlement proof.", status: 500 },
     );
   }
 }
