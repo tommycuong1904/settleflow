@@ -8,6 +8,7 @@ import { hasWorkspaceRole } from "@/lib/repositories/permissions";
 export async function queueMilestoneRelease(
   milestoneId: string,
   ownerUserId: string,
+  workspaceId: string,
   amountUsdc: string,
   executionMode: ReleaseExecutionMode = "browser_wallet",
 ) {
@@ -23,6 +24,7 @@ export async function queueMilestoneRelease(
       },
     });
     if (!milestone) throw new Error("MILESTONE_NOT_FOUND");
+    if (milestone.payout.workspaceId !== workspaceId) throw new Error("WORKSPACE_SCOPE_MISMATCH");
     if (milestone.status !== "approved") throw new Error("MILESTONE_NOT_APPROVED");
     if (milestone.releases.length > 0) throw new Error("RELEASE_ALREADY_EXISTS");
     if (!milestone.payout.targetWalletAddress) throw new Error("DESTINATION_WALLET_MISSING");
