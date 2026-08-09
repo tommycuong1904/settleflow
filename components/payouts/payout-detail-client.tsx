@@ -47,6 +47,14 @@ function normalizeDraftMilestones(
   }));
 }
 
+function getMilestoneAmountError(amount: string) {
+  const normalized = amount.trim();
+  if (!normalized) return "Amount is required.";
+  if (!/^\d+(\.\d+)?$/.test(normalized)) return "Amount must be a valid USDC number.";
+  if (Number(normalized) <= 0) return "Amount must be greater than zero.";
+  return null;
+}
+
 export function PayoutDetailClient({
   payout,
   contributor,
@@ -174,6 +182,8 @@ export function PayoutDetailClient({
 
   const draftMilestonesDirty = JSON.stringify(normalizeDraftMilestones(draftMilestonesState)) !==
     JSON.stringify(normalizeDraftMilestones(draftMilestonesCommitted));
+  const milestoneAmountErrors = draftMilestonesState.map((milestone) => getMilestoneAmountError(milestone.amount));
+  const hasMilestoneAmountError = milestoneAmountErrors.some((error) => error !== null);
 
   async function activatePayout() {
     if (activatingPayout || payoutStatusState !== "draft") return;
@@ -280,7 +290,7 @@ export function PayoutDetailClient({
   }
 
   async function saveDraftMilestones() {
-    if (savingDraftTitle || payoutStatusState !== "draft" || !draftMilestonesDirty) return;
+    if (savingDraftTitle || payoutStatusState !== "draft" || !draftMilestonesDirty || hasMilestoneAmountError) return;
 
     const normalized = draftMilestonesState.map((milestone, index) => ({
       title: milestone.title.trim(),
@@ -517,7 +527,7 @@ export function PayoutDetailClient({
                   Refine milestone copy and amounts through the real payout draft PATCH path.
                 </p>
               </div>
-              <Button onClick={() => { void saveDraftMilestones(); }} disabled={savingDraftTitle || !draftMilestonesDirty}>
+              <Button onClick={() => { void saveDraftMilestones(); }} disabled={savingDraftTitle || !draftMilestonesDirty || hasMilestoneAmountError}>
                 {savingDraftTitle ? "Saving..." : "Save milestones"}
               </Button>
             </CardHeader>
@@ -534,11 +544,16 @@ export function PayoutDetailClient({
                         onChange={(event) => setDraftMilestonesState((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, title: event.target.value } : item))}
                         placeholder="Milestone title"
                       />
-                      <Input
-                        value={milestone.amount}
-                        onChange={(event) => setDraftMilestonesState((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, amount: event.target.value } : item))}
-                        placeholder="Amount in USDC"
-                      />
+                      <div className="space-y-2">
+                        <Input
+                          value={milestone.amount}
+                          onChange={(event) => setDraftMilestonesState((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, amount: event.target.value } : item))}
+                          placeholder="Amount in USDC"
+                        />
+                        {milestoneAmountErrors[index] ? (
+                          <p className="text-xs text-rose-200">{milestoneAmountErrors[index]}</p>
+                        ) : null}
+                      </div>
                     </div>
                     <Textarea
                       className="mt-3"
