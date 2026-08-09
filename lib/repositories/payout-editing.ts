@@ -5,6 +5,7 @@ import { recordActivity } from "@/lib/repositories/activity-log";
 export type UpdatePayoutDraftInput = {
   updatedByUserId?: string;
   actorUserId?: string;
+  ownerUserId?: string;
   title?: string;
   description?: string;
   contributorId?: string;
@@ -60,7 +61,7 @@ export async function updatePayoutDraft(
       select: { id: true, status: true },
     });
 
-    const actorUserId = input.updatedByUserId ?? input.actorUserId;
+    const actorUserId = input.updatedByUserId ?? input.actorUserId ?? input.ownerUserId;
     if (actorUserId) {
       await recordActivity(tx, {
         workspaceId,
@@ -70,7 +71,9 @@ export async function updatePayoutDraft(
         payoutId: id,
         action: "payout_draft_updated",
         metadata: {
-          changedFields: Object.keys(input).filter((key) => key !== "updatedByUserId" && key !== "actorUserId"),
+          changedFields: Object.keys(input).filter(
+            (key) => key !== "updatedByUserId" && key !== "actorUserId" && key !== "ownerUserId",
+          ),
           contributorChanged: input.contributorId !== undefined ? String(input.contributorId !== current.contributorId) : undefined,
           milestoneCount: input.milestones?.length,
         },
