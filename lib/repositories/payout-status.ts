@@ -40,16 +40,18 @@ export async function recalculatePayoutStatus(
     });
   }
 
-  const releasedCount = payout.milestones.filter(
+  const someMilestonesReleased = payout.milestones.some(
     (milestone) => milestone.status === "released",
-  ).length;
+  );
+  const allMilestonesReleased = payout.milestones.every(
+    (milestone) => milestone.status === "released",
+  );
 
-  const nextStatus =
-    totalMilestones > 0 && releasedCount === totalMilestones
-      ? "completed"
-      : releasedCount > 0
-        ? "partially_released"
-        : "active";
+  const nextStatus = allMilestonesReleased
+    ? "completed"
+    : someMilestonesReleased
+      ? "partially_released"
+      : "active";
 
   return tx.payout.update({
     where: { id: payoutId },
