@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db/client";
+import { recordActivity } from "@/lib/repositories/activity-log";
 import { hasWorkspaceRole } from "@/lib/repositories/permissions";
 
 export type CreatePayoutInput = {
@@ -57,6 +58,18 @@ export async function createPayout(input: CreatePayoutInput) {
         },
       },
       select: { id: true, status: true },
+    });
+    await recordActivity(tx, {
+      workspaceId: input.workspaceId,
+      actorUserId: input.createdByUserId,
+      entityType: "payout",
+      entityId: payout.id,
+      payoutId: payout.id,
+      action: "payout_created",
+      metadata: {
+        contributorId: input.contributorId,
+        milestoneCount: input.milestones.length,
+      },
     });
     return payout;
   });

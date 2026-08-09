@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db/client";
+import { recordActivity } from "@/lib/repositories/activity-log";
 import { hasWorkspaceRole } from "@/lib/repositories/permissions";
 
 export async function reviewMilestone(
@@ -52,6 +53,18 @@ export async function reviewMilestone(
         ? { status: "approved", approvedAt: new Date() }
         : { status: "rejected", rejectedAt: new Date() },
       select: { id: true, status: true },
+    });
+    await recordActivity(tx, {
+      workspaceId: milestone.payout.workspaceId,
+      actorUserId: reviewedByUserId,
+      entityType: "milestone",
+      entityId: milestoneId,
+      milestoneId,
+      action: decision === "approved" ? "milestone_approved" : "milestone_rejected",
+      metadata: {
+        reviewId: review.id,
+        comment: comment ?? undefined,
+      },
     });
     return { milestone: updatedMilestone, review };
   });

@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { Decimal } from "@prisma/client/runtime/library";
 import { db } from "@/lib/db/client";
+import { recordActivity } from "@/lib/repositories/activity-log";
 import { hasWorkspaceRole } from "@/lib/repositories/permissions";
 
 export async function activatePayout(id: string, workspaceId: string, activatedByUserId: string) {
@@ -32,6 +33,15 @@ export async function activatePayout(id: string, workspaceId: string, activatedB
     );
     if (!total.equals(payout.totalAmountUsdc)) throw new Error("MILESTONE_TOTAL_MISMATCH");
 
-    return tx.payout.update({ where: { id }, data: { status: "active" }, select: { id: true, status: true } });
+    const updated = await tx.payout.update({ where: { id }, data: { status: "active" }, select: { id: true, status: true } });
+    await recordActivity(tx, {
+      workspaceId,
+      actorUserId: activatedByUserId,
+      entityType: "payout",
+      entityId: id,
+      payoutId: id,
+      action: "payout_activated",
+    });
+    return updated;
   });
 }

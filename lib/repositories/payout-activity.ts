@@ -5,7 +5,117 @@ function labelForUser(user?: { displayName: string | null; id: string } | null) 
   return user?.displayName?.trim() || user?.id || "System";
 }
 
-export async function getPayoutActivity(payoutId: string): Promise<ActivityItem[]> {
+function asText(value: unknown) {
+  return typeof value === "string" && value.trim().length > 0 ? value : undefined;
+}
+
+function getLogTitle(action: string, milestoneTitle?: string) {
+  switch (action) {
+    case "payout_created":
+      return "Payout created";
+    case "payout_activated":
+      return "Payout activated";
+    case "milestone_submitted":
+      return `Submitted ${milestoneTitle ?? "milestone"}`;
+    case "milestone_approved":
+      return `Approved ${milestoneTitle ?? "milestone"}`;
+    case "milestone_rejected":
+      return `Rejected ${milestoneTitle ?? "milestone"}`;
+    case "release_queued":
+      return `Queued release for ${milestoneTitle ?? "milestone"}`;
+    case "release_failed":
+      return `Release failed for ${milestoneTitle ?? "milestone"}`;
+    case "release_confirmed":
+      return `Confirmed release for ${milestoneTitle ?? "milestone"}`;
+    case "proof_failed":
+      return `Settlement proof failed for ${milestoneTitle ?? "milestone"}`;
+    case "proof_confirmed":
+      return `Settlement proof confirmed for ${milestoneTitle ?? "milestone"}`;
+    default:
+      return action.replaceAll("_", " ");
+  }
+}
+
+function getLogDescription(action: string, metadata?: Record<string, unknown>) {
+  switch (action) {
+    case "payout_created":
+      return "Initial payout draft was created.";
+    case "payout_activated":
+      return "Payout moved from draft to active state.";
+    case "milestone_submitted":
+      return asText(metadata?.summary) ?? "Contributor submitted milestone deliverables.";
+    case "milestone_approved":
+    case "milestone_rejected":
+      return asText(metadata?.comment);
+    case "release_queued": {
+      const amountUsdc = asText(metadata?.amountUsdc);
+      const executionMode = asText(metadata?.executionMode);
+      if (amountUsdc && executionMode) return `Requested ${amountUsdc} USDC via ${executionMode}.`;
+      return amountUsdc ? `Requested ${amountUsdc} USDC.` : "Release was queued.";
+    }
+    case "release_failed":
+    case "proof_failed":
+      return asText(metadata?.failureReason) ?? "Execution failed.";
+    case "proof_confirmed":
+      return asText(metadata?.txHash);
+    default:
+      return undefined;
+  }
+}
+
+async function getLoggedPayoutActivity(payoutId: string): Promise<ActivityItem[]> {
+  const [logs, milestones] = await Promise.all([
+    db.activityLog.findMany({
+      where: { payoutId },
+      orderBy: { occurredAt: "desc" },
+      select: {
+        id: true,
+        entityType: true,
+        entityId: true,
+        action: true,
+        occurredAt: true,
+        milestoneId: true,
+        actorUser: { select: { id: true, displayName: true } },
+        metadataJson: true,
+      },
+    }),
+    db.milestone.findMany({
+      where: { payoutId },
+      select: { id: true, title: true },
+    }),
+  ]);
+
+  if (logs.length === 0) return [];
+
+  const milestoneMap = new Map(milestones.map((milestone) => [milestone.id, milestone.title]));
+
+  return logs.map((log) => {
+    const metadata = log.metadataJson && typeof log.metadataJson === "object" && !Array.isArray(log.metadataJson)
+      ? (log.metadataJson as Record<string, unknown>)
+      : undefined;
+    const milestoneTitle = log.milestoneId ? milestoneMap.get(log.milestoneId) : undefined;
+
+    return {
+      id: `log:${log.id}`,
+      entityType: ["payout", "milestone", "release", "proof"].includes(log.entityType)
+        ? (log.entityType as ActivityItem["entityType"])
+        : "system",
+      entityId: log.entityId,
+      action: log.action,
+      occurredAt: log.occurredAt.toISOString(),
+      actorLabel: labelForUser(log.actorUser),
+      title: getLogTitle(log.action, milestoneTitle),
+      description: getLogDescription(log.action, metadata),
+      metadata: metadata
+        ? Object.fromEntries(
+            Object.entries(metadata).map(([key, value]) => [key, value == null ? undefined : String(value)]),
+          )
+        : undefined,
+    } satisfies ActivityItem;
+  });
+}
+
+async function getDerivedPayoutActivity(payoutId: string): Promise<ActivityItem[]> {
   const payout = await db.payout.findUnique({
     where: { id: payoutId },
     select: {
@@ -199,4 +309,10 @@ export async function getPayoutActivity(payoutId: string): Promise<ActivityItem[
   }
 
   return items.sort((a, b) => new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime());
+}
+
+export async function getPayoutActivity(payoutId: string): Promise<ActivityItem[]> {
+  const logged = await getLoggedPayoutActivity(payoutId);
+  if (logged.length > 0) return logged;
+  return getDerivedPayoutActivity(payoutId);
 }

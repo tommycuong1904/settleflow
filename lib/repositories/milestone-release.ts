@@ -2,6 +2,7 @@ import { Decimal } from "@prisma/client/runtime/library";
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db/client";
 import type { ReleaseExecutionMode } from "@/lib/arc/types";
+import { recordActivity } from "@/lib/repositories/activity-log";
 import { hasWorkspaceRole } from "@/lib/repositories/permissions";
 
 export async function queueMilestoneRelease(
@@ -56,6 +57,21 @@ export async function queueMilestoneRelease(
     const proof = await tx.transactionProof.create({
       data: { payoutId: milestone.payout.id, milestoneId, releaseId: release.id, status: "pending" },
       select: { id: true, releaseId: true, status: true },
+    });
+    await recordActivity(tx, {
+      workspaceId: milestone.payout.workspaceId,
+      actorUserId: triggeredByUserId,
+      entityType: "release",
+      entityId: release.id,
+      payoutId: milestone.payout.id,
+      milestoneId,
+      releaseId: release.id,
+      action: "release_queued",
+      metadata: {
+        proofId: proof.id,
+        amountUsdc,
+        executionMode,
+      },
     });
     return { release, proof };
   });

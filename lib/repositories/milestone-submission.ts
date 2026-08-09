@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db/client";
+import { recordActivity } from "@/lib/repositories/activity-log";
 import { hasWorkspaceRole } from "@/lib/repositories/permissions";
 
 export type SubmitMilestoneInput = {
@@ -61,6 +62,18 @@ export async function submitMilestone(milestoneId: string, input: SubmitMileston
       where: { id: milestoneId },
       data: { status: "submitted", submittedAt: submission.submittedAt, rejectedAt: null },
       select: { id: true, status: true },
+    });
+    await recordActivity(tx, {
+      workspaceId: milestone.payout.workspaceId,
+      actorUserId: input.submittedByUserId,
+      entityType: "milestone",
+      entityId: milestoneId,
+      milestoneId,
+      action: "milestone_submitted",
+      metadata: {
+        submissionId: submission.id,
+        summary: input.summary,
+      },
     });
     return { milestone: updatedMilestone, submission };
   });
