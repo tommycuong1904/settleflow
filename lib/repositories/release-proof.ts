@@ -81,11 +81,14 @@ export async function refreshReleaseProof(
       where: { id: proof.id },
       data: {
         status: input.status,
-        txHash: input.txHash,
-        network: input.network,
-        explorerUrl: input.explorerUrl,
-        blockNumber: input.blockNumber === undefined ? undefined : BigInt(input.blockNumber),
-        failureReason: input.failureReason,
+        txHash: input.status === "confirmed" ? input.txHash : null,
+        network: input.status === "confirmed" ? input.network : null,
+        explorerUrl: input.status === "confirmed" ? input.explorerUrl : null,
+        blockNumber:
+          input.status === "confirmed"
+            ? (input.blockNumber === undefined ? undefined : BigInt(input.blockNumber))
+            : null,
+        failureReason: input.status === "failed" ? input.failureReason : null,
         confirmedAt: input.status === "confirmed" ? now : null,
         failedAt: input.status === "failed" ? now : null,
       },
@@ -125,11 +128,11 @@ export async function refreshReleaseProof(
       releaseId: release.id,
       action: input.status === "confirmed" ? "proof_confirmed" : "proof_failed",
       metadata: {
-        txHash: input.txHash,
-        network: input.network,
-        explorerUrl: input.explorerUrl,
-        blockNumber: input.blockNumber,
-        failureReason: input.failureReason,
+        txHash: input.status === "confirmed" ? input.txHash : undefined,
+        network: input.status === "confirmed" ? input.network : undefined,
+        explorerUrl: input.status === "confirmed" ? input.explorerUrl : undefined,
+        blockNumber: input.status === "confirmed" ? input.blockNumber : undefined,
+        failureReason: input.status === "failed" ? input.failureReason : undefined,
       },
     });
 
@@ -143,8 +146,8 @@ export async function refreshReleaseProof(
       releaseId: release.id,
       action: input.status === "confirmed" ? "release_confirmed" : "release_failed",
       metadata: {
-        txHash: input.txHash,
-        failureReason: input.failureReason,
+        txHash: input.status === "confirmed" ? input.txHash : undefined,
+        failureReason: input.status === "failed" ? input.failureReason : undefined,
       },
     });
 
