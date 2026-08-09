@@ -1,17 +1,14 @@
-import { Decimal } from "@prisma/client/runtime/library";
 import { NextResponse } from "next/server";
 import { apiError, apiErrorFromCode } from "@/lib/api/errors";
+import {
+  hasContiguousMilestoneSequences,
+  hasValidMilestoneShape,
+  isNonEmptyString,
+  sumMilestoneAmounts,
+} from "@/lib/api/payout-payload";
 import { createPayout } from "@/lib/repositories/payout-creation";
 import { assertCanCreatePayout } from "@/lib/runtime/product-policy";
 import { resolveProductContextFromRequest } from "@/lib/runtime/product-context-server";
-
-function isNonEmpty(value: unknown): value is string {
-  return typeof value === "string" && value.trim().length > 0;
-}
-
-function hasContiguousSequences(milestones: Array<{ sequence: unknown }>) {
-  return milestones.every((milestone, index) => milestone.sequence === index + 1);
-}
 
 export async function POST(request: Request) {
   try {
@@ -21,7 +18,7 @@ export async function POST(request: Request) {
     const required = [productContext.workspaceId, productContext.ownerUserId, body.title, body.contributorId,
       body.targetWalletAddress, body.totalAmountUsdc];
 
-    if (required.some((value) => !isNonEmpty(value)) || milestones.length === 0) {
+    if (required.some((value) => !isNonEmptyString(value)) || milestones.length === 0) {
       return apiError("INVALID_PAYOUT_PAYLOAD", { message: "Invalid payout payload.", status: 400 });
     }
 
@@ -42,22 +39,17 @@ export async function POST(request: Request) {
       sequence: unknown;
     }>;
 
-    if (milestonePayload.some((milestone) =>
-      !isNonEmpty(milestone.title) || !isNonEmpty(milestone.description) ||
-      !isNonEmpty(milestone.amountUsdc) || !Number.isInteger(milestone.sequence))) {
+    if (!hasValidMilestoneShape(milestonePayload)) {
       return apiError("INVALID_MILESTONE_PAYLOAD", { message: "Invalid milestone payload.", status: 400 });
     }
 
-    if (!hasContiguousSequences(milestonePayload)) {
+    if (!hasContiguousMilestoneSequences(milestonePayload)) {
       return apiError("INVALID_MILESTONE_SEQUENCE", { message: "Milestone sequence must start at 1 and stay contiguous.", status: 400 });
     }
 
-    const milestoneTotal = milestonePayload.reduce(
-      (sum, milestone) => sum.plus(new Decimal(String(milestone.amountUsdc))),
-      new Decimal(0),
-    );
+    const milestoneTotal = sumMilestoneAmounts(milestonePayload);
 
-    if (!milestoneTotal.equals(new Decimal(String(body.totalAmountUsdc)))) {
+    if (!milestoneTotal.equals(sumMilestoneAmounts([{ amountUsdc: body.totalAmountUsdc }]))) {
       return apiError("PAYOUT_TOTAL_MISMATCH", { message: "totalAmountUsdc must equal the sum of milestone amounts.", status: 400 });
     }
 
