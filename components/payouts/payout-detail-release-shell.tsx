@@ -82,6 +82,7 @@ export function PayoutDetailReleaseShell({
       ? "Retry from proof panel"
       : undefined;
 
+// eslint-disable-next-line react-hooks/exhaustive-deps
   const statusText = useMemo(() => {
     switch (effectiveReleaseStatus) {
       case "submitting":

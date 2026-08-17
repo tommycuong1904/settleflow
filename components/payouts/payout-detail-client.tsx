@@ -103,7 +103,7 @@ export function PayoutDetailClient({
   const [activityItems, setActivityItems] = useState(initialActivity);
   const [draftSaveNotice, setDraftSaveNotice] = useState<string | null>(null);
   const [reviewError, setReviewError] = useState<string | null>(null);
-  const [reviewingMilestoneId, setReviewingMilestoneId] = useState<string | null>(null);
+  
   const [activatingPayout, setActivatingPayout] = useState(false);
   const [savingDraftTitle, setSavingDraftTitle] = useState(false);
 

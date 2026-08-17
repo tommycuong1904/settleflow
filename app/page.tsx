@@ -1,5 +1,6 @@
-import { Button } from "@/components/shared/button";
 import { SectionCard } from "@/components/shared/section-card";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 const workflowCards = [
   {
@@ -70,9 +71,11 @@ export default function Home() {
               </p>
             </div>
             <div className="flex flex-wrap gap-3">
-              <Button href="/payouts/new">Launch Demo</Button>
-              <Button href="/dashboard" variant="secondary">
-                View Sample Dashboard
+              <Button asChild>
+                <Link href="/payouts/new">Launch Demo</Link>
+              </Button>
+              <Button asChild variant="secondary">
+                <Link href="/dashboard">View Sample Dashboard</Link>
               </Button>
             </div>
           </div>

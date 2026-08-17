@@ -11,7 +11,7 @@ import {
   type ReleaseRequestBody,
 } from "@/lib/api/legacy-release";
 import { resolveWorkspaceIdFromRequest } from "@/lib/runtime/product-context-server";
-import type { ReleaseExecutionMode } from "@/lib/arc/types";
+
 
 export async function POST(request: Request) {
   const workspaceId = resolveWorkspaceIdFromRequest(request);

@@ -2,6 +2,9 @@
 
 import Link from "next/link";
 import { Suspense, useEffect, useState } from "react";
+import { Button } from "@/components/shared/button";
+import { connectBrowserWallet } from "@/lib/arc/browser-wallet";
+import { useRouter } from "next/navigation";
 
 import { ActorSwitcher } from "@/components/shared/actor-switcher";
 
@@ -9,6 +12,7 @@ const NAV_LINK_CLASS = "transition-colors hover:text-cyan-200";
 
 export function SiteHeader() {
   const [isScrolled, setIsScrolled] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     function handleScroll() {
@@ -45,6 +49,19 @@ export function SiteHeader() {
               New Payout
             </Link>
           </nav>
+           <Button
+             onClick={async () => {
+               try {
+                 await connectBrowserWallet();
+               } catch (e) {
+                 console.error('Wallet connection failed', e);
+               }
+               router.push('/app');
+             }}
+             variant="primary"
+           >
+             Launch App
+           </Button>
         </div>
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between lg:justify-end">
           <nav className="flex items-center gap-6 text-sm text-[var(--text-primary)] md:hidden">
