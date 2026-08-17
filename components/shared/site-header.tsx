@@ -36,7 +36,11 @@ export function SiteHeader() {
       ].join(" ")}
     >
       {pathname === "/" ? (
-        <div className="mx-auto flex max-w-6xl items-center justify-end px-6 py-3">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
+          <Link href="/" className="text-lg font-semibold tracking-tight text-white transition-transform duration-300 ease-out">
+            <span className="text-white">Settle</span>
+            <span className="text-cyan-300">Flow</span>
+          </Link>
           <Button
             onClick={async () => {
               try {
