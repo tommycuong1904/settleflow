@@ -67,21 +67,7 @@ export function SiteHeader() {
               <Link href="/dashboard" className={NAV_LINK_CLASS}>Dashboard</Link>
               <Link href="/payouts/new" className={NAV_LINK_CLASS}>New Payout</Link>
             </nav>
-            {!isAppRoute && (
-              <Button
-                onClick={async () => {
-                  try {
-                    await connectBrowserWallet();
-                  } catch (e) {
-                    console.error('Wallet connection failed', e);
-                  }
-                  router.push('/app');
-                }}
-                variant="primary"
-              >
-                Launch App
-              </Button>
-            )}
+
           </div>
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between lg:justify-end">
             <nav className="flex items-center gap-6 text-sm text-[var(--text-primary)] md:hidden">
