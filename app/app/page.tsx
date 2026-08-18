@@ -2,17 +2,30 @@
 
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import RoleWelcomeCard from "./RoleWelcomeCard";
 
-export default function AppHome() {
+/**
+ * App home page – hiển thị hero tùy theo vai trò người dùng.
+ * Thay đổi giá trị `role` bằng việc lấy từ session/auth khi tích hợp thực tế.
+ */
+export default async function AppHome() {
+  // TODO: Thay bằng dữ liệu thực tế (session, JWT, query param …)
+  const role: "owner" | "reviewer" | "contributor" = "reviewer";
+
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-slate-900 text-white p-6">
-      <h1 className="text-4xl font-bold mb-4">SettleFlow App</h1>
-      <p className="mb-8 max-w-xl text-center">
-        Đây là trang chính của ứng dụng sau khi bạn nhấn “Launch App”. Bạn có thể mở rộng tại đây với dashboard, biểu đồ, hoặc các tính năng khác.
-      </p>
-      <Button asChild variant="secondary">
-        <Link href="/">Quay lại Landing</Link>
-      </Button>
+    <div className="mx-auto flex max-w-[1320px] flex-col px-6 py-10 md:py-12 gap-8">
+      {/* Hero dựa trên vai trò */}
+      <RoleWelcomeCard role={role} />
+
+      {/* Nội dung phụ – vẫn giữ phần mô tả chung */}
+      <div className="flex min-h-[200px] items-center justify-center bg-slate-900 text-white p-6 rounded-[1.5rem]">
+        <h2 className="text-2xl font-medium">
+          Đây là trang chính của ứng dụng sau khi bạn nhấn “Launch App”.
+        </h2>
+        <Button asChild variant="secondary" className="ml-4">
+          <Link href="/">Quay lại Landing</Link>
+        </Button>
+      </div>
     </div>
   );
 }

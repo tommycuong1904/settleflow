@@ -32,7 +32,7 @@ export default function RootLayout({
       <body className="min-h-full bg-background text-slate-100">
         <div className="min-h-screen">
           <SiteHeader />
-          <main className="mx-auto flex max-w-6xl flex-col px-6 py-10 md:py-12">
+          <main>
             {children}
           </main>
           <Footer />

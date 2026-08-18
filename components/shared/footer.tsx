@@ -32,7 +32,7 @@ function FooterSection({ title, children }: { title: string; children: ReactNode
 export function Footer() {
   return (
     <footer className="border-t border-[var(--border-soft)] bg-[var(--surface-muted)]">
-      <div className="mx-auto max-w-6xl px-6 py-12 md:py-16">
+      <div className="mx-auto max-w-[1320px] px-6 py-12 md:py-16">
         {/* Top grid */}
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1.2fr]">
           {/* Brand */}
@@ -85,11 +85,10 @@ export function Footer() {
               {techLabels.map((tech) => (
                 <li key={tech.label} className="flex items-center gap-2">
                   <span
-                    className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                      tech.accent
+                    className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${tech.accent
                         ? "border border-cyan-300/30 bg-cyan-400/10 text-cyan-200"
                         : "border border-[var(--border-soft)] bg-[rgba(15,23,42,0.6)] text-[var(--text-primary)]"
-                    }`}
+                      }`}
                   >
                     {tech.label}
                   </span>

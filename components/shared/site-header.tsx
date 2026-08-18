@@ -37,7 +37,7 @@ export function SiteHeader() {
       ].join(" ")}
     >
       {pathname === "/" ? (
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
+        <div className="mx-auto flex max-w-[1320px] items-center justify-between px-6 py-3">
           <Link href="/" className="text-lg font-semibold tracking-tight text-white transition-transform duration-300 ease-out">
             <span className="text-white">Settle</span>
             <span className="text-cyan-300">Flow</span>
@@ -57,7 +57,7 @@ export function SiteHeader() {
           </Button>
         </div>
       ) : (
-        <div className="mx-auto flex max-w-6xl flex-col gap-4 px-6 py-3 transition-all duration-300 ease-out lg:flex-row lg:items-center lg:justify-between">
+        <div className="mx-auto flex max-w-[1320px] flex-col gap-4 px-6 py-3 transition-all duration-300 ease-out lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center justify-between gap-6">
             <Link href="/" className="text-lg font-semibold tracking-tight text-white transition-transform duration-300 ease-out">
               <span className="text-white">Settle</span>

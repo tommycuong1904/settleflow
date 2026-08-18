@@ -85,6 +85,8 @@ export function PayoutDetailClient({
   const [payoutStatusState, setPayoutStatusState] = useState(payout.status);
   const [payoutTotalAmountState, setPayoutTotalAmountState] = useState(payout.totalAmount);
   const [payoutTitleCommitted, setPayoutTitleCommitted] = useState(payout.title);
+const [reviewingMilestoneId, setReviewingMilestoneId] = useState<string | null>(null);
+
   const [payoutTitleState, setPayoutTitleState] = useState(payout.title);
   const [payoutDescriptionCommitted, setPayoutDescriptionCommitted] = useState(payout.description ?? "");
   const [payoutDescriptionState, setPayoutDescriptionState] = useState(payout.description ?? "");
@@ -103,7 +105,7 @@ export function PayoutDetailClient({
   const [activityItems, setActivityItems] = useState(initialActivity);
   const [draftSaveNotice, setDraftSaveNotice] = useState<string | null>(null);
   const [reviewError, setReviewError] = useState<string | null>(null);
-  
+
   const [activatingPayout, setActivatingPayout] = useState(false);
   const [savingDraftTitle, setSavingDraftTitle] = useState(false);
 
@@ -165,10 +167,10 @@ export function PayoutDetailClient({
     return milestoneState.map((milestone) =>
       milestone.id === persistedRelease.releasedMilestoneId
         ? {
-            ...milestone,
-            status: "released" as const,
-            releasedAt: persistedRelease.releasedAt,
-          }
+          ...milestone,
+          status: "released" as const,
+          releasedAt: persistedRelease.releasedAt,
+        }
         : milestone,
     );
   }, [milestoneState, persistedRelease]);
@@ -438,16 +440,16 @@ export function PayoutDetailClient({
       current.map((milestone) =>
         milestone.id === milestoneId
           ? {
-              ...milestone,
-              status,
-              submittedAt:
-                status === "submitted"
-                  ? meta?.submittedAt ?? milestone.submittedAt
-                  : milestone.submittedAt,
-              approvedAt: status === "approved" ? meta?.approvedAt ?? milestone.approvedAt : milestone.approvedAt,
-              rejectedAt: status === "rejected" ? meta?.rejectedAt ?? milestone.rejectedAt : milestone.rejectedAt,
-              releasedAt: status === "released" ? meta?.releasedAt ?? milestone.releasedAt : milestone.releasedAt,
-            }
+            ...milestone,
+            status,
+            submittedAt:
+              status === "submitted"
+                ? meta?.submittedAt ?? milestone.submittedAt
+                : milestone.submittedAt,
+            approvedAt: status === "approved" ? meta?.approvedAt ?? milestone.approvedAt : milestone.approvedAt,
+            rejectedAt: status === "rejected" ? meta?.rejectedAt ?? milestone.rejectedAt : milestone.rejectedAt,
+            releasedAt: status === "released" ? meta?.releasedAt ?? milestone.releasedAt : milestone.releasedAt,
+          }
           : milestone,
       ),
     );
@@ -476,17 +478,17 @@ export function PayoutDetailClient({
         current.map((milestone) =>
           milestone.id === milestoneId
             ? {
-                ...milestone,
-                status: data.milestone?.status ?? decision,
-                approvedAt:
-                  decision === "approved"
-                    ? (data.milestone?.approvedAt ?? milestone.approvedAt)
-                    : milestone.approvedAt,
-                rejectedAt:
-                  decision === "rejected"
-                    ? (data.milestone?.rejectedAt ?? milestone.rejectedAt)
-                    : milestone.rejectedAt,
-              }
+              ...milestone,
+              status: data.milestone?.status ?? decision,
+              approvedAt:
+                decision === "approved"
+                  ? (data.milestone?.approvedAt ?? milestone.approvedAt)
+                  : milestone.approvedAt,
+              rejectedAt:
+                decision === "rejected"
+                  ? (data.milestone?.rejectedAt ?? milestone.rejectedAt)
+                  : milestone.rejectedAt,
+            }
             : milestone,
         ),
       );
@@ -518,10 +520,10 @@ export function PayoutDetailClient({
       current.map((milestone) =>
         milestone.id === payload.milestoneId
           ? {
-              ...milestone,
-              status: "released" as const,
-              releasedAt: payload.releasedAt,
-            }
+            ...milestone,
+            status: "released" as const,
+            releasedAt: payload.releasedAt,
+          }
           : milestone,
       ),
     );
@@ -530,258 +532,260 @@ export function PayoutDetailClient({
   }
 
   return (
-    <div className="flex flex-col gap-8">
-      <div className="space-y-3">
-        <p className="text-sm font-medium uppercase tracking-[0.22em] text-cyan-300">
-          Payout detail
-        </p>
-        <div className="space-y-2">
-          <h1 className="text-3xl font-semibold tracking-tight text-white md:text-4xl">
-            {payoutTitleState}
-          </h1>
-          <p className="max-w-3xl text-sm leading-7 text-[var(--text-primary)] md:text-base">
-            {payoutDescriptionState.trim().length > 0
-              ? payoutDescriptionState
-              : "Review milestone submissions, approve release in sequence, and keep Arc settlement proof attached to the payout flow."}
+    <div className="mx-auto flex max-w-[1320px] flex-col px-6 py-10 md:py-12">
+      <div className="flex flex-col gap-8">
+        <div className="space-y-3">
+          <p className="text-sm font-medium uppercase tracking-[0.22em] text-cyan-300">
+            Payout detail
           </p>
-        </div>
-      </div>
-
-      <Card className="sf-shell">
-        <CardHeader className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <CardTitle>Payout Summary</CardTitle>
-          {payoutStatusState === "draft" && isOwnerActor ? (
-            <Button
-              onClick={() => { void activatePayout(); }}
-              disabled={activatingPayout || hasUnsavedDraftChanges || hasMilestoneAmountError || payoutTitleState.trim().length === 0}
-            >
-              {activatingPayout ? "Activating..." : "Activate payout"}
-            </Button>
-          ) : null}
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            {[
-              { label: "Contributor", value: contributor?.name ?? payout.contributorId },
-              {
-                label: "Wallet",
-                value: contributor ? shortenAddress(contributor.walletAddress) : "Unknown",
-              },
-              { label: "Total amount", value: `${formatUsdc(payoutTotalAmountState)} USDC` },
-              {
-                label: "Payout status",
-                value: payoutStatusLabel,
-              },
-            ].map((item) => (
-              <div key={item.label} className="rounded-2xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.62)] p-4">
-                <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                  {item.label}
-                </p>
-                <p className="mt-2 break-all text-sm font-semibold text-white">
-                  {item.value}
-                </p>
-              </div>
-            ))}
+          <div className="space-y-2">
+            <h1 className="text-3xl font-semibold tracking-tight text-white md:text-4xl">
+              {payoutTitleState}
+            </h1>
+            <p className="max-w-3xl text-sm leading-7 text-[var(--text-primary)] md:text-base">
+              {payoutDescriptionState.trim().length > 0
+                ? payoutDescriptionState
+                : "Review milestone submissions, approve release in sequence, and keep Arc settlement proof attached to the payout flow."}
+            </p>
           </div>
-          <p className="mt-4 text-sm text-[var(--text-secondary)]">
-            {effectivePayoutStatus === "draft"
-              ? hasUnsavedDraftChanges
-                ? "This payout is still a draft. Save your draft changes before activating milestone submissions and reviews."
-                : "This payout is still a draft. Activate it to begin milestone submissions and reviews."
-              : effectivePayoutStatus === "active"
-                ? "This payout is active. Contributors can submit milestones and reviewers can approve or reject work."
-                : effectivePayoutStatus === "partially_released"
-                  ? "This payout has partial settlement progress. Continue reviewing and releasing approved milestones."
-                  : "This payout is fully settled and all milestone releases are complete."}
-          </p>
-        </CardContent>
-      </Card>
+        </div>
 
-      {payoutStatusState === "draft" && isOwnerActor ? (
-        <>
-          {reviewError ? (
-            <div className="rounded-2xl border border-rose-400/30 bg-rose-400/10 px-4 py-3 text-sm text-rose-100">
-              {reviewError}
-            </div>
-          ) : null}
-          {draftSaveNotice ? (
-            <div className="rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-100">
-              {draftSaveNotice}
-            </div>
-          ) : null}
-          <Card className="sf-shell">
-            <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-              <div>
-                <CardTitle>Draft details</CardTitle>
-                <p className="mt-2 text-sm text-[var(--text-secondary)]">
-                  Refine the payout title and description before activation so the agreement is ready for review and milestone work.
-                </p>
-              </div>
+        <Card className="sf-shell">
+          <CardHeader className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <CardTitle>Payout Summary</CardTitle>
+            {payoutStatusState === "draft" && isOwnerActor ? (
               <Button
-                onClick={() => { void saveDraftTitle(); }}
-                disabled={savingDraftTitle || payoutTitleState.trim().length === 0 || !draftTitleDirty}
+                onClick={() => { void activatePayout(); }}
+                disabled={activatingPayout || hasUnsavedDraftChanges || hasMilestoneAmountError || payoutTitleState.trim().length === 0}
               >
-                {savingDraftTitle ? "Saving..." : "Save payout details"}
+                {activatingPayout ? "Activating..." : "Activate payout"}
               </Button>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between gap-3">
-                    <label className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                      Draft title
-                    </label>
-                    {draftTitleDirty ? <span className="text-[11px] uppercase tracking-[0.16em] text-cyan-200">Changed</span> : null}
-                  </div>
-                  <Input
-                    value={payoutTitleState}
-                    onChange={(event) => setPayoutTitleState(event.target.value)}
-                    placeholder="Refine the payout title"
-                  />
+            ) : null}
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              {[
+                { label: "Contributor", value: contributor?.name ?? payout.contributorId },
+                {
+                  label: "Wallet",
+                  value: contributor ? shortenAddress(contributor.walletAddress) : "Unknown",
+                },
+                { label: "Total amount", value: `${formatUsdc(payoutTotalAmountState)} USDC` },
+                {
+                  label: "Payout status",
+                  value: payoutStatusLabel,
+                },
+              ].map((item) => (
+                <div key={item.label} className="rounded-2xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.62)] p-4">
+                  <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                    {item.label}
+                  </p>
+                  <p className="mt-2 break-all text-sm font-semibold text-white">
+                    {item.value}
+                  </p>
                 </div>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between gap-3">
-                    <label className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                      Draft description
-                    </label>
-                    {draftDescriptionDirty ? <span className="text-[11px] uppercase tracking-[0.16em] text-cyan-200">Changed</span> : null}
-                    <Button
-                      variant="secondary"
-                      onClick={() => { void saveDraftDescription(); }}
-                      disabled={savingDraftTitle || !draftDescriptionDirty}
-                    >
-                      Save description
-                    </Button>
-                  </div>
-                  <Textarea
-                    value={payoutDescriptionState}
-                    onChange={(event) => setPayoutDescriptionState(event.target.value)}
-                    placeholder="Add more context for this payout agreement"
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              ))}
+            </div>
+            <p className="mt-4 text-sm text-[var(--text-secondary)]">
+              {effectivePayoutStatus === "draft"
+                ? hasUnsavedDraftChanges
+                  ? "This payout is still a draft. Save your draft changes before activating milestone submissions and reviews."
+                  : "This payout is still a draft. Activate it to begin milestone submissions and reviews."
+                : effectivePayoutStatus === "active"
+                  ? "This payout is active. Contributors can submit milestones and reviewers can approve or reject work."
+                  : effectivePayoutStatus === "partially_released"
+                    ? "This payout has partial settlement progress. Continue reviewing and releasing approved milestones."
+                    : "This payout is fully settled and all milestone releases are complete."}
+            </p>
+          </CardContent>
+        </Card>
 
-          <Card className="sf-shell">
-            <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-              <div>
-                <CardTitle>Milestone plan</CardTitle>
-                <p className="mt-2 text-sm text-[var(--text-secondary)]">
-                  Finalize milestone titles, scope, and amounts before this payout moves into active review and release work.
-                </p>
+        {payoutStatusState === "draft" && isOwnerActor ? (
+          <>
+            {reviewError ? (
+              <div className="rounded-2xl border border-rose-400/30 bg-rose-400/10 px-4 py-3 text-sm text-rose-100">
+                {reviewError}
               </div>
-              <Button onClick={() => { void saveDraftMilestones(); }} disabled={savingDraftTitle || !draftMilestonesDirty || hasMilestoneAmountError}>
-                {savingDraftTitle ? "Saving..." : "Save milestones"}
-              </Button>
+            ) : null}
+            {draftSaveNotice ? (
+              <div className="rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-100">
+                {draftSaveNotice}
+              </div>
+            ) : null}
+            <Card className="sf-shell">
+              <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <CardTitle>Draft details</CardTitle>
+                  <p className="mt-2 text-sm text-[var(--text-secondary)]">
+                    Refine the payout title and description before activation so the agreement is ready for review and milestone work.
+                  </p>
+                </div>
+                <Button
+                  onClick={() => { void saveDraftTitle(); }}
+                  disabled={savingDraftTitle || payoutTitleState.trim().length === 0 || !draftTitleDirty}
+                >
+                  {savingDraftTitle ? "Saving..." : "Save payout details"}
+                </Button>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <label className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                        Draft title
+                      </label>
+                      {draftTitleDirty ? <span className="text-[11px] uppercase tracking-[0.16em] text-cyan-200">Changed</span> : null}
+                    </div>
+                    <Input
+                      value={payoutTitleState}
+                      onChange={(event) => setPayoutTitleState(event.target.value)}
+                      placeholder="Refine the payout title"
+                    />
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <label className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                        Draft description
+                      </label>
+                      {draftDescriptionDirty ? <span className="text-[11px] uppercase tracking-[0.16em] text-cyan-200">Changed</span> : null}
+                      <Button
+                        variant="secondary"
+                        onClick={() => { void saveDraftDescription(); }}
+                        disabled={savingDraftTitle || !draftDescriptionDirty}
+                      >
+                        Save description
+                      </Button>
+                    </div>
+                    <Textarea
+                      value={payoutDescriptionState}
+                      onChange={(event) => setPayoutDescriptionState(event.target.value)}
+                      placeholder="Add more context for this payout agreement"
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="sf-shell">
+              <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <CardTitle>Milestone plan</CardTitle>
+                  <p className="mt-2 text-sm text-[var(--text-secondary)]">
+                    Finalize milestone titles, scope, and amounts before this payout moves into active review and release work.
+                  </p>
+                </div>
+                <Button onClick={() => { void saveDraftMilestones(); }} disabled={savingDraftTitle || !draftMilestonesDirty || hasMilestoneAmountError}>
+                  {savingDraftTitle ? "Saving..." : "Save milestones"}
+                </Button>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {draftMilestonesState.map((milestone, index) => (
+                    <div key={milestone.id} className={`rounded-2xl border bg-[rgba(15,23,42,0.62)] p-4 ${milestoneDirtyStates[index]?.title || milestoneDirtyStates[index]?.description || milestoneDirtyStates[index]?.amount ? "border-cyan-300/40" : "border-[var(--border-soft)]"}`}>
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                          Milestone {index + 1}
+                        </p>
+                        {milestoneDirtyStates[index]?.title || milestoneDirtyStates[index]?.description || milestoneDirtyStates[index]?.amount ? <span className="text-[11px] uppercase tracking-[0.16em] text-cyan-200">Changed</span> : null}
+                      </div>
+                      <div className="mt-3 grid gap-3 md:grid-cols-[1fr_180px]">
+                        <div className="space-y-2">
+                          <Input
+                            value={milestone.title}
+                            onChange={(event) => setDraftMilestonesState((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, title: event.target.value } : item))}
+                            placeholder="Milestone title"
+                          />
+                          {milestoneDirtyStates[index]?.title ? <p className="text-xs text-cyan-200">Title changed.</p> : null}
+                        </div>
+                        <div className="space-y-2">
+                          <Input
+                            value={milestone.amount}
+                            onChange={(event) => setDraftMilestonesState((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, amount: event.target.value } : item))}
+                            placeholder="Amount in USDC"
+                          />
+                          {milestoneAmountErrors[index] ? (
+                            <p className="text-xs text-rose-200">{milestoneAmountErrors[index]}</p>
+                          ) : milestoneDirtyStates[index]?.amount ? <p className="text-xs text-cyan-200">Amount changed.</p> : null}
+                        </div>
+                      </div>
+                      <div className="mt-3 space-y-2">
+                        <Textarea
+                          value={milestone.description}
+                          onChange={(event) => setDraftMilestonesState((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, description: event.target.value } : item))}
+                          placeholder="Milestone description"
+                        />
+                        {milestoneDirtyStates[index]?.description ? <p className="text-xs text-cyan-200">Description changed.</p> : null}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </>
+        ) : null}
+
+        <section className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+            <StatCard label="Milestones" value={milestones.length} />
+            <StatCard label="Awaiting review" value={submittedCount} />
+            <StatCard label="Ready to release" value={readyToReleaseCount} />
+            <StatCard
+              label="Released"
+              value={`${formatUsdc(amountReleased)} USDC`}
+              hint={`${releasedCount} milestone${releasedCount === 1 ? "" : "s"} already settled on Arc`}
+            />
+            <StatCard
+              label="Latest release"
+              value={latestReleasedMilestone ? latestReleasedMilestone.title : "Not released yet"}
+              hint={
+                releaseProof?.confirmedAt
+                  ? `Confirmed ${new Date(releaseProof.confirmedAt).toLocaleString()}`
+                  : releaseProof
+                    ? "Proof attached to latest payout event"
+                    : "Release the next approved milestone to attach proof"
+              }
+            />
+          </div>
+          <div className="rounded-2xl border border-dashed border-[var(--border-soft)] px-4 py-3 text-sm text-[var(--text-muted)]">
+            <span className="font-semibold text-white">Next action:</span> {nextActionText}
+          </div>
+        </section>
+
+        <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+          <Card className="sf-shell">
+            <CardHeader>
+              <CardTitle>Milestone Workflow</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {draftMilestonesState.map((milestone, index) => (
-                  <div key={milestone.id} className={`rounded-2xl border bg-[rgba(15,23,42,0.62)] p-4 ${milestoneDirtyStates[index]?.title || milestoneDirtyStates[index]?.description || milestoneDirtyStates[index]?.amount ? "border-cyan-300/40" : "border-[var(--border-soft)]"}`}>
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                        Milestone {index + 1}
-                      </p>
-                      {milestoneDirtyStates[index]?.title || milestoneDirtyStates[index]?.description || milestoneDirtyStates[index]?.amount ? <span className="text-[11px] uppercase tracking-[0.16em] text-cyan-200">Changed</span> : null}
-                    </div>
-                    <div className="mt-3 grid gap-3 md:grid-cols-[1fr_180px]">
-                      <div className="space-y-2">
-                        <Input
-                          value={milestone.title}
-                          onChange={(event) => setDraftMilestonesState((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, title: event.target.value } : item))}
-                          placeholder="Milestone title"
-                        />
-                        {milestoneDirtyStates[index]?.title ? <p className="text-xs text-cyan-200">Title changed.</p> : null}
-                      </div>
-                      <div className="space-y-2">
-                        <Input
-                          value={milestone.amount}
-                          onChange={(event) => setDraftMilestonesState((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, amount: event.target.value } : item))}
-                          placeholder="Amount in USDC"
-                        />
-                        {milestoneAmountErrors[index] ? (
-                          <p className="text-xs text-rose-200">{milestoneAmountErrors[index]}</p>
-                        ) : milestoneDirtyStates[index]?.amount ? <p className="text-xs text-cyan-200">Amount changed.</p> : null}
-                      </div>
-                    </div>
-                    <div className="mt-3 space-y-2">
-                      <Textarea
-                        value={milestone.description}
-                        onChange={(event) => setDraftMilestonesState((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, description: event.target.value } : item))}
-                        placeholder="Milestone description"
-                      />
-                      {milestoneDirtyStates[index]?.description ? <p className="text-xs text-cyan-200">Description changed.</p> : null}
-                    </div>
-                  </div>
+                {milestones.map((milestone) => (
+                  <MilestoneRow
+                    key={milestone.id}
+                    milestone={milestone}
+                    currentActor={currentActor}
+                    onApprove={isReviewerActor ? () => handleApproveMilestone(milestone.id) : undefined}
+                    onReject={isReviewerActor ? (_milestoneId, comment) => handleRejectMilestone(milestone.id, comment) : undefined}
+                    onStatusChange={handleMilestoneStatusChange}
+                  />
                 ))}
               </div>
             </CardContent>
           </Card>
-        </>
-      ) : null}
 
-      <section className="space-y-4">
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-          <StatCard label="Milestones" value={milestones.length} />
-          <StatCard label="Awaiting review" value={submittedCount} />
-          <StatCard label="Ready to release" value={readyToReleaseCount} />
-          <StatCard
-            label="Released"
-            value={`${formatUsdc(amountReleased)} USDC`}
-            hint={`${releasedCount} milestone${releasedCount === 1 ? "" : "s"} already settled on Arc`}
-          />
-          <StatCard
-            label="Latest release"
-            value={latestReleasedMilestone ? latestReleasedMilestone.title : "Not released yet"}
-            hint={
-              releaseProof?.confirmedAt
-                ? `Confirmed ${new Date(releaseProof.confirmedAt).toLocaleString()}`
-                : releaseProof
-                  ? "Proof attached to latest payout event"
-                  : "Release the next approved milestone to attach proof"
-            }
+          <PayoutDetailReleaseShell
+            payoutId={payout.id}
+            recipientAddress={contributor?.walletAddress}
+            nextReleasableMilestone={nextReleasableMilestone}
+            releaseMilestoneTitle={latestReleasedMilestone?.title}
+            releaseProof={releaseProof}
+            currentActor={currentActor}
+            onReleaseSuccess={handleReleaseSuccess}
+            onActivityChange={refreshActivity}
           />
         </div>
-        <div className="rounded-2xl border border-dashed border-[var(--border-soft)] px-4 py-3 text-sm text-[var(--text-muted)]">
-          <span className="font-semibold text-white">Next action:</span> {nextActionText}
-        </div>
-      </section>
 
-      <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-        <Card className="sf-shell">
-          <CardHeader>
-            <CardTitle>Milestone Workflow</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {milestones.map((milestone) => (
-                <MilestoneRow
-                  key={milestone.id}
-                  milestone={milestone}
-                  currentActor={currentActor}
-                  onApprove={isReviewerActor ? () => handleApproveMilestone(milestone.id) : undefined}
-                  onReject={isReviewerActor ? (_milestoneId, comment) => handleRejectMilestone(milestone.id, comment) : undefined}
-                  onStatusChange={handleMilestoneStatusChange}
-                />
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        <PayoutDetailReleaseShell
-          payoutId={payout.id}
-          recipientAddress={contributor?.walletAddress}
-          nextReleasableMilestone={nextReleasableMilestone}
-          releaseMilestoneTitle={latestReleasedMilestone?.title}
-          releaseProof={releaseProof}
-          currentActor={currentActor}
-          onReleaseSuccess={handleReleaseSuccess}
-          onActivityChange={refreshActivity}
-        />
+        <ActivityTimeline items={activityItems} />
       </div>
-
-      <ActivityTimeline items={activityItems} />
     </div>
   );
 }

@@ -55,6 +55,85 @@ const proofSignals = [
 export default function Home() {
   return (
     <div className="mx-auto flex max-w-[1320px] flex-col px-6 py-10 md:py-12">
+      <section className="pb-10">
+        <div className="space-y-5 text-center">
+          <span className="inline-flex rounded-full border border-cyan-300/30 bg-cyan-400/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-cyan-200">
+            Build on Arc · Milestone payout workflow
+          </span>
+          <div className="space-y-3">
+            <h1 className="text-4xl font-semibold tracking-tight text-white sm:text-5xl">
+              Release USDC only after milestone approval.
+            </h1>
+            <p className="text-base leading-8 text-[var(--text-primary)] sm:text-lg">
+              SettleFlow helps crypto teams create payout agreements, review submitted work,
+              and keep settlement proof attached once funds move on Arc.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-3 justify-center">
+            <Button asChild>
+              <Link href="/payouts/new">Launch Demo</Link>
+            </Button>
+            <Button asChild variant="secondary">
+              <Link href="/dashboard">View Sample Dashboard</Link>
+            </Button>
+          </div>
+        </div>
+        <div className="rounded-[1.75rem] border border-[var(--border-soft)] bg-[rgba(8,15,31,0.92)] p-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                Demo workflow
+              </p>
+              <h2 className="mt-2 text-xl font-semibold text-white">
+                Community Campaign Design
+              </h2>
+            </div>
+            <span className="rounded-full border border-cyan-300/30 bg-cyan-400/10 px-3 py-1 text-xs font-semibold text-cyan-100">
+              300 USDC
+            </span>
+          </div>
+
+          <div className="mt-5 grid gap-3 sm:grid-cols-3">
+            <div className="rounded-2xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.72)] p-4">
+              <p className="text-xs uppercase tracking-[0.16em] text-[var(--text-muted)]">
+                Milestones
+              </p>
+              <p className="mt-2 text-2xl font-semibold text-white">3</p>
+            </div>
+            <div className="rounded-2xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.72)] p-4">
+              <p className="text-xs uppercase tracking-[0.16em] text-[var(--text-muted)]">
+                Review queue
+              </p>
+              <p className="mt-2 text-2xl font-semibold text-white">1</p>
+            </div>
+            <div className="rounded-2xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.72)] p-4">
+              <p className="text-xs uppercase tracking-[0.16em] text-[var(--text-muted)]">
+                Proof status
+              </p>
+              <p className="mt-2 text-lg font-semibold text-cyan-100">Proof after release</p>
+            </div>
+          </div>
+
+          <div className="mt-5 space-y-3">
+            {flowSteps.map((step, index) => (
+              <div
+                key={step.title}
+                className="flex gap-3 rounded-2xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.58)] p-4"
+              >
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-cyan-300/30 bg-cyan-400/10 text-xs font-semibold text-cyan-100">
+                  {index + 1}
+                </div>
+                <div>
+                  <p className="font-semibold text-white">{step.title}</p>
+                  <p className="mt-1 text-sm leading-6 text-[var(--text-muted)]">
+                    {step.description}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
       <div className="flex flex-col gap-8 md:gap-10">
         <section className="sf-shell overflow-hidden rounded-[2rem] px-6 py-8 md:px-8 md:py-10">
           <div className="grid gap-8 xl:grid-cols-[1.1fr_0.9fr] xl:items-center">
