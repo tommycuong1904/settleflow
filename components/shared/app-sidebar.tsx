@@ -30,7 +30,7 @@ export function AppSidebar() {
           {NAV_ITEMS.map(({ label, href, icon: Icon, soon }) => {
             const isActive =
               href === "/dashboard"
-                ? pathname === "/dashboard"
+                ? pathname === "/dashboard" || pathname === "/app"
                 : pathname.startsWith(href);
             return (
               <li key={href}>

@@ -33,8 +33,16 @@ export function SiteHeader() {
           {navLinks.map(([label, href]) => (
             <a key={href} href={href} onClick={() => setOpen(false)} className={isHome ? undefined : (label === (isHome ? '' : pathname.replace('/', '')) ? 'sf-active-link' : undefined)}>{label}</a>
           ))}
-          {/* Keep the create‑payout button on all pages */}
-          <a href="/payouts/new" className="sf-button sf-button-small">Create a payout <ArrowRight size={15} /></a>
+          {/* Launch App button on landing page */}
+          {isHome ? (
+            <a href="/app" className="sf-button sf-button-small">
+              Launch App <ArrowRight size={15} />
+            </a>
+          ) : (
+            <a href="/payouts/new" className="sf-button sf-button-small">
+              Create a payout <ArrowRight size={15} />
+            </a>
+          )}
         </nav>
         <button className="sf-menu" onClick={() => setOpen(!open)} aria-label={open ? 'Close menu' : 'Open menu'} aria-expanded={open}>{open ? <X size={20} /> : <Menu size={20} />}</button>
       </div>
