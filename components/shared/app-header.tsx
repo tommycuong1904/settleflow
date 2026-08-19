@@ -3,8 +3,9 @@
 import React, { useState } from "react";
 import { Button } from "@/components/shared/button";
 import { RoleSwitcher } from "@/components/shared/role-switcher";
+import { FaucetModal } from "@/components/shared/faucet-modal";
 import { useWallet } from "@/lib/context/wallet-context";
-import { ExternalLink, LogOut, Wallet, User, ChevronDown } from "lucide-react";
+import { ExternalLink, LogOut, Wallet, User, ChevronDown, RefreshCw, Droplets } from "lucide-react";
 
 export function AppHeader() {
   const {
@@ -15,11 +16,14 @@ export function AppHeader() {
     authType,
     network,
     usdcBalance,
+    isRefreshingBalance,
     openAuthModal,
     disconnect,
+    refreshBalance,
   } = useWallet();
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isFaucetOpen, setIsFaucetOpen] = useState(false);
 
   const displayIdentifier = email
     ? email.split("@")[0]
@@ -32,10 +36,9 @@ export function AppHeader() {
       {/* Role Switcher */}
       <RoleSwitcher />
 
-      {/* Get test USDC button */}
-      <Button variant="ghost" href="https://faucet.circle.com/">
-        Get test USDC{" "}
-        <ExternalLink className="ml-1" size={12} aria-hidden="true" />
+      {/* Get test USDC — opens faucet modal */}
+      <Button variant="ghost" onClick={() => setIsFaucetOpen(true)}>
+        <Droplets size={13} className="mr-1 text-cyan-400" /> Get test USDC
       </Button>
 
       {/* Network indicator */}
@@ -92,10 +95,37 @@ export function AppHeader() {
 
                 <div className="flex items-center justify-between py-1 text-slate-300">
                   <span>Balance:</span>
-                  <span className="font-semibold text-white">
-                    {usdcBalance} USDC
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-white">
+                      {isRefreshingBalance ? (
+                        <span className="text-slate-400 animate-pulse">Fetching...</span>
+                      ) : (
+                        <>{usdcBalance} USDC</>
+                      )}
+                    </span>
+                    <button
+                      onClick={() => { void refreshBalance(); }}
+                      disabled={isRefreshingBalance}
+                      className="text-slate-500 hover:text-cyan-400 transition-colors disabled:opacity-40"
+                      title="Refresh live balance from Arc Testnet"
+                    >
+                      <RefreshCw
+                        size={11}
+                        className={isRefreshingBalance ? "animate-spin" : ""}
+                      />
+                    </button>
+                  </div>
                 </div>
+
+                <button
+                  onClick={() => {
+                    setIsDropdownOpen(false);
+                    setIsFaucetOpen(true);
+                  }}
+                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 py-2 transition-colors font-medium text-[11px] mb-1"
+                >
+                  <Droplets size={13} /> Get Testnet USDC
+                </button>
 
                 <button
                   onClick={() => {
@@ -111,6 +141,13 @@ export function AppHeader() {
           )}
         </div>
       )}
+
+      {/* Faucet Modal */}
+      <FaucetModal
+        isOpen={isFaucetOpen}
+        onClose={() => setIsFaucetOpen(false)}
+        userAddress={address}
+      />
     </div>
   );
 }

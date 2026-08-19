@@ -9,6 +9,7 @@ import React, {
   type ReactNode,
 } from "react";
 import { connectBrowserWallet } from "@/lib/arc/browser-wallet";
+import { fetchLiveArcBalances } from "@/lib/arc/onchain";
 
 export type AuthType = "web2_email" | "web2_google" | "web3_wallet" | null;
 
@@ -21,9 +22,11 @@ export interface WalletContextValue {
   walletName: string | null;
   network: string;
   usdcBalance: string;
+  isRefreshingBalance: boolean;
   isAuthModalOpen: boolean;
   openAuthModal: () => void;
   closeAuthModal: () => void;
+  refreshBalance: () => Promise<void>;
   connectWeb3: (preferredWallet?: string) => Promise<void>;
   connectWeb2: (identifier: string, provider?: "google" | "email") => Promise<void>;
   disconnect: () => void;
@@ -52,6 +55,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const [walletName, setWalletName] = useState<string | null>(null);
   const [network, setNetwork] = useState<string>("Arc Testnet");
   const [usdcBalance, setUsdcBalance] = useState<string>("1,250.00");
+  const [isRefreshingBalance, setIsRefreshingBalance] = useState<boolean>(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
 
   // Restore session on initial load
@@ -97,6 +101,28 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
   const openAuthModal = useCallback(() => setIsAuthModalOpen(true), []);
   const closeAuthModal = useCallback(() => setIsAuthModalOpen(false), []);
+
+  const refreshBalance = useCallback(async () => {
+    if (!address) return;
+    setIsRefreshingBalance(true);
+    try {
+      const { usdc } = await fetchLiveArcBalances(address);
+      setUsdcBalance(usdc);
+      saveSession({ usdcBalance: usdc });
+    } catch {
+      // Silently ignore; keep existing balance
+    } finally {
+      setIsRefreshingBalance(false);
+    }
+  }, [address, saveSession]);
+
+  // Auto-refresh balance on address change
+  useEffect(() => {
+    if (isConnected && address) {
+      void refreshBalance();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [address, isConnected]);
 
   const connectWeb3 = useCallback(
     async (preferredWallet?: string) => {
@@ -213,9 +239,11 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         walletName,
         network,
         usdcBalance,
+        isRefreshingBalance,
         isAuthModalOpen,
         openAuthModal,
         closeAuthModal,
+        refreshBalance,
         connectWeb3,
         connectWeb2,
         disconnect,
