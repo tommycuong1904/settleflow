@@ -10,6 +10,7 @@ type ButtonProps = {
   onClick?: MouseEventHandler<HTMLButtonElement>;
   disabled?: boolean;
   type?: "button" | "submit" | "reset";
+  className?: string; // optional additional classes
 };
 
 const baseClasses =
@@ -33,8 +34,9 @@ export function Button({
   onClick,
   disabled = false,
   type = "button",
+  className: extraClassName,
 }: ButtonProps) {
-  const className = `${baseClasses} ${variantClasses[variant]} ${disabledClasses}`;
+  const className = `${baseClasses} ${variantClasses[variant]} ${disabledClasses} ${extraClassName ?? ''}`;
 
   if (href) {
     return (
