@@ -17,6 +17,9 @@ export const metadata: Metadata = {
   description: "Arc-native USDC payout workflow for crypto teams.",
 };
 
+import { WalletProvider } from "@/lib/context/wallet-context";
+import { AuthModal } from "@/components/shared/auth-modal";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -29,7 +32,10 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full bg-background text-slate-100">
-        {children}
+        <WalletProvider>
+          {children}
+          <AuthModal />
+        </WalletProvider>
       </body>
     </html>
   );

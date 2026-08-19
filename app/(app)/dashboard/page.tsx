@@ -6,6 +6,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { SectionCard } from "@/components/shared/section-card";
 import { getDashboardData } from "@/lib/repositories/dashboard";
 import { resolveProductContextFromCookies } from "@/lib/runtime/product-context-server";
+import { WalletGate } from "@/components/dashboard/wallet-gate";
 import { formatUsdc, shortenAddress } from "@/lib/utils/format";
 
 export default async function DashboardPage() {
@@ -111,6 +112,9 @@ export default async function DashboardPage() {
           </Button>
         </div>
       </div>
+
+      {/* Inline Wallet Connection Gate (Hybrid Web2.5) */}
+      <WalletGate />
 
       <section className="sf-shell rounded-3xl p-6 md:p-7">
         <div className="grid gap-6 xl:grid-cols-[1.25fr_0.75fr] xl:items-start">

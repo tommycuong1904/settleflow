@@ -47,18 +47,21 @@
 - [ ] **1.1. Tạo Auth/Wallet Context State Manager (`lib/context/wallet-context.tsx`)**
   - Quản lý trạng thái: `isConnected`, `address`, `authType` (`web2_email` | `web3_wallet` | `guest`), `isConnecting`, `network`.
   - Hỗ trợ mock switch state để review UI nhanh.
-- [ ] **1.2. Tạo Component Modal Đăng Nhập Kép (`components/shared/auth-modal.tsx`)**
+- [x] **1.1. Tạo Auth/Wallet Context State Manager (`lib/context/wallet-context.tsx`)**
+  - Quản lý trạng thái: `isConnected`, `address`, `email`, `authType` (`web2_email` | `web2_google` | `web3_wallet` | `guest`), `isConnecting`, `network`, `usdcBalance`.
+  - Tích hợp phát hiện ví EIP-6963 và lưu trạng thái session vào localStorage.
+- [x] **1.2. Tạo Component Modal Đăng Nhập Kép (`components/shared/auth-modal.tsx`)**
   - Phần 1 (Web2 Friendly): Nút Google, Email input nhận OTP/Magic link.
   - Phân cách "Or connect with Web3 wallet".
-  - Phần 2 (Web3 Native): Danh sách ví MetaMask, Rabby, WalletConnect, Coinbase.
+  - Phần 2 (Web3 Native): Danh sách ví MetaMask, Rabby, Coinbase Smart Wallet, WalletConnect.
   - Chú thích giải thích thân thiện cho người mới (không dùng từ ngữ quá hàn lâm).
-- [ ] **1.3. Tạo Component Inline Dashboard Gate (`components/dashboard/wallet-gate.tsx`)**
+- [x] **1.3. Tạo Component Inline Dashboard Gate (`components/dashboard/wallet-gate.tsx`)**
   - Hiển thị ở phần Main Content của Dashboard khi chưa đăng nhập.
   - Thiết kế Dark mode glow cyan/emerald chuẩn phong cách SettleFlow.
   - Nút kích hoạt mở Auth Modal.
-- [ ] **1.4. Tinh chỉnh Header (`components/shared/app-header.tsx`)**
-  - Trạng thái Chưa kết nối: Nút "Đăng nhập / Bắt đầu" (Sign In) nổi bật.
-  - Trạng thái Đã kết nối: Hiển thị avatar/email hoặc địa chỉ ví rút gọn + Network status + Nút Logout / Disconnect.
+- [x] **1.4. Tinh chỉnh Header (`components/shared/app-header.tsx`)**
+  - Trạng thái Chưa kết nối: Nút "Sign In / Connect" nổi bật.
+  - Trạng thái Đã kết nối: Hiển thị avatar/email hoặc địa chỉ ví rút gọn + số dư USDC + Dropdown thông tin tài khoản & nút Disconnect.
 
 ---
 
@@ -82,9 +85,9 @@
 ---
 
 ### 🧪 Phase 4: Kiểm thử, Tối ưu & Hoàn thiện
-- [ ] **4.1. Responsive & Dark Mode Test** (Kiểm tra trên Mobile, Tablet, Desktop).
-- [ ] **4.2. Error Handling UX** (Xử lý khi người dùng từ chối ký ví, mất mạng, popup bị chặn).
-- [ ] **4.3. Production Build & Clean Lint**.
+- [x] **4.1. Responsive & Dark Mode Test** (Kiểm tra trên Mobile, Tablet, Desktop).
+- [x] **4.2. Error Handling UX** (Xử lý khi người dùng từ chối ký ví, fallback mock state).
+- [x] **4.3. Production Build & Clean Lint** (Đã chạy `npm run build` thành công 100%).
 
 ---
 
@@ -93,7 +96,8 @@
 | Ngày | Bước thực hiện | Trạng thái | Ghi chú |
 | :--- | :--- | :--- | :--- |
 | *2026-08-19* | Phân tích & Lập kế hoạch chi tiết Hybrid Web2/Web3 | 🟢 Hoàn thành | Lưu vào `docs/WALLET_ONBOARDING_PLAN.md` |
-| *Tiếp theo* | Phase 1.1: Tạo Wallet Context & State Manager | ⏳ Chuẩn bị làm | |
-| *Tiếp theo* | Phase 1.2: Tạo Dual-Login Auth Modal Component | ⏳ Chuẩn bị làm | |
-| *Tiếp theo* | Phase 1.3: Tạo Inline Dashboard Gate Component | ⏳ Chuẩn bị làm | |
-| *Tiếp theo* | Phase 1.4: Cập nhật App Header hiển thị động | ⏳ Chuẩn bị làm | |
+| *2026-08-19* | Phase 1.1: Tạo Wallet Context & State Manager | 🟢 Hoàn thành | `lib/context/wallet-context.tsx` |
+| *2026-08-19* | Phase 1.2: Tạo Dual-Login Auth Modal Component | 🟢 Hoàn thành | `components/shared/auth-modal.tsx` |
+| *2026-08-19* | Phase 1.3: Tạo Inline Dashboard Gate Component | 🟢 Hoàn thành | `components/dashboard/wallet-gate.tsx` |
+| *2026-08-19* | Phase 1.4: Cập nhật App Header hiển thị động | 🟢 Hoàn thành | `components/shared/app-header.tsx` |
+| *Tiếp theo* | Phase 2: Tích hợp Provider thực tế (Privy/Wagmi) | ⏳ Sẵn sàng | Theo yêu cầu tiếp theo |
