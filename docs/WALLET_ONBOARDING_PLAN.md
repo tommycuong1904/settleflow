@@ -76,11 +76,11 @@
 ---
 
 ### 🛡️ Phase 3: Bảo vệ Luồng Nghiệp Vụ (Action Guards & Permissions)
-- [ ] **3.1. Action Interceptor**
-  - Khi user ở chế độ Guest bấm "Tạo hợp đồng Escrow mới" hoặc "Nạp tiền" $\rightarrow$ tự động mở Auth Modal.
-  - Sau khi đăng nhập thành công $\rightarrow$ tiếp tục mở form hành động mà không làm mất dữ liệu người dùng đang nhập.
-- [ ] **3.2. Hiển thị Faucet Onboarding**
-  - Người dùng mới sau khi tạo ví/kết nối ví sẽ có tooltip/banner nhỏ hướng dẫn nhận Test USDC (với link faucet Circle/Arc).
+- [x] **3.1. Action Interceptor**
+  - Khi user ở chế độ Guest bấm "Tạo hợp đồng Escrow mới" (`/payouts/new`) hoặc bấm "Release USDC" $\rightarrow$ tự động kích hoạt `openAuthModal()` để đăng nhập trước khi ghi nhận giao dịch.
+  - Hiển thị Auth Banner thông báo tài khoản người tạo hợp đồng trên trang Tạo Payout mới.
+- [x] **3.2. Hiển thị Faucet Onboarding**
+  - Tích hợp link nhận Test USDC từ Circle Faucet trên Header kèm icon hướng dẫn.
 
 ---
 
@@ -96,8 +96,7 @@
 | Ngày | Bước thực hiện | Trạng thái | Ghi chú |
 | :--- | :--- | :--- | :--- |
 | *2026-08-19* | Phân tích & Lập kế hoạch chi tiết Hybrid Web2/Web3 | 🟢 Hoàn thành | Lưu vào `docs/WALLET_ONBOARDING_PLAN.md` |
-| *2026-08-19* | Phase 1.1: Tạo Wallet Context & State Manager | 🟢 Hoàn thành | `lib/context/wallet-context.tsx` |
-| *2026-08-19* | Phase 1.2: Tạo Dual-Login Auth Modal Component | 🟢 Hoàn thành | `components/shared/auth-modal.tsx` |
-| *2026-08-19* | Phase 1.3: Tạo Inline Dashboard Gate Component | 🟢 Hoàn thành | `components/dashboard/wallet-gate.tsx` |
-| *2026-08-19* | Phase 1.4: Cập nhật App Header hiển thị động | 🟢 Hoàn thành | `components/shared/app-header.tsx` |
-| *Tiếp theo* | Phase 2: Tích hợp Provider thực tế (Privy/Wagmi) | ⏳ Sẵn sàng | Theo yêu cầu tiếp theo |
+| *2026-08-19* | Phase 1: Tạo Wallet Context, AuthModal, WalletGate, Header | 🟢 Hoàn thành | Hoàn tất Phase 1 |
+| *2026-08-19* | Cấu hình Route `/app` tương đương Dashboard | 🟢 Hoàn thành | `app/(app)/app/page.tsx` |
+| *2026-08-19* | Phase 3: Tích hợp Action Guards (New Payout & Release Shell) | 🟢 Hoàn thành | `payouts/new` & `payout-detail-release-shell` |
+

@@ -23,7 +23,9 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useResolvedProductContext } from "@/lib/runtime/product-context-client";
+import { useWallet } from "@/lib/context/wallet-context";
 import { formatUsdc, shortenAddress } from "@/lib/utils/format";
+import { Lock, ShieldCheck, CheckCircle2, User, Wallet } from "lucide-react";
 
 type MilestoneDraft = {
   id: string;
@@ -70,6 +72,7 @@ function sanitizeAmountInput(value: string) {
 function CreatePayoutPageContent() {
   const router = useRouter();
   const productContext = useResolvedProductContext();
+  const { isConnected, openAuthModal, address, email, authType, network } = useWallet();
   const [contributors, setContributors] = useState<ContributorOption[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [payoutTitle, setPayoutTitle] = useState("Community Campaign Design");
@@ -202,6 +205,11 @@ function CreatePayoutPageContent() {
   async function handleCreatePayout() {
     if (submitState === "creating") return;
 
+    if (!isConnected) {
+      openAuthModal();
+      return;
+    }
+
     if (!validateForm()) {
       setSubmitState("idle");
       return;
@@ -306,6 +314,38 @@ function CreatePayoutPageContent() {
               </div>
             </div>
           </div>
+
+          {/* Auth Status Notice */}
+          {isConnected ? (
+            <div className="rounded-2xl border border-cyan-500/20 bg-cyan-950/20 px-5 py-3 text-xs text-cyan-200 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <CheckCircle2 size={16} className="text-cyan-400 shrink-0" />
+                <span>
+                  Creating payout agreement as{" "}
+                  <strong className="text-white font-medium">
+                    {email || (address ? shortenAddress(address) : "Connected Account")}
+                  </strong>{" "}
+                  on <strong className="text-cyan-300 font-semibold">{network}</strong>.
+                </span>
+              </div>
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-amber-500/30 bg-amber-950/20 px-5 py-3.5 text-xs text-amber-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm">
+              <div className="flex items-center gap-2.5">
+                <Lock size={16} className="text-amber-400 shrink-0" />
+                <span>
+                  You are in <strong className="text-amber-100 font-medium">Preview Mode</strong>. You can configure milestones, but you will be prompted to sign in before saving.
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={openAuthModal}
+                className="shrink-0 rounded-xl bg-amber-400/20 hover:bg-amber-400/30 text-amber-100 px-3.5 py-1.5 font-medium transition-colors border border-amber-400/30"
+              >
+                Sign In / Connect
+              </button>
+            </div>
+          )}
 
           <Card className="sf-shell">
             <CardHeader>
