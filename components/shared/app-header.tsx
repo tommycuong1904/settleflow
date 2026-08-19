@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { Button } from "@/components/shared/button";
+import { RoleSwitcher } from "@/components/shared/role-switcher";
 import { useWallet } from "@/lib/context/wallet-context";
 import { ExternalLink, LogOut, Wallet, User, ChevronDown } from "lucide-react";
 
@@ -27,7 +28,10 @@ export function AppHeader() {
     : "Connected";
 
   return (
-    <div className="sf-app-header relative">
+    <div className="sf-app-header relative flex flex-wrap items-center gap-3">
+      {/* Role Switcher */}
+      <RoleSwitcher />
+
       {/* Get test USDC button */}
       <Button variant="ghost" href="https://faucet.circle.com/">
         Get test USDC{" "}
