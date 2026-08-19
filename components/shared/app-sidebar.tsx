@@ -4,10 +4,17 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, ArrowRightLeft, Users, Activity } from "lucide-react";
 
-const NAV_ITEMS = [
+type NavItem = {
+  label: string;
+  href: string;
+  icon: React.ComponentType<{ size?: number; className?: string; "aria-hidden"?: boolean | "true" | "false" }>;
+  soon?: boolean;
+};
+
+const NAV_ITEMS: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "Payouts", href: "/payouts", icon: ArrowRightLeft },
-  { label: "Contributors", href: "/contributors", icon: Users, soon: true },
+  { label: "Contributors", href: "/contributors", icon: Users },
   { label: "Activity", href: "/activity", icon: Activity },
 ];
 
