@@ -35,7 +35,7 @@ export function SiteHeader() {
           ))}
           {/* Launch App button on landing page */}
           {isHome ? (
-            <a href="/app" className="sf-button sf-button-small">
+            <a href="/dashboard" className="sf-button sf-button-small">
               Launch App <ArrowRight size={15} />
             </a>
           ) : (
