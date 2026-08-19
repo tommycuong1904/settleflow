@@ -8,6 +8,7 @@ import { formatUsdc, shortenAddress } from "@/lib/utils/format";
 import { AddContributorDialog } from "./add-contributor-dialog";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Button } from "@/components/shared/button";
+import { useToast } from "@/lib/context/toast-context";
 import {
   Search,
   UserPlus,
@@ -31,14 +32,21 @@ export function ContributorListClient({
   initialContributors,
 }: ContributorListClientProps) {
   const router = useRouter();
+  const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "archived">("all");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  const handleCopy = (id: string, text: string) => {
+  const handleCopy = (id: string, text: string, name?: string) => {
     navigator.clipboard.writeText(text);
     setCopiedId(id);
+    toast({
+      variant: "success",
+      title: "Address Copied",
+      description: `Copied ${name ? `${name}'s` : ""} wallet address to clipboard.`,
+      durationMs: 2500,
+    });
     setTimeout(() => setCopiedId(null), 2000);
   };
 
@@ -207,10 +215,10 @@ export function ContributorListClient({
                         </span>
                         <button
                           onClick={() =>
-                            handleCopy(contributor.id, contributor.walletAddress)
+                            handleCopy(`wallet-${contributor.id}`, contributor.walletAddress, contributor.displayName)
                           }
-                          title="Copy full wallet address"
-                          className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-cyan-300 transition-colors"
+                          className="inline-flex items-center gap-1.5 font-mono text-slate-300 hover:text-cyan-300 transition-colors"
+                          title="Copy wallet address"
                         >
                           {isCopied ? (
                             <Check size={13} className="text-emerald-400" />

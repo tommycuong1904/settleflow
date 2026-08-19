@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useResolvedProductContext } from "@/lib/runtime/product-context-client";
 import { PRODUCT_CONTEXT_COOKIE_NAMES, type ProductActor } from "@/lib/runtime/product-context";
 import { Crown, CheckCircle2, Search, Code2, ChevronDown, Check } from "lucide-react";
+import { useToast } from "@/lib/context/toast-context";
 
 type RoleOption = {
   actor: ProductActor;
@@ -50,6 +51,7 @@ export function RoleSwitcher() {
   const router = useRouter();
   const productContext = useResolvedProductContext();
   const currentActor = productContext.actor;
+  const { toast } = useToast();
 
   const [isOpen, setIsOpen] = useState(false);
 
@@ -60,6 +62,15 @@ export function RoleSwitcher() {
     // Set cookie for 1 year
     document.cookie = `${PRODUCT_CONTEXT_COOKIE_NAMES.actor}=${nextActor}; path=/; max-age=31536000; SameSite=Lax`;
     setIsOpen(false);
+    
+    const nextRole = ROLES.find((r) => r.actor === nextActor);
+    toast({
+      variant: "info",
+      title: "Role Switched",
+      description: `Viewing application as ${nextRole?.badge}`,
+      durationMs: 2500,
+    });
+    
     router.refresh();
   };
 

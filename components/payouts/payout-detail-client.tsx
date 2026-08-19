@@ -11,6 +11,7 @@ import { Button } from "@/components/shared/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/lib/context/toast-context";
 import type { ActivityItem } from "@/lib/models/activity-item";
 import type { Contributor } from "@/lib/models/contributor";
 import type { Milestone } from "@/lib/models/milestone";
@@ -108,6 +109,7 @@ const [reviewingMilestoneId, setReviewingMilestoneId] = useState<string | null>(
   const [draftSaveNotice, setDraftSaveNotice] = useState<string | null>(null);
   const [reviewError, setReviewError] = useState<string | null>(null);
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
+  const { toast } = useToast();
 
   const [activatingPayout, setActivatingPayout] = useState(false);
   const [savingDraftTitle, setSavingDraftTitle] = useState(false);
@@ -268,8 +270,12 @@ const [reviewingMilestoneId, setReviewingMilestoneId] = useState<string | null>(
         body: JSON.stringify({}),
       });
       const data = (await response.json()) as { error?: string; payout?: { status?: Payout["status"] } };
-      if (!response.ok) throw new Error(data.error ?? "Unable to activate payout.");
       setPayoutStatusState(data.payout?.status ?? "active");
+      toast({
+        variant: "success",
+        title: "Payout Activated",
+        description: "Draft is now active. Milestones can be submitted.",
+      });
       await refreshActivity();
     } catch (error) {
       setReviewError(error instanceof Error ? error.message : "Unable to activate payout.");
@@ -346,6 +352,12 @@ const [reviewingMilestoneId, setReviewingMilestoneId] = useState<string | null>(
       setPayoutDescriptionCommitted(resolvedDescription);
       setPayoutDescriptionState(resolvedDescription);
       setDraftSaveNotice("Draft title saved.");
+      toast({
+        variant: "info",
+        title: "Draft Saved",
+        description: "Payout title has been updated.",
+        durationMs: 2500,
+      });
     } catch (error) {
       setReviewError(error instanceof Error ? error.message : "Unable to update payout draft.");
       setPayoutTitleState(payoutTitleCommitted);
@@ -373,6 +385,12 @@ const [reviewingMilestoneId, setReviewingMilestoneId] = useState<string | null>(
       setPayoutDescriptionState(resolvedDescription);
       setPayoutTotalAmountState(Number(updated?.totalAmountUsdc ?? payoutTotalAmountState));
       setDraftSaveNotice("Draft description saved.");
+      toast({
+        variant: "info",
+        title: "Draft Saved",
+        description: "Payout description has been updated.",
+        durationMs: 2500,
+      });
     } catch (error) {
       setReviewError(error instanceof Error ? error.message : "Unable to update payout draft.");
       setPayoutDescriptionState(payoutDescriptionCommitted);
@@ -411,6 +429,12 @@ const [reviewingMilestoneId, setReviewingMilestoneId] = useState<string | null>(
       setDraftMilestonesState(resolvedMilestones);
       setPayoutTotalAmountState(Number(updated?.totalAmountUsdc ?? payoutTotalAmountState));
       setDraftSaveNotice("Draft milestones saved.");
+      toast({
+        variant: "info",
+        title: "Draft Saved",
+        description: "Milestones and allocations updated.",
+        durationMs: 2500,
+      });
       if (updated?.title) {
         setPayoutTitleCommitted(updated.title);
         setPayoutTitleState(updated.title);
@@ -495,6 +519,13 @@ const [reviewingMilestoneId, setReviewingMilestoneId] = useState<string | null>(
             : milestone,
         ),
       );
+      toast({
+        variant: decision === "approved" ? "success" : "warning",
+        title: `Milestone ${decision === "approved" ? "Approved" : "Rejected"}`,
+        description: decision === "approved" 
+          ? "Deliverable accepted. Ready for USDC release." 
+          : "Revisions requested. Contributor notified.",
+      });
       await refreshActivity();
     } catch (error) {
       setReviewError(error instanceof Error ? error.message : "Review request failed.");
@@ -531,6 +562,11 @@ const [reviewingMilestoneId, setReviewingMilestoneId] = useState<string | null>(
       ),
     );
     window.sessionStorage.setItem(getStorageKey(payout.id), JSON.stringify(nextState));
+    toast({
+      variant: "success",
+      title: "USDC Released on Arc",
+      description: "Milestone funds settled onchain. Tx proof recorded.",
+    });
     void refreshActivity();
   }
 

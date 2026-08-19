@@ -17,6 +17,7 @@ import {
   Sparkles,
   ShieldCheck,
 } from "lucide-react";
+import { useToast } from "@/lib/context/toast-context";
 
 type FaucetModalProps = {
   isOpen: boolean;
@@ -25,6 +26,7 @@ type FaucetModalProps = {
 };
 
 export function FaucetModal({ isOpen, onClose, userAddress }: FaucetModalProps) {
+  const { toast } = useToast();
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [addingNetwork, setAddingNetwork] = useState(false);
   const [networkNotice, setNetworkNotice] = useState<{
@@ -34,9 +36,15 @@ export function FaucetModal({ isOpen, onClose, userAddress }: FaucetModalProps) 
 
   if (!isOpen) return null;
 
-  const handleCopy = (key: string, text: string) => {
+  const handleCopy = (key: string, text: string, label: string) => {
     navigator.clipboard.writeText(text);
     setCopiedKey(key);
+    toast({
+      variant: "success",
+      title: "Copied to Clipboard",
+      description: `${label} copied successfully.`,
+      durationMs: 2500,
+    });
     setTimeout(() => setCopiedKey(null), 2000);
   };
 
@@ -45,17 +53,25 @@ export function FaucetModal({ isOpen, onClose, userAddress }: FaucetModalProps) 
     setNetworkNotice(null);
     try {
       await addArcNetworkToWallet();
+      toast({
+        variant: "success",
+        title: "Network Added",
+        description: "Arc Testnet has been added to your wallet.",
+      });
       setNetworkNotice({
         type: "success",
         message: "Arc Testnet added to your wallet successfully!",
       });
     } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : "Failed to add Arc Testnet. Please add it manually.";
+      toast({
+        variant: "error",
+        title: "Network Error",
+        description: errorMsg,
+      });
       setNetworkNotice({
         type: "error",
-        message:
-          err instanceof Error
-            ? err.message
-            : "Failed to add Arc Testnet. Please add it manually.",
+        message: errorMsg,
       });
     } finally {
       setAddingNetwork(false);
@@ -175,7 +191,7 @@ export function FaucetModal({ isOpen, onClose, userAddress }: FaucetModalProps) 
                     {ARC_CONFIG.rpcUrl}
                   </span>
                   <button
-                    onClick={() => handleCopy("rpc", ARC_CONFIG.rpcUrl)}
+                    onClick={() => handleCopy("rpc", ARC_CONFIG.rpcUrl, "RPC URL")}
                     className="text-slate-400 hover:text-cyan-300"
                   >
                     {copiedKey === "rpc" ? (
@@ -193,7 +209,7 @@ export function FaucetModal({ isOpen, onClose, userAddress }: FaucetModalProps) 
                   <span className="text-slate-300">{ARC_CONFIG.chainId}</span>
                   <button
                     onClick={() =>
-                      handleCopy("chainId", ARC_CONFIG.chainId.toString())
+                      handleCopy("chainId", ARC_CONFIG.chainId.toString(), "Chain ID")
                     }
                     className="text-slate-400 hover:text-cyan-300"
                   >

@@ -13,6 +13,7 @@ import {
   AlertCircle,
   CheckCircle2,
 } from "lucide-react";
+import { useToast } from "@/lib/context/toast-context";
 
 type AddContributorDialogProps = {
   isOpen: boolean;
@@ -26,6 +27,7 @@ export function AddContributorDialog({
   onSuccess,
 }: AddContributorDialogProps) {
   const router = useRouter();
+  const { toast } = useToast();
 
   const [name, setName] = useState("");
   const [walletAddress, setWalletAddress] = useState("");
@@ -70,6 +72,12 @@ export function AddContributorDialog({
       if (!res.ok) {
         throw new Error(data.error || "Failed to create contributor.");
       }
+
+      toast({
+        variant: "success",
+        title: "Contributor Added",
+        description: `${name.trim()} has been registered successfully.`,
+      });
 
       setSuccessMessage("Contributor registered successfully!");
       setTimeout(() => {
