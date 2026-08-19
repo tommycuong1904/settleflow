@@ -17,7 +17,9 @@ import type { Milestone } from "@/lib/models/milestone";
 import type { Payout } from "@/lib/models/payout";
 import type { TransactionProof } from "@/lib/models/transaction-proof";
 import type { ProductActor } from "@/lib/runtime/product-context";
+import { PayoutReceiptModal } from "@/components/payouts/payout-receipt-modal";
 import { formatUsdc, shortenAddress } from "@/lib/utils/format";
+import { Crown, Search, Code2, FileCheck, CheckCircle2, AlertCircle } from "lucide-react";
 
 type PersistedReleaseState = {
   releasedMilestoneId: string;
@@ -105,6 +107,7 @@ const [reviewingMilestoneId, setReviewingMilestoneId] = useState<string | null>(
   const [activityItems, setActivityItems] = useState(initialActivity);
   const [draftSaveNotice, setDraftSaveNotice] = useState<string | null>(null);
   const [reviewError, setReviewError] = useState<string | null>(null);
+  const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
 
   const [activatingPayout, setActivatingPayout] = useState(false);
   const [savingDraftTitle, setSavingDraftTitle] = useState(false);
@@ -534,19 +537,64 @@ const [reviewingMilestoneId, setReviewingMilestoneId] = useState<string | null>(
   return (
     <div className="sf-container flex flex-col py-10 md:py-12">
       <div className="flex flex-col gap-8">
-        <div className="space-y-3">
-          <p className="text-sm font-medium uppercase tracking-[0.22em] text-cyan-300">
-            Payout detail
-          </p>
-          <div className="space-y-2">
-            <h1 className="text-3xl font-semibold tracking-tight text-white md:text-4xl">
-              {payoutTitleState}
-            </h1>
-            <p className="max-w-3xl text-sm leading-7 text-[var(--text-primary)] md:text-base">
-              {payoutDescriptionState.trim().length > 0
-                ? payoutDescriptionState
-                : "Review milestone submissions, approve release in sequence, and keep Arc settlement proof attached to the payout flow."}
+        {/* Role Simulation Context Banner */}
+        <div
+          className={`rounded-2xl border p-4 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+            currentActor === "owner"
+              ? "bg-amber-500/10 border-amber-500/30 text-amber-200"
+              : currentActor === "reviewer"
+              ? "bg-cyan-500/10 border-cyan-500/30 text-cyan-200"
+              : "bg-emerald-500/10 border-emerald-500/30 text-emerald-200"
+          }`}
+        >
+          <div className="flex items-center gap-2.5">
+            {currentActor === "owner" ? (
+              <Crown size={18} className="text-amber-400 shrink-0" />
+            ) : currentActor === "reviewer" ? (
+              <Search size={18} className="text-cyan-400 shrink-0" />
+            ) : (
+              <Code2 size={18} className="text-emerald-400 shrink-0" />
+            )}
+            <p className="leading-relaxed">
+              Viewing as <strong className="font-semibold uppercase tracking-wider">{currentActor}</strong>:{" "}
+              {currentActor === "owner"
+                ? "You have full control to activate draft agreements, refine milestone allocations, and trigger Arc USDC releases."
+                : currentActor === "reviewer"
+                ? "Your primary role is to inspect milestone deliverables and approve or reject submissions to authorize payout release."
+                : "You can submit milestone deliverables for review and track your upcoming USDC escrow settlements."}
             </p>
+          </div>
+          <span className="text-[10px] uppercase font-mono tracking-wider opacity-70 shrink-0">
+            Use Header to switch role
+          </span>
+        </div>
+
+        {/* Header with Export Receipt CTA */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div className="space-y-3">
+            <p className="text-sm font-medium uppercase tracking-[0.22em] text-cyan-300">
+              Payout detail
+            </p>
+            <div className="space-y-2">
+              <h1 className="text-3xl font-semibold tracking-tight text-white md:text-4xl">
+                {payoutTitleState}
+              </h1>
+              <p className="max-w-3xl text-sm leading-7 text-[var(--text-primary)] md:text-base">
+                {payoutDescriptionState.trim().length > 0
+                  ? payoutDescriptionState
+                  : "Review milestone submissions, approve release in sequence, and keep Arc settlement proof attached to the payout flow."}
+              </p>
+            </div>
+          </div>
+
+          <div className="shrink-0">
+            <button
+              type="button"
+              onClick={() => setIsReceiptModalOpen(true)}
+              className="flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800/80 px-4 py-2.5 text-xs font-semibold text-slate-200 hover:bg-slate-700 hover:text-white transition-all shadow-sm"
+            >
+              <FileCheck size={15} className="text-cyan-400" /> Export Settlement Receipt
+            </button>
           </div>
         </div>
 
@@ -785,6 +833,16 @@ const [reviewingMilestoneId, setReviewingMilestoneId] = useState<string | null>(
         </div>
 
         <ActivityTimeline items={activityItems} />
+
+        {/* Export Receipt Modal */}
+        <PayoutReceiptModal
+          isOpen={isReceiptModalOpen}
+          onClose={() => setIsReceiptModalOpen(false)}
+          payout={payout}
+          contributor={contributor}
+          milestones={milestones}
+          releaseProof={releaseProof}
+        />
       </div>
     </div>
   );
