@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -71,6 +71,8 @@ function sanitizeAmountInput(value: string) {
 
 function CreatePayoutPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const queryContributorId = searchParams.get("contributorId");
   const productContext = useResolvedProductContext();
   const { isConnected, openAuthModal, address, email, authType, network } = useWallet();
   const [contributors, setContributors] = useState<ContributorOption[]>([]);
@@ -100,9 +102,13 @@ function CreatePayoutPageContent() {
         if (!cancelled) {
           const nextContributors = data.data ?? [];
           setContributors(nextContributors);
-          if (nextContributors[0]) {
-            setContributorId(nextContributors[0].id);
-            setWalletAddress(nextContributors[0].walletAddress);
+          const target = queryContributorId
+            ? nextContributors.find((item) => item.id === queryContributorId)
+            : undefined;
+          const initial = target || nextContributors[0];
+          if (initial) {
+            setContributorId(initial.id);
+            setWalletAddress(initial.walletAddress);
           }
         }
       })
@@ -110,7 +116,7 @@ function CreatePayoutPageContent() {
         if (!cancelled) setLoadError(error instanceof Error ? error.message : "Unable to load contributors.");
       });
     return () => { cancelled = true; };
-  }, [productContext.workspaceId]);
+  }, [productContext.workspaceId, queryContributorId]);
 
   const totalAmount = useMemo(
     () =>
