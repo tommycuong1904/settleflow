@@ -261,7 +261,7 @@ function CreatePayoutPageContent() {
   }
 
   return (
-    <div className="mx-auto flex max-w-[1320px] flex-col px-6 py-10 md:py-12">
+    <div className="sf-container flex flex-col py-10 md:py-12">
       <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
         <div className="space-y-6">
           {loadError ? <p className="rounded-2xl border border-rose-400/30 bg-rose-400/10 p-3 text-sm text-rose-200">{loadError}</p> : null}

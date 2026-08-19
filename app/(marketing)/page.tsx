@@ -2,6 +2,9 @@
 import { useEffect, useState } from 'react'
 import { ArrowRight, Check, ChevronRight, CircleCheck, CircleDot, FileCheck2, LockKeyhole, Menu, ShieldCheck, WalletCards, X } from 'lucide-react'
 
+
+
+
 const milestones = [
   ['Create', 'Contributor payout created'],
   ['Milestones', 'Two release checkpoints defined'],
@@ -11,7 +14,6 @@ const milestones = [
   ['Release', 'USDC release becomes available'],
   ['Proof', 'Settlement proof stays attached'],
 ]
-
 function PayoutPreview() {
   const [active, setActive] = useState(2)
   useEffect(() => {
@@ -36,8 +38,7 @@ function PayoutPreview() {
 
 function SectionKicker({ children }: { children: React.ReactNode }) { return <p className="sf-kicker">{children}</p> }
 function ArrowLink({ href, children }: { href: string; children: React.ReactNode }) { return <a className="sf-text-link" href={href}>{children} <ArrowRight size={16} /></a> }
-
-export default function Page() {
+export default function Home() {
   return (
     <main id="top">
       <section className="sf-hero sf-container">

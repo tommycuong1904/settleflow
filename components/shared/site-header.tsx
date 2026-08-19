@@ -9,84 +9,35 @@ import { useRouter } from "next/navigation";
 
 import { ActorSwitcher } from "@/components/shared/actor-switcher";
 
+import { ArrowRight, Check, ChevronRight, CircleCheck, CircleDot, FileCheck2, LockKeyhole, Menu, ShieldCheck, WalletCards, X } from 'lucide-react'
+
 const NAV_LINK_CLASS = "transition-colors hover:text-cyan-200";
 
 export function SiteHeader() {
-  const [isScrolled, setIsScrolled] = useState(false);
-  const router = useRouter();
+  const [open, setOpen] = useState(false)
   const pathname = usePathname();
-  const isAppRoute = pathname.startsWith('/app');
-
-  useEffect(() => {
-    function handleScroll() {
-      setIsScrolled(window.scrollY > 96);
-    }
-
-    handleScroll();
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
+  const isHome = pathname === '/';
+  const navLinks = isHome
+    ? [['Product', '#product'], ['How it works', '#workflow'], ['Why Arc', '#why-arc'], ['Proof', '#proof']]
+    : [
+        ['Home', '/'],
+        ['Dashboard', '/dashboard'],
+        ['Payouts', '/payouts'],
+        ['Settings', '/settings'],
+      ];
   return (
-    <header
-      className={[
-        "sticky top-0 z-50 transition-all duration-300 ease-out",
-        isScrolled
-          ? "border-b border-[rgba(148,163,184,0.16)] bg-[rgba(2,6,23,0.82)] shadow-[0_18px_42px_rgba(2,6,23,0.34)] backdrop-blur-xl"
-          : "border-b border-[var(--border-soft)] bg-slate-950/90 backdrop-blur",
-      ].join(" ")}
-    >
-      {pathname === "/" ? (
-        <div className="mx-auto flex max-w-[1320px] items-center justify-between px-6 py-3">
-          <Link href="/" className="text-lg font-semibold tracking-tight text-white transition-transform duration-300 ease-out">
-            <span className="text-white">Settle</span>
-            <span className="text-cyan-300">Flow</span>
-          </Link>
-          <Button
-            onClick={async () => {
-              try {
-                await connectBrowserWallet();
-              } catch (e) {
-                console.error('Wallet connection failed', e);
-              }
-              router.push('/app');
-            }}
-            variant="primary"
-          >
-            Launch App
-          </Button>
-        </div>
-      ) : (
-        <div className="mx-auto flex max-w-[1320px] flex-col gap-4 px-6 py-3 transition-all duration-300 ease-out lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex items-center justify-between gap-6">
-            <Link href="/" className="text-lg font-semibold tracking-tight text-white transition-transform duration-300 ease-out">
-              <span className="text-white">Settle</span>
-              <span className="text-cyan-300">Flow</span>
-            </Link>
-            <nav className="hidden items-center gap-6 text-sm text-[var(--text-primary)] md:flex">
-              <Link href="/dashboard" className={NAV_LINK_CLASS}>Dashboard</Link>
-              <Link href="/payouts/new" className={NAV_LINK_CLASS}>New Payout</Link>
-            </nav>
-
-          </div>
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between lg:justify-end">
-            <nav className="flex items-center gap-6 text-sm text-[var(--text-primary)] md:hidden">
-              <Link href="/dashboard" className={NAV_LINK_CLASS}>Dashboard</Link>
-              <Link href="/payouts/new" className={NAV_LINK_CLASS}>New Payout</Link>
-            </nav>
-            <div
-              className={[
-                "transition-all duration-300 ease-out",
-                isScrolled ? "translate-y-0 scale-[0.985]" : "translate-y-0 scale-100",
-              ].join(" ")}
-            >
-              <Suspense fallback={<div className="h-14 min-w-[220px] rounded-2xl border border-[var(--border-soft)] bg-[rgba(8,15,31,0.68)]" />}>
-                <ActorSwitcher />
-              </Suspense>
-            </div>
-          </div>
-        </div>
-      )}
+    <header className={`sf-header ${!isHome ? 'sf-header-solid' : ''}`}>
+      <div className="sf-container sf-nav">
+        <a href="/" className="sf-wordmark" aria-label="SettleFlow home"><span>Settle</span>Flow</a>
+        <nav className={open ? 'sf-nav-links is-open' : 'sf-nav-links'} aria-label="Main navigation">
+          {navLinks.map(([label, href]) => (
+            <a key={href} href={href} onClick={() => setOpen(false)} className={isHome ? undefined : (label === (isHome ? '' : pathname.replace('/', '')) ? 'sf-active-link' : undefined)}>{label}</a>
+          ))}
+          {/* Keep the create‑payout button on all pages */}
+          <a href="/payouts/new" className="sf-button sf-button-small">Create a payout <ArrowRight size={15} /></a>
+        </nav>
+        <button className="sf-menu" onClick={() => setOpen(!open)} aria-label={open ? 'Close menu' : 'Open menu'} aria-expanded={open}>{open ? <X size={20} /> : <Menu size={20} />}</button>
+      </div>
     </header>
   );
 }

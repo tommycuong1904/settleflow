@@ -13,7 +13,7 @@ export default async function AppHome() {
   const role: "owner" | "reviewer" | "contributor" = "reviewer";
 
   return (
-    <div className="mx-auto flex max-w-[1320px] flex-col px-6 py-10 md:py-12 gap-8">
+    <div className="sf-container flex flex-col py-10 md:py-12 gap-8">
       {/* Hero dựa trên vai trò */}
       <RoleWelcomeCard role={role} />
 

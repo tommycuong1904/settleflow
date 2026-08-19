@@ -274,21 +274,12 @@ h1 em {
   padding: 8px 16px;
 }
 
-/* Header button font overrides */
-.sf-app-header button {
-  font-size: 0.75rem;
-  font-weight: normal;
-}
-.sf-app-header button.sf-header-get-test {
-  font-size: 1rem;
-  font-weight: 600;
-}
 
-
-/* Header button overrides */
-.sf-app-header .sf-button {
-  font-size: 0.75rem;
-  font-weight: normal;
+/* Header button overrides – target both <button> and <a> rendered by Button component */
+.sf-app-header button,
+.sf-app-header a {
+  font-size: 0.75rem !important;
+  font-weight: 400 !important;
 }
 
 .sf-header {

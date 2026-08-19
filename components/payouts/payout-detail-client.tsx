@@ -532,7 +532,7 @@ const [reviewingMilestoneId, setReviewingMilestoneId] = useState<string | null>(
   }
 
   return (
-    <div className="mx-auto flex max-w-[1320px] flex-col px-6 py-10 md:py-12">
+    <div className="sf-container flex flex-col py-10 md:py-12">
       <div className="flex flex-col gap-8">
         <div className="space-y-3">
           <p className="text-sm font-medium uppercase tracking-[0.22em] text-cyan-300">

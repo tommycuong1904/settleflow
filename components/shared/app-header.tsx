@@ -8,8 +8,8 @@ export function AppHeader() {
   return (
     <div className="sf-app-header">
       {/* Get test USDC button with placeholder icon */}
-        <Button variant="ghost" href="https://faucet.circle.com/" className="sf-header-get-test">
-          <span className="sf-icon-blank" aria-hidden="true" /> Get test USDC <ExternalLink className="ml-1" size={16} aria-hidden="true" />
+        <Button variant="ghost" href="https://faucet.circle.com/">
+          <span className="sf-icon-blank" aria-hidden="true" /> Get test USDC <ExternalLink className="ml-1" size={12} aria-hidden="true" />
         </Button>
 
       {/* Network status indicator – styled like a button */}

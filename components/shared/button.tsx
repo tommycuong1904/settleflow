@@ -14,7 +14,7 @@ type ButtonProps = {
 };
 
 const baseClasses =
-  "inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/60";
+  "inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-normal transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/60";
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary:

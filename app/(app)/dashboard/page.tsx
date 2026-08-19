@@ -83,7 +83,7 @@ export default async function DashboardPage() {
           : "No urgent payout blockers are open right now.";
 
   return (
-    <div className="mx-auto flex max-w-[1320px] flex-col px-6 py-10 md:py-12 gap-8">
+    <div className="sf-container flex flex-col py-10 md:py-12 gap-8">
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div className="space-y-3">
           <p className="text-sm font-medium uppercase tracking-[0.22em] text-cyan-300">
