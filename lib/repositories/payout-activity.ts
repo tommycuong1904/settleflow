@@ -365,3 +365,117 @@ export async function getPayoutActivity(payoutId: string): Promise<ActivityItem[
     (a, b) => new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime(),
   );
 }
+
+export async function getWorkspaceActivity(workspaceId?: string): Promise<ActivityItem[]> {
+  const [logs, proofs] = await Promise.all([
+    db.activityLog.findMany({
+      where: workspaceId ? { workspaceId } : {},
+      orderBy: { occurredAt: "desc" },
+      take: 50,
+      select: {
+        id: true,
+        entityType: true,
+        entityId: true,
+        action: true,
+        occurredAt: true,
+        milestoneId: true,
+        payoutId: true,
+        actorUser: { select: { id: true, displayName: true } },
+        metadataJson: true,
+      },
+    }),
+    db.transactionProof.findMany({
+      where: workspaceId ? { payout: { workspaceId } } : {},
+      orderBy: { createdAt: "desc" },
+      take: 20,
+      select: {
+        id: true,
+        milestoneId: true,
+        payoutId: true,
+        txHash: true,
+        network: true,
+        status: true,
+        explorerUrl: true,
+        confirmedAt: true,
+        failedAt: true,
+        createdAt: true,
+        milestone: { select: { title: true } },
+      },
+    }),
+  ]);
+
+  const milestoneIds = logs.map((l) => l.milestoneId).filter((id): id is string => Boolean(id));
+  const milestones = milestoneIds.length
+    ? await db.milestone.findMany({
+        where: { id: { in: milestoneIds } },
+        select: { id: true, title: true },
+      })
+    : [];
+  const milestoneMap = new Map(milestones.map((m) => [m.id, m.title]));
+
+  const items: ActivityItem[] = logs.map((log) => {
+    const metadata =
+      log.metadataJson && typeof log.metadataJson === "object" && !Array.isArray(log.metadataJson)
+        ? (log.metadataJson as Record<string, unknown>)
+        : undefined;
+    const milestoneTitle = log.milestoneId ? milestoneMap.get(log.milestoneId) : undefined;
+
+    return {
+      id: `log:${log.id}`,
+      entityType: ["payout", "milestone", "release", "proof"].includes(log.entityType)
+        ? (log.entityType as ActivityItem["entityType"])
+        : "system",
+      entityId: log.entityId,
+      action: log.action,
+      occurredAt: log.occurredAt.toISOString(),
+      actorLabel: labelForUser(log.actorUser),
+      title: getLogTitle(log.action, milestoneTitle),
+      description: getLogDescription(log.action, metadata),
+      metadata: metadata
+        ? Object.fromEntries(
+            Object.entries(metadata).map(([key, value]) => [key, value == null ? undefined : String(value)]),
+          )
+        : undefined,
+    };
+  });
+
+  for (const proof of proofs) {
+    if (proof.confirmedAt) {
+      items.push({
+        id: `proof:${proof.id}:confirmed`,
+        entityType: "proof",
+        entityId: proof.id,
+        action: "proof_confirmed",
+        occurredAt: proof.confirmedAt.toISOString(),
+        actorLabel: "System",
+        title: `Settlement proof confirmed for ${proof.milestone?.title ?? "milestone"}`,
+        description: proof.txHash || "Confirmed on Arc Testnet",
+        metadata: {
+          txHash: proof.txHash || undefined,
+          network: proof.network || undefined,
+          explorerUrl: proof.explorerUrl || undefined,
+        },
+      });
+    } else if (proof.failedAt) {
+      items.push({
+        id: `proof:${proof.id}:failed`,
+        entityType: "proof",
+        entityId: proof.id,
+        action: "proof_failed",
+        occurredAt: proof.failedAt.toISOString(),
+        actorLabel: "System",
+        title: `Settlement proof failed for ${proof.milestone?.title ?? "milestone"}`,
+        description: "Failed on Arc Testnet",
+      });
+    }
+  }
+
+  const merged = new Map<string, ActivityItem>();
+  for (const item of items) {
+    merged.set(getActivityDedupKey(item), item);
+  }
+
+  return Array.from(merged.values()).sort(
+    (a, b) => new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime(),
+  );
+}

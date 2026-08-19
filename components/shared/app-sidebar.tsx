@@ -8,7 +8,7 @@ const NAV_ITEMS = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "Payouts", href: "/payouts", icon: ArrowRightLeft },
   { label: "Contributors", href: "/contributors", icon: Users, soon: true },
-  { label: "Activity", href: "/activity", icon: Activity, soon: true },
+  { label: "Activity", href: "/activity", icon: Activity },
 ];
 
 export function AppSidebar() {
