@@ -1,5 +1,7 @@
 "use client";
 import { useState, ReactNode } from "react";
+import { useResolvedProductContext } from "@/lib/runtime/product-context-client";
+import { hasRole } from "@/lib/runtime/role-utils";
 
 type TabItem = {
   key: string;
@@ -10,12 +12,17 @@ type TabItem = {
 
 export default function DashboardTabs({ tabs }: { tabs: TabItem[] }) {
   const [active, setActive] = useState(tabs[0]?.key ?? "");
+  const productContext = useResolvedProductContext();
+  const actor = productContext.actor;
+  // Owner sees all tabs; others see only subset (for now keep all)
+  const visibleTabs = tabs.filter(() => true); // placeholder, can customize per role
+
 
   return (
     <div className="space-y-4 w-full">
       {/* Tab headers */}
           <div className="relative flex border-b border-gray-700" style={{ position: 'relative' }}>
-      {tabs.map((tab, idx) => (
+      {visibleTabs.map((tab, idx) => (
         <button
           key={tab.key}
           onClick={() => setActive(tab.key)}
@@ -38,8 +45,8 @@ export default function DashboardTabs({ tabs }: { tabs: TabItem[] }) {
           <span
             className="absolute bottom-0 left-0 h-0.5 bg-cyan-500 transition-transform duration-300 ease-out"
             style={{
-              width: `${100 / tabs.length}%`,
-              transform: `translateX(${tabs.findIndex((t) => t.key === active) * 100}%)`,
+              width: `${100 / visibleTabs.length}%`,
+              transform: `translateX(${visibleTabs.findIndex((t) => t.key === active) * 100}%)`,
             }}
           />
     </div>
