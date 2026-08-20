@@ -83,7 +83,9 @@ export default async function ContributorsPage() {
       </div>
 
       {/* Interactive Contributor List */}
-      <ContributorListClient initialContributors={contributors} />
+      <div className="flex-1">
+        <ContributorListClient initialContributors={contributors} />
+      </div>
     </div>
   );
 }
