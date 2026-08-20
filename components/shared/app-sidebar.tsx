@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, ArrowRightLeft, Users, Activity, Settings } from "lucide-react";
+import { useResolvedProductContext } from "@/lib/runtime/product-context-client";
+import { hasRole } from "@/lib/runtime/role-utils";
 
 type NavItem = {
   label: string;
@@ -21,6 +23,17 @@ const NAV_ITEMS: NavItem[] = [
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const productContext = useResolvedProductContext();
+  const actor = productContext.actor;
+
+  // Determine visible navigation items based on role hierarchy
+  const visibleNavItems = NAV_ITEMS.filter((item) => {
+    // Owner sees everything
+    if (hasRole(actor, "owner")) return true;
+    // Reviewer and Contributor cannot see Settings or Contributors list
+    if (item.href === "/settings" || item.href === "/contributors") return false;
+    return true;
+  });
 
   return (
     <aside className="sf-sidebar">
@@ -35,7 +48,7 @@ export function AppSidebar() {
       <nav className="sf-sidebar-nav" aria-label="App navigation">
         <p className="sf-sidebar-section-label">WORKSPACE</p>
         <ul role="list">
-          {NAV_ITEMS.map(({ label, href, icon: Icon, soon }) => {
+          {visibleNavItems.map(({ label, href, icon: Icon, soon }) => {
             const isActive =
               href === "/dashboard"
                 ? pathname === "/dashboard" || pathname === "/app"
