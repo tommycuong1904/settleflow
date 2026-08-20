@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/shared/button";
 import {
   X,
   UserPlus,
@@ -253,18 +254,20 @@ export function AddContributorDialog({
 
           {/* Action Buttons */}
           <div className="pt-2 flex items-center justify-end gap-3">
-            <button
+            <Button
               type="button"
+              variant="secondary"
+              size="sm"
               onClick={onClose}
               disabled={isSubmitting}
-              className="rounded-xl border border-slate-700 bg-slate-800/80 px-4 py-2.5 text-xs font-semibold text-slate-300 hover:bg-slate-700 hover:text-white transition-all disabled:opacity-50"
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
+              variant="primary"
+              size="sm"
               disabled={isSubmitting || !name.trim() || !walletAddress.trim()}
-              className="flex items-center justify-center gap-2 rounded-xl bg-cyan-400 hover:bg-cyan-300 px-5 py-2.5 text-xs font-semibold text-slate-950 transition-all shadow-[0_0_20px_rgba(34,211,238,0.2)] disabled:opacity-50 disabled:shadow-none"
             >
               {isSubmitting ? (
                 <>
@@ -273,7 +276,7 @@ export function AddContributorDialog({
               ) : (
                 "Save Contributor"
               )}
-            </button>
+            </Button>
           </div>
         </form>
       </div>

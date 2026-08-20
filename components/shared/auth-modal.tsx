@@ -104,7 +104,7 @@ export function AuthModal() {
             <button
               onClick={handleGoogleSignIn}
               disabled={isConnecting}
-              className="w-full flex items-center justify-center gap-3 rounded-xl border border-slate-700 bg-slate-800/80 hover:bg-slate-700/90 py-3 px-4 text-sm font-medium text-white transition-all hover:border-slate-600 disabled:opacity-60"
+              className="w-full flex items-center justify-center gap-3 rounded-full border border-slate-700 bg-slate-800/80 hover:bg-slate-700/90 py-3 px-4 text-sm font-normal text-white transition-all hover:border-slate-600 disabled:opacity-60"
             >
               <svg className="h-4 w-4" viewBox="0 0 24 24">
                 <path
@@ -153,13 +153,13 @@ export function AuthModal() {
                   value={emailInput}
                   onChange={(e) => setEmailInput(e.target.value)}
                   placeholder="Enter your email address"
-                  className="w-full rounded-xl border border-slate-700 bg-slate-900/90 py-2.5 pl-10 pr-4 text-sm text-white placeholder-slate-500 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400 transition-all"
+                  className="w-full rounded-full border border-slate-700 bg-slate-900/90 py-2.5 pl-10 pr-4 text-sm text-white placeholder-slate-500 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400 transition-all"
                 />
               </div>
               <button
                 type="submit"
                 disabled={isConnecting || !emailInput.trim()}
-                className="w-full flex items-center justify-center gap-2 rounded-xl bg-cyan-400 hover:bg-cyan-300 py-2.5 px-4 text-sm font-semibold text-slate-950 transition-all disabled:opacity-50"
+                className="w-full flex items-center justify-center gap-2 rounded-full bg-cyan-400 hover:bg-cyan-300 py-2.5 px-4 text-sm font-normal text-slate-950 transition-all disabled:opacity-50"
               >
                 {isConnecting ? (
                   <>
@@ -265,6 +265,22 @@ export function AuthModal() {
                 Connect →
               </span>
             </button>
+
+            {/* Quick Add Network Helper */}
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    const { addArcNetworkToWallet } = await import("@/lib/arc/onchain");
+                    await addArcNetworkToWallet();
+                  } catch {}
+                }}
+                className="w-full py-2 px-3 rounded-xl border border-dashed border-cyan-500/30 bg-cyan-500/5 hover:bg-cyan-500/10 text-cyan-300 text-[11px] font-medium transition-all text-center flex items-center justify-center gap-1.5"
+              >
+                <span>🌐 Add / Switch Arc Testnet RPC in MetaMask</span>
+              </button>
+            </div>
           </div>
         )}
 

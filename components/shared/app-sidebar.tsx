@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, ArrowRightLeft, Users, Activity } from "lucide-react";
+import { LayoutDashboard, ArrowRightLeft, Users, Activity, Settings } from "lucide-react";
 
 type NavItem = {
   label: string;
@@ -16,6 +16,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Payouts", href: "/payouts", icon: ArrowRightLeft },
   { label: "Contributors", href: "/contributors", icon: Users },
   { label: "Activity", href: "/activity", icon: Activity },
+  { label: "Settings", href: "/settings", icon: Settings },
 ];
 
 export function AppSidebar() {

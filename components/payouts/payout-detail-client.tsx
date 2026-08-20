@@ -624,13 +624,15 @@ const [reviewingMilestoneId, setReviewingMilestoneId] = useState<string | null>(
           </div>
 
           <div className="shrink-0">
-            <button
+            <Button
               type="button"
+              variant="secondary"
+              size="md"
               onClick={() => setIsReceiptModalOpen(true)}
-              className="flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800/80 px-4 py-2.5 text-xs font-semibold text-slate-200 hover:bg-slate-700 hover:text-white transition-all shadow-sm"
+              icon={<FileCheck size={15} className="text-cyan-400" />}
             >
-              <FileCheck size={15} className="text-cyan-400" /> Export Settlement Receipt
-            </button>
+              Export Settlement Receipt
+            </Button>
           </div>
         </div>
 

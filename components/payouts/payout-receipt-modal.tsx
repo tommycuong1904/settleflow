@@ -1,6 +1,7 @@
 "use client";
 
-import React from "react";
+import React, { useRef } from "react";
+import { Button } from "@/components/shared/button";
 import type { Payout } from "@/lib/models/payout";
 import type { Milestone } from "@/lib/models/milestone";
 import type { Contributor } from "@/lib/models/contributor";
@@ -294,18 +295,24 @@ export function PayoutReceiptModal({
 
         {/* Action CTAs */}
         <div className="mt-6 pt-4 border-t border-slate-800 flex items-center justify-end gap-3 print:hidden">
-          <button
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
             onClick={handleDownloadJson}
-            className="flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800/80 px-4 py-2 text-xs font-semibold text-slate-300 hover:bg-slate-700 hover:text-white transition-all shadow-sm"
+            icon={<Download size={14} />}
           >
-            <Download size={14} /> Download JSON
-          </button>
-          <button
+            Download JSON
+          </Button>
+          <Button
+            type="button"
+            variant="primary"
+            size="sm"
             onClick={handlePrint}
-            className="flex items-center gap-1.5 rounded-xl bg-cyan-400 hover:bg-cyan-300 px-5 py-2 text-xs font-semibold text-slate-950 transition-all shadow-[0_0_20px_rgba(34,211,238,0.2)]"
+            icon={<Printer size={14} />}
           >
-            <Printer size={14} /> Print / Save PDF
-          </button>
+            Print / Save PDF
+          </Button>
         </div>
       </div>
     </div>

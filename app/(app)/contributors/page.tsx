@@ -24,14 +24,14 @@ export default async function ContributorsPage() {
   );
 
   return (
-    <div className="sf-container flex flex-col py-10 md:py-12 gap-8">
+    <div className="sf-app-wrapper flex flex-col py-10 md:py-12 gap-8">
       {/* Header */}
       <div className="space-y-3">
         <p className="text-sm font-medium uppercase tracking-[0.22em] text-cyan-300">
           Recipient Directory
         </p>
         <div className="space-y-2">
-          <h1 className="text-3xl font-semibold tracking-tight text-white md:text-4xl">
+          <h1 className="text-2xl font-semibold tracking-tight text-white md:text-3xl">
             Contributors & Wallets
           </h1>
           <p className="max-w-3xl text-sm leading-7 text-[var(--text-primary)] md:text-base">
@@ -45,7 +45,7 @@ export default async function ContributorsPage() {
 
       {/* Stats Cards */}
       <div className="grid gap-4 sm:grid-cols-3">
-        <div className="rounded-3xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.72)] p-5">
+        <div className="rounded-xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.72)] p-5">
           <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
             Total Contributors
           </p>
@@ -57,7 +57,7 @@ export default async function ContributorsPage() {
           </p>
         </div>
 
-        <div className="rounded-3xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.72)] p-5">
+        <div className="rounded-xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.72)] p-5">
           <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
             Total Settled Volume
           </p>
@@ -69,7 +69,7 @@ export default async function ContributorsPage() {
           </p>
         </div>
 
-        <div className="rounded-3xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.72)] p-5">
+        <div className="rounded-xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.72)] p-5">
           <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
             Active Engagements
           </p>

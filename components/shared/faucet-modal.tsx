@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { Button } from "@/components/shared/button";
 import { ARC_CONFIG } from "@/lib/arc/config";
 import { addArcNetworkToWallet } from "@/lib/arc/onchain";
 import { shortenAddress } from "@/lib/utils/format";
@@ -150,27 +151,31 @@ export function FaucetModal({ isOpen, onClose, userAddress }: FaucetModalProps) 
               </div>
             </div>
 
-            <a
+            <Button
               href={faucetUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full flex items-center justify-center gap-2 rounded-xl bg-cyan-400 hover:bg-cyan-300 py-2.5 px-4 text-xs font-semibold text-slate-950 transition-all shadow-[0_0_20px_rgba(34,211,238,0.2)]"
+              variant="primary"
+              size="md"
+              className="w-full"
+              icon={<ExternalLink size={13} className="order-last" />}
             >
-              Open Circle Faucet <ExternalLink size={13} />
-            </a>
+              Open Circle Faucet
+            </Button>
           </div>
 
           {/* 1-Click Add Network Button */}
-          <button
+          <Button
+            type="button"
+            variant="secondary"
+            size="md"
             onClick={handleAddNetwork}
             disabled={addingNetwork}
-            className="w-full flex items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-800/90 hover:bg-slate-700/90 py-2.5 px-4 text-xs font-medium text-white transition-all disabled:opacity-50"
+            className="w-full"
+            icon={<Plus size={14} className="text-cyan-400" />}
           >
-            <Plus size={14} className="text-cyan-400" />
             {addingNetwork
               ? "Adding to Wallet..."
               : "Add Arc Testnet to MetaMask / Rabby"}
-          </button>
+          </Button>
 
           {/* Network Parameter Reference */}
           <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 space-y-2.5 text-xs">

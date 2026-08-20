@@ -1,8 +1,8 @@
 "use client";
 
 import React from "react";
-import { useWallet } from "@/lib/context/wallet-context";
 import { Button } from "@/components/shared/button";
+import { useWallet } from "@/lib/context/wallet-context";
 import {
   ShieldCheck,
   Sparkles,
@@ -20,7 +20,7 @@ export function WalletGate() {
   if (isConnected) {
     // Show connected notification / quick banner if needed, or null
     return (
-      <div className="rounded-2xl border border-cyan-500/20 bg-cyan-950/20 px-5 py-3.5 text-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-cyan-200">
+      <div className="rounded-xl border border-cyan-500/20 bg-cyan-950/20 px-5 py-3.5 text-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-cyan-200">
         <div className="flex items-center gap-2.5">
           <CheckCircle2 size={18} className="text-cyan-400 shrink-0" />
           <span>
@@ -48,7 +48,7 @@ export function WalletGate() {
   }
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-cyan-500/30 bg-gradient-to-b from-[#0e172a]/95 to-[#090e1c]/95 p-6 md:p-8 shadow-[0_0_50px_rgba(34,211,238,0.08)]">
+    <div className="relative overflow-hidden rounded-xl border border-cyan-500/30 bg-gradient-to-b from-[#0e172a]/95 to-[#090e1c]/95 p-6 md:p-8 shadow-[0_0_50px_rgba(34,211,238,0.08)]">
       {/* Background ambient lighting */}
       <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-cyan-500/10 blur-3xl" />
       <div className="pointer-events-none absolute left-1/3 -bottom-20 h-48 w-48 rounded-full bg-blue-500/10 blur-3xl" />
@@ -83,12 +83,16 @@ export function WalletGate() {
         </div>
 
         <div className="flex flex-col sm:flex-row lg:flex-col gap-3 w-full sm:w-auto shrink-0">
-          <button
+          <Button
+            type="button"
+            variant="primary"
+            size="lg"
             onClick={openAuthModal}
-            className="flex items-center justify-center gap-2 rounded-xl bg-cyan-400 hover:bg-cyan-300 px-6 py-3.5 text-sm font-semibold text-slate-950 shadow-[0_0_25px_rgba(34,211,238,0.25)] transition-all hover:scale-[1.02] active:scale-[0.98]"
+            className="w-full sm:w-auto"
+            icon={<Lock size={16} />}
           >
-            <Lock size={16} /> Sign In / Connect Wallet <ArrowRight size={16} />
-          </button>
+            Sign In / Connect Wallet <ArrowRight size={16} className="ml-1" />
+          </Button>
         </div>
       </div>
     </div>

@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { ArrowRight, Check, ChevronRight, CircleCheck, CircleDot, FileCheck2, LockKeyhole, Menu, ShieldCheck, WalletCards, X } from 'lucide-react'
+import Link from 'next/link'
+import { ArrowRight, Check, ChevronRight, CircleCheck, CircleDot, FileCheck2, LockKeyhole, ShieldCheck, WalletCards } from 'lucide-react'
 
 const milestones = [
   ['Create', 'Contributor payout created'],
@@ -35,7 +36,7 @@ function PayoutPreview() {
 }
 
 function SectionKicker({ children }: { children: React.ReactNode }) { return <p className="sf-kicker">{children}</p> }
-function ArrowLink({ href, children }: { href: string; children: React.ReactNode }) { return <a className="sf-text-link" href={href}>{children} <ArrowRight size={16} /></a> }
+function ArrowLink({ href, children }: { href: string; children: React.ReactNode }) { return <Link className="sf-text-link" href={href}>{children} <ArrowRight size={16} /></Link> }
 
 export default function Page() {
   return (
@@ -52,12 +53,12 @@ export default function Page() {
             release USDC with settlement proof — all in one clear flow.
           </p>
           <div className="sf-cta-row">
-            <a href="/payouts/new" className="sf-button">
+            <Link href="/payouts/new" className="sf-button">
               Create a payout <ArrowRight size={17} />
-            </a>
-            <a href="/dashboard" className="sf-button sf-button-ghost">
+            </Link>
+            <Link href="/dashboard" className="sf-button sf-button-ghost">
               Open dashboard
-            </a>
+            </Link>
           </div>
           <div className="sf-hero-note">
             <span className="sf-note-check">
@@ -508,12 +509,12 @@ export default function Page() {
             proof.
           </p>
           <div className="sf-cta-row">
-            <a href="/payouts/new" className="sf-button">
+            <Link href="/payouts/new" className="sf-button">
               Create a payout <ArrowRight size={17} />
-            </a>
-            <a href="/dashboard" className="sf-button sf-button-ghost">
+            </Link>
+            <Link href="/dashboard" className="sf-button sf-button-ghost">
               Open dashboard
-            </a>
+            </Link>
           </div>
           <div className="sf-final-flow">
             <span>APPROVAL</span>

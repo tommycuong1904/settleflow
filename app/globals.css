@@ -88,9 +88,9 @@ h2 {
 }
 
 h1 {
-  max-width: 650px;
+  /* max-width: 650px; */
   margin-bottom: 25px;
-  font-size: clamp(42px, 5.4vw, 72px);
+  font-size: clamp(24px, 4vw, 42px);
   line-height: 0.99;
 }
 
@@ -101,11 +101,12 @@ h1 em {
 
 .sf-shell {
   border: 1px solid var(--border-soft);
-  background: linear-gradient(
+  border-radius: 0.75rem;
+  /* background: linear-gradient(
     180deg,
     rgba(17, 24, 39, 0.96),
     rgba(15, 23, 42, 0.92)
-  );
+  ); */
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.02);
 }
 
@@ -125,6 +126,12 @@ h1 em {
 .sf-container {
   width: min(1160px, calc(100% - 48px));
   margin: 0 auto;
+}
+
+.sf-app-wrapper {
+  width: 100%;
+  margin: 0 auto;
+  padding: 40px;
 }
 
 /* ─── App shell / sidebar layout ─────────────────────────── */
@@ -322,7 +329,7 @@ h1 em {
   font-size: 13px;
 }
 
-.sf-nav-links a:hover {
+.sf-nav-links a:not([class*="bg-cyan"]):hover {
   color: var(--foreground);
 }
 
@@ -336,12 +343,12 @@ h1 em {
   justify-content: center;
   gap: 9px;
   border: 1px solid var(--accent);
-  border-radius: 6px;
-  padding: 13px 18px;
+  border-radius: 9999px;
+  padding: 13px 24px;
   background: var(--accent);
   color: #04232b;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 400;
   transition:
     transform 0.2s,
     box-shadow 0.2s,
@@ -366,8 +373,9 @@ h1 em {
 }
 
 .sf-button-small {
-  padding: 9px 13px;
+  padding: 9px 16px;
   font-size: 12px;
+  border-radius: 9999px;
 }
 
 .sf-menu {

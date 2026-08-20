@@ -5,6 +5,8 @@ import { Button } from "@/components/shared/button";
 import { RoleSwitcher } from "@/components/shared/role-switcher";
 import { FaucetModal } from "@/components/shared/faucet-modal";
 import { useWallet } from "@/lib/context/wallet-context";
+import { addArcNetworkToWallet } from "@/lib/arc/onchain";
+import { useToast } from "@/lib/context/toast-context";
 import { ExternalLink, LogOut, Wallet, User, ChevronDown, RefreshCw, Droplets } from "lucide-react";
 
 export function AppHeader() {
@@ -22,8 +24,29 @@ export function AppHeader() {
     refreshBalance,
   } = useWallet();
 
+  const { toast } = useToast();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isFaucetOpen, setIsFaucetOpen] = useState(false);
+
+  const handleAddArcNetwork = async () => {
+    try {
+      await addArcNetworkToWallet();
+      toast({
+        variant: "success",
+        title: "Arc Testnet Active",
+        description: "Arc Testnet was successfully added/selected in your wallet.",
+      });
+    } catch (err: unknown) {
+      const errorObj = err as { code?: number; message?: string } | undefined;
+      if (errorObj?.code !== 4001) {
+        toast({
+          variant: "warning",
+          title: "Network Switch",
+          description: errorObj?.message || "Please make sure your Web3 wallet extension is unlocked.",
+        });
+      }
+    }
+  };
 
   const displayIdentifier = email
     ? email.split("@")[0]
@@ -41,11 +64,15 @@ export function AppHeader() {
         <Droplets size={13} className="mr-1 text-cyan-400" /> Get test USDC
       </Button>
 
-      {/* Network indicator */}
-      <div className="inline-flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-900/80 px-3 py-2 text-xs text-slate-300">
+      {/* Network indicator with 1-click Add/Switch Arc Testnet */}
+      <button
+        onClick={handleAddArcNetwork}
+        title="Click to add / switch to Arc Testnet in your Web3 wallet"
+        className="inline-flex items-center gap-2 rounded-full border border-slate-800 bg-slate-900/80 hover:bg-slate-800 hover:border-cyan-500/40 transition-all px-3.5 py-2 text-xs text-slate-300"
+      >
         <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)] animate-pulse" />
         <span>{network}</span>
-      </div>
+      </button>
 
       {/* Auth state button */}
       {!isConnected ? (
@@ -56,7 +83,7 @@ export function AppHeader() {
         <div className="relative">
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="flex items-center gap-2 rounded-xl border border-cyan-500/30 bg-slate-900/90 px-3.5 py-2 text-xs font-normal text-cyan-200 hover:border-cyan-400 hover:bg-slate-800 transition-all shadow-sm"
+            className="flex items-center gap-2 rounded-full border border-cyan-500/30 bg-slate-900/90 px-4 py-2 text-xs font-normal text-cyan-200 hover:border-cyan-400 hover:bg-slate-800 transition-all shadow-sm"
           >
             {authType === "web2_google" || authType === "web2_email" ? (
               <User size={13} className="text-cyan-400" />

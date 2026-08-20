@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db/client";
 import { recordActivity } from "@/lib/repositories/activity-log";
 import { hasWorkspaceRole } from "@/lib/repositories/permissions";
+import { dispatchWebhookNotification } from "@/lib/notifications/webhook-dispatcher";
 
 export type SubmitMilestoneInput = {
   contributorUserId: string;
@@ -32,14 +33,17 @@ export function deriveMilestoneSubmissionUpdate(
 }
 
 export async function submitMilestone(milestoneId: string, workspaceId: string, input: SubmitMilestoneInput) {
-  return db.$transaction(async (tx: Prisma.TransactionClient) => {
+  const result = await db.$transaction(async (tx: Prisma.TransactionClient) => {
     const milestone = await tx.milestone.findUnique({
       where: { id: milestoneId },
       select: {
         id: true,
+        title: true,
+        amountUsdc: true,
         status: true,
         payout: {
           select: {
+            title: true,
             workspaceId: true,
             contributor: { select: { linkedUserId: true } },
           },
@@ -96,6 +100,25 @@ export async function submitMilestone(milestoneId: string, workspaceId: string, 
         summary: input.summary,
       },
     });
-    return { milestone: updatedMilestone, submission };
+    return {
+      milestone: updatedMilestone,
+      submission,
+      payoutTitle: milestone.payout.title,
+      milestoneTitle: milestone.title,
+      amountUsdc: milestone.amountUsdc.toString(),
+    };
   });
+
+  // Non-blocking Webhook dispatch
+  void dispatchWebhookNotification({
+    event: "milestone_submitted",
+    payoutTitle: result.payoutTitle,
+    milestoneTitle: result.milestoneTitle,
+    amountUsdc: result.amountUsdc,
+    artifactUrl: input.artifactUrl,
+    summary: input.summary,
+  });
+
+  return { milestone: result.milestone, submission: result.submission };
 }
+

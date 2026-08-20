@@ -6,7 +6,7 @@ type StatCardProps = {
 
 export function StatCard({ label, value, hint }: StatCardProps) {
   return (
-    <div className="sf-shell rounded-3xl p-6">
+    <div className="sf-shell rounded-xl p-6">
       <p className="text-xs font-medium uppercase tracking-[0.22em] text-[var(--text-muted)]">
         {label}
       </p>

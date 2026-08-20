@@ -86,9 +86,9 @@ export async function connectBrowserWallet() {
     // No wallet detected – return a placeholder to avoid throwing during dev/testing.
     // Adapter is set to null; callers should handle null gracefully.
     return {
-      adapter: null as any,
+      adapter: null as unknown as Awaited<ReturnType<typeof createViemAdapterFromProvider>>,
       connectedAddress: null,
-      walletName: 'No Wallet Detected',
+      walletName: "No Wallet Detected",
     };
   }
   if (!selectedWallet) {

@@ -275,7 +275,7 @@ function CreatePayoutPageContent() {
   }
 
   return (
-    <div className="sf-container flex flex-col py-10 md:py-12">
+    <div className="sf-app-wrapper flex flex-col py-10 md:py-12">
       <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
         <div className="space-y-6">
           {loadError ? <p className="rounded-2xl border border-rose-400/30 bg-rose-400/10 p-3 text-sm text-rose-200">{loadError}</p> : null}
@@ -285,7 +285,7 @@ function CreatePayoutPageContent() {
               <p className="text-sm font-medium uppercase tracking-[0.22em] text-cyan-300">
                 Create payout
               </p>
-              <h1 className="text-3xl font-semibold tracking-tight text-white md:text-4xl">
+              <h1 className="text-2xl font-semibold tracking-tight text-white md:text-3xl">
                 Build a milestone-based payout agreement for Arc settlement.
               </h1>
               <p className="max-w-3xl text-sm leading-7 text-[var(--text-primary)] md:text-base">
@@ -294,7 +294,7 @@ function CreatePayoutPageContent() {
               </p>
             </div>
             <div className="grid gap-3 sm:grid-cols-3">
-              <div className="rounded-3xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.72)] px-5 py-4">
+              <div className="rounded-xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.72)] px-5 py-4">
                 <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
                   Total payout
                 </p>
@@ -346,7 +346,7 @@ function CreatePayoutPageContent() {
               <button
                 type="button"
                 onClick={openAuthModal}
-                className="shrink-0 rounded-xl bg-amber-400/20 hover:bg-amber-400/30 text-amber-100 px-3.5 py-1.5 font-medium transition-colors border border-amber-400/30"
+                className="shrink-0 rounded-full bg-amber-400/20 hover:bg-amber-400/30 text-amber-100 px-4 py-1.5 font-medium transition-colors border border-amber-400/30 text-xs"
               >
                 Sign In / Connect
               </button>

@@ -26,7 +26,7 @@ export default async function PayoutsPage() {
   const totalValue = payouts.reduce((sum, p) => sum + Number(p.totalAmount), 0);
 
   return (
-    <div className="sf-container flex flex-col py-10 md:py-12 gap-8">
+    <div className="sf-app-wrapper flex flex-col py-10 md:py-12 gap-8">
       {/* Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div className="space-y-3">
@@ -34,7 +34,7 @@ export default async function PayoutsPage() {
             Escrow Contracts
           </p>
           <div className="space-y-2">
-            <h1 className="text-3xl font-semibold tracking-tight text-white md:text-4xl">
+            <h1 className="text-2xl font-semibold tracking-tight text-white md:text-3xl">
               Contributor Payouts
             </h1>
             <p className="max-w-3xl text-sm leading-7 text-[var(--text-primary)] md:text-base">
@@ -54,7 +54,7 @@ export default async function PayoutsPage() {
 
       {/* Summary Cards */}
       <div className="grid gap-4 sm:grid-cols-3">
-        <div className="rounded-3xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.72)] p-5">
+        <div className="rounded-xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.72)] p-5">
           <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
             Total Payouts
           </p>
@@ -65,7 +65,7 @@ export default async function PayoutsPage() {
             {activePayouts.length} active · {completedPayouts.length} completed
           </p>
         </div>
-        <div className="rounded-3xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.72)] p-5">
+        <div className="rounded-xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.72)] p-5">
           <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
             Total Value
           </p>
@@ -76,7 +76,7 @@ export default async function PayoutsPage() {
             Settled via Arc Testnet
           </p>
         </div>
-        <div className="rounded-3xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.72)] p-5">
+        <div className="rounded-xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.72)] p-5">
           <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
             Active Contributors
           </p>

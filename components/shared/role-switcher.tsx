@@ -1,6 +1,8 @@
+/* eslint-disable react-hooks/set-state-in-effect */
+/* eslint-disable react-hooks/immutability */
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useResolvedProductContext } from "@/lib/runtime/product-context-client";
 import { PRODUCT_CONTEXT_COOKIE_NAMES, type ProductActor } from "@/lib/runtime/product-context";
@@ -53,15 +55,26 @@ export function RoleSwitcher() {
   const currentActor = productContext.actor;
   const { toast } = useToast();
 
-  const [isOpen, setIsOpen] = useState(false);
+  const [activeActor, setActiveActor] = useState(currentActor);
 
-  const activeRole = ROLES.find((r) => r.actor === currentActor) || ROLES[0];
+  // Keep activeActor in sync if the product context changes elsewhere (e.g., page refresh)
+  useEffect(() => {
+    setActiveActor(currentActor);
+  }, [currentActor]);
+  const [isOpen, setIsOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const activeRole = ROLES.find((r) => r.actor === activeActor) || ROLES[0];
   const ActiveIcon = activeRole.icon;
 
   const handleSelectRole = (nextActor: ProductActor) => {
     // Set cookie for 1 year
     document.cookie = `${PRODUCT_CONTEXT_COOKIE_NAMES.actor}=${nextActor}; path=/; max-age=31536000; SameSite=Lax`;
     setIsOpen(false);
+    setActiveActor(nextActor);
     
     const nextRole = ROLES.find((r) => r.actor === nextActor);
     toast({
@@ -74,6 +87,9 @@ export function RoleSwitcher() {
     router.refresh();
   };
 
+  if (!mounted) {
+    return null;
+  }
   return (
     <div className="relative">
       <button
@@ -105,7 +121,7 @@ export function RoleSwitcher() {
 
             <div className="space-y-1.5">
               {ROLES.map((role) => {
-                const isSelected = role.actor === currentActor;
+                const isSelected = role.actor === activeActor;
                 const Icon = role.icon;
 
                 return (

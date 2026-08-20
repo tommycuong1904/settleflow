@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db/client";
 import { recordActivity } from "@/lib/repositories/activity-log";
 import { hasWorkspaceRole } from "@/lib/repositories/permissions";
+import { dispatchWebhookNotification } from "@/lib/notifications/webhook-dispatcher";
 
 type ReviewDecisionUpdate = {
   status: "approved" | "rejected";
@@ -35,13 +36,15 @@ export async function reviewMilestone(
   decision: "approved" | "rejected",
   comment?: string,
 ) {
-  return db.$transaction(async (tx: Prisma.TransactionClient) => {
+  const result = await db.$transaction(async (tx: Prisma.TransactionClient) => {
     const milestone = await tx.milestone.findUnique({
       where: { id: milestoneId },
       select: {
         id: true,
+        title: true,
+        amountUsdc: true,
         status: true,
-        payout: { select: { workspaceId: true } },
+        payout: { select: { title: true, workspaceId: true } },
         submissions: { orderBy: { submittedAt: "desc" }, take: 1, select: { id: true } },
       },
     });
@@ -97,6 +100,24 @@ export async function reviewMilestone(
         comment: comment ?? undefined,
       },
     });
-    return { milestone: updatedMilestone, review };
+    return {
+      milestone: updatedMilestone,
+      review,
+      payoutTitle: milestone.payout.title,
+      milestoneTitle: milestone.title,
+      amountUsdc: milestone.amountUsdc.toString(),
+    };
   });
+
+  // Non-blocking Webhook dispatch
+  void dispatchWebhookNotification({
+    event: decision === "approved" ? "milestone_approved" : "milestone_rejected",
+    payoutTitle: result.payoutTitle,
+    milestoneTitle: result.milestoneTitle,
+    amountUsdc: result.amountUsdc,
+    comment,
+  });
+
+  return { milestone: result.milestone, review: result.review };
 }
+

@@ -1,6 +1,8 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { ArrowRight, Check, ChevronRight, CircleCheck, CircleDot, FileCheck2, LockKeyhole, Menu, ShieldCheck, WalletCards, X } from 'lucide-react'
+import Link from 'next/link'
+import { Button } from '@/components/shared/button'
+import { ArrowRight, Check, ChevronRight, CircleCheck, CircleDot, FileCheck2, LockKeyhole, ShieldCheck, WalletCards } from 'lucide-react'
 
 
 
@@ -53,12 +55,12 @@ export default function Home() {
             release USDC with settlement proof — all in one clear flow.
           </p>
           <div className="sf-cta-row">
-            <a href="/payouts/new" className="sf-button">
+            <Button href="/payouts/new" variant="primary" size="lg">
               Create a payout <ArrowRight size={17} />
-            </a>
-            <a href="/dashboard" className="sf-button sf-button-ghost">
+            </Button>
+            <Button href="/dashboard" variant="ghost" size="lg">
               Open dashboard
-            </a>
+            </Button>
           </div>
           <div className="sf-hero-note">
             <span className="sf-note-check">
@@ -509,12 +511,12 @@ export default function Home() {
             proof.
           </p>
           <div className="sf-cta-row">
-            <a href="/payouts/new" className="sf-button">
+            <Button href="/payouts/new" variant="primary" size="lg">
               Create a payout <ArrowRight size={17} />
-            </a>
-            <a href="/dashboard" className="sf-button sf-button-ghost">
+            </Button>
+            <Button href="/dashboard" variant="ghost" size="lg">
               Open dashboard
-            </a>
+            </Button>
           </div>
           <div className="sf-final-flow">
             <span>APPROVAL</span>

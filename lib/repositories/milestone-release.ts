@@ -4,6 +4,7 @@ import { db } from "@/lib/db/client";
 import type { ReleaseExecutionMode } from "@/lib/arc/types";
 import { recordActivity } from "@/lib/repositories/activity-log";
 import { hasWorkspaceRole } from "@/lib/repositories/permissions";
+import { dispatchWebhookNotification } from "@/lib/notifications/webhook-dispatcher";
 
 type QueueReleasePayload = {
   payoutId: string;
@@ -43,16 +44,18 @@ export async function queueMilestoneRelease(
   amountUsdc: string,
   executionMode: ReleaseExecutionMode = "browser_wallet",
 ) {
-  return db.$transaction(async (tx: Prisma.TransactionClient) => {
+  const result = await db.$transaction(async (tx: Prisma.TransactionClient) => {
     const milestone = await tx.milestone.findUnique({
       where: { id: milestoneId },
       select: {
         id: true,
+        title: true,
         status: true,
         amountUsdc: true,
         payout: {
           select: {
             id: true,
+            title: true,
             workspaceId: true,
             status: true,
             targetWalletAddress: true,
@@ -132,6 +135,25 @@ export async function queueMilestoneRelease(
         executionMode,
       },
     });
-    return { release, proof };
+    return {
+      release,
+      proof,
+      payoutTitle: milestone.payout.title,
+      milestoneTitle: milestone.title,
+      amountUsdc: milestone.amountUsdc.toString(),
+      recipientAddress: milestone.payout.targetWalletAddress,
+    };
   });
+
+  // Non-blocking Webhook dispatch
+  void dispatchWebhookNotification({
+    event: "milestone_released",
+    payoutTitle: result.payoutTitle,
+    milestoneTitle: result.milestoneTitle,
+    amountUsdc: result.amountUsdc,
+    recipientAddress: result.recipientAddress,
+  });
+
+  return { release: result.release, proof: result.proof };
 }
+

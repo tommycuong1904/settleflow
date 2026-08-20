@@ -4,10 +4,12 @@ import { useState } from "react";
 
 import { MilestoneStatusBadge } from "@/components/milestones/milestone-status-badge";
 import { ReviewControls } from "@/components/milestones/review-controls";
+import { SubmitMilestoneDialog } from "@/components/milestones/submit-milestone-dialog";
 import { Button } from "@/components/shared/button";
 import type { Milestone } from "@/lib/models/milestone";
 import type { ProductActor } from "@/lib/runtime/product-context";
 import { formatUsdc } from "@/lib/utils/format";
+import { FileCode, ExternalLink } from "lucide-react";
 
 type MilestoneRowProps = {
   milestone: Milestone;
@@ -29,9 +31,11 @@ export function MilestoneRow({
   onStatusChange,
 }: MilestoneRowProps) {
   const [status, setStatus] = useState(milestone.status);
-  const [submitting, setSubmitting] = useState(false);
+  const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
   const [reviewBusy, setReviewBusy] = useState(false);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
+  const [lastSubmissionSummary, setLastSubmissionSummary] = useState<string | null>(null);
+  const [lastArtifactUrl, setLastArtifactUrl] = useState<string | null>(null);
 
   const isSubmitted = status === "submitted";
   const isApproved = status === "approved";
@@ -42,34 +46,12 @@ export function MilestoneRow({
   const isOwnerActor = currentActor === "owner";
   const isSubmittable = (status === "pending" || status === "rejected") && isContributorActor;
 
-  async function handleSubmitMilestone() {
-    if (!isSubmittable || submitting) return;
-
-    setSubmissionError(null);
-    setSubmitting(true);
-    try {
-      const response = await fetch(`/api/v1/milestones/${milestone.id}/submit`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          summary: `Submitted via SettleFlow payout detail for ${milestone.title}.`,
-        }),
-      });
-      const data = (await response.json()) as {
-        error?: string;
-        milestone?: { status?: Milestone["status"] };
-        submission?: { submittedAt?: string };
-      };
-      if (!response.ok) throw new Error(data.error ?? "Unable to submit milestone.");
-      const nextStatus = data.milestone?.status ?? "submitted";
-      setStatus(nextStatus);
-      onStatusChange?.(milestone.id, nextStatus, { submittedAt: data.submission?.submittedAt });
-    } catch (error) {
-      setSubmissionError(error instanceof Error ? error.message : "Unable to submit milestone.");
-    } finally {
-      setSubmitting(false);
-    }
-  }
+  const handleSubmissionSuccess = (meta?: { submittedAt?: string; summary?: string; artifactUrl?: string }) => {
+    setStatus("submitted");
+    if (meta?.summary) setLastSubmissionSummary(meta.summary);
+    if (meta?.artifactUrl) setLastArtifactUrl(meta.artifactUrl);
+    onStatusChange?.(milestone.id, "submitted", { submittedAt: meta?.submittedAt });
+  };
 
   async function handleApprove() {
     if (!onApprove || reviewBusy) return;
@@ -107,102 +89,137 @@ export function MilestoneRow({
   }
 
   return (
-    <div className="sf-shell rounded-3xl p-5">
-      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-        <div className="space-y-3">
-          <div className="flex flex-wrap items-center gap-3">
-            <p className="font-semibold text-white">{milestone.title}</p>
-            <MilestoneStatusBadge status={status} />
+    <>
+      <div className="sf-shell rounded-xl p-5">
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <p className="font-semibold text-white">{milestone.title}</p>
+              <MilestoneStatusBadge status={status} />
+            </div>
+            <p className="max-w-2xl text-sm leading-6 text-[var(--text-primary)]">
+              {milestone.description}
+            </p>
+            <p className="text-sm font-semibold text-cyan-100">
+              {formatUsdc(milestone.amount)} USDC
+            </p>
+
+            {/* Submitted deliverable link preview */}
+            {(lastArtifactUrl || lastSubmissionSummary) && (
+              <div className="mt-2.5 rounded-2xl border border-cyan-500/20 bg-cyan-950/20 p-3 text-xs space-y-1.5 max-w-xl">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-cyan-400">
+                  Attached Deliverable
+                </p>
+                {lastSubmissionSummary && (
+                  <p className="text-slate-300 leading-relaxed italic">
+                    &quot;{lastSubmissionSummary}&quot;
+                  </p>
+                )}
+                {lastArtifactUrl && (
+                  <a
+                    href={lastArtifactUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-cyan-300 hover:text-cyan-200 font-medium underline underline-offset-2 transition-colors pt-0.5"
+                  >
+                    <FileCode size={13} /> View Submitted Artifact <ExternalLink size={11} />
+                  </a>
+                )}
+              </div>
+            )}
           </div>
-          <p className="max-w-2xl text-sm leading-6 text-[var(--text-primary)]">
-            {milestone.description}
-          </p>
-          <p className="text-sm font-semibold text-cyan-100">
-            {formatUsdc(milestone.amount)} USDC
-          </p>
-        </div>
-        <div className="sf-panel min-w-[240px] rounded-3xl p-4 text-sm text-[var(--text-primary)]">
-          {isSubmitted ? (
-            <div className="space-y-3">
-              <div className="space-y-1">
-                <p className="font-semibold text-white">Review needed</p>
-                <p>Submitted work is ready for an approve or reject decision.</p>
+
+          <div className="sf-panel min-w-[240px] rounded-3xl p-4 text-sm text-[var(--text-primary)]">
+            {isSubmitted ? (
+              <div className="space-y-3">
+                <div className="space-y-1">
+                  <p className="font-semibold text-white">Review needed</p>
+                  <p>Submitted work is ready for an approve or reject decision.</p>
+                </div>
+                {isReviewerActor ? (
+                  <ReviewControls
+                    submittedAt={milestone.submittedAt}
+                    onApprove={handleApprove}
+                    onReject={handleReject}
+                    busy={reviewBusy}
+                  />
+                ) : (
+                  <p className="text-xs text-[var(--text-muted)]">Only the reviewer can approve or reject this milestone.</p>
+                )}
               </div>
-              {isReviewerActor ? (
-                <ReviewControls
-                  submittedAt={milestone.submittedAt}
-                  onApprove={handleApprove}
-                  onReject={handleReject}
-                  busy={reviewBusy}
-                />
-              ) : (
-                <p className="text-xs text-[var(--text-muted)]">Only the reviewer can approve or reject this milestone.</p>
-              )}
-            </div>
-          ) : null}
+            ) : null}
 
-          {isApproved ? (
-            <div className="space-y-2">
-              <p className="font-semibold text-white">
-                {isOwnerActor ? "Ready for release" : isReviewerActor ? "Review complete" : "Waiting for release"}
-              </p>
-              <p>
-                {isOwnerActor
-                  ? "Approved work can now move to the Arc release step from the side panel."
-                  : isReviewerActor
-                    ? "Your review is complete. The owner can now release this approved milestone on Arc."
-                    : "This milestone has been approved and is now waiting for the owner to release it on Arc."}
-              </p>
-            </div>
-          ) : null}
-
-          {isReleased ? (
-            <div className="space-y-2">
-              <p className="font-semibold text-white">Released in USDC on Arc</p>
-              <p>Settlement proof is now available in the side panel.</p>
-              <p className="text-xs text-[var(--text-muted)]">
-                Released {milestone.releasedAt ? milestone.releasedAt.slice(0, 10) : "recently"}
-              </p>
-            </div>
-          ) : null}
-
-          {isRejected ? (
-            <div className="space-y-3">
+            {isApproved ? (
               <div className="space-y-2">
-                <p className="font-semibold text-white">Revision requested</p>
-                <p>The contributor needs to resubmit this milestone before review can continue.</p>
+                <p className="font-semibold text-white">
+                  {isOwnerActor ? "Ready for release" : isReviewerActor ? "Review complete" : "Waiting for release"}
+                </p>
+                <p>
+                  {isOwnerActor
+                    ? "Approved work can now move to the Arc release step from the side panel."
+                    : isReviewerActor
+                      ? "Your review is complete. The owner can now release this approved milestone on Arc."
+                      : "This milestone has been approved and is now waiting for the owner to release it on Arc."}
+                </p>
               </div>
-              {isContributorActor ? (
-                <Button onClick={() => { void handleSubmitMilestone(); }} disabled={submitting} variant="secondary">
-                  {submitting ? "Submitting..." : "Resubmit milestone"}
-                </Button>
-              ) : (
-                <p className="text-xs text-[var(--text-muted)]">Only the contributor can resubmit this milestone.</p>
-              )}
-            </div>
-          ) : null}
+            ) : null}
 
-          {!isSubmitted && !isApproved && !isReleased && !isRejected ? (
-            <div className="space-y-3">
+            {isReleased ? (
               <div className="space-y-2">
-                <p className="font-semibold text-white">Waiting for contributor submission</p>
-                <p>Review and release actions will unlock after work is submitted.</p>
+                <p className="font-semibold text-white">Released in USDC on Arc</p>
+                <p>Settlement proof is now available in the side panel.</p>
+                <p className="text-xs text-[var(--text-muted)]">
+                  Released {milestone.releasedAt ? milestone.releasedAt.slice(0, 10) : "recently"}
+                </p>
               </div>
-              {isContributorActor ? (
-                <Button onClick={() => { void handleSubmitMilestone(); }} disabled={submitting} variant="secondary">
-                  {submitting ? "Submitting..." : "Submit milestone"}
-                </Button>
-              ) : (
-                <p className="text-xs text-[var(--text-muted)]">Only the contributor can submit this milestone.</p>
-              )}
-            </div>
-          ) : null}
+            ) : null}
 
-          {submissionError ? (
-            <p className="mt-3 text-xs text-rose-300">{submissionError}</p>
-          ) : null}
+            {isRejected ? (
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <p className="font-semibold text-white">Revision requested</p>
+                  <p>The contributor needs to resubmit this milestone before review can continue.</p>
+                </div>
+                {isContributorActor ? (
+                  <Button onClick={() => setIsSubmitModalOpen(true)} variant="secondary">
+                    Resubmit milestone
+                  </Button>
+                ) : (
+                  <p className="text-xs text-[var(--text-muted)]">Only the contributor can resubmit this milestone.</p>
+                )}
+              </div>
+            ) : null}
+
+            {!isSubmitted && !isApproved && !isReleased && !isRejected ? (
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <p className="font-semibold text-white">Waiting for contributor submission</p>
+                  <p>Review and release actions will unlock after work is submitted.</p>
+                </div>
+                {isContributorActor ? (
+                  <Button onClick={() => setIsSubmitModalOpen(true)} variant="secondary">
+                    Submit milestone
+                  </Button>
+                ) : (
+                  <p className="text-xs text-[var(--text-muted)]">Only the contributor can submit this milestone.</p>
+                )}
+              </div>
+            ) : null}
+
+            {submissionError ? (
+              <p className="mt-3 text-xs text-rose-300">{submissionError}</p>
+            ) : null}
+          </div>
         </div>
       </div>
-    </div>
+
+      {/* Deliverable Submission Dialog */}
+      <SubmitMilestoneDialog
+        isOpen={isSubmitModalOpen}
+        onClose={() => setIsSubmitModalOpen(false)}
+        milestone={milestone}
+        onSuccess={handleSubmissionSuccess}
+      />
+    </>
   );
 }

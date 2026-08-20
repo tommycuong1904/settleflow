@@ -84,22 +84,20 @@ export default async function DashboardPage() {
           : "No urgent payout blockers are open right now.";
 
   return (
-    <div className="sf-container flex flex-col py-10 md:py-12 gap-8">
-      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div className="space-y-3">
+    <div className="sf-app-wrapper flex flex-col py-10 md:py-12 gap-8">
+      <div className="w-full flex flex-col gap-4">
+        <div className="w-full">
           <p className="text-sm font-medium uppercase tracking-[0.22em] text-cyan-300">
             Payout operations
           </p>
-          <div className="space-y-2">
-            <h1 className="text-3xl font-semibold tracking-tight text-white md:text-4xl">
-              Review queue, release readiness, and settlement proof in one place.
-            </h1>
-            <p className="max-w-3xl text-sm leading-7 text-[var(--text-primary)] md:text-base">
-              SettleFlow keeps contributor payouts visible from submitted work to
-              approved release and onchain proof, so teams can move faster
-              without losing control.
-            </p>
-          </div>
+          <h1 className="text-2xl font-semibold tracking-tight text-white md:text-3xl w-full">
+            Review queue, release readiness, and settlement proof in one place.
+          </h1>
+          <p className="max-w-3xl text-sm leading-7 text-[var(--text-primary)] md:text-base">
+            SettleFlow keeps contributor payouts visible from submitted work to
+            approved release and onchain proof, so teams can move faster
+            without losing control.
+          </p>
         </div>
         <div className="flex flex-wrap gap-3">
           {nextActionPayoutId && nextActionLabel ? (
@@ -116,7 +114,7 @@ export default async function DashboardPage() {
       {/* Inline Wallet Connection Gate (Hybrid Web2.5) */}
       <WalletGate />
 
-      <section className="sf-shell rounded-3xl p-6 md:p-7">
+      <section className="sf-shell rounded-xl p-6 md:p-7">
         <div className="grid gap-6 xl:grid-cols-[1.25fr_0.75fr] xl:items-start">
           <div className="space-y-4">
             <div className="inline-flex rounded-full border border-cyan-300/20 bg-cyan-400/8 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200">
@@ -133,7 +131,7 @@ export default async function DashboardPage() {
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-            <div className="rounded-3xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.72)] p-5">
+            <div className="rounded-xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.72)] p-5">
               <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
                 Ready to release
               </p>
@@ -144,7 +142,7 @@ export default async function DashboardPage() {
                 Approved milestone value that can move to Arc next.
               </p>
             </div>
-            <div className="rounded-3xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.72)] p-5">
+            <div className="rounded-xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.72)] p-5">
               <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
                 Released with proof
               </p>
@@ -192,7 +190,7 @@ export default async function DashboardPage() {
                 return (
                   <div
                     key={milestone.id}
-                    className="sf-shell rounded-3xl p-5"
+                    className="sf-shell rounded-xl p-5"
                   >
                     <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                       <div className="space-y-3">
@@ -216,7 +214,7 @@ export default async function DashboardPage() {
                         <Button href={`/payouts/${milestone.payoutId}`} variant="primary">
                           Review milestone
                         </Button>
-                        <div className="rounded-2xl border border-dashed border-[var(--border-soft)] px-4 py-3 text-sm text-[var(--text-muted)]">
+                        <div className="rounded-xl border border-dashed border-[var(--border-soft)] px-4 py-3 text-sm text-[var(--text-muted)]">
                           Approving this milestone unlocks the next release step.
                         </div>
                       </div>
@@ -282,7 +280,7 @@ export default async function DashboardPage() {
                 return (
                   <div
                     key={payout.id}
-                    className="rounded-3xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.62)] p-5"
+                    className="rounded-xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.62)] p-5"
                   >
                     <div className="space-y-3">
                       <div className="flex items-start justify-between gap-3">
@@ -318,7 +316,7 @@ export default async function DashboardPage() {
                         <Button href={`/payouts/${payout.id}`} variant="ghost">
                           {payoutActionLabel}
                         </Button>
-                        <div className="rounded-2xl border border-dashed border-[var(--border-soft)] px-4 py-3 text-sm text-[var(--text-muted)]">
+                        <div className="rounded-xl border border-dashed border-[var(--border-soft)] px-4 py-3 text-sm text-[var(--text-muted)]">
                           {payoutActionHint}
                         </div>
                       </div>
@@ -354,7 +352,7 @@ export default async function DashboardPage() {
                   return (
                     <div
                       key={proof.id}
-                      className="rounded-3xl border border-[var(--border-soft)] bg-[rgba(8,15,31,0.72)] p-5"
+                       className="rounded-xl border border-[var(--border-soft)] bg-[rgba(8,15,31,0.72)] p-5"
                     >
                       <div className="space-y-3">
                         <div className="flex flex-wrap items-center gap-3">
@@ -380,7 +378,7 @@ export default async function DashboardPage() {
                             <Button href={`/payouts/${milestone.payoutId}`} variant="ghost">
                               {proofActionLabel}
                             </Button>
-                            <div className="rounded-2xl border border-dashed border-[var(--border-soft)] px-4 py-3 text-sm text-[var(--text-muted)]">
+                            <div className="rounded-xl border border-dashed border-[var(--border-soft)] px-4 py-3 text-sm text-[var(--text-muted)]">
                               {proofActionHint}
                             </div>
                           </div>
