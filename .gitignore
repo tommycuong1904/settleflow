@@ -42,3 +42,4 @@ next-env.d.ts
 
 # local workbench artifacts
 /local-artifacts/
+/feedback
