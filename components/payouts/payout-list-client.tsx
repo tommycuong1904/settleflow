@@ -47,6 +47,11 @@ export function PayoutListClient({
 
     return matchesTitle || matchesContributor || matchesWallet;
   });
+  // Pagination
+  const itemsPerPage = 10;
+  const [currentPage, setCurrentPage] = useState(1);
+  const totalPages = Math.ceil(filteredPayouts.length / itemsPerPage);
+  const paginatedPayouts = filteredPayouts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   return (
     <div className="space-y-5">
@@ -124,9 +129,9 @@ export function PayoutListClient({
               : "Create your first milestone payout agreement to get started with Arc settlements."
           }
         />
-      ) : (
+      ) : ( <>
         <div className="space-y-3.5">
-          {filteredPayouts.map((payout) => {
+          {paginatedPayouts.map((payout) => {
             const contributor = contributorMap.get(payout.contributorId);
             const statusLabel =
               payout.status === "completed"
@@ -192,7 +197,29 @@ export function PayoutListClient({
             );
           })}
         </div>
-      )}
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="flex justify-center items-center gap-4 mt-4">
+            <Button
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              variant="ghost"
+              disabled={currentPage === 1}
+            >
+              Previous
+            </Button>
+            <span className="text-sm text-white">
+              Page {currentPage} of {totalPages}
+            </span>
+            <Button
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              variant="ghost"
+              disabled={currentPage === totalPages}
+            >
+              Next
+            </Button>
+          </div>
+        )}
+      </>)}
     </div>
   );
 }

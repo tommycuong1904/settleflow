@@ -21,6 +21,7 @@ import type { ProductActor } from "@/lib/runtime/product-context";
 import { PayoutReceiptModal } from "@/components/payouts/payout-receipt-modal";
 import { formatUsdc, shortenAddress } from "@/lib/utils/format";
 import { Crown, Search, Code2, FileCheck, CheckCircle2, AlertCircle } from "lucide-react";
+import { hasRole, isRole } from "@/lib/runtime/role-utils";
 
 type PersistedReleaseState = {
   releasedMilestoneId: string;
@@ -68,8 +69,8 @@ export function PayoutDetailClient({
   initialActivity,
   currentActor,
 }: PayoutDetailClientProps) {
-  const isOwnerActor = currentActor === "owner";
-  const isReviewerActor = currentActor === "reviewer";
+  const isOwnerActor = isRole(currentActor, "owner");
+  const isReviewerActor = isRole(currentActor, "reviewer");
   const [persistedRelease, setPersistedRelease] = useState<PersistedReleaseState | null>(() => {
     if (typeof window === "undefined" || initialReleaseProof) return null;
 
@@ -576,28 +577,28 @@ const [reviewingMilestoneId, setReviewingMilestoneId] = useState<string | null>(
         {/* Role Simulation Context Banner */}
         <div
           className={`rounded-2xl border p-4 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
-            currentActor === "owner"
-              ? "bg-amber-500/10 border-amber-500/30 text-amber-200"
-              : currentActor === "reviewer"
-              ? "bg-cyan-500/10 border-cyan-500/30 text-cyan-200"
-              : "bg-emerald-500/10 border-emerald-500/30 text-emerald-200"
-          }`}
+              hasRole(currentActor, "owner")
+                ? "bg-amber-500/10 border-amber-500/30 text-amber-200"
+                : hasRole(currentActor, "reviewer")
+                ? "bg-cyan-500/10 border-cyan-500/30 text-cyan-200"
+                : "bg-emerald-500/10 border-emerald-500/30 text-emerald-200"
+            }`}
         >
           <div className="flex items-center gap-2.5">
-            {currentActor === "owner" ? (
-              <Crown size={18} className="text-amber-400 shrink-0" />
-            ) : currentActor === "reviewer" ? (
-              <Search size={18} className="text-cyan-400 shrink-0" />
-            ) : (
-              <Code2 size={18} className="text-emerald-400 shrink-0" />
-            )}
+            {hasRole(currentActor, "owner") ? (
+                <Crown size={18} className="text-amber-400 shrink-0" />
+              ) : hasRole(currentActor, "reviewer") ? (
+                <Search size={18} className="text-cyan-400 shrink-0" />
+              ) : (
+                <Code2 size={18} className="text-emerald-400 shrink-0" />
+              )}
             <p className="leading-relaxed">
               Viewing as <strong className="font-semibold uppercase tracking-wider">{currentActor}</strong>:{" "}
-              {currentActor === "owner"
-                ? "You have full control to activate draft agreements, refine milestone allocations, and trigger Arc USDC releases."
-                : currentActor === "reviewer"
-                ? "Your primary role is to inspect milestone deliverables and approve or reject submissions to authorize payout release."
-                : "You can submit milestone deliverables for review and track your upcoming USDC escrow settlements."}
+               {hasRole(currentActor, "owner")
+                 ? "You have full control to activate draft agreements, refine milestone allocations, and trigger Arc USDC releases."
+                 : hasRole(currentActor, "reviewer")
+                 ? "Your primary role is to inspect milestone deliverables and approve or reject submissions to authorize payout release."
+                 : "You can submit milestone deliverables for review and track your upcoming USDC escrow settlements."}
             </p>
           </div>
           <span className="text-[10px] uppercase font-mono tracking-wider opacity-70 shrink-0">
@@ -639,7 +640,7 @@ const [reviewingMilestoneId, setReviewingMilestoneId] = useState<string | null>(
         <Card className="sf-shell">
           <CardHeader className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <CardTitle>Payout Summary</CardTitle>
-            {payoutStatusState === "draft" && isOwnerActor ? (
+            {payoutStatusState === "draft" && hasRole(currentActor, "owner") ? (
               <Button
                 onClick={() => { void activatePayout(); }}
                 disabled={activatingPayout || hasUnsavedDraftChanges || hasMilestoneAmountError || payoutTitleState.trim().length === 0}

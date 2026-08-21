@@ -10,6 +10,7 @@ import type { Milestone } from "@/lib/models/milestone";
 import type { ProductActor } from "@/lib/runtime/product-context";
 import { formatUsdc } from "@/lib/utils/format";
 import { FileCode, ExternalLink } from "lucide-react";
+import { hasRole, isRole } from "@/lib/runtime/role-utils";
 
 type MilestoneRowProps = {
   milestone: Milestone;
@@ -41,9 +42,9 @@ export function MilestoneRow({
   const isApproved = status === "approved";
   const isReleased = status === "released";
   const isRejected = status === "rejected";
-  const isContributorActor = currentActor === "contributor";
-  const isReviewerActor = currentActor === "reviewer";
-  const isOwnerActor = currentActor === "owner";
+  const isContributorActor = isRole(currentActor, "contributor");
+  const isReviewerActor = isRole(currentActor, "reviewer");
+  const isOwnerActor = isRole(currentActor, "owner");
   const isSubmittable = (status === "pending" || status === "rejected") && isContributorActor;
 
   const handleSubmissionSuccess = (meta?: { submittedAt?: string; summary?: string; artifactUrl?: string }) => {
@@ -136,7 +137,7 @@ export function MilestoneRow({
                   <p className="font-semibold text-white">Review needed</p>
                   <p>Submitted work is ready for an approve or reject decision.</p>
                 </div>
-                {isReviewerActor ? (
+                {hasRole(currentActor, 'reviewer') ? (
                   <ReviewControls
                     submittedAt={milestone.submittedAt}
                     onApprove={handleApprove}

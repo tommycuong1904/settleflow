@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
 import React, {
@@ -11,6 +10,7 @@ import React, {
 } from "react";
 import { connectBrowserWallet } from "@/lib/arc/browser-wallet";
 import { fetchLiveArcBalances } from "@/lib/arc/onchain";
+import { deriveSmartAccountAddress, deriveDeterministicPrivateKey } from "@/lib/auth/smart-account";
 
 export type AuthType = "web2_email" | "web2_google" | "web3_wallet" | null;
 
@@ -19,6 +19,8 @@ export interface WalletContextValue {
   isConnecting: boolean;
   address: string | null;
   email: string | null;
+  userName: string | null;
+  userAvatar: string | null;
   authType: AuthType;
   walletName: string | null;
   network: string;
@@ -30,6 +32,8 @@ export interface WalletContextValue {
   refreshBalance: () => Promise<void>;
   connectWeb3: (preferredWallet?: string) => Promise<void>;
   connectWeb2: (identifier: string, provider?: "google" | "email") => Promise<void>;
+  connectGoogle: (profile: { email: string; name?: string; picture?: string; sub?: string }) => Promise<void>;
+  getPrivateKey: () => string | null;
   disconnect: () => void;
 }
 
@@ -41,6 +45,8 @@ interface StoredSession {
   isConnected: boolean;
   address: string | null;
   email: string | null;
+  userName?: string | null;
+  userAvatar?: string | null;
   authType: AuthType;
   walletName: string | null;
   network: string;
@@ -52,6 +58,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const [isConnecting, setIsConnecting] = useState<boolean>(false);
   const [address, setAddress] = useState<string | null>(null);
   const [email, setEmail] = useState<string | null>(null);
+  const [userName, setUserName] = useState<string | null>(null);
+  const [userAvatar, setUserAvatar] = useState<string | null>(null);
   const [authType, setAuthType] = useState<AuthType>(null);
   const [walletName, setWalletName] = useState<string | null>(null);
   const [network, setNetwork] = useState<string>("Arc Testnet");
@@ -69,6 +77,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
           setIsConnected(true);
           setAddress(session.address);
           setEmail(session.email);
+          setUserName(session.userName || null);
+          setUserAvatar(session.userAvatar || null);
           setAuthType(session.authType);
           setWalletName(session.walletName);
           setNetwork(session.network || "Arc Testnet");
@@ -136,6 +146,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         setIsConnected(true);
         setAddress(connectedAddr);
         setEmail(null);
+        setUserName(null);
+        setUserAvatar(null);
         setAuthType("web3_wallet");
         setWalletName(wName);
         setNetwork("Arc Testnet");
@@ -145,6 +157,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
           isConnected: true,
           address: connectedAddr,
           email: null,
+          userName: null,
+          userAvatar: null,
           authType: "web3_wallet",
           walletName: wName,
           network: "Arc Testnet",
@@ -160,6 +174,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         setIsConnected(true);
         setAddress(mockAddr);
         setEmail(null);
+        setUserName(null);
+        setUserAvatar(null);
         setAuthType("web3_wallet");
         setWalletName(wName);
         setNetwork("Arc Testnet");
@@ -169,8 +185,48 @@ export function WalletProvider({ children }: { children: ReactNode }) {
           isConnected: true,
           address: mockAddr,
           email: null,
+          userName: null,
+          userAvatar: null,
           authType: "web3_wallet",
           walletName: wName,
+          network: "Arc Testnet",
+          usdcBalance: "1,000.00",
+        });
+
+        setIsAuthModalOpen(false);
+      } finally {
+        setIsConnecting(false);
+      }
+    },
+    [saveSession],
+  );
+
+  const connectGoogle = useCallback(
+    async (profile: { email: string; name?: string; picture?: string; sub?: string }) => {
+      setIsConnecting(true);
+      try {
+        const smartAccount = deriveSmartAccountAddress(profile.sub || profile.email);
+        const name = profile.name || profile.email.split("@")[0];
+        const avatar = profile.picture || null;
+
+        setIsConnected(true);
+        setAddress(smartAccount);
+        setEmail(profile.email);
+        setUserName(name);
+        setUserAvatar(avatar);
+        setAuthType("web2_google");
+        setWalletName("Google Smart Account");
+        setNetwork("Arc Testnet");
+        setUsdcBalance("1,000.00");
+
+        saveSession({
+          isConnected: true,
+          address: smartAccount,
+          email: profile.email,
+          userName: name,
+          userAvatar: avatar,
+          authType: "web2_google",
+          walletName: "Google Smart Account",
           network: "Arc Testnet",
           usdcBalance: "1,000.00",
         });
@@ -187,16 +243,17 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     async (identifier: string, provider: "google" | "email" = "google") => {
       setIsConnecting(true);
       try {
-        // Simulate Web2 embedded smart wallet generation
-        await new Promise((resolve) => setTimeout(resolve, 600));
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
-        // Generate deterministic/mock smart account address based on email
-        const mockSmartAccount = "0x3f4A91B6c4b9d0F835A9211C54a938E768019ab2";
         const userEmail = provider === "google" ? "user.google@settleflow.io" : identifier;
+        const smartAccount = deriveSmartAccountAddress(userEmail);
+        const name = userEmail.split("@")[0];
 
         setIsConnected(true);
-        setAddress(mockSmartAccount);
+        setAddress(smartAccount);
         setEmail(userEmail);
+        setUserName(name);
+        setUserAvatar(null);
         setAuthType(provider === "google" ? "web2_google" : "web2_email");
         setWalletName("Smart Account");
         setNetwork("Arc Testnet");
@@ -204,8 +261,10 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
         saveSession({
           isConnected: true,
-          address: mockSmartAccount,
+          address: smartAccount,
           email: userEmail,
+          userName: name,
+          userAvatar: null,
           authType: provider === "google" ? "web2_google" : "web2_email",
           walletName: "Smart Account",
           network: "Arc Testnet",
@@ -220,10 +279,20 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     [saveSession],
   );
 
+  const getPrivateKey = useCallback(() => {
+    if (!isConnected || (authType !== "web2_google" && authType !== "web2_email")) {
+      return null;
+    }
+    if (!email) return null;
+    return deriveDeterministicPrivateKey(email);
+  }, [isConnected, authType, email]);
+
   const disconnect = useCallback(() => {
     setIsConnected(false);
     setAddress(null);
     setEmail(null);
+    setUserName(null);
+    setUserAvatar(null);
     setAuthType(null);
     setWalletName(null);
     clearSession();
@@ -236,6 +305,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         isConnecting,
         address,
         email,
+        userName,
+        userAvatar,
         authType,
         walletName,
         network,
@@ -247,6 +318,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         refreshBalance,
         connectWeb3,
         connectWeb2,
+        connectGoogle,
+        getPrivateKey,
         disconnect,
       }}
     >
@@ -262,3 +335,4 @@ export function useWallet() {
   }
   return context;
 }
+

@@ -1,11 +1,15 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/shared/button";
+import { useRouter } from "next/navigation";
+import { useResolvedProductContext } from "@/lib/runtime/product-context-client";
+import { hasRole } from "@/lib/runtime/role-utils";
 import { useWallet } from "@/lib/context/wallet-context";
 import { ARC_CONFIG } from "@/lib/arc/config";
 import { addArcNetworkToWallet } from "@/lib/arc/onchain";
 import { useToast } from "@/lib/context/toast-context";
+import { ExportKeyModal } from "@/components/shared/export-key-modal";
 import {
   Settings,
   Shield,
@@ -20,12 +24,19 @@ import {
   Radio,
   Sliders,
   Sparkles,
+  KeyRound,
 } from "lucide-react";
 import { shortenAddress } from "@/lib/utils/format";
 
 export default function SettingsPage() {
-  const { isConnected, address, email, authType, disconnect, network } = useWallet();
+  const router = useRouter();
+  const productContext = useResolvedProductContext();
+  const actor = productContext.actor;
+  const isOwner = hasRole(actor, "owner");
+
+  const { isConnected, address, email, authType, disconnect, network, getPrivateKey } = useWallet();
   const { toast } = useToast();
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   const [workspaceName, setWorkspaceName] = useState("SettleFlow Core DAO");
   const [supportEmail, setSupportEmail] = useState("ops@settleflow.io");
@@ -36,6 +47,16 @@ export default function SettingsPage() {
   const [rpcStatus, setRpcStatus] = useState<"idle" | "testing" | "healthy">("idle");
   const [latencyMs, setLatencyMs] = useState<number | null>(null);
   const [webhookBusy, setWebhookBusy] = useState(false);
+
+  useEffect(() => {
+    if (!isOwner) {
+      router.replace("/dashboard");
+    }
+  }, [isOwner, router]);
+
+  if (!isOwner) {
+    return null;
+  }
 
   const handleTestWebhook = async () => {
     if (!webhookUrl || !webhookUrl.startsWith("http")) {
@@ -382,12 +403,30 @@ export default function SettingsPage() {
           </div>
 
           <div className="grid gap-4 md:grid-cols-2 text-xs">
-            <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-1">
-              <p className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold">
-                Active Account Principal
-              </p>
+            <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <p className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold">
+                  Active Account Principal
+                </p>
+                {address && (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      await navigator.clipboard.writeText(address);
+                      toast({
+                        variant: "success",
+                        title: "Address Copied",
+                        description: "Wallet address copied to clipboard!",
+                      });
+                    }}
+                    className="flex items-center gap-1 text-[11px] text-cyan-400 hover:text-cyan-300 transition-colors"
+                  >
+                    <Copy size={12} /> Copy Address
+                  </button>
+                )}
+              </div>
               <p className="text-sm font-mono text-white font-medium break-all">
-                {email || address || "Guest / Not connected"}
+                {email ? `${email} (${address?.slice(0, 6)}...${address?.slice(-4)})` : address || "Guest / Not connected"}
               </p>
             </div>
 
@@ -405,6 +444,31 @@ export default function SettingsPage() {
                   : "Guest Simulation Mode"}
               </p>
             </div>
+
+            {(authType === "web2_google" || authType === "web2_email") && (
+              <div className="md:col-span-2 p-4 rounded-2xl bg-amber-950/20 border border-amber-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 shrink-0">
+                    <KeyRound size={18} />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-white">Wallet Self-Custody & Backup</p>
+                    <p className="text-[11px] text-slate-400">
+                      Export your Arc Smart Account private key to import into MetaMask, Rabby, or other hardware wallets.
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setIsExportModalOpen(true)}
+                  className="shrink-0 text-amber-200 border-amber-500/30 hover:bg-amber-500/10"
+                >
+                  <KeyRound size={13} className="mr-1.5" /> Export Private Key
+                </Button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -420,6 +484,15 @@ export default function SettingsPage() {
           </Button>
         </div>
       </form>
+
+      {/* Export Private Key Modal */}
+      <ExportKeyModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        address={address}
+        email={email}
+        privateKey={getPrivateKey()}
+      />
     </div>
   );
 }

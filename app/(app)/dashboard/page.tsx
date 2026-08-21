@@ -4,6 +4,10 @@ import { MilestoneStatusBadge } from "@/components/milestones/milestone-status-b
 import { Button } from "@/components/shared/button";
 import { EmptyState } from "@/components/shared/empty-state";
 import { SectionCard } from "@/components/shared/section-card";
+import DashboardTabs from "@/components/dashboard/DashboardTabs";
+import PendingReview from "@/components/dashboard/PendingReview";
+import ActivePayouts from "@/components/dashboard/ActivePayouts";
+import RecentProof from "@/components/dashboard/RecentProof";
 import { getDashboardData } from "@/lib/repositories/dashboard";
 import { resolveProductContextFromCookies } from "@/lib/runtime/product-context-server";
 import { WalletGate } from "@/components/dashboard/wallet-gate";
@@ -93,7 +97,7 @@ export default async function DashboardPage() {
           <h1 className="text-2xl font-semibold tracking-tight text-white md:text-3xl w-full">
             Review queue, release readiness, and settlement proof in one place.
           </h1>
-          <p className="max-w-3xl text-sm leading-7 text-[var(--text-primary)] md:text-base">
+          <p className="text-sm leading-7 text-[var(--text-primary)] md:text-base">
             SettleFlow keeps contributor payouts visible from submitted work to
             approved release and onchain proof, so teams can move faster
             without losing control.
@@ -171,227 +175,49 @@ export default async function DashboardPage() {
           hint="USDC still waiting on review, release, or proof confirmation across visible payouts"
         />
       </section>
-
-      <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-        <SectionCard title="Pending Review Queue">
-          <div className="space-y-4">
-            {pendingApprovals.length === 0 ? (
-              <EmptyState
-                title="No milestones waiting for review"
-                description="As contributors submit work, review-ready milestones will appear here."
-              />
-            ) : (
-              pendingApprovals.map((milestone) => {
-                const payout = payouts.find((item) => item.id === milestone.payoutId);
-                const contributor = contributors.find(
-                  (item) => item.id === payout?.contributorId,
-                );
-
-                return (
-                  <div
-                    key={milestone.id}
-                    className="sf-shell rounded-xl p-5"
-                  >
-                    <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                      <div className="space-y-3">
-                        <div className="flex flex-wrap items-center gap-3">
-                          <MilestoneStatusBadge status={milestone.status} />
-                          <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                            {payout?.title}
-                          </p>
-                        </div>
-                        <div className="space-y-1.5">
-                          <p className="text-lg font-semibold text-white">{milestone.title}</p>
-                          <p className="text-sm text-[var(--text-primary)]">
-                            {contributor?.name ?? payout?.contributorId ?? "Unknown contributor"} · {formatUsdc(milestone.amount)} USDC awaiting review
-                          </p>
-                        </div>
-                        <p className="max-w-2xl text-sm leading-6 text-[var(--text-muted)]">
-                          {milestone.description}
-                        </p>
-                      </div>
-                      <div className="flex min-w-[180px] flex-col gap-3">
-                        <Button href={`/payouts/${milestone.payoutId}`} variant="primary">
-                          Review milestone
-                        </Button>
-                        <div className="rounded-xl border border-dashed border-[var(--border-soft)] px-4 py-3 text-sm text-[var(--text-muted)]">
-                          Approving this milestone unlocks the next release step.
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-        </SectionCard>
-
-        <div className="flex flex-col gap-6">
-          <SectionCard title="Active Payouts">
-            <div className="space-y-4">
-              {activePayouts.map((payout) => {
-                const contributor = contributors.find(
-                  (item) => item.id === payout.contributorId,
-                );
-                const payoutMilestones = milestones.filter(
-                  (milestone) => milestone.payoutId === payout.id,
-                );
-                const releasedAmount = payoutMilestones
-                  .filter((milestone) => milestone.status === "released")
-                  .reduce((sum, milestone) => sum + milestone.amount, 0);
-                const nextPendingReview = payoutMilestones.find(
-                  (milestone) => milestone.status === "submitted",
-                );
-                const nextReleaseReady = payoutMilestones.find(
-                  (milestone) => milestone.status === "approved",
-                );
-                const currentReleaseProof = nextReleaseReady
-                  ? transactionProofs.find((proof) => proof.milestoneId === nextReleaseReady.id)
-                  : undefined;
-                const payoutStatusLabel =
-                  payout.status === "partially_released"
-                    ? "Partially released"
-                    : payout.status === "completed"
-                      ? "Completed"
-                      : payout.status === "active"
-                        ? "Active"
-                        : "Draft";
-                const payoutActionLabel = nextPendingReview
-                  ? "Review milestone"
-                  : nextReleaseReady && currentReleaseProof?.status === "failed"
-                    ? "Retry settlement"
-                    : nextReleaseReady && currentReleaseProof?.status === "pending"
-                      ? "Update proof"
-                      : nextReleaseReady
-                        ? "Release milestone"
-                        : "View payout detail";
-                const payoutActionHint = nextPendingReview
-                  ? `${nextPendingReview.title} is waiting for review.`
-                  : nextReleaseReady && currentReleaseProof?.status === "pending"
-                    ? `${nextReleaseReady.title} is waiting for settlement proof confirmation.`
-                    : nextReleaseReady && currentReleaseProof?.status === "failed"
-                      ? `${nextReleaseReady.title} needs a retry or proof refresh before payout progress can continue.`
-                      : nextReleaseReady
-                        ? `${nextReleaseReady.title} is approved and ready for release.`
-                        : payout.status === "completed"
-                          ? "This payout is fully settled. Open the detail view to review final proof history."
-                          : "Open the payout to continue milestone progress.";
-
-                return (
-                  <div
-                    key={payout.id}
-                    className="rounded-xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.62)] p-5"
-                  >
-                    <div className="space-y-3">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="text-lg font-semibold text-white">{payout.title}</p>
-                          <p className="mt-1 text-sm text-[var(--text-primary)]">
-                            {contributor?.name ?? payout.contributorId}
-                          </p>
-                        </div>
-                        <div className="inline-flex items-center rounded-full border border-cyan-300/20 bg-cyan-400/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-cyan-100">
-                          {payoutStatusLabel}
-                        </div>
-                      </div>
-                      <div className="grid gap-3 sm:grid-cols-2">
-                        <div>
-                          <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                            Total commitment
-                          </p>
-                          <p className="mt-1 font-semibold text-white">
-                            {formatUsdc(payout.totalAmount)} USDC
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                            Released so far
-                          </p>
-                          <p className="mt-1 font-semibold text-white">
-                            {formatUsdc(releasedAmount)} / {formatUsdc(payout.totalAmount)} USDC
-                          </p>
-                        </div>
-                      </div>
-                      <div className="space-y-3">
-                        <Button href={`/payouts/${payout.id}`} variant="ghost">
-                          {payoutActionLabel}
-                        </Button>
-                        <div className="rounded-xl border border-dashed border-[var(--border-soft)] px-4 py-3 text-sm text-[var(--text-muted)]">
-                          {payoutActionHint}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </SectionCard>
-
-          <SectionCard title="Recent Settlement Proof">
-            <div className="space-y-4">
-              {transactionProofs.length === 0 ? (
-                <EmptyState
-                  title="No releases yet"
-                  description="Release proof events will surface here as milestones move through settlement."
+      <section className="sf-shell rounded-xl p-6 md:p-7">
+        <DashboardTabs
+          tabs={[
+            {
+              key: "pending",
+              label: "Pending Review",
+              count: pendingApprovals.length,
+              content: (
+                <PendingReview
+                  pendingApprovals={pendingApprovals}
+                  payouts={payouts}
+                  contributors={contributors}
+                  milestones={milestones}
                 />
-              ) : (
-                transactionProofs.slice(0, 2).map((proof) => {
-                  const milestone = milestones.find(
-                    (item) => item.id === proof.milestoneId,
-                  );
-                  const proofActionLabel = proof.status === "failed"
-                    ? "Retry payout flow"
-                    : proof.status === "pending"
-                      ? "Track settlement"
-                      : "Open payout proof";
-                  const proofActionHint = proof.status === "failed"
-                    ? "Open the payout to inspect the failed release and decide whether to retry."
-                    : proof.status === "pending"
-                      ? "Open the payout to monitor confirmation and refresh proof state."
-                      : "Open the payout detail to review the full settlement record."
-                  return (
-                    <div
-                      key={proof.id}
-                       className="rounded-xl border border-[var(--border-soft)] bg-[rgba(8,15,31,0.72)] p-5"
-                    >
-                      <div className="space-y-3">
-                        <div className="flex flex-wrap items-center gap-3">
-                          <p className="text-lg font-semibold text-white">
-                            {milestone?.title ?? "Settlement event"}
-                          </p>
-                          <MilestoneStatusBadge status={proof.status === "confirmed" ? "released" : proof.status === "failed" ? "rejected" : "submitted"} />
-                        </div>
-                        <p className="text-sm text-[var(--text-primary)]">
-                          {formatUsdc(milestone?.amount ?? 0)} USDC · {proof.network ?? "Arc Testnet"}
-                        </p>
-                        <p className="break-all font-mono text-xs leading-6 text-cyan-100">
-                          {proof.txHash
-                            ? shortenAddress(proof.txHash)
-                            : proof.status === "pending"
-                              ? "Hash pending / unavailable"
-                              : proof.status === "failed"
-                                ? "No confirmed transaction hash"
-                                : "Proof pending"}
-                        </p>
-                        {milestone?.payoutId ? (
-                          <div className="space-y-3 pt-1">
-                            <Button href={`/payouts/${milestone.payoutId}`} variant="ghost">
-                              {proofActionLabel}
-                            </Button>
-                            <div className="rounded-xl border border-dashed border-[var(--border-soft)] px-4 py-3 text-sm text-[var(--text-muted)]">
-                              {proofActionHint}
-                            </div>
-                          </div>
-                        ) : null}
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </SectionCard>
-        </div>
-      </div>
+              ),
+            },
+            {
+              key: "active",
+              label: "Active Payouts",
+              count: activePayouts.length,
+              content: (
+                <ActivePayouts
+                  activePayouts={activePayouts}
+                  payouts={payouts}
+                  contributors={contributors}
+                  milestones={milestones}
+                  transactionProofs={transactionProofs}
+                />
+              ),
+            },
+            {
+              key: "proof",
+              label: "Recent Settlement Proof",
+              count: transactionProofs.length,
+              content: (
+                <RecentProof transactionProofs={transactionProofs} milestones={milestones} />
+              ),
+            },
+          ]}
+        />
+      </section>
     </div>
+
+
   );
 }

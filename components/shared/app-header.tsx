@@ -4,10 +4,11 @@ import React, { useState } from "react";
 import { Button } from "@/components/shared/button";
 import { RoleSwitcher } from "@/components/shared/role-switcher";
 import { FaucetModal } from "@/components/shared/faucet-modal";
+import { ExportKeyModal } from "@/components/shared/export-key-modal";
 import { useWallet } from "@/lib/context/wallet-context";
 import { addArcNetworkToWallet } from "@/lib/arc/onchain";
 import { useToast } from "@/lib/context/toast-context";
-import { ExternalLink, LogOut, Wallet, User, ChevronDown, RefreshCw, Droplets } from "lucide-react";
+import { ExternalLink, LogOut, Wallet, User, ChevronDown, RefreshCw, Droplets, KeyRound, Copy } from "lucide-react";
 
 export function AppHeader() {
   const {
@@ -15,6 +16,8 @@ export function AppHeader() {
     isConnecting,
     address,
     email,
+    userName,
+    userAvatar,
     authType,
     network,
     usdcBalance,
@@ -22,11 +25,13 @@ export function AppHeader() {
     openAuthModal,
     disconnect,
     refreshBalance,
+    getPrivateKey,
   } = useWallet();
 
   const { toast } = useToast();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isFaucetOpen, setIsFaucetOpen] = useState(false);
+  const [isExportKeyOpen, setIsExportKeyOpen] = useState(false);
 
   const handleAddArcNetwork = async () => {
     try {
@@ -48,7 +53,9 @@ export function AppHeader() {
     }
   };
 
-  const displayIdentifier = email
+  const displayIdentifier = userName
+    ? userName
+    : email
     ? email.split("@")[0]
     : address
     ? `${address.slice(0, 6)}...${address.slice(-4)}`
@@ -59,10 +66,17 @@ export function AppHeader() {
       {/* Role Switcher */}
       <RoleSwitcher />
 
-      {/* Get test USDC — opens faucet modal */}
-      <Button variant="ghost" onClick={() => setIsFaucetOpen(true)}>
-        <Droplets size={13} className="mr-1 text-cyan-400" /> Get test USDC
-      </Button>
+      {/* Get test USDC — opens official Circle Arc faucet in a new tab */}
+      <a
+        href="https://faucet.circle.com"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium text-cyan-300 hover:text-white hover:bg-cyan-500/10 transition-colors border border-transparent hover:border-cyan-500/30"
+        title="Open Circle Arc Testnet Faucet in a new tab"
+      >
+        <Droplets size={13} className="text-cyan-400" /> Get test USDC
+        <ExternalLink size={11} className="text-slate-400 ml-0.5" />
+      </a>
 
       {/* Network indicator with 1-click Add/Switch Arc Testnet */}
       <button
@@ -85,12 +99,19 @@ export function AppHeader() {
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
             className="flex items-center gap-2 rounded-full border border-cyan-500/30 bg-slate-900/90 px-4 py-2 text-xs font-normal text-cyan-200 hover:border-cyan-400 hover:bg-slate-800 transition-all shadow-sm"
           >
-            {authType === "web2_google" || authType === "web2_email" ? (
+            {userAvatar ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={userAvatar}
+                alt={displayIdentifier}
+                className="h-4 w-4 rounded-full object-cover border border-cyan-400/40"
+              />
+            ) : authType === "web2_google" || authType === "web2_email" ? (
               <User size={13} className="text-cyan-400" />
             ) : (
               <Wallet size={13} className="text-cyan-400" />
             )}
-            <span className="font-medium text-white">{displayIdentifier}</span>
+            <span className="font-medium text-white max-w-[120px] truncate">{displayIdentifier}</span>
             <span className="text-slate-500 font-mono">|</span>
             <span className="text-cyan-300">{usdcBalance} USDC</span>
             <ChevronDown size={12} className="text-slate-400" />
@@ -108,10 +129,34 @@ export function AppHeader() {
                   <p className="text-[11px] uppercase tracking-wider text-slate-400">
                     Account Details
                   </p>
-                  <p className="mt-1 font-mono text-white break-all">
-                    {email || address}
-                  </p>
-                  <p className="mt-0.5 text-[11px] text-cyan-300">
+                  {email && (
+                    <p className="mt-1 text-slate-200 font-medium truncate">
+                      {email}
+                    </p>
+                  )}
+                  {address && (
+                    <div className="mt-1.5 flex items-center justify-between gap-1 rounded-xl bg-slate-900/90 border border-slate-800/80 px-2.5 py-1.5">
+                      <span className="font-mono text-[11px] text-cyan-300 truncate">
+                        {address.slice(0, 8)}...{address.slice(-6)}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          await navigator.clipboard.writeText(address);
+                          toast({
+                            variant: "success",
+                            title: "Address Copied",
+                            description: "Wallet address copied to clipboard!",
+                          });
+                        }}
+                        className="p-1 text-slate-400 hover:text-cyan-300 hover:bg-slate-800 rounded-md transition-colors"
+                        title="Copy full wallet address"
+                      >
+                        <Copy size={12} />
+                      </button>
+                    </div>
+                  )}
+                  <p className="mt-1.5 text-[11px] text-cyan-400/90">
                     {authType === "web2_google"
                       ? "Google Smart Account"
                       : authType === "web2_email"
@@ -144,15 +189,27 @@ export function AppHeader() {
                   </div>
                 </div>
 
-                <button
-                  onClick={() => {
-                    setIsDropdownOpen(false);
-                    setIsFaucetOpen(true);
-                  }}
-                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 py-2 transition-colors font-medium text-[11px] mb-1"
+                <a
+                  href="https://faucet.circle.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => setIsDropdownOpen(false)}
+                  className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 py-2 transition-colors font-medium text-[11px] mb-1"
                 >
-                  <Droplets size={13} /> Get Testnet USDC
-                </button>
+                  <Droplets size={13} /> Get Testnet USDC <ExternalLink size={10} className="text-cyan-400/70 ml-0.5" />
+                </a>
+
+                {(authType === "web2_google" || authType === "web2_email") && (
+                  <button
+                    onClick={() => {
+                      setIsDropdownOpen(false);
+                      setIsExportKeyOpen(true);
+                    }}
+                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 py-2 transition-colors font-medium text-[11px] mb-1"
+                  >
+                    <KeyRound size={13} /> Export Private Key
+                  </button>
+                )}
 
                 <button
                   onClick={() => {
@@ -174,6 +231,15 @@ export function AppHeader() {
         isOpen={isFaucetOpen}
         onClose={() => setIsFaucetOpen(false)}
         userAddress={address}
+      />
+
+      {/* Export Private Key Modal */}
+      <ExportKeyModal
+        isOpen={isExportKeyOpen}
+        onClose={() => setIsExportKeyOpen(false)}
+        address={address}
+        email={email}
+        privateKey={getPrivateKey()}
       />
     </div>
   );

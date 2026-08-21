@@ -3,6 +3,8 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useResolvedProductContext } from "@/lib/runtime/product-context-client";
+import { hasRole } from "@/lib/runtime/role-utils";
 import type { ContributorListItem } from "@/lib/repositories/contributors";
 import { formatUsdc, shortenAddress } from "@/lib/utils/format";
 import { AddContributorDialog } from "./add-contributor-dialog";
@@ -32,6 +34,8 @@ export function ContributorListClient({
   initialContributors,
 }: ContributorListClientProps) {
   const router = useRouter();
+  const productContext = useResolvedProductContext();
+  const actor = productContext.actor;
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "archived">("all");
@@ -106,18 +110,21 @@ export function ContributorListClient({
             >
               Active
             </button>
-            <button
-              onClick={() => setStatusFilter("archived")}
-              className={`rounded-lg px-3 py-1.5 transition-all ${
-                statusFilter === "archived"
-                  ? "bg-cyan-400 text-slate-950 font-semibold shadow-sm"
-                  : "text-slate-400 hover:text-white"
-              }`}
-            >
-              Archived
-            </button>
+            {hasRole(actor, "owner") && (
+              <button
+                onClick={() => setStatusFilter("archived")}
+                className={`rounded-lg px-3 py-1.5 transition-all ${
+                  statusFilter === "archived"
+                    ? "bg-cyan-400 text-slate-950 font-semibold shadow-sm"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                Archived
+              </button>
+            )}
           </div>
 
+{hasRole(actor, "owner") && (
           <Button
             variant="primary"
             onClick={() => setIsAddModalOpen(true)}
@@ -125,6 +132,7 @@ export function ContributorListClient({
           >
             <UserPlus size={15} className="mr-1.5" /> Add Contributor
           </Button>
+        )}
         </div>
       </div>
 

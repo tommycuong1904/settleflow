@@ -15,7 +15,12 @@ export default function DashboardTabs({ tabs }: { tabs: TabItem[] }) {
   const productContext = useResolvedProductContext();
   const actor = productContext.actor;
   // Owner sees all tabs; others see only subset (for now keep all)
-  const visibleTabs = tabs.filter(() => true); // placeholder, can customize per role
+  const visibleTabs = tabs.filter((tab) => {
+  if (hasRole(actor, "owner")) return true;
+  if (hasRole(actor, "reviewer")) return tab.key === "pending";
+  if (hasRole(actor, "contributor")) return tab.key === "active";
+  return false;
+});
 
 
   return (
@@ -55,7 +60,7 @@ export default function DashboardTabs({ tabs }: { tabs: TabItem[] }) {
 
       {/* Tab content */}
       <div className="pt-4 w-full">
-        {tabs.map(
+        {visibleTabs.map(
           (tab) =>
             active === tab.key && (
               <div key={tab.key} className="tab-panel">

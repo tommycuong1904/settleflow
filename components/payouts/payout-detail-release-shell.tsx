@@ -18,6 +18,7 @@ import type { Milestone } from "@/lib/models/milestone";
 import type { TransactionProof } from "@/lib/models/transaction-proof";
 import { useResolvedProductContext } from "@/lib/runtime/product-context-client";
 import { PRODUCT_CONTEXT_HEADER_NAMES, type ProductActor } from "@/lib/runtime/product-context";
+import { hasRole, isRole } from "@/lib/runtime/role-utils";
 import { useWallet } from "@/lib/context/wallet-context";
 import { formatUsdc } from "@/lib/utils/format";
 
@@ -48,7 +49,7 @@ export function PayoutDetailReleaseShell({
 }: PayoutDetailReleaseShellProps) {
   const productContext = useResolvedProductContext();
   const { isConnected, openAuthModal } = useWallet();
-  const isOwnerActor = currentActor === "owner";
+  const isOwnerActor = isRole(currentActor, "owner");
   const [releaseStatus, setReleaseStatus] = useState<ReleasePanelStatus>(
     releaseProof?.status === "failed"
       ? "failed"
@@ -120,7 +121,7 @@ export function PayoutDetailReleaseShell({
       return;
     }
 
-    if (!isOwnerActor || !nextReleasableMilestone) {
+    if (!hasRole(currentActor, "owner") || !nextReleasableMilestone) {
       return;
     }
 

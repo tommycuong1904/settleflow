@@ -132,6 +132,8 @@ h1 em {
   width: 100%;
   margin: 0 auto;
   padding: 40px;
+  min-height: 100dvh; /* keep full viewport height */
+  overflow-y: auto;   /* always allow vertical scroll */
 }
 
 /* ─── App shell / sidebar layout ─────────────────────────── */

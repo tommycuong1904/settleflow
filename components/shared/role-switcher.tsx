@@ -75,7 +75,8 @@ export function RoleSwitcher() {
     document.cookie = `${PRODUCT_CONTEXT_COOKIE_NAMES.actor}=${nextActor}; path=/; max-age=31536000; SameSite=Lax`;
     setIsOpen(false);
     setActiveActor(nextActor);
-    
+    // Update URL query to reflect actor change
+    router.push(`?actor=${nextActor}`);
     const nextRole = ROLES.find((r) => r.actor === nextActor);
     toast({
       variant: "info",
@@ -83,7 +84,6 @@ export function RoleSwitcher() {
       description: `Viewing application as ${nextRole?.badge}`,
       durationMs: 2500,
     });
-    
     router.refresh();
   };
 
