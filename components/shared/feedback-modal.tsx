@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   X,
   MessageSquareHeart,
@@ -14,6 +14,9 @@ import {
   Lightbulb,
   Heart,
   CheckCircle2,
+  Image as ImageIcon,
+  Trash2,
+  UploadCloud,
 } from "lucide-react";
 import { useToast } from "@/lib/context/toast-context";
 import { useWallet } from "@/lib/context/wallet-context";
@@ -28,14 +31,46 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
   const { toast } = useToast();
   const { address, email } = useWallet();
   const productContext = useResolvedProductContext();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [category, setCategory] = useState<"idea" | "bug" | "praise" | "general">("idea");
   const [rating, setRating] = useState<number>(5);
   const [message, setMessage] = useState("");
+  const [attachedImage, setAttachedImage] = useState<string | null>(null);
+  const [imageName, setImageName] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
   if (!isOpen) return null;
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        variant: "warning",
+        title: "File Too Large",
+        description: "Please attach an image smaller than 5MB.",
+      });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setAttachedImage(reader.result as string);
+      setImageName(file.name);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removeImage = () => {
+    setAttachedImage(null);
+    setImageName(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,6 +85,7 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
           category,
           rating,
           message: message.trim(),
+          attachedImage,
           userEmail: email,
           userAddress: address,
           role: productContext.actor,
@@ -70,6 +106,7 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
       setTimeout(() => {
         setIsSubmitted(false);
         setMessage("");
+        removeImage();
         onClose();
       }, 2000);
     } catch (err) {
@@ -212,7 +249,7 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
                 </label>
                 <textarea
                   required
-                  rows={4}
+                  rows={3}
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   placeholder="What did you like? What can we make better for Arc payout settlements?"
@@ -220,11 +257,61 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
                 />
               </div>
 
+              {/* Image Attachment */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                    Attach Screenshot (Optional)
+                  </label>
+                  {attachedImage && (
+                    <button
+                      type="button"
+                      onClick={removeImage}
+                      className="text-[11px] text-rose-400 hover:text-rose-300 flex items-center gap-1 transition-colors"
+                    >
+                      <Trash2 size={12} /> Remove
+                    </button>
+                  )}
+                </div>
+
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleImageChange}
+                  accept="image/png, image/jpeg, image/webp, image/gif"
+                  className="hidden"
+                />
+
+                {attachedImage ? (
+                  <div className="relative rounded-2xl border border-cyan-500/30 bg-slate-900/80 p-2.5 flex items-center gap-3 animate-in fade-in">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={attachedImage}
+                      alt="Attachment preview"
+                      className="h-12 w-12 rounded-xl object-cover border border-slate-700 shrink-0"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium text-white truncate">{imageName || "screenshot.png"}</p>
+                      <p className="text-[10px] text-cyan-300">Ready to upload</p>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full flex items-center justify-center gap-2 rounded-2xl border border-dashed border-slate-700 hover:border-cyan-400/50 bg-slate-900/40 hover:bg-slate-900/80 py-3 px-4 text-slate-400 hover:text-cyan-200 transition-all"
+                  >
+                    <UploadCloud size={16} className="text-cyan-400" />
+                    <span>Click to attach image or screenshot (Max 5MB)</span>
+                  </button>
+                )}
+              </div>
+
               {/* Submit Button */}
               <button
                 type="submit"
                 disabled={isSubmitting || !message.trim()}
-                className="w-full flex items-center justify-center gap-2 rounded-full bg-cyan-400 hover:bg-cyan-300 py-2.5 px-4 text-xs font-semibold text-slate-950 transition-all disabled:opacity-50 shadow-md active:scale-[0.99]"
+                className="w-full flex items-center justify-center gap-2 rounded-full bg-cyan-400 hover:bg-cyan-300 py-2.5 px-4 text-xs font-semibold text-slate-950 transition-all disabled:opacity-50 shadow-md active:scale-[0.99] pt-2"
               >
                 {isSubmitting ? (
                   <>
