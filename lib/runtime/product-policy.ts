@@ -94,3 +94,47 @@ export function assertCanRetryRelease({ productContext, actorUserId }: PolicyInp
     assertActorUserAlignment(productContext, actorUserId, "FORBIDDEN_RELEASE_RETRY_CONTEXT", "Release retry context does not match the active owner.")
   );
 }
+
+export type PayoutViewPolicyInput = {
+  productContext: ProductContext;
+  payoutContributorId?: string | null;
+  recipientAddress?: string | null;
+  contributorEmail?: string | null;
+};
+
+export function assertCanViewPayout({
+  productContext,
+  payoutContributorId,
+  recipientAddress,
+  contributorEmail,
+}: PayoutViewPolicyInput): ProductPolicyViolation | null {
+  // Owner and Reviewer can view all payouts in the workspace
+  if (productContext.actor === "owner" || productContext.actor === "reviewer") {
+    return null;
+  }
+
+  // Contributor can only view payouts assigned to them
+  if (productContext.actor === "contributor") {
+    const activeUserId = productContext.activeUserId?.toLowerCase();
+    
+    // Check match against contributor ID, recipient address, or email
+    const matchesId = Boolean(payoutContributorId && activeUserId && payoutContributorId.toLowerCase() === activeUserId);
+    const matchesAddress = Boolean(recipientAddress && activeUserId && recipientAddress.toLowerCase() === activeUserId);
+    const matchesEmail = Boolean(contributorEmail && activeUserId && contributorEmail.toLowerCase() === activeUserId);
+
+    if (matchesId || matchesAddress || matchesEmail) {
+      return null;
+    }
+
+    return forbid(
+      "FORBIDDEN_PAYOUT_ACCESS",
+      "You do not have permission to view this payout agreement. Only the assigned contributor, reviewer, or owner can access it."
+    );
+  }
+
+  return forbid(
+    "FORBIDDEN_PAYOUT_ACCESS",
+    "You do not have permission to access this payout."
+  );
+}
+

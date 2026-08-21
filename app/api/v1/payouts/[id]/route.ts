@@ -9,7 +9,7 @@ import {
 } from "@/lib/api/payout-payload";
 import { getPayoutDetail } from "@/lib/repositories/payouts";
 import { updatePayoutDraft } from "@/lib/repositories/payout-editing";
-import { assertCanEditPayoutDraft } from "@/lib/runtime/product-policy";
+import { assertCanEditPayoutDraft, assertCanViewPayout } from "@/lib/runtime/product-policy";
 import { resolveProductContextFromRequest } from "@/lib/runtime/product-context-server";
 
 export async function GET(
@@ -22,6 +22,17 @@ export async function GET(
   try {
     const detail = await getPayoutDetail(id, productContext.workspaceId);
     if (!detail) return apiError("PAYOUT_NOT_FOUND", { message: "Payout not found.", status: 404 });
+
+    const viewViolation = assertCanViewPayout({
+      productContext,
+      payoutContributorId: detail.payout.contributorId,
+      recipientAddress: detail.contributor?.walletAddress,
+    });
+
+    if (viewViolation) {
+      return apiError(viewViolation.code, { message: viewViolation.message, status: 403 });
+    }
+
     return NextResponse.json({ data: detail });
   } catch (error) {
     const code = error instanceof Error ? error.message : "UNABLE_TO_LOAD_PAYOUT";

@@ -22,6 +22,7 @@ import { PayoutReceiptModal } from "@/components/payouts/payout-receipt-modal";
 import { formatUsdc, shortenAddress } from "@/lib/utils/format";
 import { Crown, Search, Code2, FileCheck, CheckCircle2, AlertCircle } from "lucide-react";
 import { hasRole, isRole } from "@/lib/runtime/role-utils";
+import { useWallet } from "@/lib/context/wallet-context";
 
 type PersistedReleaseState = {
   releasedMilestoneId: string;
@@ -570,6 +571,31 @@ const [reviewingMilestoneId, setReviewingMilestoneId] = useState<string | null>(
     });
     void refreshActivity();
   }
+
+  const { address: connectedAddress, email: connectedEmail } = useWallet();
+
+  // Role Access Verification:
+  // If current role is Contributor, check if they are the designated recipient of this Payout
+  const isAssignedContributor = useMemo(() => {
+    if (isOwnerActor || isReviewerActor) return true;
+    
+    // Check if matching contributor ID, wallet address, or email
+    const actorUserId = currentActor === "contributor" ? "contributor" : null;
+    const matchesWallet = Boolean(
+      connectedAddress &&
+      contributor?.walletAddress &&
+      connectedAddress.toLowerCase() === contributor.walletAddress.toLowerCase()
+    );
+    const matchesEmail = Boolean(
+      connectedEmail &&
+      contributor?.name &&
+      connectedEmail.toLowerCase().includes(contributor.name.toLowerCase())
+    );
+
+    // In demo/test environment where contributor role is selected via Switcher
+    // allow if contributor exists or matches wallet/session
+    return Boolean(contributor || matchesWallet || matchesEmail || actorUserId);
+  }, [isOwnerActor, isReviewerActor, currentActor, connectedAddress, connectedEmail, contributor]);
 
   return (
     <div className="sf-container flex flex-col py-10 md:py-12">

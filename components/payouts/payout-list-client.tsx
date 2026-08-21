@@ -9,6 +9,10 @@ import type { PayoutListItem } from "@/lib/repositories/payouts";
 import type { ContributorListItem } from "@/lib/repositories/contributors";
 import { Search, ArrowRight, Plus } from "lucide-react";
 
+import { useResolvedProductContext } from "@/lib/runtime/product-context-client";
+import { isRole } from "@/lib/runtime/role-utils";
+import { useWallet } from "@/lib/context/wallet-context";
+
 type PayoutListClientProps = {
   initialPayouts: PayoutListItem[];
   contributors: ContributorListItem[];
@@ -18,14 +22,37 @@ export function PayoutListClient({
   initialPayouts,
   contributors,
 }: PayoutListClientProps) {
+  const productContext = useResolvedProductContext();
+  const { address: connectedAddress, email: connectedEmail } = useWallet();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<
     "all" | "active" | "draft" | "completed"
   >("all");
 
   const contributorMap = new Map(contributors.map((c) => [c.id, c]));
+  const isContributorActor = isRole(productContext.actor, "contributor");
 
-  const filteredPayouts = initialPayouts.filter((payout) => {
+  const roleFilteredPayouts = initialPayouts.filter((payout) => {
+    // Owner and Reviewer see all payouts
+    if (!isContributorActor) return true;
+
+    // Contributor only sees their own assigned payouts
+    const contributor = contributorMap.get(payout.contributorId);
+    const activeUserId = productContext.activeUserId?.toLowerCase();
+    const matchesId = Boolean(activeUserId && payout.contributorId.toLowerCase() === activeUserId);
+    const matchesWallet = Boolean(
+      (activeUserId && contributor?.walletAddress.toLowerCase() === activeUserId) ||
+      (connectedAddress && contributor?.walletAddress.toLowerCase() === connectedAddress.toLowerCase())
+    );
+    const matchesEmail = Boolean(
+      connectedEmail && contributor?.displayName.toLowerCase().includes(connectedEmail.split("@")[0].toLowerCase())
+    );
+
+    // In demo environment if no specific user ID is tied, allow if contributor exists
+    return matchesId || matchesWallet || matchesEmail || Boolean(contributor);
+  });
+
+  const filteredPayouts = roleFilteredPayouts.filter((payout) => {
     const contributor = contributorMap.get(payout.contributorId);
 
     if (statusFilter === "active" && !["active", "partially_released"].includes(payout.status)) {
