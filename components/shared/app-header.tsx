@@ -5,10 +5,11 @@ import { Button } from "@/components/shared/button";
 import { RoleSwitcher } from "@/components/shared/role-switcher";
 import { FaucetModal } from "@/components/shared/faucet-modal";
 import { ExportKeyModal } from "@/components/shared/export-key-modal";
+import { FeedbackModal } from "@/components/shared/feedback-modal";
 import { useWallet } from "@/lib/context/wallet-context";
 import { addArcNetworkToWallet } from "@/lib/arc/onchain";
 import { useToast } from "@/lib/context/toast-context";
-import { ExternalLink, LogOut, Wallet, User, ChevronDown, RefreshCw, Droplets, KeyRound, Copy } from "lucide-react";
+import { ExternalLink, LogOut, Wallet, User, ChevronDown, RefreshCw, Droplets, KeyRound, Copy, MessageSquareHeart } from "lucide-react";
 
 export function AppHeader() {
   const {
@@ -32,6 +33,7 @@ export function AppHeader() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isFaucetOpen, setIsFaucetOpen] = useState(false);
   const [isExportKeyOpen, setIsExportKeyOpen] = useState(false);
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
 
   const handleAddArcNetwork = async () => {
     try {
@@ -77,6 +79,15 @@ export function AppHeader() {
         <Droplets size={13} className="text-cyan-400" /> Get test USDC
         <ExternalLink size={11} className="text-slate-400 ml-0.5" />
       </a>
+
+      {/* Feedback Button */}
+      <button
+        onClick={() => setIsFeedbackOpen(true)}
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-amber-300 hover:text-amber-200 bg-amber-500/10 hover:bg-amber-500/20 transition-all border border-amber-500/30"
+        title="Send feedback or report an issue"
+      >
+        <MessageSquareHeart size={13} className="text-amber-400" /> Feedback
+      </button>
 
       {/* Network indicator with 1-click Add/Switch Arc Testnet */}
       <button
@@ -240,6 +251,12 @@ export function AppHeader() {
         address={address}
         email={email}
         privateKey={getPrivateKey()}
+      />
+
+      {/* User Feedback Modal */}
+      <FeedbackModal
+        isOpen={isFeedbackOpen}
+        onClose={() => setIsFeedbackOpen(false)}
       />
     </div>
   );
