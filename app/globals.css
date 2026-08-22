@@ -1,28 +1,6 @@
 @import "tailwindcss";
 
 :root {
-  color-scheme: dark;
-  --background: #090a0d;
-  --surface: #111318;
-  --surface-muted: #0d0f13;
-  --surface-strong: #171a21;
-  --foreground: #ffffff;
-  --text-primary: #e2e8f0;
-  --text-muted: #8e9aa8;
-  --border-soft: rgba(255, 255, 255, 0.08);
-  --border-strong: rgba(255, 255, 255, 0.18);
-  --accent: #ffffff;
-  --accent-strong: #f8fafc;
-  --accent-cyan: #38bdf8;
-  --accent-emerald: #10b981;
-  --success-soft: rgba(16, 185, 129, 0.1);
-  --radius: 0.75rem;
-  /* Sidebar */
-  --sidebar-bg: rgba(10, 11, 14, 0.92);
-  --sidebar-border: rgba(255, 255, 255, 0.07);
-}
-
-[data-theme="light"] {
   color-scheme: light;
   --background: #F7F7F5;
   --surface: #FFFFFF;
@@ -38,9 +16,31 @@
   --accent-cyan: #0284C7;
   --accent-emerald: #059669;
   --success-soft: rgba(5, 150, 105, 0.08);
+  --radius: 0.75rem;
   /* Sidebar */
   --sidebar-bg: #FFFFFF;
   --sidebar-border: rgba(0, 0, 0, 0.07);
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --background: #090a0d;
+  --surface: #111318;
+  --surface-muted: #0d0f13;
+  --surface-strong: #171a21;
+  --foreground: #ffffff;
+  --text-primary: #e2e8f0;
+  --text-muted: #8e9aa8;
+  --border-soft: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.18);
+  --accent: #ffffff;
+  --accent-strong: #f8fafc;
+  --accent-cyan: #38bdf8;
+  --accent-emerald: #10b981;
+  --success-soft: rgba(16, 185, 129, 0.1);
+  /* Sidebar */
+  --sidebar-bg: rgba(10, 11, 14, 0.92);
+  --sidebar-border: rgba(255, 255, 255, 0.07);
 }
 
 @custom-variant dark (&:is(.dark *));
@@ -76,7 +76,7 @@ body {
   transition: background 0.2s ease, color 0.2s ease;
 }
 
-:root:not([data-theme="light"]) body {
+[data-theme="dark"] body {
   background:
     radial-gradient(
       circle at 50% 0%,
