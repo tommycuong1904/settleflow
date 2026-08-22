@@ -130,8 +130,8 @@ export function RoleSwitcher() {
                     onClick={() => handleSelectRole(role.actor)}
                     className={`w-full text-left p-2.5 rounded-xl transition-all flex items-start justify-between gap-2.5 ${
                       isSelected
-                        ? "bg-[var(--surface-strong)] border border-[var(--border-strong)]"
-                        : "hover:bg-[var(--surface-muted)] border border-transparent"
+                        ? "bg-[var(--background)] border border-[var(--border-strong)]"
+                        : "hover:bg-[var(--background)] border border-transparent"
                     }`}
                   >
                     <div className="flex items-start gap-2.5">
