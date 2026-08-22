@@ -2,13 +2,13 @@ import type { MilestoneStatus } from "@/lib/models/milestone";
 
 const statusStyles: Record<MilestoneStatus, string> = {
   pending:
-    "border border-[var(--border-soft)] bg-[rgba(15,23,42,0.82)] text-[var(--text-primary)]",
+    "border border-[var(--border-soft)] bg-[var(--surface-muted)] text-[var(--text-muted)]",
   submitted:
-    "border border-cyan-300/30 bg-cyan-400/10 text-cyan-200",
+    "border border-sky-400/20 bg-sky-400/10 text-sky-200",
   approved:
-    "border border-cyan-300/50 bg-cyan-400/16 text-cyan-100",
+    "border border-emerald-400/25 bg-emerald-400/10 text-emerald-200",
   released:
-    "border border-cyan-300/55 bg-cyan-400/18 text-white",
+    "border border-emerald-400/30 bg-emerald-400/12 text-emerald-100",
   rejected:
     "border border-rose-400/30 bg-rose-400/10 text-rose-200",
 };

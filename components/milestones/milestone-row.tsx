@@ -101,14 +101,14 @@ export function MilestoneRow({
             <p className="max-w-2xl text-sm leading-6 text-[var(--text-primary)]">
               {milestone.description}
             </p>
-            <p className="text-sm font-semibold text-cyan-100">
+            <p className="font-mono-numbers text-sm font-medium text-white">
               {formatUsdc(milestone.amount)} USDC
             </p>
 
             {/* Submitted deliverable link preview */}
             {(lastArtifactUrl || lastSubmissionSummary) && (
-              <div className="mt-2.5 rounded-2xl border border-cyan-500/20 bg-cyan-950/20 p-3 text-xs space-y-1.5 max-w-xl">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-cyan-400">
+              <div className="mt-2.5 rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-3 text-xs space-y-1.5 max-w-xl">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
                   Attached Deliverable
                 </p>
                 {lastSubmissionSummary && (
@@ -121,7 +121,7 @@ export function MilestoneRow({
                     href={lastArtifactUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 text-cyan-300 hover:text-cyan-200 font-medium underline underline-offset-2 transition-colors pt-0.5"
+                    className="inline-flex items-center gap-1.5 text-sky-300 hover:text-white font-medium underline underline-offset-2 transition-colors pt-0.5"
                   >
                     <FileCode size={13} /> View Submitted Artifact <ExternalLink size={11} />
                   </a>

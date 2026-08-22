@@ -97,16 +97,16 @@ export function PayoutListClient({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search by title, recipient, or wallet..."
-            className="w-full rounded-2xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.72)] py-2.5 pl-10 pr-4 text-xs text-white placeholder-slate-500 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400 transition-all"
+            className="w-full rounded-xl border border-[var(--border-soft)] bg-[var(--surface)] py-2.5 pl-10 pr-4 text-xs text-white placeholder-slate-500 focus:border-white/30 focus:outline-none focus:ring-1 focus:ring-white/20 transition-all"
           />
         </div>
 
-        <div className="flex rounded-xl bg-slate-900/90 p-1 border border-slate-800 text-xs font-medium shrink-0">
+        <div className="flex rounded-xl bg-[var(--surface)] p-1 border border-[var(--border-soft)] text-xs font-medium shrink-0">
           <button
             onClick={() => setStatusFilter("all")}
             className={`rounded-lg px-3 py-1.5 transition-all ${
               statusFilter === "all"
-                ? "bg-cyan-400 text-slate-950 font-semibold shadow-sm"
+                ? "bg-white text-slate-950 font-semibold shadow-sm"
                 : "text-slate-400 hover:text-white"
             }`}
           >
@@ -116,7 +116,7 @@ export function PayoutListClient({
             onClick={() => setStatusFilter("active")}
             className={`rounded-lg px-3 py-1.5 transition-all ${
               statusFilter === "active"
-                ? "bg-cyan-400 text-slate-950 font-semibold shadow-sm"
+                ? "bg-white text-slate-950 font-semibold shadow-sm"
                 : "text-slate-400 hover:text-white"
             }`}
           >
@@ -126,7 +126,7 @@ export function PayoutListClient({
             onClick={() => setStatusFilter("draft")}
             className={`rounded-lg px-3 py-1.5 transition-all ${
               statusFilter === "draft"
-                ? "bg-cyan-400 text-slate-950 font-semibold shadow-sm"
+                ? "bg-white text-slate-950 font-semibold shadow-sm"
                 : "text-slate-400 hover:text-white"
             }`}
           >
@@ -136,7 +136,7 @@ export function PayoutListClient({
             onClick={() => setStatusFilter("completed")}
             className={`rounded-lg px-3 py-1.5 transition-all ${
               statusFilter === "completed"
-                ? "bg-cyan-400 text-slate-950 font-semibold shadow-sm"
+                ? "bg-white text-slate-950 font-semibold shadow-sm"
                 : "text-slate-400 hover:text-white"
             }`}
           >
@@ -174,20 +174,20 @@ export function PayoutListClient({
 
             const statusBg =
               payout.status === "completed"
-                ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
+                ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300"
                 : payout.status === "active" || payout.status === "partially_released"
-                ? "border-cyan-400/30 bg-cyan-400/10 text-cyan-200"
-                : "border-slate-700 bg-slate-800 text-slate-300";
+                ? "border-sky-400/20 bg-sky-400/10 text-sky-200"
+                : "border-white/10 bg-white/5 text-slate-400";
 
             return (
               <div
                 key={payout.id}
-                className="rounded-2xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.62)] p-5 hover:border-cyan-500/30 transition-all group"
+                className="rounded-xl border border-[var(--border-soft)] bg-[var(--surface)] p-5 hover:border-white/20 transition-all group"
               >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="space-y-1.5">
                     <div className="flex flex-wrap items-center gap-2.5">
-                      <span className="text-base font-semibold text-white group-hover:text-cyan-200 transition-colors">
+                      <span className="text-base font-semibold text-white group-hover:text-slate-100 transition-colors">
                         {payout.title}
                       </span>
                       <span
@@ -196,13 +196,13 @@ export function PayoutListClient({
                         {statusLabel}
                       </span>
                     </div>
-                    <p className="text-xs text-[var(--text-primary)]">
+                    <p className="text-xs text-[var(--text-muted)]">
                       Recipient:{" "}
                       <strong className="text-slate-300 font-medium">
                         {contributor?.displayName ?? "Contributor"}
                       </strong>{" "}
                       {contributor?.walletAddress ? (
-                        <span className="font-mono text-slate-400">
+                        <span className="font-mono text-slate-500">
                           ({shortenAddress(contributor.walletAddress)})
                         </span>
                       ) : null}
@@ -211,10 +211,10 @@ export function PayoutListClient({
 
                   <div className="flex items-center justify-between sm:justify-end gap-6 shrink-0">
                     <div className="text-right">
-                      <p className="text-xs uppercase tracking-wider text-[var(--text-muted)]">
+                      <p className="text-[10px] uppercase tracking-wider text-[var(--text-muted)]">
                         Amount
                       </p>
-                      <p className="text-base font-semibold text-white">
+                      <p className="font-mono-numbers text-base font-medium text-white">
                         {formatUsdc(Number(payout.totalAmount))} USDC
                       </p>
                     </div>

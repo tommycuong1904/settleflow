@@ -26,21 +26,21 @@ export default function DashboardTabs({ tabs }: { tabs: TabItem[] }) {
   return (
     <div className="space-y-4 w-full">
       {/* Tab headers */}
-          <div className="relative flex border-b border-gray-700" style={{ position: 'relative' }}>
+          <div className="relative flex border-b border-[var(--border-soft)]" style={{ position: 'relative' }}>
       {visibleTabs.map((tab, idx) => (
         <button
           key={tab.key}
           onClick={() => setActive(tab.key)}
           className={`flex-1 px-4 py-3.5 -mb-px text-sm font-medium transition-colors cursor-pointer ${
             active === tab.key
-                ? "border-b-2 border-cyan-500 text-white"
-                : "text-gray-400 hover:text-white"
+                ? "border-b-2 border-white text-white"
+                : "text-slate-400 hover:text-white"
           }`}
-          style={active === tab.key ? { background: "rgba(15,23,42,0.54)" } : undefined}
+          style={active === tab.key ? { background: "rgba(255,255,255,0.03)" } : undefined}
         >
           {tab.label}
           {tab.count !== undefined && (
-            <span className="ml-1 rounded-full bg-cyan-600 px-2 py-0.5 text-xs text-white">
+            <span className="ml-1 rounded-full bg-white/15 px-2 py-0.5 text-xs text-white">
               {tab.count}
             </span>
           )}
@@ -48,7 +48,7 @@ export default function DashboardTabs({ tabs }: { tabs: TabItem[] }) {
       ))}
       {/* Animated underline */}
           <span
-            className="absolute bottom-0 left-0 h-0.5 bg-cyan-500 transition-transform duration-300 ease-out"
+            className="absolute bottom-0 left-0 h-0.5 bg-white transition-transform duration-300 ease-out"
             style={{
               width: `${100 / visibleTabs.length}%`,
               transform: `translateX(${visibleTabs.findIndex((t) => t.key === active) * 100}%)`,

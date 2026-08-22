@@ -73,29 +73,29 @@ export function AppHeader() {
         href="https://faucet.circle.com"
         target="_blank"
         rel="noopener noreferrer"
-        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium text-cyan-300 hover:text-white hover:bg-cyan-500/10 transition-colors border border-transparent hover:border-cyan-500/30"
+        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium text-slate-400 hover:text-white hover:bg-white/5 transition-colors border border-transparent hover:border-white/10"
         title="Open Circle Arc Testnet Faucet in a new tab"
       >
-        <Droplets size={13} className="text-cyan-400" /> Get test USDC
-        <ExternalLink size={11} className="text-slate-400 ml-0.5" />
+        <Droplets size={13} className="text-sky-400" /> Get test USDC
+        <ExternalLink size={11} className="text-slate-500 ml-0.5" />
       </a>
 
       {/* Feedback Button */}
       <button
         onClick={() => setIsFeedbackOpen(true)}
-        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-amber-300 hover:text-amber-200 bg-amber-500/10 hover:bg-amber-500/20 transition-all border border-amber-500/30"
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 transition-all border border-white/10"
         title="Send feedback or report an issue"
       >
-        <MessageSquareHeart size={13} className="text-amber-400" /> Feedback
+        <MessageSquareHeart size={13} className="text-slate-400" /> Feedback
       </button>
 
       {/* Network indicator with 1-click Add/Switch Arc Testnet */}
       <button
         onClick={handleAddArcNetwork}
         title="Click to add / switch to Arc Testnet in your Web3 wallet"
-        className="inline-flex items-center gap-2 rounded-full border border-slate-800 bg-slate-900/80 hover:bg-slate-800 hover:border-cyan-500/40 transition-all px-3.5 py-2 text-xs text-slate-300"
+        className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-[#14171e] hover:bg-[#1c202a] hover:border-white/20 transition-all px-3 py-1.5 text-xs text-slate-300"
       >
-        <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)] animate-pulse" />
+        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
         <span>{network}</span>
       </button>
 
@@ -108,23 +108,23 @@ export function AppHeader() {
         <div className="relative">
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="flex items-center gap-2 rounded-full border border-cyan-500/30 bg-slate-900/90 px-4 py-2 text-xs font-normal text-cyan-200 hover:border-cyan-400 hover:bg-slate-800 transition-all shadow-sm"
+            className="flex items-center gap-2 rounded-full border border-white/10 bg-[#14171e] px-3.5 py-1.5 text-xs text-slate-200 hover:border-white/20 hover:bg-[#1c202a] transition-all shadow-sm"
           >
             {userAvatar ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={userAvatar}
                 alt={displayIdentifier}
-                className="h-4 w-4 rounded-full object-cover border border-cyan-400/40"
+                className="h-4 w-4 rounded-full object-cover border border-white/20"
               />
             ) : authType === "web2_google" || authType === "web2_email" ? (
-              <User size={13} className="text-cyan-400" />
+              <User size={13} className="text-slate-400" />
             ) : (
-              <Wallet size={13} className="text-cyan-400" />
+              <Wallet size={13} className="text-slate-400" />
             )}
             <span className="font-medium text-white max-w-[120px] truncate">{displayIdentifier}</span>
-            <span className="text-slate-500 font-mono">|</span>
-            <span className="text-cyan-300">{usdcBalance} USDC</span>
+            <span className="text-white/20 font-mono">|</span>
+            <span className="font-mono-numbers text-emerald-400 font-medium">{usdcBalance} USDC</span>
             <ChevronDown size={12} className="text-slate-400" />
           </button>
 
@@ -135,19 +135,40 @@ export function AppHeader() {
                 className="fixed inset-0 z-40"
                 onClick={() => setIsDropdownOpen(false)}
               />
-              <div className="absolute right-0 top-full mt-2 z-50 w-64 rounded-2xl border border-slate-800 bg-[#0c1322] p-3 shadow-2xl text-xs space-y-2.5">
-                <div className="border-b border-slate-800 pb-2">
-                  <p className="text-[11px] uppercase tracking-wider text-slate-400">
-                    Account Details
+              <div className="absolute right-0 top-full mt-2 z-50 w-64 rounded-2xl border border-white/10 bg-[#111318] p-3 shadow-2xl text-xs space-y-2.5 backdrop-blur-xl">
+                <div className="border-b border-white/5 pb-2">
+                  <p className="text-[10px] uppercase tracking-wider text-slate-400">
+                    Connected Account
                   </p>
-                  {email && (
-                    <p className="mt-1 text-slate-200 font-medium truncate">
-                      {email}
-                    </p>
-                  )}
+                  <p className="font-mono text-white text-[11px] truncate mt-0.5">
+                    {address || email}
+                  </p>
+                </div>
+
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between text-slate-300 py-1">
+                    <span>USDC Balance</span>
+                    <div className="flex items-center gap-1.5">
+                      <strong className="font-mono-numbers text-emerald-400 font-medium">
+                        {isRefreshingBalance ? (
+                          <span className="text-slate-500 animate-pulse">Fetching...</span>
+                        ) : (
+                          <>{usdcBalance} USDC</>
+                        )}
+                      </strong>
+                      <button
+                        onClick={() => { void refreshBalance(); }}
+                        disabled={isRefreshingBalance}
+                        className="text-slate-500 hover:text-white transition-colors disabled:opacity-40"
+                        title="Refresh live balance from Arc Testnet"
+                      >
+                        <RefreshCw size={11} className={isRefreshingBalance ? "animate-spin" : ""} />
+                      </button>
+                    </div>
+                  </div>
                   {address && (
-                    <div className="mt-1.5 flex items-center justify-between gap-1 rounded-xl bg-slate-900/90 border border-slate-800/80 px-2.5 py-1.5">
-                      <span className="font-mono text-[11px] text-cyan-300 truncate">
+                    <div className="flex items-center justify-between gap-1 rounded-lg bg-white/5 border border-white/10 px-2.5 py-1.5">
+                      <span className="font-mono text-[11px] text-slate-300 truncate">
                         {address.slice(0, 8)}...{address.slice(-6)}
                       </span>
                       <button
@@ -160,14 +181,14 @@ export function AppHeader() {
                             description: "Wallet address copied to clipboard!",
                           });
                         }}
-                        className="p-1 text-slate-400 hover:text-cyan-300 hover:bg-slate-800 rounded-md transition-colors"
+                        className="p-1 text-slate-500 hover:text-white hover:bg-white/10 rounded-md transition-colors"
                         title="Copy full wallet address"
                       >
                         <Copy size={12} />
                       </button>
                     </div>
                   )}
-                  <p className="mt-1.5 text-[11px] text-cyan-400/90">
+                  <p className="text-[11px] text-slate-500">
                     {authType === "web2_google"
                       ? "Google Smart Account"
                       : authType === "web2_email"
@@ -176,61 +197,39 @@ export function AppHeader() {
                   </p>
                 </div>
 
-                <div className="flex items-center justify-between py-1 text-slate-300">
-                  <span>Balance:</span>
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-white">
-                      {isRefreshingBalance ? (
-                        <span className="text-slate-400 animate-pulse">Fetching...</span>
-                      ) : (
-                        <>{usdcBalance} USDC</>
-                      )}
-                    </span>
+                <div className="border-t border-white/5 pt-2 space-y-1">
+                  <a
+                    href="https://faucet.circle.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => setIsDropdownOpen(false)}
+                    className="w-full flex items-center gap-2 rounded-lg hover:bg-white/5 text-slate-400 hover:text-white px-2 py-1.5 transition-colors text-[11px]"
+                  >
+                    <Droplets size={13} /> Get Testnet USDC <ExternalLink size={10} className="ml-auto opacity-50" />
+                  </a>
+
+                  {(authType === "web2_google" || authType === "web2_email") && (
                     <button
-                      onClick={() => { void refreshBalance(); }}
-                      disabled={isRefreshingBalance}
-                      className="text-slate-500 hover:text-cyan-400 transition-colors disabled:opacity-40"
-                      title="Refresh live balance from Arc Testnet"
+                      onClick={() => {
+                        setIsDropdownOpen(false);
+                        setIsExportKeyOpen(true);
+                      }}
+                      className="w-full flex items-center gap-2 rounded-lg hover:bg-white/5 text-slate-400 hover:text-white px-2 py-1.5 transition-colors font-medium text-[11px]"
                     >
-                      <RefreshCw
-                        size={11}
-                        className={isRefreshingBalance ? "animate-spin" : ""}
-                      />
+                      <KeyRound size={13} /> Export Private Key
                     </button>
-                  </div>
-                </div>
+                  )}
 
-                <a
-                  href="https://faucet.circle.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => setIsDropdownOpen(false)}
-                  className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 py-2 transition-colors font-medium text-[11px] mb-1"
-                >
-                  <Droplets size={13} /> Get Testnet USDC <ExternalLink size={10} className="text-cyan-400/70 ml-0.5" />
-                </a>
-
-                {(authType === "web2_google" || authType === "web2_email") && (
                   <button
                     onClick={() => {
                       setIsDropdownOpen(false);
-                      setIsExportKeyOpen(true);
+                      disconnect();
                     }}
-                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 py-2 transition-colors font-medium text-[11px] mb-1"
+                    className="w-full flex items-center gap-2 rounded-lg hover:bg-rose-500/10 text-slate-400 hover:text-rose-300 px-2 py-1.5 transition-colors font-medium text-[11px]"
                   >
-                    <KeyRound size={13} /> Export Private Key
+                    <LogOut size={13} /> Disconnect
                   </button>
-                )}
-
-                <button
-                  onClick={() => {
-                    setIsDropdownOpen(false);
-                    disconnect();
-                  }}
-                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 py-2 transition-colors font-medium"
-                >
-                  <LogOut size={13} /> Disconnect
-                </button>
+                </div>
               </div>
             </>
           )}

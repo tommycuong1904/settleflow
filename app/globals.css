@@ -2,19 +2,21 @@
 
 :root {
   color-scheme: dark;
-  --background: #020617;
-  --surface: #111827;
-  --surface-muted: #0f172a;
-  --surface-strong: #162033;
-  --foreground: #e5eefb;
-  --text-primary: #aab6cc;
-  --text-muted: #7f8ba3;
-  --border-soft: rgba(148, 163, 184, 0.16);
-  --border-strong: rgba(34, 211, 238, 0.2);
-  --accent: #22d3ee;
-  --accent-strong: #67e8f9;
-  --success-soft: rgba(34, 211, 238, 0.12);
-  --radius: 0.7rem;
+  --background: #090a0d;
+  --surface: #111318;
+  --surface-muted: #0d0f13;
+  --surface-strong: #171a21;
+  --foreground: #ffffff;
+  --text-primary: #e2e8f0;
+  --text-muted: #8e9aa8;
+  --border-soft: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.18);
+  --accent: #ffffff;
+  --accent-strong: #f8fafc;
+  --accent-cyan: #38bdf8;
+  --accent-emerald: #10b981;
+  --success-soft: rgba(16, 185, 129, 0.1);
+  --radius: 0.75rem;
 }
 
 @custom-variant dark (&:is(.dark *));
@@ -26,8 +28,8 @@
   --color-ring: var(--accent);
   --color-primary: var(--accent);
   --color-primary-foreground: var(--background);
-  --font-sans: "Inter", "Arial", sans-serif;
-  --font-mono: "JetBrains Mono", "SFMono-Regular", monospace;
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "IBM Plex Mono", "Geist Mono", "JetBrains Mono", monospace;
 }
 
 * {
@@ -44,14 +46,15 @@ body {
   margin: 0;
   background:
     radial-gradient(
-      circle at 50% -10%,
-      rgba(34, 211, 238, 0.14),
-      transparent 28rem
+      circle at 50% 0%,
+      rgba(255, 255, 255, 0.035),
+      transparent 36rem
     ),
-    linear-gradient(180deg, rgba(15, 23, 42, 0.72), transparent 28%),
     var(--background);
   color: var(--foreground);
-  font-family: "Inter", Arial, sans-serif;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 a {
@@ -66,13 +69,13 @@ a {
 
 button:focus-visible,
 a:focus-visible {
-  outline: 2px solid var(--accent-strong);
-  outline-offset: 4px;
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
 }
 
 ::selection {
-  background: rgba(34, 211, 238, 0.22);
-  color: var(--foreground);
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
 }
 
 h1,
@@ -84,39 +87,41 @@ p {
 
 h1,
 h2 {
-  letter-spacing: -0.055em;
+  letter-spacing: -0.035em;
+  font-weight: 600;
 }
 
 h1 {
-  /* max-width: 650px; */
-  margin-bottom: 25px;
-  font-size: clamp(24px, 4vw, 42px);
-  line-height: 0.99;
+  margin-bottom: 20px;
+  font-size: clamp(26px, 4vw, 44px);
+  line-height: 1.1;
 }
 
-h1 em {
-  color: var(--accent-strong);
-  font-style: normal;
+.font-mono-numbers {
+  font-family: var(--font-mono);
+  font-feature-settings: "tnum";
+  letter-spacing: -0.02em;
 }
 
 .sf-shell {
   border: 1px solid var(--border-soft);
-  border-radius: 0.75rem;
-  /* background: linear-gradient(
-    180deg,
-    rgba(17, 24, 39, 0.96),
-    rgba(15, 23, 42, 0.92)
-  ); */
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.02);
+  border-radius: 0.875rem;
+  background: var(--surface);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.35);
 }
 
 .sf-panel {
   border: 1px solid var(--border-soft);
-  background: rgba(15, 23, 42, 0.72);
+  background: var(--surface-muted);
+  border-radius: 0.75rem;
 }
 
 .sf-label {
   color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
 .sf-copy {
@@ -124,16 +129,16 @@ h1 em {
 }
 
 .sf-container {
-  width: min(1160px, calc(100% - 48px));
+  width: min(1180px, calc(100% - 48px));
   margin: 0 auto;
 }
 
 .sf-app-wrapper {
   width: 100%;
   margin: 0 auto;
-  padding: 40px;
-  min-height: 100dvh; /* keep full viewport height */
-  overflow-y: auto;   /* always allow vertical scroll */
+  padding: 32px 40px;
+  min-height: 100dvh;
+  overflow-y: auto;
 }
 
 /* ─── App shell / sidebar layout ─────────────────────────── */
@@ -201,13 +206,13 @@ h1 em {
 }
 
 .sf-sidebar-item:hover {
-  background: rgba(34, 211, 238, 0.06);
+  background: rgba(255, 255, 255, 0.05);
   color: var(--foreground);
 }
 
 .sf-sidebar-item--active {
-  background: rgba(34, 211, 238, 0.1);
-  color: var(--accent);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--foreground);
 }
 
 .sf-sidebar-item--soon {
@@ -245,15 +250,14 @@ h1 em {
   gap: 6px;
   font-size: 12px;
   font-weight: 500;
-  color: var(--accent);
+  color: var(--text-muted);
 }
 
 .sf-net-dot {
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background: #22c55e;
-  box-shadow: 0 0 6px rgba(34, 197, 94, 0.7);
   animation: sf-pulse 2.4s ease-in-out infinite;
 }
 

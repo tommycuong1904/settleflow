@@ -26,7 +26,7 @@ const ROLES: RoleOption[] = [
     badge: "Owner",
     icon: Crown,
     description: "Full control. Create payouts, activate draft agreements, execute Arc USDC releases.",
-    colorClass: "text-amber-300 border-amber-500/30",
+    colorClass: "text-amber-200 border-amber-500/20",
     bgClass: "bg-amber-500/10",
   },
   {
@@ -35,8 +35,8 @@ const ROLES: RoleOption[] = [
     badge: "Reviewer",
     icon: Search,
     description: "Inspect deliverable submissions, approve or request revisions on milestones.",
-    colorClass: "text-cyan-300 border-cyan-500/30",
-    bgClass: "bg-cyan-500/10",
+    colorClass: "text-sky-200 border-sky-500/20",
+    bgClass: "bg-sky-500/10",
   },
   {
     actor: "contributor",
@@ -44,7 +44,7 @@ const ROLES: RoleOption[] = [
     badge: "Contributor",
     icon: Code2,
     description: "Submit milestone deliverables for review, track upcoming USDC payouts.",
-    colorClass: "text-emerald-300 border-emerald-500/30",
+    colorClass: "text-emerald-200 border-emerald-500/20",
     bgClass: "bg-emerald-500/10",
   },
 ];
@@ -94,7 +94,7 @@ export function RoleSwitcher() {
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-medium transition-all shadow-sm ${activeRole.bgClass} ${activeRole.colorClass} hover:opacity-90`}
+        className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all shadow-sm ${activeRole.bgClass} ${activeRole.colorClass} hover:opacity-90`}
         title="Switch active role context"
         aria-label="Switch active role"
       >
@@ -109,9 +109,9 @@ export function RoleSwitcher() {
             className="fixed inset-0 z-40"
             onClick={() => setIsOpen(false)}
           />
-          <div className="absolute right-0 top-full mt-2 z-50 w-72 rounded-2xl border border-slate-800 bg-[#0c1322] p-3 shadow-2xl text-xs space-y-2 animate-in fade-in zoom-in-95">
-            <div className="border-b border-slate-800 pb-2 px-1">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+          <div className="absolute right-0 top-full mt-2 z-50 w-72 rounded-2xl border border-white/10 bg-[#111318] p-3 shadow-2xl text-xs space-y-2 animate-in fade-in zoom-in-95 backdrop-blur-xl">
+            <div className="border-b border-white/5 pb-2 px-1">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
                 Active Simulation Role
               </p>
               <p className="text-[11px] text-slate-400 mt-0.5 leading-relaxed">
@@ -130,8 +130,8 @@ export function RoleSwitcher() {
                     onClick={() => handleSelectRole(role.actor)}
                     className={`w-full text-left p-2.5 rounded-xl transition-all flex items-start justify-between gap-2.5 ${
                       isSelected
-                        ? "bg-slate-800 border border-slate-700"
-                        : "hover:bg-slate-800/60 border border-transparent"
+                        ? "bg-white/10 border border-white/15"
+                        : "hover:bg-white/5 border border-transparent"
                     }`}
                   >
                     <div className="flex items-start gap-2.5">
