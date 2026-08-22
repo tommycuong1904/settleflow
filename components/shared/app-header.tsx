@@ -73,20 +73,14 @@ export function AppHeader() {
       {/* Light / Dark Mode Toggle */}
       <button
         onClick={toggleTheme}
-        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-[var(--text-muted)] hover:text-[var(--foreground)] bg-[var(--surface-muted)] hover:bg-[var(--surface-strong)] transition-all border border-[var(--border-soft)]"
+        className="inline-flex items-center justify-center p-2 rounded-full text-[var(--text-muted)] hover:text-[var(--foreground)] bg-[var(--surface-muted)] hover:bg-[var(--surface-strong)] transition-all border border-[var(--border-soft)]"
         title={`Switch to ${theme === "dark" ? "Light Mode" : "Dark Mode"}`}
         aria-label="Toggle theme"
       >
         {theme === "dark" ? (
-          <>
-            <Sun size={13} className="text-amber-400" />
-            <span>Light</span>
-          </>
+          <Sun size={15} className="text-amber-400" />
         ) : (
-          <>
-            <Moon size={13} className="text-slate-600" />
-            <span>Dark</span>
-          </>
+          <Moon size={15} className="text-slate-600" />
         )}
       </button>
 
