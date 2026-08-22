@@ -109,10 +109,14 @@ export function AppHeader() {
       <button
         onClick={handleAddArcNetwork}
         title="Click to add / switch to Arc Testnet in your Web3 wallet"
-        className="inline-flex items-center gap-2 rounded-full border border-[var(--border-soft)] bg-[var(--surface)] hover:bg-[var(--surface-muted)] transition-all px-3 py-1.5 text-xs text-[var(--text-muted)]"
+        className={`inline-flex items-center gap-2 rounded-full border border-[var(--border-soft)] bg-[var(--surface)] hover:bg-[var(--surface-muted)] transition-all px-3 py-1.5 text-xs ${network === "Arc Testnet" ? "text-[var(--text-muted)]" : "text-rose-500"}`}
       >
-        <span className="h-1.5 w-1.5 rounded-full bg-[var(--foreground)] opacity-70" />
-        <span>{network}</span>
+        {network === "Arc Testnet" ? (
+          <span className="sf-net-dot shrink-0" aria-hidden="true" />
+        ) : (
+          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-rose-500" />
+        )}
+        <span className="font-medium">{network === "Arc Testnet" ? network : "Wrong network"}</span>
       </button>
 
       {/* Auth state button */}
