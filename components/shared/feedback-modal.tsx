@@ -132,18 +132,15 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
       onClick={handleClose}
     >
       <div
-        className="relative w-full max-w-[480px] overflow-hidden rounded-3xl border border-cyan-500/20 bg-[#0c1322] p-6 sm:p-8 shadow-[0_0_60px_rgba(34,211,238,0.15)] text-white space-y-5"
+        className="relative w-full max-w-[480px] overflow-hidden rounded-3xl border border-[var(--border-strong)] bg-[var(--surface)] p-6 sm:p-8 shadow-2xl space-y-5"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Glow */}
-        <div className="pointer-events-none absolute -right-20 -top-20 h-48 w-48 rounded-full bg-cyan-500/10 blur-3xl" />
-        <div className="pointer-events-none absolute -left-20 -bottom-20 h-48 w-48 rounded-full bg-blue-600/10 blur-3xl" />
 
         {/* Close Button */}
         <button
           onClick={handleClose}
           disabled={isSubmitting}
-          className="absolute right-5 top-5 rounded-full p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
+          className="absolute right-5 top-5 rounded-full p-1.5 text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--foreground)] transition-colors"
           aria-label="Close modal"
         >
           <X size={18} />
@@ -151,11 +148,11 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
 
         {isSubmitted ? (
           <div className="py-8 text-center space-y-3 animate-in zoom-in-95">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--success-soft)] text-[var(--accent-emerald)] border border-[var(--border-soft)]">
               <CheckCircle2 size={30} />
             </div>
-            <h3 className="text-xl font-bold text-white">Thank You!</h3>
-            <p className="text-xs text-slate-400 max-w-[280px] mx-auto leading-relaxed">
+            <h3 className="text-xl font-bold text-[var(--foreground)]">Thank You!</h3>
+            <p className="text-xs text-[var(--text-muted)] max-w-[280px] mx-auto leading-relaxed">
               Your feedback is immensely valuable in making SettleFlow the smoothest payout platform.
             </p>
           </div>
@@ -163,14 +160,14 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
           <>
             {/* Header */}
             <div className="flex items-center gap-3.5">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-cyan-400/10 border border-cyan-400/30 text-cyan-300 shadow-[0_0_20px_rgba(34,211,238,0.2)] shrink-0">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--surface-muted)] border border-[var(--border-soft)] text-[var(--foreground)] shrink-0">
                 <MessageSquareHeart size={22} />
               </div>
               <div>
-                <h2 className="text-xl font-bold tracking-tight text-white">
+                <h2 className="text-xl font-bold tracking-tight text-[var(--foreground)]">
                   Send Feedback
                 </h2>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-[var(--text-muted)]">
                   Help us refine the Arc milestone settlement experience
                 </p>
               </div>
@@ -179,7 +176,7 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
             <form onSubmit={handleSubmit} className="space-y-4 pt-1 text-xs">
               {/* Category selector */}
               <div className="space-y-1.5">
-                <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                <label className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
                   Feedback Topic
                 </label>
                 <div className="grid grid-cols-4 gap-2">
@@ -198,11 +195,11 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
                         onClick={() => setCategory(item.id as typeof category)}
                         className={`flex flex-col items-center justify-center gap-1.5 rounded-xl border p-2.5 transition-all text-xs font-medium ${
                           isSelected
-                            ? "border-cyan-400 bg-cyan-400/15 text-cyan-200 shadow-sm"
-                            : "border-slate-800 bg-slate-900/80 text-slate-400 hover:border-slate-700 hover:text-white"
+                            ? "border-[var(--foreground)] bg-[var(--foreground)] text-[var(--background)] shadow-sm"
+                            : "border-[var(--border-soft)] bg-[var(--surface-muted)] text-[var(--text-muted)] hover:border-[var(--border-strong)] hover:text-[var(--foreground)]"
                         }`}
                       >
-                        <Icon size={16} className={isSelected ? "text-cyan-400" : ""} />
+                        <Icon size={16} />
                         <span>{item.label}</span>
                       </button>
                     );
@@ -212,10 +209,10 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
 
               {/* Experience Rating */}
               <div className="space-y-1.5">
-                <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                <label className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
                   How is your experience?
                 </label>
-                <div className="flex items-center justify-center gap-4 p-2 rounded-xl bg-slate-900/60 border border-slate-800">
+                <div className="flex items-center justify-center gap-4 p-2 rounded-xl bg-[var(--surface-muted)] border border-[var(--border-soft)]">
                   {[
                     { val: 1, label: "Needs work", icon: Frown, color: "text-rose-400" },
                     { val: 3, label: "Good", icon: Meh, color: "text-amber-400" },
@@ -230,11 +227,11 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
                         onClick={() => setRating(r.val)}
                         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                           isSelected
-                            ? "bg-slate-800 text-white ring-1 ring-cyan-400/40"
-                            : "text-slate-500 hover:text-slate-300"
+                            ? "bg-[var(--foreground)] text-[var(--background)]"
+                            : "text-[var(--text-muted)] hover:text-[var(--foreground)]"
                         }`}
                       >
-                        <Icon size={16} className={r.color} />
+                        <Icon size={16} className={isSelected ? "" : r.color} />
                         <span>{r.label}</span>
                       </button>
                     );
@@ -244,7 +241,7 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
 
               {/* Message Input */}
               <div className="space-y-1.5">
-                <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                <label className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
                   Your Thoughts or Suggestions
                 </label>
                 <textarea
@@ -253,21 +250,21 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   placeholder="What did you like? What can we make better for Arc payout settlements?"
-                  className="w-full rounded-2xl border border-slate-700 bg-slate-900/90 p-3 text-xs text-white placeholder-slate-500 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400 transition-all resize-none"
+                  className="w-full rounded-2xl border border-[var(--border-soft)] bg-[var(--surface)] p-3 text-xs text-[var(--foreground)] placeholder-[var(--text-muted)] focus:border-[var(--foreground)] focus:outline-none focus:ring-1 focus:ring-[var(--foreground)] transition-all resize-none"
                 />
               </div>
 
               {/* Image Attachment */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                  <label className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
                     Attach Screenshot (Optional)
                   </label>
                   {attachedImage && (
                     <button
                       type="button"
                       onClick={removeImage}
-                      className="text-[11px] text-rose-400 hover:text-rose-300 flex items-center gap-1 transition-colors"
+                      className="text-[11px] text-[var(--text-muted)] hover:text-rose-500 flex items-center gap-1 transition-colors"
                     >
                       <Trash2 size={12} /> Remove
                     </button>
@@ -283,26 +280,26 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
                 />
 
                 {attachedImage ? (
-                  <div className="relative rounded-2xl border border-cyan-500/30 bg-slate-900/80 p-2.5 flex items-center gap-3 animate-in fade-in">
+                  <div className="relative rounded-2xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-2.5 flex items-center gap-3 animate-in fade-in">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={attachedImage}
                       alt="Attachment preview"
-                      className="h-12 w-12 rounded-xl object-cover border border-slate-700 shrink-0"
+                      className="h-12 w-12 rounded-xl object-cover border border-[var(--border-soft)] shrink-0"
                     />
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-white truncate">{imageName || "screenshot.png"}</p>
-                      <p className="text-[10px] text-cyan-300">Ready to upload</p>
+                      <p className="text-xs font-medium text-[var(--foreground)] truncate">{imageName || "screenshot.png"}</p>
+                      <p className="text-[10px] text-[var(--text-muted)]">Ready to upload</p>
                     </div>
                   </div>
                 ) : (
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="w-full flex items-center justify-center gap-2 rounded-2xl border border-dashed border-slate-700 hover:border-cyan-400/50 bg-slate-900/40 hover:bg-slate-900/80 py-3 px-4 text-slate-400 hover:text-cyan-200 transition-all"
+                    className="w-full flex items-center justify-center gap-2 rounded-2xl border border-dashed border-[var(--border-strong)] hover:border-[var(--foreground)] bg-[var(--surface-muted)] hover:bg-[var(--surface-strong)] py-3 px-4 text-[var(--text-muted)] hover:text-[var(--foreground)] transition-all"
                   >
-                    <UploadCloud size={16} className="text-cyan-400" />
-                    <span>Click to attach image or screenshot (Max 5MB)</span>
+                    <UploadCloud size={16} />
+                    <span>Click to attach image (Max 5MB)</span>
                   </button>
                 )}
               </div>
@@ -311,7 +308,7 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
               <button
                 type="submit"
                 disabled={isSubmitting || !message.trim()}
-                className="w-full flex items-center justify-center gap-2 rounded-full bg-cyan-400 hover:bg-cyan-300 py-2.5 px-4 text-xs font-semibold text-slate-950 transition-all disabled:opacity-50 shadow-md active:scale-[0.99] pt-2"
+                className="w-full flex items-center justify-center gap-2 rounded-full bg-[var(--foreground)] hover:bg-[var(--foreground)]/90 py-2.5 px-4 text-xs font-semibold text-[var(--background)] transition-all disabled:opacity-50 shadow-md active:scale-[0.99] pt-2"
               >
                 {isSubmitting ? (
                   <>
