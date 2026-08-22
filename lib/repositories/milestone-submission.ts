@@ -1,12 +1,12 @@
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db/client";
 import { recordActivity } from "@/lib/repositories/activity-log";
-import { hasWorkspaceRole } from "@/lib/repositories/permissions";
 import { dispatchWebhookNotification } from "@/lib/notifications/webhook-dispatcher";
 
 export type SubmitMilestoneInput = {
   contributorUserId: string;
   summary: string;
+  walletAddress?: string;
   artifactUrl?: string;
   artifactLabel?: string;
   notes?: string;
@@ -45,7 +45,8 @@ export async function submitMilestone(milestoneId: string, workspaceId: string, 
           select: {
             title: true,
             workspaceId: true,
-            contributor: { select: { linkedUserId: true } },
+            targetWalletAddress: true,
+            contributor: { select: { linkedUserId: true, walletAddress: true } },
           },
         },
       },
@@ -59,14 +60,20 @@ export async function submitMilestone(milestoneId: string, workspaceId: string, 
     const submitter = await tx.user.findUnique({ where: { id: input.contributorUserId }, select: { id: true } });
     if (!submitter) throw new Error("USER_NOT_FOUND");
 
-    const isLinkedContributor = milestone.payout.contributor.linkedUserId === input.contributorUserId;
-    const hasContributorRole = await hasWorkspaceRole(
-      tx,
-      milestone.payout.workspaceId,
-      input.contributorUserId,
-      ["owner", "ops", "contributor"],
+    const targetWallet = (milestone.payout.contributor.walletAddress || milestone.payout.targetWalletAddress || "").toLowerCase();
+    const submitterWallet = (input.walletAddress || "").toLowerCase();
+
+    const matchesLinkedUserId = Boolean(
+      milestone.payout.contributor.linkedUserId &&
+      milestone.payout.contributor.linkedUserId === input.contributorUserId
     );
-    if (!isLinkedContributor && !hasContributorRole) {
+    const matchesWallet = Boolean(
+      submitterWallet &&
+      targetWallet &&
+      submitterWallet === targetWallet
+    );
+
+    if (!matchesLinkedUserId && !matchesWallet) {
       throw new Error("USER_NOT_ALLOWED_TO_SUBMIT");
     }
 

@@ -39,12 +39,16 @@ function toListItem(payout: PayoutRecord): PayoutListItem {
 export async function listPayouts(input?: {
   workspaceId?: string;
   contributorId?: string;
+  linkedUserId?: string;
   status?: PayoutListItem["status"];
 }): Promise<PayoutListItem[]> {
   const payouts = await db.payout.findMany({
     where: {
       ...(input?.workspaceId ? { workspaceId: input.workspaceId } : {}),
       ...(input?.contributorId ? { contributorId: input.contributorId } : {}),
+      ...(input?.linkedUserId
+        ? { contributor: { linkedUserId: input.linkedUserId } }
+        : {}),
       ...(input?.status ? { status: input.status } : {}),
     },
     orderBy: { createdAt: "desc" },
@@ -90,6 +94,10 @@ export type PayoutDetailData = {
     title: string;
     description?: string;
     contributorId: string;
+    createdByUserId?: string;
+    targetWalletAddress?: string;
+    creatorWalletAddress?: string;
+    creatorEmail?: string;
     totalAmount: number;
     currency: "USDC";
     status: "draft" | "active" | "partially_released" | "completed";
@@ -99,6 +107,7 @@ export type PayoutDetailData = {
     id: string;
     name: string;
     walletAddress: string;
+    linkedUserId?: string | null;
     role?: string;
   };
   milestones: {
@@ -140,12 +149,17 @@ export async function getPayoutDetail(id: string, workspaceId?: string): Promise
       title: true,
       description: true,
       contributorId: true,
+      createdByUserId: true,
+      targetWalletAddress: true,
       totalAmountUsdc: true,
       currency: true,
       status: true,
       createdAt: true,
+      createdBy: {
+        select: { walletAddress: true, email: true },
+      },
       contributor: {
-        select: { id: true, name: true, walletAddress: true, role: true },
+        select: { id: true, name: true, walletAddress: true, linkedUserId: true, role: true },
       },
       milestones: {
         orderBy: { sequence: "asc" },
@@ -191,6 +205,10 @@ export async function getPayoutDetail(id: string, workspaceId?: string): Promise
       title: payout.title,
       description: payout.description ?? undefined,
       contributorId: payout.contributorId,
+      createdByUserId: payout.createdByUserId,
+      targetWalletAddress: payout.targetWalletAddress ?? undefined,
+      creatorWalletAddress: payout.createdBy?.walletAddress ?? undefined,
+      creatorEmail: payout.createdBy?.email ?? undefined,
       totalAmount: Number(payout.totalAmountUsdc.toString()),
       currency: "USDC",
       status: payout.status,
@@ -201,6 +219,7 @@ export async function getPayoutDetail(id: string, workspaceId?: string): Promise
           id: payout.contributor.id,
           name: payout.contributor.name,
           walletAddress: payout.contributor.walletAddress,
+          linkedUserId: payout.contributor.linkedUserId ?? null,
           role: payout.contributor.role ?? undefined,
         }
       : undefined,

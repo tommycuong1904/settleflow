@@ -6,7 +6,7 @@ import {
   payoutStatuses,
 } from "@/lib/api/list-query";
 import { listPayouts } from "@/lib/repositories/payouts";
-import { resolveWorkspaceIdFromRequest } from "@/lib/runtime/product-context-server";
+import { resolveProductContextFromRequest } from "@/lib/runtime/product-context-server";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -16,9 +16,16 @@ export async function GET(request: Request) {
     return apiError("INVALID_PAYOUT_STATUS", { message: "Invalid payout status.", status: 400 });
   }
 
+  const productContext = resolveProductContextFromRequest(request);
+
+  // Contributors can only see payouts where they are the linked user
+  const linkedUserId =
+    productContext.actor === "contributor" ? productContext.activeUserId : undefined;
+
   const payouts = await listPayouts({
-    workspaceId: resolveWorkspaceIdFromRequest(request),
+    workspaceId: productContext.workspaceId,
     contributorId: searchParams.get("contributorId") ?? undefined,
+    linkedUserId,
     status: parseEnumQueryValue(status, payoutStatuses),
   });
 

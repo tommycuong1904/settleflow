@@ -9,6 +9,10 @@ export type Payout = {
   title: string;
   description?: string;
   contributorId: string;
+  createdByUserId?: string;
+  targetWalletAddress?: string;
+  creatorWalletAddress?: string;
+  creatorEmail?: string;
   totalAmount: number;
   currency: "USDC";
   status: PayoutStatus;

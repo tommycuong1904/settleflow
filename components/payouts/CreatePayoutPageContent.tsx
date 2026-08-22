@@ -258,20 +258,20 @@ function CreatePayoutPageContent() {
   }
 
   return (
-    <div className="sf-app-wrapper flex flex-col py-10 md:py-12">
+    <section className="flex flex-col gap-6" aria-label="Create Payout Page Content">
       <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
         <div className="space-y-6">
-          {loadError ? <p className="rounded-2xl border border-rose-400/30 bg-rose-400/10 p-3 text-sm text-rose-200">{loadError}</p> : null}
-          {errors.submit ? <p className="rounded-2xl border border-rose-400/30 bg-rose-400/10 p-3 text-sm text-rose-200">{errors.submit}</p> : null}
+          {loadError ? <p role="alert" className="rounded-2xl border border-rose-400/30 bg-rose-400/10 p-3 text-sm text-rose-200">{loadError}</p> : null}
+          {errors.submit ? <p role="alert" className="rounded-2xl border border-rose-400/30 bg-rose-400/10 p-3 text-sm text-rose-200">{errors.submit}</p> : null}
           <div className="space-y-4">
-            <div className="space-y-2">
+            {/* <div className="space-y-2">
               <p className="text-sm font-medium uppercase tracking-[0.22em] text-cyan-300">Create payout</p>
               <h1 className="text-2xl font-semibold tracking-tight text-white md:text-3xl">Build a milestone-based payout agreement for Arc settlement.</h1>
               <p className="max-w-3xl text-sm leading-7 text-[var(--text-primary)] md:text-base">
                 Define who gets paid, how milestones unlock review and release, and
                 how settlement proof should appear once USDC moves on Arc.
               </p>
-            </div>
+            </div> */}
             <div className="grid gap-3 sm:grid-cols-3">
               <div className="rounded-xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.72)] px-5 py-4">
                 <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">Total payout</p>
@@ -502,12 +502,14 @@ function CreatePayoutPageContent() {
               </div>
             </div>
           ) : null}
+        </div>
 
-          <div className="flex flex-col gap-6">
-            <Card className="sf-shell">
-              <CardHeader>
-                <CardTitle>Approval Logic</CardTitle>
-              </CardHeader>
+        {/* Right column — sidebar */}
+        <div className="flex flex-col gap-6">
+          <Card className="sf-shell">
+            <CardHeader>
+              <CardTitle>Approval Logic</CardTitle>
+            </CardHeader>
               <CardContent>
                 <div className="space-y-3 text-sm text-[var(--text-primary)]">
                   {[{ title: "Submit work", description: "Contributors complete a milestone and submit work for review." },
@@ -529,11 +531,11 @@ function CreatePayoutPageContent() {
                     ))}
                 </div>
               </CardContent>
-            </Card>
+          </Card>
 
-            <Card className="sf-shell">
-              <CardHeader>
-                <CardTitle>Settlement Preview</CardTitle>
+          <Card className="sf-shell">
+            <CardHeader>
+              <CardTitle>Settlement Preview</CardTitle>
                 <CardDescription>Review the final payout story before creating the draft.</CardDescription>
               </CardHeader>
               <CardContent>
@@ -607,12 +609,13 @@ function CreatePayoutPageContent() {
                   </Card>
                 </div>
               </CardContent>
-            </Card>
-          </div>
+          </Card>
         </div>
-        <Link href="/payouts"><Button>Back to payouts</Button></Link>
       </div>
-    </div>
+      <div>
+        <Link href="/payouts"><Button variant="secondary">Back to payouts</Button></Link>
+      </div>
+    </section>
   );
 }
 

@@ -38,18 +38,21 @@ export function PayoutListClient({
 
     // Contributor only sees their own assigned payouts
     const contributor = contributorMap.get(payout.contributorId);
-    const activeUserId = productContext.activeUserId?.toLowerCase();
-    const matchesId = Boolean(activeUserId && payout.contributorId.toLowerCase() === activeUserId);
+    if (!contributor) return false;
+
     const matchesWallet = Boolean(
-      (activeUserId && contributor?.walletAddress.toLowerCase() === activeUserId) ||
-      (connectedAddress && contributor?.walletAddress.toLowerCase() === connectedAddress.toLowerCase())
-    );
-    const matchesEmail = Boolean(
-      connectedEmail && contributor?.displayName.toLowerCase().includes(connectedEmail.split("@")[0].toLowerCase())
+      connectedAddress &&
+      contributor.walletAddress &&
+      connectedAddress.toLowerCase() === contributor.walletAddress.toLowerCase()
     );
 
-    // In demo environment if no specific user ID is tied, allow if contributor exists
-    return matchesId || matchesWallet || matchesEmail || Boolean(contributor);
+    const matchesEmail = Boolean(
+      connectedEmail &&
+      ((contributor.email && connectedEmail.toLowerCase() === contributor.email.toLowerCase()) ||
+       (contributor.displayName && connectedEmail.toLowerCase().startsWith(contributor.displayName.toLowerCase())))
+    );
+
+    return matchesWallet || matchesEmail;
   });
 
   const filteredPayouts = roleFilteredPayouts.filter((payout) => {

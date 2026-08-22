@@ -3,6 +3,7 @@
 import { AppKit, type SendParams } from "@circle-fin/app-kit";
 import { createViemAdapterFromProvider } from "@circle-fin/adapter-viem-v2";
 import { getAddress, type EIP1193Provider } from "viem";
+import { addArcNetworkToWallet } from "@/lib/arc/onchain";
 
 export type EIP6963ProviderInfo = {
   uuid: string;
@@ -134,6 +135,16 @@ export async function sendUsdcWithBrowserWallet(input: {
     amount: input.amount,
     token: "USDC",
   };
+
+  // Ensure Arc Testnet is registered in the wallet before attempting to switch/send.
+  // wallet_addEthereumChain both adds the chain (if missing) and switches to it,
+  // avoiding the "Unrecognized chain ID" error from wallet_switchEthereumChain.
+  try {
+    await addArcNetworkToWallet();
+  } catch {
+    // Non-fatal: wallet may already have the chain or reject the prompt.
+    // The send will still attempt and surface a clearer error if it fails.
+  }
 
   await withTimeout(
     kit.estimateSend(sendParams),

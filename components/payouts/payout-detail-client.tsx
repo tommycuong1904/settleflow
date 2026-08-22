@@ -20,9 +20,10 @@ import type { TransactionProof } from "@/lib/models/transaction-proof";
 import type { ProductActor } from "@/lib/runtime/product-context";
 import { PayoutReceiptModal } from "@/components/payouts/payout-receipt-modal";
 import { formatUsdc, shortenAddress } from "@/lib/utils/format";
-import { Crown, Search, Code2, FileCheck, CheckCircle2, AlertCircle } from "lucide-react";
+import { Crown, Search, Code2, FileCheck, CheckCircle2, AlertCircle, ShieldAlert, Lock, ArrowLeft, Wallet } from "lucide-react";
 import { hasRole, isRole } from "@/lib/runtime/role-utils";
 import { useWallet } from "@/lib/context/wallet-context";
+import Link from "next/link";
 
 type PersistedReleaseState = {
   releasedMilestoneId: string;
@@ -572,30 +573,148 @@ const [reviewingMilestoneId, setReviewingMilestoneId] = useState<string | null>(
     void refreshActivity();
   }
 
-  const { address: connectedAddress, email: connectedEmail } = useWallet();
+  const { address: connectedAddress, email: connectedEmail, isConnected, openAuthModal } = useWallet();
 
-  // Role Access Verification:
-  // If current role is Contributor, check if they are the designated recipient of this Payout
-  const isAssignedContributor = useMemo(() => {
-    if (isOwnerActor || isReviewerActor) return true;
-    
-    // Check if matching contributor ID, wallet address, or email
-    const actorUserId = currentActor === "contributor" ? "contributor" : null;
-    const matchesWallet = Boolean(
-      connectedAddress &&
-      contributor?.walletAddress &&
-      connectedAddress.toLowerCase() === contributor.walletAddress.toLowerCase()
-    );
-    const matchesEmail = Boolean(
-      connectedEmail &&
-      contributor?.name &&
-      connectedEmail.toLowerCase().includes(contributor.name.toLowerCase())
-    );
+  // Strict Role & Wallet Access Verification across all roles:
+  // 1. Contributor: Must be the designated recipient wallet/email for this payout
+  // 2. Owner: Must be the payout creator or authorized workspace owner (cannot be an unauthorized or recipient wallet)
+  // 3. Reviewer: Must be an independent authorized reviewer (recipient contributor cannot self-review)
+  const { isAuthorized, requiredRoleLabel, designatedIdentity } = useMemo(() => {
+    const currentWallet = (connectedAddress || "").toLowerCase();
+    const currentEmail = (connectedEmail || "").toLowerCase();
+    const targetWallet = (contributor?.walletAddress || payout.targetWalletAddress || "").toLowerCase();
+    const creatorWallet = (payout.creatorWalletAddress || "").toLowerCase();
 
-    // In demo/test environment where contributor role is selected via Switcher
-    // allow if contributor exists or matches wallet/session
-    return Boolean(contributor || matchesWallet || matchesEmail || actorUserId);
-  }, [isOwnerActor, isReviewerActor, currentActor, connectedAddress, connectedEmail, contributor]);
+    // Contributor role check:
+    if (currentActor === "contributor") {
+      const matchesWallet = Boolean(currentWallet && targetWallet && currentWallet === targetWallet);
+      const matchesEmail = Boolean(
+        currentEmail &&
+        ((contributor?.email && currentEmail === contributor.email.toLowerCase()) ||
+         (contributor?.name && currentEmail.startsWith(contributor.name.toLowerCase())))
+      );
+      return {
+        isAuthorized: matchesWallet || matchesEmail,
+        requiredRoleLabel: "Designated Contributor",
+        designatedIdentity: contributor?.name
+          ? `${contributor.name} (${shortenAddress(contributor?.walletAddress || payout.targetWalletAddress || "")})`
+          : shortenAddress(contributor?.walletAddress || payout.targetWalletAddress || "Designated Recipient"),
+      };
+    }
+
+    // Owner role check:
+    if (currentActor === "owner") {
+      // Contributor cannot impersonate owner to self-release or access owner controls
+      const isDesignatedContributorOnly = Boolean(
+        currentWallet && targetWallet && currentWallet === targetWallet && currentWallet !== creatorWallet
+      );
+      if (isDesignatedContributorOnly) {
+        return {
+          isAuthorized: false,
+          requiredRoleLabel: "Workspace Owner / Payout Creator",
+          designatedIdentity: payout.creatorWalletAddress
+            ? shortenAddress(payout.creatorWalletAddress)
+            : "Authorized Payout Lead (Non-Recipient)",
+        };
+      }
+
+      // If creator wallet is known and wallet is connected, verify match
+      if (creatorWallet && currentWallet && currentWallet !== creatorWallet) {
+        return {
+          isAuthorized: false,
+          requiredRoleLabel: "Workspace Owner / Payout Creator",
+          designatedIdentity: shortenAddress(payout.creatorWalletAddress!),
+        };
+      }
+
+      return {
+        isAuthorized: true,
+        requiredRoleLabel: "Workspace Owner",
+        designatedIdentity: "Authorized Owner",
+      };
+    }
+
+    // Reviewer role check:
+    if (currentActor === "reviewer") {
+      // Contributor cannot review/approve their own payout
+      const isDesignatedContributorOnly = Boolean(
+        currentWallet && targetWallet && currentWallet === targetWallet && currentWallet !== creatorWallet
+      );
+      if (isDesignatedContributorOnly) {
+        return {
+          isAuthorized: false,
+          requiredRoleLabel: "Independent QA / Reviewer",
+          designatedIdentity: "Assigned Workspace Reviewer (Non-Recipient)",
+        };
+      }
+
+      return {
+        isAuthorized: true,
+        requiredRoleLabel: "Reviewer / QA Lead",
+        designatedIdentity: "Authorized Reviewer",
+      };
+    }
+
+    return { isAuthorized: true, requiredRoleLabel: currentActor, designatedIdentity: "" };
+  }, [currentActor, connectedAddress, connectedEmail, contributor, payout.targetWalletAddress, payout.creatorWalletAddress]);
+
+  if (!isAuthorized) {
+    return (
+      <div className="sf-container flex flex-col py-12 md:py-16 items-center justify-center min-h-[60vh]">
+        <div className="w-full max-w-xl rounded-3xl border border-rose-500/30 bg-[#0c1322]/90 backdrop-blur-xl p-8 sm:p-10 shadow-[0_0_60px_rgba(244,63,94,0.1)] text-center space-y-6 animate-in fade-in zoom-in-95">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-rose-500/30 bg-rose-500/10 text-rose-400">
+            <ShieldAlert size={32} />
+          </div>
+
+          <div className="space-y-2">
+            <div className="inline-flex items-center gap-1.5 rounded-full border border-rose-500/30 bg-rose-500/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-rose-300">
+              <Lock size={12} />
+              <span>403 Restricted Access</span>
+            </div>
+            <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
+              Private Payout Agreement
+            </h1>
+            <p className="text-sm leading-relaxed text-slate-400">
+              You are viewing as <strong className="text-white font-medium">{requiredRoleLabel}</strong>. This payout agreement is confidential and your current connected wallet does not have permission to view or manage it.
+            </p>
+          </div>
+
+          {/* Identity comparison card */}
+          <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-4 text-xs text-left space-y-2.5">
+            <div className="flex items-center justify-between text-slate-400 pb-2 border-b border-slate-800">
+              <span>Required Role / Identity:</span>
+              <strong className="font-mono text-cyan-300">
+                {designatedIdentity}
+              </strong>
+            </div>
+            <div className="flex items-center justify-between text-slate-400">
+              <span>Your Connected Identity:</span>
+              <span className="font-mono text-rose-300 font-medium">
+                {connectedAddress
+                  ? shortenAddress(connectedAddress)
+                  : connectedEmail || "Not connected"}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+            <Button
+              variant="primary"
+              onClick={openAuthModal}
+              icon={<Wallet size={14} />}
+            >
+              {isConnected ? "Switch Wallet / Account" : "Connect Authorized Wallet"}
+            </Button>
+            <Link href="/payouts">
+              <Button variant="secondary" icon={<ArrowLeft size={14} />}>
+                Back to Payouts
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="sf-container flex flex-col py-10 md:py-12">

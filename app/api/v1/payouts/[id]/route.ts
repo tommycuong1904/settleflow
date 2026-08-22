@@ -25,7 +25,7 @@ export async function GET(
 
     const viewViolation = assertCanViewPayout({
       productContext,
-      payoutContributorId: detail.payout.contributorId,
+      linkedContributorUserId: detail.contributor?.linkedUserId ?? null,
       recipientAddress: detail.contributor?.walletAddress,
     });
 

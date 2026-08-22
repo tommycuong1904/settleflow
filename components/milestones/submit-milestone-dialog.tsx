@@ -5,6 +5,7 @@ import { Button } from "@/components/shared/button";
 import { X, Send, Link as LinkIcon, Loader2, Code2, Video, Layers, Globe } from "lucide-react";
 import { formatUsdc } from "@/lib/utils/format";
 import type { Milestone } from "@/lib/models/milestone";
+import { useWallet } from "@/lib/context/wallet-context";
 
 type SubmitMilestoneDialogProps = {
   isOpen: boolean;
@@ -37,6 +38,8 @@ export function SubmitMilestoneDialog({
 
   if (!isOpen) return null;
 
+  const { address: connectedAddress } = useWallet();
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!summary.trim()) {
@@ -56,6 +59,7 @@ export function SubmitMilestoneDialog({
           artifactUrl: artifactUrl.trim() || undefined,
           artifactLabel: artifactUrl.trim() ? artifactLabel : undefined,
           notes: notes.trim() || undefined,
+          walletAddress: connectedAddress || undefined,
         }),
       });
 
