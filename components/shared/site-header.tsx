@@ -4,9 +4,11 @@ import Link from "next/link";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/shared/button";
-import { ArrowRight, Menu, X } from "lucide-react";
+import { ArrowRight, Menu, X, Sun, Moon } from "lucide-react";
+import { useTheme } from "@/lib/context/theme-context";
 
 export function SiteHeader() {
+  const { theme, toggleTheme } = useTheme();
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const isHome = pathname === "/";
@@ -50,6 +52,15 @@ export function SiteHeader() {
               {label}
             </Link>
           ))}
+          {/* Light / Dark Mode Switcher */}
+          <button
+            onClick={toggleTheme}
+            className="inline-flex items-center justify-center p-2 rounded-full text-[var(--text-muted)] hover:text-[var(--foreground)] bg-[var(--surface-muted)] hover:bg-[var(--surface-strong)] transition-all border border-[var(--border-soft)]"
+            title={`Switch to ${theme === "dark" ? "Light Mode" : "Dark Mode"}`}
+            aria-label="Toggle theme"
+          >
+            {theme === "dark" ? <Sun size={14} className="text-amber-400" /> : <Moon size={14} className="text-slate-600" />}
+          </button>
           {/* Launch App button on landing page */}
           {isHome ? (
             <Button href="/dashboard" size="sm" variant="primary">

@@ -6,7 +6,8 @@
   --surface: #FFFFFF;
   --surface-muted: #F0EFED;
   --surface-strong: #E8E7E4;
-  --foreground: #111111;
+  /* --foreground: #111111; */
+  --foreground: #0d0d0d;
   --text-primary: #374151;
   --text-muted: #6B7280;
   --border-soft: rgba(0, 0, 0, 0.08);
@@ -329,8 +330,8 @@ h1 {
   position: sticky;
   z-index: 20;
   top: 0;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.1);
-  background: rgba(2, 6, 23, 0.8);
+  border-bottom: 1px solid var(--border-soft);
+  background: var(--background);
   backdrop-filter: blur(18px);
 }
 
@@ -354,7 +355,7 @@ h1 {
 }
 
 .sf-wordmark {
-  color: var(--accent);
+  color: var(--foreground);
 }
 
 .sf-nav-links {
@@ -365,7 +366,7 @@ h1 {
   font-size: 13px;
 }
 
-.sf-nav-links a:not([class*="bg-cyan"]):hover {
+.sf-nav-links a:hover {
   color: var(--foreground);
 }
 
@@ -382,9 +383,9 @@ h1 {
   border-radius: 9999px;
   padding: 13px 24px;
   background: var(--accent);
-  color: #04232b;
+  color: var(--background);
   font-size: 13px;
-  font-weight: 400;
+  font-weight: 500;
   transition:
     transform 0.2s,
     box-shadow 0.2s,
@@ -393,7 +394,7 @@ h1 {
 
 .sf-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 30px rgba(34, 211, 238, 0.16);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
   background: var(--accent-strong);
 }
 
@@ -404,7 +405,7 @@ h1 {
 }
 
 .sf-button-ghost:hover {
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--surface-muted);
   box-shadow: none;
 }
 
@@ -433,10 +434,10 @@ h1 {
 
 .sf-kicker {
   margin: 0 0 20px;
-  color: var(--accent);
-  font-family: "JetBrains Mono", monospace;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
   font-size: 10px;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.16em;
 }
 
@@ -475,7 +476,7 @@ h1 {
   height: 19px;
   border-radius: 50%;
   background: var(--success-soft);
-  color: var(--accent);
+  color: var(--accent-emerald);
 }
 
 .sf-note-line {
@@ -496,7 +497,7 @@ h1 {
   position: absolute;
   width: 500px;
   height: 360px;
-  border: 1px solid rgba(34, 211, 238, 0.12);
+  border: 1px solid var(--border-soft);
   border-radius: 50%;
   transform: rotate(-22deg);
 }
@@ -505,7 +506,7 @@ h1 {
   width: 420px;
   height: 480px;
   transform: rotate(63deg);
-  border-color: rgba(148, 163, 184, 0.1);
+  border-color: var(--border-soft);
 }
 
 .sf-payout-card {
@@ -514,15 +515,9 @@ h1 {
   width: min(450px, 100%);
   padding: 27px;
   border: 1px solid var(--border-strong);
-  border-radius: 10px;
-  background: linear-gradient(
-    140deg,
-    rgba(22, 32, 51, 0.97),
-    rgba(10, 20, 38, 0.97)
-  );
-  box-shadow:
-    0 25px 80px rgba(0, 0, 0, 0.38),
-    0 0 50px rgba(34, 211, 238, 0.07);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
   animation: float 6s ease-in-out infinite;
 }
 
@@ -542,7 +537,7 @@ h1 {
 .sf-dashboard small,
 .sf-dash-summary small {
   color: var(--text-muted);
-  font-family: "JetBrains Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 9px;
   letter-spacing: 0.12em;
 }
@@ -551,8 +546,8 @@ h1 {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: var(--accent);
-  font-family: "JetBrains Mono", monospace;
+  color: var(--foreground);
+  font-family: var(--font-mono);
   font-size: 9px;
   letter-spacing: 0.08em;
 }
@@ -562,8 +557,7 @@ h1 {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 0 10px var(--accent);
+  background: var(--accent-emerald);
 }
 
 .sf-amount {
@@ -571,10 +565,11 @@ h1 {
   font-size: 47px;
   font-weight: 650;
   letter-spacing: -0.07em;
+  color: var(--foreground);
 }
 
 .sf-amount small {
-  color: var(--accent);
+  color: var(--text-muted);
   font-size: 14px;
   letter-spacing: 0.02em;
 }
@@ -599,12 +594,12 @@ h1 {
   width: 29px;
   height: 29px;
   border-radius: 50%;
-  background: var(--accent);
-  color: #04232b;
+  background: var(--foreground);
+  color: var(--background);
 }
 
 .sf-milestone-icon.muted {
-  background: rgba(148, 163, 184, 0.12);
+  background: var(--surface-strong);
   color: var(--text-muted);
 }
 
@@ -620,6 +615,7 @@ h1 {
 .sf-milestone strong {
   font-size: 12px;
   font-weight: 600;
+  color: var(--foreground);
 }
 
 .sf-milestone small {
@@ -630,7 +626,7 @@ h1 {
 
 .sf-check,
 .sf-status {
-  color: var(--accent);
+  color: var(--foreground);
 }
 
 .sf-chevron {
@@ -644,8 +640,8 @@ h1 {
   margin-top: 13px;
   padding: 11px;
   border: 1px solid var(--border-strong);
-  border-radius: 5px;
-  color: var(--accent-strong);
+  border-radius: 6px;
+  color: var(--foreground);
   background: var(--success-soft);
   font-size: 10px;
 }
@@ -666,7 +662,7 @@ h1 {
   gap: 6px;
   justify-items: center;
   color: var(--text-muted);
-  font-family: "JetBrains Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 8px;
 }
 
@@ -680,18 +676,18 @@ h1 {
 }
 
 .sf-state.active {
-  color: var(--accent);
+  color: var(--foreground);
 }
 
 .sf-state.active > span {
-  border-color: var(--accent);
+  border-color: var(--foreground);
 }
 
 .sf-dot {
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: var(--accent);
+  background: var(--foreground);
 }
 
 .sf-proof-chip {
@@ -704,10 +700,10 @@ h1 {
   gap: 9px;
   padding: 12px 15px;
   border: 1px solid var(--border-strong);
-  border-radius: 6px;
-  background: #0b182d;
-  color: var(--accent);
-  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.25);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--foreground);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
 }
 
 .sf-proof-chip span {
@@ -730,7 +726,7 @@ h1 {
 .sf-final {
   border-top: 1px solid var(--border-soft);
   border-bottom: 1px solid var(--border-soft);
-  background: rgba(15, 23, 42, 0.45);
+  background: var(--surface-muted);
 }
 
 .sf-thesis-inner,
@@ -758,7 +754,7 @@ h1 {
 
 .sf-vertical-flow {
   padding-left: 30px;
-  border-left: 1px solid var(--border-strong);
+  border-left: 1px solid var(--border-soft);
 }
 
 .sf-flow-step {
@@ -768,13 +764,14 @@ h1 {
   gap: 18px;
   height: 55px;
   color: var(--text-primary);
-  font-family: "JetBrains Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 11px;
 }
 
 .sf-flow-step span {
-  color: var(--accent);
+  color: var(--foreground);
   font-size: 10px;
+  font-weight: 600;
 }
 
 .sf-flow-step i {
@@ -783,8 +780,7 @@ h1 {
   left: -31px;
   width: 1px;
   height: 25px;
-  background: var(--accent);
-  opacity: 0.7;
+  background: var(--border-strong);
 }
 
 .sf-section {
@@ -827,8 +823,8 @@ h1 {
   min-height: 250px;
   padding: 22px;
   border: 1px solid var(--border-soft);
-  border-radius: 7px;
-  background: rgba(17, 24, 39, 0.55);
+  border-radius: 12px;
+  background: var(--surface);
 }
 
 .sf-fragment > span {
@@ -904,7 +900,7 @@ h1 {
 
 .sf-product {
   border-top: 1px solid var(--border-soft);
-  background: linear-gradient(180deg, rgba(15, 23, 42, 0.35), transparent);
+  background: var(--surface-muted);
 }
 
 .sf-product-grid {
@@ -927,13 +923,13 @@ h1 {
 
 .sf-step-number {
   margin-bottom: 45px;
-  color: var(--accent);
-  font-family: "JetBrains Mono", monospace;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
   font-size: 10px;
 }
 
 .sf-workflow {
-  background: #061022;
+  background: var(--background);
 }
 
 .sf-timeline {
@@ -967,22 +963,22 @@ h1 {
   margin-bottom: 20px;
   border: 1px solid var(--border-soft);
   border-radius: 50%;
-  background: #061022;
+  background: var(--surface);
   color: var(--text-muted);
-  font-family: "JetBrains Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 10px;
 }
 
 .sf-timeline-item.active .sf-timeline-marker {
-  border-color: var(--accent);
-  background: var(--accent);
-  color: #04232b;
-  box-shadow: 0 0 20px rgba(34, 211, 238, 0.22);
+  border-color: var(--foreground);
+  background: var(--foreground);
+  color: var(--background);
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.08);
 }
 
 .sf-timeline-content > span {
   color: var(--text-muted);
-  font-family: "JetBrains Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 9px;
 }
 
@@ -1000,9 +996,9 @@ h1 {
 .sf-approval-card {
   margin-top: 20px;
   padding: 17px;
-  border: 1px solid var(--border-strong);
-  border-radius: 7px;
-  background: rgba(17, 24, 39, 0.8);
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  background: var(--surface);
 }
 
 .sf-approval-card strong,
@@ -1048,10 +1044,10 @@ h1 {
   align-items: center;
   justify-content: center;
   gap: 4px;
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #04232b;
-  font-weight: 700;
+  background: var(--foreground);
+  border-color: var(--foreground);
+  color: var(--background);
+  font-weight: 600;
 }
 
 .sf-gated-inner {
@@ -1072,15 +1068,11 @@ h1 {
 }
 
 .sf-principles svg {
-  color: var(--accent);
+  color: var(--foreground);
 }
 
 .sf-showcase {
-  background: radial-gradient(
-    circle at 80% 50%,
-    rgba(34, 211, 238, 0.07),
-    transparent 30rem
-  );
+  background: var(--background);
 }
 
 .sf-dashboard {
@@ -1090,9 +1082,9 @@ h1 {
   margin-top: 65px;
   overflow: hidden;
   border: 1px solid var(--border-strong);
-  border-radius: 9px;
-  background: #0a1426;
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.25);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
 }
 
 .sf-dashboard aside {
@@ -1101,7 +1093,7 @@ h1 {
   gap: 8px;
   padding: 25px 17px;
   border-right: 1px solid var(--border-soft);
-  background: rgba(15, 23, 42, 0.6);
+  background: var(--surface-muted);
 }
 
 .sf-dashboard aside .sf-wordmark {
@@ -1121,8 +1113,9 @@ h1 {
 }
 
 .sf-dashboard aside a.current {
-  background: var(--success-soft);
-  color: var(--accent);
+  background: var(--surface-strong);
+  color: var(--foreground);
+  font-weight: 600;
 }
 
 .sf-aside-bottom {
@@ -1151,7 +1144,7 @@ h1 {
   padding: 7px 9px;
   border-radius: 4px;
   background: var(--success-soft);
-  color: var(--accent);
+  color: var(--accent-emerald);
   font-size: 10px;
 }
 
@@ -1174,13 +1167,13 @@ h1 {
 }
 
 .sf-dash-summary i {
-  color: var(--accent);
+  color: var(--foreground);
   font-size: 10px;
   font-style: normal;
 }
 
 .cyan {
-  color: var(--accent);
+  color: var(--foreground);
 }
 
 .sf-dash-milestones {
@@ -1191,7 +1184,7 @@ h1 {
 .sf-dash-row {
   padding: 15px;
   border: 1px solid var(--border-soft);
-  border-radius: 5px;
+  border-radius: 8px;
 }
 
 .sf-row-icon {
@@ -1203,13 +1196,13 @@ h1 {
 }
 
 .sf-row-icon.done {
-  background: var(--accent);
-  color: #04232b;
+  background: var(--foreground);
+  color: var(--background);
 }
 
 .sf-row-icon.review {
-  background: rgba(34, 211, 238, 0.12);
-  color: var(--accent);
+  background: var(--surface-strong);
+  color: var(--foreground);
 }
 
 .sf-dash-row > div {
@@ -1234,15 +1227,15 @@ h1 {
 }
 
 .sf-dash-row .review-text {
-  color: var(--accent);
+  color: var(--foreground);
 }
 
 .sf-dash-proof {
   margin-top: 28px;
   padding: 15px;
   border: 1px solid var(--border-strong);
-  border-radius: 5px;
-  color: var(--accent);
+  border-radius: 8px;
+  color: var(--foreground);
 }
 
 .sf-dash-proof div {
@@ -1262,7 +1255,7 @@ h1 {
 }
 
 .sf-state-section {
-  background: rgba(15, 23, 42, 0.42);
+  background: var(--surface-muted);
 }
 
 .sf-state-layout {
@@ -1275,8 +1268,8 @@ h1 {
 .sf-state-machine {
   padding: 22px;
   border: 1px solid var(--border-soft);
-  border-radius: 7px;
-  background: rgba(17, 24, 39, 0.5);
+  border-radius: 12px;
+  background: var(--surface);
 }
 
 .sf-machine-state {
@@ -1295,12 +1288,12 @@ h1 {
   height: 27px;
   border: 1px solid var(--border-soft);
   border-radius: 50%;
-  font-family: "JetBrains Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 9px;
 }
 
 .sf-machine-state strong {
-  font-family: "JetBrains Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 10px;
   letter-spacing: 0.08em;
 }
@@ -1315,11 +1308,11 @@ h1 {
 }
 
 .sf-machine-state.active {
-  color: var(--accent);
+  color: var(--foreground);
 }
 
 .sf-machine-state.active span {
-  border-color: var(--accent);
+  border-color: var(--foreground);
   background: var(--success-soft);
 }
 
@@ -1335,19 +1328,19 @@ h1 {
 .sf-layer {
   padding: 28px;
   border: 1px solid var(--border-soft);
-  border-radius: 7px;
-  background: rgba(17, 24, 39, 0.45);
+  border-radius: 12px;
+  background: var(--surface);
 }
 
 .sf-layer svg {
-  color: var(--accent);
+  color: var(--foreground);
   margin-bottom: 32px;
 }
 
 .sf-layer small {
   display: block;
   color: var(--text-muted);
-  font-family: "JetBrains Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 9px;
   text-transform: uppercase;
 }
@@ -1377,7 +1370,7 @@ h1 {
 }
 
 .sf-use-grid span {
-  color: var(--accent);
+  color: var(--foreground);
 }
 
 .sf-use-grid h3 {
@@ -1392,7 +1385,7 @@ h1 {
 }
 
 .sf-proof {
-  background: #061022;
+  background: var(--background);
 }
 
 .sf-proof-head {
@@ -1408,17 +1401,18 @@ h1 {
   min-width: 150px;
   padding: 18px;
   border: 1px solid var(--border-strong);
-  border-radius: 6px;
+  border-radius: 8px;
+  background: var(--surface);
 }
 
 .sf-proof-badge strong {
   font-size: 10px;
-  color: var(--accent);
+  color: var(--foreground);
 }
 
 .sf-proof-badge small {
   color: var(--text-muted);
-  font-family: "JetBrains Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 9px;
 }
 
@@ -1435,7 +1429,7 @@ h1 {
 
 .sf-proof-grid svg {
   flex: 0 0 auto;
-  color: var(--accent);
+  color: var(--foreground);
 }
 
 .sf-proof-grid h3 {
@@ -1478,8 +1472,8 @@ h1 {
   justify-content: center;
   gap: 15px;
   margin-top: 65px;
-  color: var(--accent);
-  font-family: "JetBrains Mono", monospace;
+  color: var(--foreground);
+  font-family: var(--font-mono);
   font-size: 10px;
   letter-spacing: 0.13em;
 }
@@ -1493,6 +1487,7 @@ h1 {
 .sf-footer {
   padding: 32px 0;
   border-top: 1px solid var(--border-soft);
+  background: var(--background);
 }
 
 .sf-footer .sf-container {
@@ -1516,7 +1511,7 @@ h1 {
 }
 
 .sf-footer a:hover {
-  color: var(--accent);
+  color: var(--foreground);
 }
 
 @keyframes float {
