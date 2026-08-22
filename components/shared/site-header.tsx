@@ -27,13 +27,18 @@ export function SiteHeader() {
       ];
 
   return (
-    <header className={`sf-header ${!isHome ? "sf-header-solid" : ""}`}>
-      <div className="sf-container sf-nav">
-        <Link href="/" className="sf-wordmark" aria-label="SettleFlow home">
+    <header className={`sf-header relative ${!isHome ? "sf-header-solid" : ""}`}>
+      <div className="sf-container sf-nav relative flex items-center justify-between">
+        {/* Left: Logo */}
+        <Link href="/" className="sf-wordmark z-10" aria-label="SettleFlow home">
           <span>Settle</span>Flow
         </Link>
+
+        {/* Center: Centered Navigation Links (Desktop) */}
         <nav
-          className={open ? "sf-nav-links is-open" : "sf-nav-links"}
+          className={`${
+            open ? "sf-nav-links is-open" : "sf-nav-links"
+          } md:absolute md:left-1/2 md:-translate-x-1/2`}
           aria-label="Main navigation"
         >
           {navLinks.map(([label, href]) => (
@@ -52,16 +57,22 @@ export function SiteHeader() {
               {label}
             </Link>
           ))}
-          {/* Light / Dark Mode Switcher */}
+        </nav>
+
+        {/* Right: Actions (Theme Toggle & CTA) */}
+        <div className="hidden md:flex items-center gap-3 z-10">
           <button
             onClick={toggleTheme}
             className="inline-flex items-center justify-center p-2 rounded-full text-[var(--text-muted)] hover:text-[var(--foreground)] bg-[var(--surface-muted)] hover:bg-[var(--surface-strong)] transition-all border border-[var(--border-soft)]"
             title={`Switch to ${theme === "dark" ? "Light Mode" : "Dark Mode"}`}
             aria-label="Toggle theme"
           >
-            {theme === "dark" ? <Sun size={14} className="text-amber-400" /> : <Moon size={14} className="text-slate-600" />}
+            {theme === "dark" ? (
+              <Sun size={15} className="text-amber-400" />
+            ) : (
+              <Moon size={15} className="text-slate-600" />
+            )}
           </button>
-          {/* Launch App button on landing page */}
           {isHome ? (
             <Button href="/dashboard" size="sm" variant="primary">
               Launch App <ArrowRight size={14} />
@@ -71,15 +82,31 @@ export function SiteHeader() {
               Create a payout <ArrowRight size={14} />
             </Button>
           )}
-        </nav>
-        <button
-          className="sf-menu"
-          onClick={() => setOpen(!open)}
-          aria-label={open ? "Close menu" : "Open menu"}
-          aria-expanded={open}
-        >
-          {open ? <X size={20} /> : <Menu size={20} />}
-        </button>
+        </div>
+
+        {/* Mobile Hamburger Menu Toggle */}
+        <div className="flex md:hidden items-center gap-2 z-10">
+          <button
+            onClick={toggleTheme}
+            className="inline-flex items-center justify-center p-1.5 rounded-full text-[var(--text-muted)] hover:text-[var(--foreground)] bg-[var(--surface-muted)] transition-all border border-[var(--border-soft)]"
+            title={`Switch to ${theme === "dark" ? "Light Mode" : "Dark Mode"}`}
+            aria-label="Toggle theme"
+          >
+            {theme === "dark" ? (
+              <Sun size={14} className="text-amber-400" />
+            ) : (
+              <Moon size={14} className="text-slate-600" />
+            )}
+          </button>
+          <button
+            className="sf-menu"
+            onClick={() => setOpen(!open)}
+            aria-label={open ? "Close menu" : "Open menu"}
+            aria-expanded={open}
+          >
+            {open ? <X size={20} /> : <Menu size={20} />}
+          </button>
+        </div>
       </div>
     </header>
   );
