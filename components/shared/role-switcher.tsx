@@ -26,8 +26,8 @@ const ROLES: RoleOption[] = [
     badge: "Owner",
     icon: Crown,
     description: "Full control. Create payouts, activate draft agreements, execute Arc USDC releases.",
-    colorClass: "text-amber-200 border-amber-500/20",
-    bgClass: "bg-amber-500/10",
+    colorClass: "text-[var(--foreground)] border-[var(--border-strong)]",
+    bgClass: "bg-[var(--surface)]",
   },
   {
     actor: "reviewer",
@@ -35,8 +35,8 @@ const ROLES: RoleOption[] = [
     badge: "Reviewer",
     icon: Search,
     description: "Inspect deliverable submissions, approve or request revisions on milestones.",
-    colorClass: "text-sky-200 border-sky-500/20",
-    bgClass: "bg-sky-500/10",
+    colorClass: "text-[var(--foreground)] border-[var(--border-strong)]",
+    bgClass: "bg-[var(--surface)]",
   },
   {
     actor: "contributor",
@@ -44,8 +44,8 @@ const ROLES: RoleOption[] = [
     badge: "Contributor",
     icon: Code2,
     description: "Submit milestone deliverables for review, track upcoming USDC payouts.",
-    colorClass: "text-emerald-200 border-emerald-500/20",
-    bgClass: "bg-emerald-500/10",
+    colorClass: "text-[var(--foreground)] border-[var(--border-strong)]",
+    bgClass: "bg-[var(--surface)]",
   },
 ];
 
@@ -94,13 +94,13 @@ export function RoleSwitcher() {
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all shadow-sm ${activeRole.bgClass} ${activeRole.colorClass} hover:opacity-90`}
+        className={`flex items-center gap-1.5 rounded-full border border-[var(--border-strong)] px-3 py-1.5 text-xs font-medium transition-all shadow-sm bg-[var(--surface)] text-[var(--foreground)] hover:bg-[var(--surface-muted)]`}
         title="Switch active role context"
         aria-label="Switch active role"
       >
-        <ActiveIcon size={13} />
+        <ActiveIcon size={13} className="text-[var(--text-muted)]" />
         <span>Role: <strong className="font-semibold">{activeRole.badge}</strong></span>
-        <ChevronDown size={12} className="opacity-70 ml-0.5" />
+        <ChevronDown size={12} className="text-[var(--text-muted)] ml-0.5" />
       </button>
 
       {isOpen && (
@@ -144,14 +144,14 @@ export function RoleSwitcher() {
                         <p className="font-semibold text-[var(--foreground)] text-xs">
                           {role.label}
                         </p>
-                        <p className="text-[10px] text-slate-400 leading-snug mt-0.5">
+                        <p className="text-[10px] text-[var(--text-muted)] leading-snug mt-0.5">
                           {role.description}
                         </p>
                       </div>
                     </div>
 
                     {isSelected && (
-                      <Check size={14} className="text-cyan-400 shrink-0 mt-1" />
+                      <Check size={14} className="text-[var(--foreground)] shrink-0 mt-1" />
                     )}
                   </button>
                 );

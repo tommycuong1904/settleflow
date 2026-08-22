@@ -78,9 +78,9 @@ export function AppHeader() {
         aria-label="Toggle theme"
       >
         {theme === "dark" ? (
-          <Sun size={15} className="text-amber-400" />
+          <Sun size={15} className="text-[var(--foreground)]" />
         ) : (
-          <Moon size={15} className="text-slate-600" />
+          <Moon size={15} className="text-[var(--foreground)]" />
         )}
       </button>
 
@@ -92,7 +92,7 @@ export function AppHeader() {
         className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium text-[var(--text-muted)] hover:text-[var(--foreground)] hover:bg-[var(--surface-muted)] transition-colors border border-transparent hover:border-[var(--border-soft)]"
         title="Open Circle Arc Testnet Faucet in a new tab"
       >
-        <Droplets size={13} className="text-sky-500" /> Get test USDC
+        <Droplets size={13} className="text-[var(--foreground)]" /> Get test USDC
         <ExternalLink size={11} className="opacity-60 ml-0.5" />
       </a>
 
@@ -111,7 +111,7 @@ export function AppHeader() {
         title="Click to add / switch to Arc Testnet in your Web3 wallet"
         className="inline-flex items-center gap-2 rounded-full border border-[var(--border-soft)] bg-[var(--surface)] hover:bg-[var(--surface-muted)] transition-all px-3 py-1.5 text-xs text-[var(--text-muted)]"
       >
-        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+        <span className="h-1.5 w-1.5 rounded-full bg-[var(--foreground)] opacity-70" />
         <span>{network}</span>
       </button>
 
@@ -140,7 +140,7 @@ export function AppHeader() {
             )}
             <span className="font-medium text-[var(--foreground)] max-w-[120px] truncate">{displayIdentifier}</span>
             <span className="opacity-20 font-mono">|</span>
-            <span className="font-mono-numbers text-emerald-500 font-medium">{usdcBalance} USDC</span>
+            <span className="font-mono-numbers text-[var(--foreground)] font-medium">{usdcBalance} USDC</span>
             <ChevronDown size={12} className="opacity-60" />
           </button>
 
@@ -162,12 +162,12 @@ export function AppHeader() {
                 </div>
 
                 <div className="space-y-1">
-                  <div className="flex items-center justify-between text-slate-300 py-1">
+                  <div className="flex items-center justify-between text-[var(--text-muted)] py-1">
                     <span>USDC Balance</span>
                     <div className="flex items-center gap-1.5">
-                      <strong className="font-mono-numbers text-emerald-400 font-medium">
+                      <strong className="font-mono-numbers text-[var(--foreground)] font-medium">
                         {isRefreshingBalance ? (
-                          <span className="text-slate-500 animate-pulse">Fetching...</span>
+                          <span className="text-[var(--text-muted)] animate-pulse">Fetching...</span>
                         ) : (
                           <>{usdcBalance} USDC</>
                         )}
@@ -175,7 +175,7 @@ export function AppHeader() {
                       <button
                         onClick={() => { void refreshBalance(); }}
                         disabled={isRefreshingBalance}
-                        className="text-slate-500 hover:text-white transition-colors disabled:opacity-40"
+                        className="text-[var(--text-muted)] hover:text-[var(--foreground)] transition-colors disabled:opacity-40"
                         title="Refresh live balance from Arc Testnet"
                       >
                         <RefreshCw size={11} className={isRefreshingBalance ? "animate-spin" : ""} />
@@ -183,8 +183,8 @@ export function AppHeader() {
                     </div>
                   </div>
                   {address && (
-                    <div className="flex items-center justify-between gap-1 rounded-lg bg-white/5 border border-white/10 px-2.5 py-1.5">
-                      <span className="font-mono text-[11px] text-slate-300 truncate">
+                    <div className="flex items-center justify-between gap-1 rounded-lg bg-[var(--surface-muted)] border border-[var(--border-soft)] px-2.5 py-1.5">
+                      <span className="font-mono text-[11px] text-[var(--text-muted)] truncate">
                         {address.slice(0, 8)}...{address.slice(-6)}
                       </span>
                       <button
@@ -197,14 +197,14 @@ export function AppHeader() {
                             description: "Wallet address copied to clipboard!",
                           });
                         }}
-                        className="p-1 text-slate-500 hover:text-white hover:bg-white/10 rounded-md transition-colors"
+                        className="p-1 text-[var(--text-muted)] hover:text-[var(--foreground)] hover:bg-[var(--surface-strong)] rounded-md transition-colors"
                         title="Copy full wallet address"
                       >
                         <Copy size={12} />
                       </button>
                     </div>
                   )}
-                  <p className="text-[11px] text-slate-500">
+                  <p className="text-[11px] text-[var(--text-muted)]">
                     {authType === "web2_google"
                       ? "Google Smart Account"
                       : authType === "web2_email"
@@ -213,13 +213,13 @@ export function AppHeader() {
                   </p>
                 </div>
 
-                <div className="border-t border-white/5 pt-2 space-y-1">
+                <div className="border-t border-[var(--border-soft)] pt-2 space-y-1">
                   <a
                     href="https://faucet.circle.com"
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={() => setIsDropdownOpen(false)}
-                    className="w-full flex items-center gap-2 rounded-lg hover:bg-white/5 text-slate-400 hover:text-white px-2 py-1.5 transition-colors text-[11px]"
+                    className="w-full flex items-center gap-2 rounded-lg hover:bg-[var(--surface-muted)] text-[var(--text-muted)] hover:text-[var(--foreground)] px-2 py-1.5 transition-colors text-[11px]"
                   >
                     <Droplets size={13} /> Get Testnet USDC <ExternalLink size={10} className="ml-auto opacity-50" />
                   </a>
@@ -230,7 +230,7 @@ export function AppHeader() {
                         setIsDropdownOpen(false);
                         setIsExportKeyOpen(true);
                       }}
-                      className="w-full flex items-center gap-2 rounded-lg hover:bg-white/5 text-slate-400 hover:text-white px-2 py-1.5 transition-colors font-medium text-[11px]"
+                      className="w-full flex items-center gap-2 rounded-lg hover:bg-[var(--surface-muted)] text-[var(--text-muted)] hover:text-[var(--foreground)] px-2 py-1.5 transition-colors font-medium text-[11px]"
                     >
                       <KeyRound size={13} /> Export Private Key
                     </button>
@@ -241,7 +241,7 @@ export function AppHeader() {
                       setIsDropdownOpen(false);
                       disconnect();
                     }}
-                    className="w-full flex items-center gap-2 rounded-lg hover:bg-rose-500/10 text-slate-400 hover:text-rose-300 px-2 py-1.5 transition-colors font-medium text-[11px]"
+                    className="w-full flex items-center gap-2 rounded-lg hover:bg-[var(--surface-muted)] text-[var(--text-muted)] hover:text-[var(--foreground)] px-2 py-1.5 transition-colors font-medium text-[11px]"
                   >
                     <LogOut size={13} /> Disconnect
                   </button>
