@@ -9,9 +9,11 @@ import { FeedbackModal } from "@/components/shared/feedback-modal";
 import { useWallet } from "@/lib/context/wallet-context";
 import { addArcNetworkToWallet } from "@/lib/arc/onchain";
 import { useToast } from "@/lib/context/toast-context";
-import { ExternalLink, LogOut, Wallet, User, ChevronDown, RefreshCw, Droplets, KeyRound, Copy, MessageSquareHeart } from "lucide-react";
+import { ExternalLink, LogOut, Wallet, User, ChevronDown, RefreshCw, Droplets, KeyRound, Copy, MessageSquareHeart, Sun, Moon } from "lucide-react";
+import { useTheme } from "@/lib/context/theme-context";
 
 export function AppHeader() {
+  const { theme, toggleTheme } = useTheme();
   const {
     isConnected,
     isConnecting,
@@ -68,34 +70,54 @@ export function AppHeader() {
       {/* Role Switcher */}
       <RoleSwitcher />
 
+      {/* Light / Dark Mode Toggle */}
+      <button
+        onClick={toggleTheme}
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-[var(--text-muted)] hover:text-[var(--foreground)] bg-[var(--surface-muted)] hover:bg-[var(--surface-strong)] transition-all border border-[var(--border-soft)]"
+        title={`Switch to ${theme === "dark" ? "Light Mode" : "Dark Mode"}`}
+        aria-label="Toggle theme"
+      >
+        {theme === "dark" ? (
+          <>
+            <Sun size={13} className="text-amber-400" />
+            <span>Light</span>
+          </>
+        ) : (
+          <>
+            <Moon size={13} className="text-slate-600" />
+            <span>Dark</span>
+          </>
+        )}
+      </button>
+
       {/* Get test USDC — opens official Circle Arc faucet in a new tab */}
       <a
         href="https://faucet.circle.com"
         target="_blank"
         rel="noopener noreferrer"
-        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium text-slate-400 hover:text-white hover:bg-white/5 transition-colors border border-transparent hover:border-white/10"
+        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium text-[var(--text-muted)] hover:text-[var(--foreground)] hover:bg-[var(--surface-muted)] transition-colors border border-transparent hover:border-[var(--border-soft)]"
         title="Open Circle Arc Testnet Faucet in a new tab"
       >
-        <Droplets size={13} className="text-sky-400" /> Get test USDC
-        <ExternalLink size={11} className="text-slate-500 ml-0.5" />
+        <Droplets size={13} className="text-sky-500" /> Get test USDC
+        <ExternalLink size={11} className="opacity-60 ml-0.5" />
       </a>
 
       {/* Feedback Button */}
       <button
         onClick={() => setIsFeedbackOpen(true)}
-        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 transition-all border border-white/10"
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-[var(--text-muted)] hover:text-[var(--foreground)] bg-[var(--surface-muted)] hover:bg-[var(--surface-strong)] transition-all border border-[var(--border-soft)]"
         title="Send feedback or report an issue"
       >
-        <MessageSquareHeart size={13} className="text-slate-400" /> Feedback
+        <MessageSquareHeart size={13} className="opacity-70" /> Feedback
       </button>
 
       {/* Network indicator with 1-click Add/Switch Arc Testnet */}
       <button
         onClick={handleAddArcNetwork}
         title="Click to add / switch to Arc Testnet in your Web3 wallet"
-        className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-[#14171e] hover:bg-[#1c202a] hover:border-white/20 transition-all px-3 py-1.5 text-xs text-slate-300"
+        className="inline-flex items-center gap-2 rounded-full border border-[var(--border-soft)] bg-[var(--surface)] hover:bg-[var(--surface-muted)] transition-all px-3 py-1.5 text-xs text-[var(--text-muted)]"
       >
-        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
         <span>{network}</span>
       </button>
 
@@ -108,24 +130,24 @@ export function AppHeader() {
         <div className="relative">
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="flex items-center gap-2 rounded-full border border-white/10 bg-[#14171e] px-3.5 py-1.5 text-xs text-slate-200 hover:border-white/20 hover:bg-[#1c202a] transition-all shadow-sm"
+            className="flex items-center gap-2 rounded-full border border-[var(--border-soft)] bg-[var(--surface)] px-3.5 py-1.5 text-xs text-[var(--foreground)] hover:border-[var(--border-strong)] hover:bg-[var(--surface-muted)] transition-all shadow-sm"
           >
             {userAvatar ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={userAvatar}
                 alt={displayIdentifier}
-                className="h-4 w-4 rounded-full object-cover border border-white/20"
+                className="h-4 w-4 rounded-full object-cover border border-[var(--border-soft)]"
               />
             ) : authType === "web2_google" || authType === "web2_email" ? (
-              <User size={13} className="text-slate-400" />
+              <User size={13} className="opacity-70" />
             ) : (
-              <Wallet size={13} className="text-slate-400" />
+              <Wallet size={13} className="opacity-70" />
             )}
-            <span className="font-medium text-white max-w-[120px] truncate">{displayIdentifier}</span>
-            <span className="text-white/20 font-mono">|</span>
-            <span className="font-mono-numbers text-emerald-400 font-medium">{usdcBalance} USDC</span>
-            <ChevronDown size={12} className="text-slate-400" />
+            <span className="font-medium text-[var(--foreground)] max-w-[120px] truncate">{displayIdentifier}</span>
+            <span className="opacity-20 font-mono">|</span>
+            <span className="font-mono-numbers text-emerald-500 font-medium">{usdcBalance} USDC</span>
+            <ChevronDown size={12} className="opacity-60" />
           </button>
 
           {/* Account Dropdown */}
@@ -135,12 +157,12 @@ export function AppHeader() {
                 className="fixed inset-0 z-40"
                 onClick={() => setIsDropdownOpen(false)}
               />
-              <div className="absolute right-0 top-full mt-2 z-50 w-64 rounded-2xl border border-white/10 bg-[#111318] p-3 shadow-2xl text-xs space-y-2.5 backdrop-blur-xl">
-                <div className="border-b border-white/5 pb-2">
-                  <p className="text-[10px] uppercase tracking-wider text-slate-400">
+              <div className="absolute right-0 top-full mt-2 z-50 w-64 rounded-2xl border border-[var(--border-strong)] bg-[var(--surface)] p-3 shadow-2xl text-xs space-y-2.5 backdrop-blur-xl">
+                <div className="border-b border-[var(--border-soft)] pb-2">
+                  <p className="text-[10px] uppercase tracking-wider text-[var(--text-muted)]">
                     Connected Account
                   </p>
-                  <p className="font-mono text-white text-[11px] truncate mt-0.5">
+                  <p className="font-mono text-[var(--foreground)] text-[11px] truncate mt-0.5">
                     {address || email}
                   </p>
                 </div>

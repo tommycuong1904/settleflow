@@ -109,12 +109,12 @@ export function RoleSwitcher() {
             className="fixed inset-0 z-40"
             onClick={() => setIsOpen(false)}
           />
-          <div className="absolute right-0 top-full mt-2 z-50 w-72 rounded-2xl border border-white/10 bg-[#111318] p-3 shadow-2xl text-xs space-y-2 animate-in fade-in zoom-in-95 backdrop-blur-xl">
-            <div className="border-b border-white/5 pb-2 px-1">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+          <div className="absolute right-0 top-full mt-2 z-50 w-72 rounded-2xl border border-[var(--border-strong)] bg-[var(--surface)] p-3 shadow-2xl text-xs space-y-2 animate-in fade-in zoom-in-95 backdrop-blur-xl">
+            <div className="border-b border-[var(--border-soft)] pb-2 px-1">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
                 Active Simulation Role
               </p>
-              <p className="text-[11px] text-slate-400 mt-0.5 leading-relaxed">
+              <p className="text-[11px] text-[var(--text-muted)] mt-0.5 leading-relaxed">
                 Toggle roles to test different permissions and actions across the workflow.
               </p>
             </div>
@@ -130,8 +130,8 @@ export function RoleSwitcher() {
                     onClick={() => handleSelectRole(role.actor)}
                     className={`w-full text-left p-2.5 rounded-xl transition-all flex items-start justify-between gap-2.5 ${
                       isSelected
-                        ? "bg-white/10 border border-white/15"
-                        : "hover:bg-white/5 border border-transparent"
+                        ? "bg-[var(--surface-strong)] border border-[var(--border-strong)]"
+                        : "hover:bg-[var(--surface-muted)] border border-transparent"
                     }`}
                   >
                     <div className="flex items-start gap-2.5">
@@ -141,7 +141,7 @@ export function RoleSwitcher() {
                         <Icon size={12} />
                       </div>
                       <div>
-                        <p className="font-semibold text-white text-xs">
+                        <p className="font-semibold text-[var(--foreground)] text-xs">
                           {role.label}
                         </p>
                         <p className="text-[10px] text-slate-400 leading-snug mt-0.5">

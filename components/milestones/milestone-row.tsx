@@ -95,13 +95,13 @@ export function MilestoneRow({
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div className="space-y-3">
             <div className="flex flex-wrap items-center gap-3">
-              <p className="font-semibold text-white">{milestone.title}</p>
+              <p className="font-semibold text-[var(--foreground)]">{milestone.title}</p>
               <MilestoneStatusBadge status={status} />
             </div>
             <p className="max-w-2xl text-sm leading-6 text-[var(--text-primary)]">
               {milestone.description}
             </p>
-            <p className="font-mono-numbers text-sm font-medium text-white">
+            <p className="font-mono-numbers text-sm font-medium text-[var(--foreground)]">
               {formatUsdc(milestone.amount)} USDC
             </p>
 
@@ -112,7 +112,7 @@ export function MilestoneRow({
                   Attached Deliverable
                 </p>
                 {lastSubmissionSummary && (
-                  <p className="text-slate-300 leading-relaxed italic">
+                  <p className="text-[var(--text-primary)] leading-relaxed italic">
                     &quot;{lastSubmissionSummary}&quot;
                   </p>
                 )}
@@ -121,7 +121,7 @@ export function MilestoneRow({
                     href={lastArtifactUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 text-sky-300 hover:text-white font-medium underline underline-offset-2 transition-colors pt-0.5"
+                    className="inline-flex items-center gap-1.5 text-sky-500 hover:underline font-medium underline-offset-2 transition-colors pt-0.5"
                   >
                     <FileCode size={13} /> View Submitted Artifact <ExternalLink size={11} />
                   </a>
@@ -134,7 +134,7 @@ export function MilestoneRow({
             {isSubmitted ? (
               <div className="space-y-3">
                 <div className="space-y-1">
-                  <p className="font-semibold text-white">Review needed</p>
+                  <p className="font-semibold text-[var(--foreground)]">Review needed</p>
                   <p>Submitted work is ready for an approve or reject decision.</p>
                 </div>
                 {hasRole(currentActor, 'reviewer') ? (

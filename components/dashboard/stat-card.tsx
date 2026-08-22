@@ -10,7 +10,7 @@ export function StatCard({ label, value, hint }: StatCardProps) {
       <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">
         {label}
       </p>
-      <p className="mt-3 font-mono-numbers text-2xl font-medium tracking-tight text-white">
+      <p className="mt-3 font-mono-numbers text-2xl font-medium tracking-tight text-[var(--foreground)]">
         {value}
       </p>
       {hint ? (

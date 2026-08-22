@@ -33,14 +33,14 @@ export default function DashboardTabs({ tabs }: { tabs: TabItem[] }) {
           onClick={() => setActive(tab.key)}
           className={`flex-1 px-4 py-3.5 -mb-px text-sm font-medium transition-colors cursor-pointer ${
             active === tab.key
-                ? "border-b-2 border-white text-white"
-                : "text-slate-400 hover:text-white"
+                ? "border-b-2 border-[var(--foreground)] text-[var(--foreground)]"
+                : "text-[var(--text-muted)] hover:text-[var(--foreground)]"
           }`}
-          style={active === tab.key ? { background: "rgba(255,255,255,0.03)" } : undefined}
+          style={active === tab.key ? { background: "var(--surface-muted)" } : undefined}
         >
           {tab.label}
           {tab.count !== undefined && (
-            <span className="ml-1 rounded-full bg-white/15 px-2 py-0.5 text-xs text-white">
+            <span className="ml-1 rounded-full bg-[var(--surface-strong)] px-2 py-0.5 text-xs text-[var(--foreground)]">
               {tab.count}
             </span>
           )}
@@ -48,7 +48,7 @@ export default function DashboardTabs({ tabs }: { tabs: TabItem[] }) {
       ))}
       {/* Animated underline */}
           <span
-            className="absolute bottom-0 left-0 h-0.5 bg-white transition-transform duration-300 ease-out"
+            className="absolute bottom-0 left-0 h-0.5 bg-[var(--foreground)] transition-transform duration-300 ease-out"
             style={{
               width: `${100 / visibleTabs.length}%`,
               transform: `translateX(${visibleTabs.findIndex((t) => t.key === active) * 100}%)`,

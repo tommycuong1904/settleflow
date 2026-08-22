@@ -18,7 +18,7 @@ export type ButtonProps = {
 };
 
 const baseClasses =
-  "inline-flex items-center justify-center font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 disabled:cursor-not-allowed select-none active:scale-[0.98] rounded-full";
+  "inline-flex items-center justify-center font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-strong)] disabled:cursor-not-allowed select-none active:scale-[0.98] rounded-full";
 
 const sizeClasses: Record<ButtonSize, string> = {
   sm: "px-3.5 py-1.5 text-xs rounded-full gap-1.5",
@@ -28,15 +28,15 @@ const sizeClasses: Record<ButtonSize, string> = {
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary:
-    "border border-transparent bg-white text-black font-semibold hover:bg-slate-200 shadow-sm disabled:bg-white/40 disabled:text-black/50 disabled:shadow-none",
+    "border border-transparent bg-[var(--foreground)] text-[var(--background)] font-semibold hover:opacity-90 shadow-sm disabled:opacity-40",
   secondary:
-    "border border-white/10 bg-[#14171e] text-slate-100 hover:bg-[#1c202a] hover:border-white/20 shadow-sm disabled:border-white/5 disabled:bg-white/[0.02] disabled:text-slate-500",
+    "border border-[var(--border-soft)] bg-[var(--surface-muted)] text-[var(--foreground)] hover:bg-[var(--surface-strong)] hover:border-[var(--border-strong)] shadow-sm disabled:opacity-40",
   ghost:
-    "border border-transparent bg-transparent text-slate-300 hover:bg-white/[0.06] hover:text-white disabled:text-slate-600",
+    "border border-transparent bg-transparent text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--foreground)] disabled:opacity-40",
   outline:
-    "border border-white/15 bg-transparent text-white hover:bg-white/[0.08] hover:border-white/30 disabled:border-white/10 disabled:text-white/40",
+    "border border-[var(--border-strong)] bg-transparent text-[var(--foreground)] hover:bg-[var(--surface-muted)] disabled:opacity-40",
   danger:
-    "border border-rose-500/30 bg-rose-500/10 text-rose-300 hover:bg-rose-500/20 hover:border-rose-500/50 disabled:opacity-40",
+    "border border-rose-500/30 bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 hover:border-rose-500/50 disabled:opacity-40",
 };
 
 export function Button({
