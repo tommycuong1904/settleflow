@@ -379,11 +379,11 @@ h1 {
   align-items: center;
   justify-content: center;
   gap: 9px;
-  border: 1px solid var(--accent);
+  border: 1px solid #000000;
   border-radius: 9999px;
   padding: 13px 24px;
-  background: var(--accent);
-  color: var(--background);
+  background: #000000;
+  color: #ffffff;
   font-size: 13px;
   font-weight: 500;
   transition:
@@ -395,7 +395,8 @@ h1 {
 .sf-button:hover {
   transform: translateY(-2px);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-  background: var(--accent-strong);
+  background: #171717;
+  color: #ffffff;
 }
 
 .sf-button-ghost {
