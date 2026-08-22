@@ -28,7 +28,7 @@ const sizeClasses: Record<ButtonSize, string> = {
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary:
-    "border border-black !bg-black !text-white font-semibold hover:!bg-neutral-900 shadow-sm disabled:opacity-40",
+    "border border-black !bg-black !text-white font-semibold hover:opacity-80 transition-opacity shadow-sm disabled:opacity-40",
   secondary:
     "border border-[var(--border-soft)] bg-[var(--surface-muted)] text-[var(--foreground)] hover:bg-[var(--surface-strong)] hover:border-[var(--border-strong)] shadow-sm disabled:opacity-40",
   ghost:
