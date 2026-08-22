@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/shared/button'
-import { ArrowRight, Check, ChevronRight, CircleCheck, CircleDot, FileCheck2, LockKeyhole, ShieldCheck, WalletCards } from 'lucide-react'
+import { ArrowRight, Check, ChevronRight, CircleCheck, CircleDot, FileCheck2, LockKeyhole, ShieldCheck, WalletCards, MessageSquare, Table2, ArrowRightLeft } from 'lucide-react'
 
 
 
@@ -113,25 +113,31 @@ export default function Home() {
           </div>
           <div className="sf-fragment-grid">
             {[
-              ["CHATS", "Approvals get buried in conversations.", "01"],
-              ["SPREADSHEETS", "Payout status is hard to keep in sync.", "02"],
+              ["CHATS", "Approvals get buried in conversations.", "01", MessageSquare],
+              ["SPREADSHEETS", "Payout status is hard to keep in sync.", "02", Table2],
               [
                 "WALLET TRANSFERS",
                 "Funds are released manually, outside the workflow.",
                 "03",
+                ArrowRightLeft,
               ],
-            ].map(([title, text, num]) => (
-              <div className="sf-fragment" key={title}>
-                <span>{num}</span>
-                <div className="sf-faux-window">
-                  <div />
-                  <div />
-                  <div />
+            ].map(([title, text, num, Icon]) => {
+              const IconComp = Icon as React.ComponentType<{ size?: number; className?: string }>;
+              return (
+                <div className="sf-fragment flex flex-col justify-between" key={title as string}>
+                  <div>
+                    <div className="flex items-center justify-between mb-4">
+                      <span className="font-mono text-xs text-[var(--text-muted)]">{num as string}</span>
+                      <div className="p-2 rounded-lg bg-[var(--surface-muted)] border border-[var(--border-soft)] text-[var(--foreground)]">
+                        <IconComp size={18} />
+                      </div>
+                    </div>
+                    <h3 className="font-semibold text-base text-[var(--foreground)] mb-2">{title as string}</h3>
+                    <p className="text-sm text-[var(--text-muted)] leading-relaxed">{text as string}</p>
+                  </div>
                 </div>
-                <h3>{title}</h3>
-                <p>{text}</p>
-              </div>
-            ))}
+              );
+            })}
           </div>
           <div className="sf-transition">
             <span>FRAGMENTED</span>
