@@ -344,26 +344,24 @@ h1 {
 }
 
 .sf-wordmark {
-  font-size: 18px;
+  font-size: 23px;
   font-weight: 700;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.05em;
   white-space: nowrap;
+  color: var(--foreground);
 }
 
 .sf-wordmark span {
   color: var(--foreground);
 }
 
-.sf-wordmark {
-  color: var(--foreground);
-}
-
 .sf-nav-links {
   display: flex;
   align-items: center;
-  gap: 28px;
+  gap: 32px;
   color: var(--text-muted);
-  font-size: 13px;
+  font-size: 15px;
+  font-weight: 500;
 }
 
 .sf-nav-links a:hover {
