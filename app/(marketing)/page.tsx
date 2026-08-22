@@ -124,15 +124,23 @@ export default function Home() {
             ].map(([title, text, num, Icon]) => {
               const IconComp = Icon as React.ComponentType<{ size?: number; className?: string }>;
               return (
-                <div className="sf-fragment flex flex-col justify-between" key={title as string}>
+                <div className="sf-fragment relative overflow-hidden flex flex-col justify-between group" key={title as string}>
+                  {/* Large background artistic watermark number */}
+                  <span className="pointer-events-none absolute right-4 bottom-2 font-mono text-6xl font-extralight tracking-tighter text-[var(--foreground)] opacity-[0.06] select-none font-mono-numbers group-hover:opacity-[0.12] transition-opacity">
+                    {num as string}
+                  </span>
+
                   <div>
-                    <div className="flex items-center justify-between mb-4">
-                      <span className="font-mono text-xs text-[var(--text-muted)]">{num as string}</span>
-                      <div className="p-2 rounded-lg bg-[var(--surface-muted)] border border-[var(--border-soft)] text-[var(--foreground)]">
+                    <div className="flex items-center justify-between mb-5">
+                      {/* Editorial slash badge for the number */}
+                      <span className="font-mono text-[11px] font-medium tracking-[0.2em] text-[var(--text-muted)] uppercase border-b border-[var(--border-soft)] pb-0.5">
+                        /{num as string}
+                      </span>
+                      <div className="p-2 rounded-xl bg-[var(--surface-muted)] border border-[var(--border-soft)] text-[var(--foreground)] shadow-sm">
                         <IconComp size={18} />
                       </div>
                     </div>
-                    <h3 className="font-semibold text-base text-[var(--foreground)] mb-2">{title as string}</h3>
+                    <h3 className="font-semibold text-base text-[var(--foreground)] mb-2 tracking-tight">{title as string}</h3>
                     <p className="text-sm text-[var(--text-muted)] leading-relaxed">{text as string}</p>
                   </div>
                 </div>
