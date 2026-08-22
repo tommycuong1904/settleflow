@@ -36,7 +36,7 @@ export function AppSidebar() {
   });
 
   return (
-    <aside className="sf-sidebar !h-full">
+    <aside className="sf-sidebar">
       {/* Logo */}
       <div className="sf-sidebar-logo">
         <Link href="/" className="sf-wordmark" aria-label="SettleFlow home">
