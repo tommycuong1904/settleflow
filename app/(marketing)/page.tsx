@@ -133,7 +133,7 @@ export default function Home() {
                   <div>
                     <div className="flex items-center justify-between mb-5">
                       {/* Editorial slash badge for the number */}
-                      <span className="font-mono text-[11px] font-medium tracking-[0.2em] text-[var(--text-muted)] uppercase border-b border-[var(--border-soft)] pb-0.5">
+                      <span className="font-mono text-[11px] font-medium tracking-[0.2em] text-[var(--text-muted)] uppercase">
                         /{num as string}
                       </span>
                       <div className="p-2 rounded-xl bg-[var(--surface-muted)] border border-[var(--border-soft)] text-[var(--foreground)] shadow-sm">
