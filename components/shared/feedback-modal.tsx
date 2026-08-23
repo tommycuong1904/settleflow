@@ -214,9 +214,9 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
                 </label>
                 <div className="flex items-center justify-center gap-4 p-2 rounded-xl bg-[var(--surface-muted)] border border-[var(--border-soft)]">
                   {[
-                    { val: 1, label: "Needs work", icon: Frown, color: "text-rose-400" },
-                    { val: 3, label: "Good", icon: Meh, color: "text-amber-400" },
-                    { val: 5, label: "Great!", icon: Smile, color: "text-emerald-400" },
+                    { val: 1, label: "Needs work", icon: Frown },
+                    { val: 3, label: "Good", icon: Meh },
+                    { val: 5, label: "Great!", icon: Smile },
                   ].map((r) => {
                     const Icon = r.icon;
                     const isSelected = rating === r.val;
@@ -231,7 +231,7 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
                             : "text-[var(--text-muted)] hover:text-[var(--foreground)]"
                         }`}
                       >
-                        <Icon size={16} className={isSelected ? "" : r.color} />
+                        <Icon size={16} className={isSelected ? "" : "text-[var(--text-muted)]"} />
                         <span>{r.label}</span>
                       </button>
                     );
@@ -264,7 +264,7 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
                     <button
                       type="button"
                       onClick={removeImage}
-                      className="text-[11px] text-[var(--text-muted)] hover:text-rose-500 flex items-center gap-1 transition-colors"
+                      className="text-[11px] text-[var(--text-muted)] hover:text-[var(--foreground)] flex items-center gap-1 transition-colors"
                     >
                       <Trash2 size={12} /> Remove
                     </button>
