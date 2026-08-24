@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useRef } from "react";
+import { useScrollLock } from "@/lib/hooks/use-scroll-lock";
 import { Button } from "@/components/shared/button";
 import type { Payout } from "@/lib/models/payout";
 import type { Milestone } from "@/lib/models/milestone";
@@ -37,6 +38,8 @@ export function PayoutReceiptModal({
   milestones,
   releaseProof,
 }: PayoutReceiptModalProps) {
+  useScrollLock(isOpen);
+
   if (!isOpen) return null;
 
   const releasedMilestones = milestones.filter((m) => m.status === "released");

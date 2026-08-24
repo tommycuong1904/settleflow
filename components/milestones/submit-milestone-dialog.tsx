@@ -6,6 +6,7 @@ import { X, Send, Link as LinkIcon, Loader2, Code2, Video, Layers, Globe } from 
 import { formatUsdc } from "@/lib/utils/format";
 import type { Milestone } from "@/lib/models/milestone";
 import { useWallet } from "@/lib/context/wallet-context";
+import { useScrollLock } from "@/lib/hooks/use-scroll-lock";
 
 type SubmitMilestoneDialogProps = {
   isOpen: boolean;
@@ -35,6 +36,8 @@ export function SubmitMilestoneDialog({
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useScrollLock(isOpen);
 
   if (!isOpen) return null;
 

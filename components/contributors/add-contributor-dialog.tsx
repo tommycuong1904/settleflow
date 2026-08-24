@@ -15,6 +15,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { useToast } from "@/lib/context/toast-context";
+import { useScrollLock } from "@/lib/hooks/use-scroll-lock";
 
 type AddContributorDialogProps = {
   isOpen: boolean;
@@ -39,6 +40,8 @@ export function AddContributorDialog({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  useScrollLock(isOpen);
 
   if (!isOpen) return null;
 

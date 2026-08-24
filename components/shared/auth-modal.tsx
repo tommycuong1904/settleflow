@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useWallet } from "@/lib/context/wallet-context";
 import { promptGoogleOAuth, loadGoogleGsiScript, type GoogleUserProfile } from "@/lib/auth/google";
 import { useToast } from "@/lib/context/toast-context";
+import { useScrollLock } from "@/lib/hooks/use-scroll-lock";
 import {
   X,
   Mail,
@@ -42,6 +43,8 @@ export function AuthModal() {
       }
     }
   }, [isAuthModalOpen]);
+
+  useScrollLock(isAuthModalOpen);
 
   if (!isAuthModalOpen) return null;
 

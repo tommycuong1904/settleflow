@@ -21,6 +21,7 @@ import {
 import { useToast } from "@/lib/context/toast-context";
 import { useWallet } from "@/lib/context/wallet-context";
 import { useResolvedProductContext } from "@/lib/runtime/product-context-client";
+import { useScrollLock } from "@/lib/hooks/use-scroll-lock";
 
 interface FeedbackModalProps {
   isOpen: boolean;
@@ -32,6 +33,8 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
   const { address, email } = useWallet();
   const productContext = useResolvedProductContext();
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useScrollLock(isOpen);
 
   const [category, setCategory] = useState<"idea" | "bug" | "praise" | "general">("idea");
   const [rating, setRating] = useState<number>(5);

@@ -16,6 +16,7 @@ import {
 import { useToast } from "@/lib/context/toast-context";
 import { ARC_CONFIG } from "@/lib/arc/config";
 import { shortenAddress } from "@/lib/utils/format";
+import { useScrollLock } from "@/lib/hooks/use-scroll-lock";
 
 interface ExportKeyModalProps {
   isOpen: boolean;
@@ -36,6 +37,8 @@ export function ExportKeyModal({
   const [isRevealed, setIsRevealed] = useState(false);
   const [hasCopied, setHasCopied] = useState(false);
   const [showImportGuide, setShowImportGuide] = useState(false);
+
+  useScrollLock(isOpen);
 
   if (!isOpen) return null;
 

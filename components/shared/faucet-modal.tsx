@@ -19,6 +19,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { useToast } from "@/lib/context/toast-context";
+import { useScrollLock } from "@/lib/hooks/use-scroll-lock";
 
 type FaucetModalProps = {
   isOpen: boolean;
@@ -28,6 +29,8 @@ type FaucetModalProps = {
 
 export function FaucetModal({ isOpen, onClose, userAddress }: FaucetModalProps) {
   const { toast } = useToast();
+
+  useScrollLock(isOpen);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [addingNetwork, setAddingNetwork] = useState(false);
   const [networkNotice, setNetworkNotice] = useState<{
