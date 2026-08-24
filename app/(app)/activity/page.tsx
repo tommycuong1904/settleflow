@@ -26,11 +26,11 @@ export default async function ActivityPage() {
     <div className="sf-app-wrapper flex flex-col py-10 md:py-12 gap-8">
       {/* Header */}
       <div className="space-y-3">
-        <p className="text-sm font-medium uppercase tracking-[0.22em] text-cyan-300">
+        <p className="text-sm font-medium uppercase tracking-[0.22em] text-[var(--text-muted)]">
           Audit & Settlement Ledger
         </p>
         <div className="space-y-2">
-          <h1 className="text-2xl font-semibold tracking-tight text-white md:text-3xl w-full">
+          <h1 className="text-2xl font-semibold tracking-tight text-[var(--foreground)] md:text-3xl w-full">
             Activity & Settlement Log
           </h1>
           <p className="max-w-3xl text-sm leading-7 text-[var(--text-primary)] md:text-base">
@@ -48,7 +48,7 @@ export default async function ActivityPage() {
           <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
             Total Logged Events
           </p>
-          <p className="mt-3 text-2xl font-semibold tracking-tight text-white">
+          <p className="mt-3 text-2xl font-semibold tracking-tight text-[var(--foreground)]">
             {activities.length}
           </p>
           <p className="mt-1.5 text-xs text-[var(--text-primary)]">
@@ -60,7 +60,7 @@ export default async function ActivityPage() {
           <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
             Settlement & Releases
           </p>
-          <p className="mt-3 text-2xl font-semibold tracking-tight text-white">
+          <p className="mt-3 text-2xl font-semibold tracking-tight text-[var(--foreground)]">
             {proofEvents.length}
           </p>
           <p className="mt-1.5 text-xs text-[var(--text-primary)]">
@@ -72,7 +72,7 @@ export default async function ActivityPage() {
           <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
             Approval Transitions
           </p>
-          <p className="mt-3 text-2xl font-semibold tracking-tight text-white">
+          <p className="mt-3 text-2xl font-semibold tracking-tight text-[var(--foreground)]">
             {approvalEvents.length}
           </p>
           <p className="mt-1.5 text-xs text-[var(--text-primary)]">

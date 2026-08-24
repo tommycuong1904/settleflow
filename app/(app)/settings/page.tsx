@@ -140,11 +140,11 @@ export default function SettingsPage() {
     <div className="sf-app-wrapper flex flex-col py-10 md:py-12 gap-8">
       {/* Header */}
       <div className="space-y-3">
-        <p className="text-sm font-medium uppercase tracking-[0.22em] text-cyan-300">
+        <p className="text-sm font-medium uppercase tracking-[0.22em] text-[var(--text-muted)]">
           Preferences & Configuration
         </p>
         <div className="space-y-2">
-          <h1 className="text-2xl font-semibold tracking-tight text-white md:text-3xl w-full">
+          <h1 className="text-2xl font-semibold tracking-tight text-[var(--foreground)] md:text-3xl w-full">
             Workspace Settings
           </h1>
           <p className="max-w-3xl text-sm leading-7 text-[var(--text-primary)] md:text-base">
@@ -156,62 +156,62 @@ export default function SettingsPage() {
       <form onSubmit={handleSaveSettings} className="space-y-8">
         {/* Section 1: General Workspace Profile */}
         <div className="rounded-xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.72)] p-6 sm:p-8 space-y-6">
-          <div className="flex items-center gap-3 pb-4 border-b border-slate-800">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-300">
+          <div className="flex items-center gap-3 pb-4 border-b border-[var(--border-soft)]">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--surface-muted)] border border-[var(--border-soft)] text-[var(--text-muted)]">
               <Sliders size={20} />
             </div>
             <div>
-              <h2 className="text-base font-semibold text-white">General Workspace Profile</h2>
-              <p className="text-xs text-slate-400">Organization identity and settlement currency defaults</p>
+              <h2 className="text-base font-semibold text-[var(--foreground)]">General Workspace Profile</h2>
+              <p className="text-xs text-[var(--text-muted)]">Organization identity and settlement currency defaults</p>
             </div>
           </div>
 
           <div className="grid gap-5 md:grid-cols-2 text-xs">
             <div className="space-y-2">
-              <label className="block font-semibold uppercase tracking-wider text-slate-300">
+              <label className="block font-semibold uppercase tracking-wider text-[var(--text-muted)]">
                 Workspace Display Name
               </label>
               <input
                 type="text"
                 value={workspaceName}
                 onChange={(e) => setWorkspaceName(e.target.value)}
-                className="w-full rounded-xl border border-slate-700 bg-slate-900/90 py-2.5 px-3.5 text-xs text-white placeholder-slate-500 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400 transition-all"
+                className="w-full rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] py-2.5 px-3.5 text-xs text-[var(--foreground)] placeholder-[var(--text-muted)] focus:border-[var(--foreground)] focus:outline-none focus:ring-1 focus:ring-[var(--foreground)] transition-all"
               />
             </div>
 
             <div className="space-y-2">
-              <label className="block font-semibold uppercase tracking-wider text-slate-300">
+              <label className="block font-semibold uppercase tracking-wider text-[var(--text-muted)]">
                 Operations / Notification Email
               </label>
               <input
                 type="email"
                 value={supportEmail}
                 onChange={(e) => setSupportEmail(e.target.value)}
-                className="w-full rounded-xl border border-slate-700 bg-slate-900/90 py-2.5 px-3.5 text-xs text-white placeholder-slate-500 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400 transition-all"
+                className="w-full rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] py-2.5 px-3.5 text-xs text-[var(--foreground)] placeholder-[var(--text-muted)] focus:border-[var(--foreground)] focus:outline-none focus:ring-1 focus:ring-[var(--foreground)] transition-all"
               />
             </div>
 
             <div className="space-y-2">
-              <label className="block font-semibold uppercase tracking-wider text-slate-300">
+              <label className="block font-semibold uppercase tracking-wider text-[var(--text-muted)]">
                 Settlement Token
               </label>
               <input
                 type="text"
                 disabled
                 value="Circle USDC (Native on Arc)"
-                className="w-full rounded-xl border border-slate-800 bg-slate-950/70 py-2.5 px-3.5 text-xs text-slate-400 cursor-not-allowed font-mono"
+                className="w-full rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] py-2.5 px-3.5 text-xs text-[var(--text-muted)] cursor-not-allowed font-mono"
               />
             </div>
 
             <div className="space-y-2">
-              <label className="block font-semibold uppercase tracking-wider text-slate-300">
+              <label className="block font-semibold uppercase tracking-wider text-[var(--text-muted)]">
                 Default Milestone Release Rule
               </label>
               <input
                 type="text"
                 disabled
                 value="Requires Explicit Reviewer Approval"
-                className="w-full rounded-xl border border-slate-800 bg-slate-950/70 py-2.5 px-3.5 text-xs text-slate-400 cursor-not-allowed"
+                className="w-full rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] py-2.5 px-3.5 text-xs text-[var(--text-muted)] cursor-not-allowed"
               />
             </div>
           </div>
@@ -219,14 +219,14 @@ export default function SettingsPage() {
 
         {/* Section 2: Arc Blockchain & Protocol Configuration */}
         <div className="rounded-xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.72)] p-6 sm:p-8 space-y-6">
-          <div className="flex items-center justify-between gap-4 pb-4 border-b border-slate-800">
+          <div className="flex items-center justify-between gap-4 pb-4 border-b border-[var(--border-soft)]">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-300">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--surface-muted)] border border-[var(--border-soft)] text-[var(--text-muted)]">
                 <Cpu size={20} />
               </div>
               <div>
-                <h2 className="text-base font-semibold text-white">Arc Protocol & Node Config</h2>
-                <p className="text-xs text-slate-400">Network endpoints and contract verification</p>
+                <h2 className="text-base font-semibold text-[var(--foreground)]">Arc Protocol & Node Config</h2>
+                <p className="text-xs text-[var(--text-muted)]">Network endpoints and contract verification</p>
               </div>
             </div>
 
@@ -261,34 +261,34 @@ export default function SettingsPage() {
 
           <div className="grid gap-5 md:grid-cols-2 text-xs">
             <div className="space-y-2">
-              <label className="block font-semibold uppercase tracking-wider text-slate-300">
+              <label className="block font-semibold uppercase tracking-wider text-[var(--text-muted)]">
                 Arc Testnet Chain ID
               </label>
-              <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 font-mono text-slate-200">
+              <div className="p-2.5 rounded-xl bg-[var(--surface-muted)] border border-[var(--border-soft)] font-mono text-[var(--text-muted)]">
                 {ARC_CONFIG.chainId} (0x{ARC_CONFIG.chainId.toString(16)})
               </div>
             </div>
 
             <div className="space-y-2">
-              <label className="block font-semibold uppercase tracking-wider text-slate-300">
+              <label className="block font-semibold uppercase tracking-wider text-[var(--text-muted)]">
                 Active RPC Endpoint
               </label>
-              <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 font-mono text-slate-200 truncate">
+              <div className="p-2.5 rounded-xl bg-[var(--surface-muted)] border border-[var(--border-soft)] font-mono text-[var(--text-muted)] truncate">
                 {ARC_CONFIG.rpcUrl}
               </div>
             </div>
 
             <div className="space-y-2 md:col-span-2">
-              <label className="block font-semibold uppercase tracking-wider text-slate-300">
+              <label className="block font-semibold uppercase tracking-wider text-[var(--text-muted)]">
                 Block Explorer URL
               </label>
-              <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-900 border border-slate-800 font-mono text-slate-200">
+              <div className="flex items-center justify-between p-2.5 rounded-xl bg-[var(--surface-muted)] border border-[var(--border-soft)] font-mono text-[var(--text-muted)]">
                 <span className="truncate">{ARC_CONFIG.explorerUrl}</span>
                 <a
                   href={ARC_CONFIG.explorerUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-cyan-400 hover:underline flex items-center gap-1 shrink-0 ml-2"
+                  className="text-[var(--foreground)] hover:underline flex items-center gap-1 shrink-0 ml-2"
                 >
                   Open Arcscan <ExternalLink size={12} />
                 </a>
@@ -299,20 +299,20 @@ export default function SettingsPage() {
 
         {/* Section 3: Webhooks & Notifications */}
         <div className="rounded-xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.72)] p-6 sm:p-8 space-y-6">
-          <div className="flex items-center gap-3 pb-4 border-b border-slate-800">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-300">
+          <div className="flex items-center gap-3 pb-4 border-b border-[var(--border-soft)]">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--surface-muted)] border border-[var(--border-soft)] text-[var(--text-muted)]">
               <Bell size={20} />
             </div>
             <div>
-              <h2 className="text-base font-semibold text-white">Event Webhooks & Alerts</h2>
-              <p className="text-xs text-slate-400">Receive real-time notifications on Discord, Slack, or custom endpoints</p>
+              <h2 className="text-base font-semibold text-[var(--foreground)]">Event Webhooks & Alerts</h2>
+              <p className="text-xs text-[var(--text-muted)]">Receive real-time notifications on Discord, Slack, or custom endpoints</p>
             </div>
           </div>
 
           <div className="space-y-4 text-xs">
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label className="block font-semibold uppercase tracking-wider text-slate-300">
+                <label className="block font-semibold uppercase tracking-wider text-[var(--text-muted)]">
                   Webhook URL (Discord / Slack / Telegram)
                 </label>
                 <Button
@@ -330,47 +330,47 @@ export default function SettingsPage() {
                 value={webhookUrl}
                 onChange={(e) => setWebhookUrl(e.target.value)}
                 placeholder="https://discord.com/api/webhooks/... or https://hooks.slack.com/..."
-                className="w-full rounded-xl border border-slate-700 bg-slate-900/90 py-2.5 px-3.5 text-xs text-white placeholder-slate-500 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400 transition-all font-mono"
+                className="w-full rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] py-2.5 px-3.5 text-xs text-[var(--foreground)] placeholder-[var(--text-muted)] focus:border-[var(--foreground)] focus:outline-none focus:ring-1 focus:ring-[var(--foreground)] transition-all font-mono"
               />
             </div>
 
             <div className="grid gap-3 sm:grid-cols-3 pt-2">
-              <label className="flex items-center gap-3 p-3.5 rounded-2xl border border-slate-800 bg-slate-900/60 cursor-pointer hover:border-slate-700 transition-all">
+              <label className="flex items-center gap-3 p-3.5 rounded-2xl border border-[var(--border-soft)] bg-[var(--surface-muted)] cursor-pointer hover:border-[var(--border-soft)] transition-all">
                 <input
                   type="checkbox"
                   checked={notifyOnSubmit}
                   onChange={(e) => setNotifyOnSubmit(e.target.checked)}
-                  className="rounded border-slate-700 bg-slate-800 text-cyan-400 focus:ring-cyan-400 h-4 w-4"
+                  className="rounded border-[var(--border-soft)] bg-[var(--surface-muted)] text-[var(--foreground)] focus:ring-[var(--foreground)] h-4 w-4"
                 />
                 <div>
-                  <p className="font-semibold text-white">Milestone Submitted</p>
-                  <p className="text-[10px] text-slate-400">Notify reviewers to inspect work</p>
+                  <p className="font-semibold text-[var(--foreground)]">Milestone Submitted</p>
+                  <p className="text-[10px] text-[var(--text-muted)]">Notify reviewers to inspect work</p>
                 </div>
               </label>
 
-              <label className="flex items-center gap-3 p-3.5 rounded-2xl border border-slate-800 bg-slate-900/60 cursor-pointer hover:border-slate-700 transition-all">
+              <label className="flex items-center gap-3 p-3.5 rounded-2xl border border-[var(--border-soft)] bg-[var(--surface-muted)] cursor-pointer hover:border-[var(--border-soft)] transition-all">
                 <input
                   type="checkbox"
                   checked={notifyOnApprove}
                   onChange={(e) => setNotifyOnApprove(e.target.checked)}
-                  className="rounded border-slate-700 bg-slate-800 text-cyan-400 focus:ring-cyan-400 h-4 w-4"
+                  className="rounded border-[var(--border-soft)] bg-[var(--surface-muted)] text-[var(--foreground)] focus:ring-[var(--foreground)] h-4 w-4"
                 />
                 <div>
-                  <p className="font-semibold text-white">Milestone Approved</p>
-                  <p className="text-[10px] text-slate-400">Notify payout lead for release</p>
+                  <p className="font-semibold text-[var(--foreground)]">Milestone Approved</p>
+                  <p className="text-[10px] text-[var(--text-muted)]">Notify payout lead for release</p>
                 </div>
               </label>
 
-              <label className="flex items-center gap-3 p-3.5 rounded-2xl border border-slate-800 bg-slate-900/60 cursor-pointer hover:border-slate-700 transition-all">
+              <label className="flex items-center gap-3 p-3.5 rounded-2xl border border-[var(--border-soft)] bg-[var(--surface-muted)] cursor-pointer hover:border-[var(--border-soft)] transition-all">
                 <input
                   type="checkbox"
                   checked={notifyOnRelease}
                   onChange={(e) => setNotifyOnRelease(e.target.checked)}
-                  className="rounded border-slate-700 bg-slate-800 text-cyan-400 focus:ring-cyan-400 h-4 w-4"
+                  className="rounded border-[var(--border-soft)] bg-[var(--surface-muted)] text-[var(--foreground)] focus:ring-[var(--foreground)] h-4 w-4"
                 />
                 <div>
-                  <p className="font-semibold text-white">USDC Released</p>
-                  <p className="text-[10px] text-slate-400">Attach proof & ping contributor</p>
+                  <p className="font-semibold text-[var(--foreground)]">USDC Released</p>
+                  <p className="text-[10px] text-[var(--text-muted)]">Attach proof & ping contributor</p>
                 </div>
               </label>
             </div>
@@ -379,14 +379,14 @@ export default function SettingsPage() {
 
         {/* Section 4: Wallet & Security Session */}
         <div className="rounded-xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.72)] p-6 sm:p-8 space-y-6">
-          <div className="flex items-center justify-between gap-4 pb-4 border-b border-slate-800">
+          <div className="flex items-center justify-between gap-4 pb-4 border-b border-[var(--border-soft)]">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-300">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--surface-muted)] border border-[var(--border-soft)] text-[var(--text-muted)]">
                 <Shield size={20} />
               </div>
               <div>
-                <h2 className="text-base font-semibold text-white">Security & Active Session</h2>
-                <p className="text-xs text-slate-400">Wallet connection and auth principal details</p>
+                <h2 className="text-base font-semibold text-[var(--foreground)]">Security & Active Session</h2>
+                <p className="text-xs text-[var(--text-muted)]">Wallet connection and auth principal details</p>
               </div>
             </div>
 
@@ -403,9 +403,9 @@ export default function SettingsPage() {
           </div>
 
           <div className="grid gap-4 md:grid-cols-2 text-xs">
-            <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-1.5">
+            <div className="p-4 rounded-2xl bg-[var(--surface-muted)] border border-[var(--border-soft)] space-y-1.5">
               <div className="flex items-center justify-between">
-                <p className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold">
+                <p className="text-[11px] uppercase tracking-wider text-[var(--text-muted)] font-semibold">
                   Active Account Principal
                 </p>
                 {address && (
@@ -419,22 +419,22 @@ export default function SettingsPage() {
                         description: "Wallet address copied to clipboard!",
                       });
                     }}
-                    className="flex items-center gap-1 text-[11px] text-cyan-400 hover:text-cyan-300 transition-colors"
+                    className="flex items-center gap-1 text-[11px] text-[var(--foreground)] hover:text-[var(--text-muted)] transition-colors"
                   >
                     <Copy size={12} /> Copy Address
                   </button>
                 )}
               </div>
-              <p className="text-sm font-mono text-white font-medium break-all">
+              <p className="text-sm font-mono text-[var(--foreground)] font-medium break-all">
                 {email ? `${email} (${address?.slice(0, 6)}...${address?.slice(-4)})` : address || "Guest / Not connected"}
               </p>
             </div>
 
-            <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-1">
-              <p className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold">
+            <div className="p-4 rounded-2xl bg-[var(--surface-muted)] border border-[var(--border-soft)] space-y-1">
+              <p className="text-[11px] uppercase tracking-wider text-[var(--text-muted)] font-semibold">
                 Authentication Rail
               </p>
-              <p className="text-sm font-semibold text-cyan-300">
+              <p className="text-sm font-semibold text-[var(--text-muted)]">
                 {authType === "web2_google"
                   ? "Google Non-Custodial Smart Account"
                   : authType === "web2_email"
@@ -446,14 +446,14 @@ export default function SettingsPage() {
             </div>
 
             {(authType === "web2_google" || authType === "web2_email") && (
-              <div className="md:col-span-2 p-4 rounded-2xl bg-amber-950/20 border border-amber-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="md:col-span-2 p-4 rounded-2xl bg-[var(--surface-muted)] border border-[var(--border-soft)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 shrink-0">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--surface-strong)] border border-[var(--border-soft)] text-[var(--foreground)] shrink-0">
                     <KeyRound size={18} />
                   </div>
                   <div>
-                    <p className="font-semibold text-white">Wallet Self-Custody & Backup</p>
-                    <p className="text-[11px] text-slate-400">
+                    <p className="font-semibold text-[var(--foreground)]">Wallet Self-Custody & Backup</p>
+                    <p className="text-[11px] text-[var(--text-muted)]">
                       Export your Arc Smart Account private key to import into MetaMask, Rabby, or other hardware wallets.
                     </p>
                   </div>
@@ -463,7 +463,7 @@ export default function SettingsPage() {
                   variant="secondary"
                   size="sm"
                   onClick={() => setIsExportModalOpen(true)}
-                  className="shrink-0 text-amber-200 border-amber-500/30 hover:bg-amber-500/10"
+                  className="shrink-0"
                 >
                   <KeyRound size={13} className="mr-1.5" /> Export Private Key
                 </Button>

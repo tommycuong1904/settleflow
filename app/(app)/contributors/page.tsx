@@ -27,11 +27,11 @@ export default async function ContributorsPage() {
     <div className="sf-app-wrapper flex flex-col py-10 md:py-12 gap-8">
       {/* Header */}
       <div className="space-y-3">
-        <p className="text-sm font-medium uppercase tracking-[0.22em] text-cyan-300">
+        <p className="text-sm font-medium uppercase tracking-[0.22em] text-[var(--text-muted)]">
           Recipient Directory
         </p>
         <div className="space-y-2">
-          <h1 className="text-2xl font-semibold tracking-tight text-white md:text-3xl">
+          <h1 className="text-2xl font-semibold tracking-tight text-[var(--foreground)] md:text-3xl">
             Contributors & Wallets
           </h1>
           <p className="max-w-3xl text-sm leading-7 text-[var(--text-primary)] md:text-base">
@@ -49,7 +49,7 @@ export default async function ContributorsPage() {
           <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
             Total Contributors
           </p>
-          <p className="mt-3 text-2xl font-semibold tracking-tight text-white">
+          <p className="mt-3 text-2xl font-semibold tracking-tight text-[var(--foreground)]">
             {contributors.length}
           </p>
           <p className="mt-1.5 text-xs text-[var(--text-primary)]">
@@ -61,7 +61,7 @@ export default async function ContributorsPage() {
           <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
             Total Settled Volume
           </p>
-          <p className="mt-3 text-2xl font-semibold tracking-tight text-white">
+          <p className="mt-3 text-2xl font-semibold tracking-tight text-[var(--foreground)]">
             {formatUsdc(totalSettledUsdc)} USDC
           </p>
           <p className="mt-1.5 text-xs text-[var(--text-primary)]">
@@ -73,7 +73,7 @@ export default async function ContributorsPage() {
           <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
             Active Engagements
           </p>
-          <p className="mt-3 text-2xl font-semibold tracking-tight text-white">
+          <p className="mt-3 text-2xl font-semibold tracking-tight text-[var(--foreground)]">
             {totalActivePayouts}
           </p>
           <p className="mt-1.5 text-xs text-[var(--text-primary)]">

@@ -91,10 +91,10 @@ export default async function DashboardPage() {
     <div className="sf-app-wrapper flex flex-col py-10 md:py-12 gap-8">
       <div className="w-full flex flex-col gap-4">
         <div className="w-full">
-          <p className="text-sm font-medium uppercase tracking-[0.22em] text-cyan-300">
+          <p className="text-sm font-medium uppercase tracking-[0.22em] text-[var(--text-muted)]">
             Payout operations
           </p>
-          <h1 className="text-2xl font-semibold tracking-tight text-white md:text-3xl w-full">
+          <h1 className="text-2xl font-semibold tracking-tight text-[var(--foreground)] md:text-3xl w-full">
             Review queue, release readiness, and settlement proof in one place.
           </h1>
           <p className="text-sm leading-7 text-[var(--text-primary)] md:text-base">
@@ -121,11 +121,11 @@ export default async function DashboardPage() {
       <section className="sf-shell rounded-xl p-6 md:p-7">
         <div className="grid gap-6 xl:grid-cols-[1.25fr_0.75fr] xl:items-start">
           <div className="space-y-4">
-            <div className="inline-flex rounded-full border border-cyan-300/20 bg-cyan-400/8 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200">
+            <div className="inline-flex rounded-full border border-[var(--border-soft)] bg-[var(--surface-muted)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">
               Priority queue
             </div>
             <div className="space-y-2">
-              <h2 className="text-2xl font-semibold tracking-tight text-white">
+              <h2 className="text-2xl font-semibold tracking-tight text-[var(--foreground)]">
                 {priorityQueueTitle}
               </h2>
               <p className="max-w-2xl text-sm leading-7 text-[var(--text-primary)]">
@@ -139,7 +139,7 @@ export default async function DashboardPage() {
               <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
                 Ready to release
               </p>
-              <p className="mt-3 text-2xl font-semibold tracking-tight text-white">
+              <p className="mt-3 text-2xl font-semibold tracking-tight text-[var(--foreground)]">
                 {formatUsdc(releaseReadyMilestones.reduce((sum, milestone) => sum + milestone.amount, 0))} USDC
               </p>
               <p className="mt-2 text-sm text-[var(--text-primary)]">
@@ -150,7 +150,7 @@ export default async function DashboardPage() {
               <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
                 Released with proof
               </p>
-              <p className="mt-3 text-2xl font-semibold tracking-tight text-white">
+              <p className="mt-3 text-2xl font-semibold tracking-tight text-[var(--foreground)]">
                 {formatUsdc(releasedValue)} USDC
               </p>
               <p className="mt-2 text-sm text-[var(--text-primary)]">

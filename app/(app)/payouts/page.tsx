@@ -30,11 +30,11 @@ export default async function PayoutsPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div className="space-y-3">
-          <p className="text-sm font-medium uppercase tracking-[0.22em] text-cyan-300">
+          <p className="text-sm font-medium uppercase tracking-[0.22em] text-[var(--text-muted)]">
             Escrow Contracts
           </p>
           <div className="space-y-2">
-            <h1 className="text-2xl font-semibold tracking-tight text-white md:text-3xl">
+            <h1 className="text-2xl font-semibold tracking-tight text-[var(--foreground)] md:text-3xl">
               Contributor Payouts
             </h1>
             <p className="max-w-3xl text-sm leading-7 text-[var(--text-primary)] md:text-base">
@@ -58,7 +58,7 @@ export default async function PayoutsPage() {
           <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
             Total Payouts
           </p>
-          <p className="mt-3 text-2xl font-semibold tracking-tight text-white">
+          <p className="mt-3 text-2xl font-semibold tracking-tight text-[var(--foreground)]">
             {payouts.length}
           </p>
           <p className="mt-1.5 text-xs text-[var(--text-primary)]">
@@ -69,7 +69,7 @@ export default async function PayoutsPage() {
           <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
             Total Value
           </p>
-          <p className="mt-3 text-2xl font-semibold tracking-tight text-white">
+          <p className="mt-3 text-2xl font-semibold tracking-tight text-[var(--foreground)]">
             {formatUsdc(totalValue)} USDC
           </p>
           <p className="mt-1.5 text-xs text-[var(--text-primary)]">
@@ -80,7 +80,7 @@ export default async function PayoutsPage() {
           <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
             Active Contributors
           </p>
-          <p className="mt-3 text-2xl font-semibold tracking-tight text-white">
+          <p className="mt-3 text-2xl font-semibold tracking-tight text-[var(--foreground)]">
             {contributors.length}
           </p>
           <p className="mt-1.5 text-xs text-[var(--text-primary)]">
