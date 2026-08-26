@@ -148,6 +148,7 @@ export function buildDiscordEmbed(payload: WebhookPayload) {
 export async function dispatchWebhookNotification(
   payload: WebhookPayload,
   customWebhookUrl?: string,
+  fetchImpl: typeof globalThis.fetch = globalThis.fetch,
 ): Promise<{ success: boolean; error?: string }> {
   const webhookUrl =
     customWebhookUrl ||
@@ -170,7 +171,7 @@ export async function dispatchWebhookNotification(
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000);
 
-    const response = await fetch(webhookUrl, {
+    const response = await fetchImpl(webhookUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       signal: controller.signal,

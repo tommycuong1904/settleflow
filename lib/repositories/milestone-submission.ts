@@ -32,7 +32,12 @@ export function deriveMilestoneSubmissionUpdate(
   };
 }
 
-export async function submitMilestone(milestoneId: string, workspaceId: string, input: SubmitMilestoneInput) {
+export async function submitMilestone(
+  milestoneId: string,
+  workspaceId: string,
+  input: SubmitMilestoneInput,
+  notify: typeof dispatchWebhookNotification = dispatchWebhookNotification,
+) {
   const result = await db.$transaction(async (tx: Prisma.TransactionClient) => {
     const milestone = await tx.milestone.findUnique({
       where: { id: milestoneId },
@@ -117,7 +122,7 @@ export async function submitMilestone(milestoneId: string, workspaceId: string, 
   });
 
   // Non-blocking Webhook dispatch
-  void dispatchWebhookNotification({
+  void notify({
     event: "milestone_submitted",
     payoutTitle: result.payoutTitle,
     milestoneTitle: result.milestoneTitle,

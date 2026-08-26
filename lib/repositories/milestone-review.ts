@@ -35,6 +35,7 @@ export async function reviewMilestone(
   workspaceId: string,
   decision: "approved" | "rejected",
   comment?: string,
+  notify: typeof dispatchWebhookNotification = dispatchWebhookNotification,
 ) {
   const result = await db.$transaction(async (tx: Prisma.TransactionClient) => {
     const milestone = await tx.milestone.findUnique({
@@ -110,7 +111,7 @@ export async function reviewMilestone(
   });
 
   // Non-blocking Webhook dispatch
-  void dispatchWebhookNotification({
+  void notify({
     event: decision === "approved" ? "milestone_approved" : "milestone_rejected",
     payoutTitle: result.payoutTitle,
     milestoneTitle: result.milestoneTitle,
