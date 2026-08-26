@@ -9,6 +9,19 @@ Turn SettleFlow from a demo-oriented prototype into a real usable MVP for milest
 - Only brand-new pages may use temporary mockup/demo UI before real data wiring.
 - Arc execution decisions must rely only on official Arc documentation.
 
+## Phase status snapshot (as of `main` `38129aa`)
+
+| Phase | Status | Notes |
+| :--- | :--- | :--- |
+| 1 — De-demo existing flows | **Mostly done** | Real payout creation + real detail redirect work; seeded demo IDs (`ws-demo`, `payout-1/2`) remain in seed/demo paths |
+| 2 — Real workflow state machine | **Done** | Payout/milestone/proof states, activity logging, reload-safe persistence implemented |
+| 3 — Real actors and permissions | **In progress** | Product-context actor boundary + route-level role checks exist, but remain seeded; no stored membership model |
+| 4 — Auth/session | **Scaffold only** | Google sign-in route + smart-account address derivation exist; no server-side session/middleware |
+| 5 — Workspace productization | **Mostly done** | Payout list/filters, real-data dashboard, contributor add/list (`/contributors`), settings; contributor edit/archive missing |
+| 6 — Real Arc execution path | **Not started** | `createReleaseExecutor` still returns "not wired yet" failures |
+| 7 — Reliability and hardening | **In progress** | 16 unit tests + idempotent release retry; no route/E2E tests yet |
+| 8 — Ship-ready MVP | **Not started** | Legacy mock cleanup and ops docs pending |
+
 ## Phase 1 — De-demo existing flows
 ### Objective
 Convert current payout surfaces into real product entry points.
@@ -77,7 +90,7 @@ Make SettleFlow usable as a team operations product.
 ### Tasks
 1. Build payout list and filters from real data.
 2. Make dashboard fully real-data-driven.
-3. Add contributor management.
+3. Add contributor management (create/list done; edit/archive pending).
 4. Add basic workspace settings.
 
 ### Done when
@@ -104,7 +117,7 @@ Move release execution from scaffold to real settlement integration.
 Make the MVP safe to iterate on.
 
 ### Tasks
-1. Add tests for repositories, state transitions, permissions, and critical routes.
+1. Add tests for repositories, state transitions, permissions, and critical routes (unit payload/repository tests exist; route/E2E tests are still missing).
 2. Add idempotency and duplicate protection.
 3. Improve UI error surfaces.
 4. Improve logging and diagnostics.
@@ -130,21 +143,21 @@ Finish the usable MVP surface and clean the repo directionally.
 
 ## Delivery order
 ### Sprint A — Immediate
-1. De-demo `/payouts/new`.
-2. Real payout creation -> real payout detail redirect.
-3. De-demo `/payouts/[id]`.
-4. Make dashboard read real data.
-5. Stop using seeded payouts as the main workflow path.
+1. De-demo `/payouts/new`. *(done)*
+2. Real payout creation -> real payout detail redirect. *(done)*
+3. De-demo `/payouts/[id]`. *(done)*
+4. Make dashboard read real data. *(done)*
+5. Stop using seeded payouts as the main workflow path. *(partial — seeded demo IDs remain)*
 
 ### Sprint B — Usable product core
-6. Real actors and permissions.
-7. Auth/session.
-8. Payout list + workspace scoping.
+6. Real actors and permissions. *(in progress — seeded product-context boundary only)*
+7. Auth/session. *(scaffold only — Google sign-in route, no session)*
+8. Payout list + workspace scoping. *(payout list done; workspace scoping via seeded context only)*
 
 ### Sprint C — Settlement truth
-9. Real Arc execution path.
-10. Real proof/retry.
-11. Reliability + tests.
+9. Real Arc execution path. *(not started — executor placeholder)*
+10. Real proof/retry. *(done — proof refresh + idempotent release retry)*
+11. Reliability + tests. *(in progress — unit tests added, E2E pending)*
 
 ### Sprint D — Ship
 12. Legacy cleanup.

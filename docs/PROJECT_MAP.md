@@ -15,8 +15,13 @@ This document maps the current repository structure and explains the role of eac
 settleflow/
 ├── app/
 │   ├── api/
-│   ├── dashboard/
-│   ├── payouts/
+│   ├── (app)/
+│   │   ├── dashboard/
+│   │   ├── payouts/
+│   │   ├── contributors/
+│   │   ├── activity/
+│   │   ├── settings/
+│   │   └── app/
 │   ├── globals.css
 │   ├── layout.tsx
 │   └── page.tsx
@@ -28,10 +33,15 @@ settleflow/
 │   └── ui/
 ├── docs/
 ├── lib/
+│   ├── api/
 │   ├── arc/
+│   ├── auth/
+│   ├── context/
 │   ├── data/
 │   ├── db/
+│   ├── hooks/
 │   ├── models/
+│   ├── notifications/
 │   ├── repositories/
 │   └── utils/
 ├── prisma/
@@ -82,6 +92,19 @@ settleflow/
   - Displays payout summary, milestone workflow, release target, and settlement proof.
   - Integrates with submit/approve/reject/release behaviors through the API layer.
 
+### `app/(app)/contributors/page.tsx`
+- **Confirmed**:
+  - Contributor registry page with search/status filters and per-contributor metrics.
+  - Add Contributor dialog creating contributors via `POST /api/contributors`.
+
+### `app/(app)/activity/page.tsx`
+- **Confirmed**:
+  - Activity ledger with event filters, pagination, and CSV export.
+
+### `app/(app)/settings/page.tsx`
+- **Confirmed**:
+  - Workspace settings: webhook URL configuration + "Test Webhook", actor/workspace switcher.
+
 ## API Route Map
 
 ### `app/api/`
@@ -108,6 +131,10 @@ settleflow/
   - `releases/[id]/route.ts`
   - `releases/[id]/retry/route.ts`
   - `releases/[id]/proof/refresh/route.ts`
+  - `payouts/[id]/activity/route.ts`
+  - `webhooks/test/route.ts`
+  - `feedback/route.ts`
+  - `auth/google/route.ts`
 - **Confirmed**:
   - The repository now has an explicit server mutation/read surface rather than frontend-only state transitions.
 
@@ -175,6 +202,22 @@ settleflow/
 - **Assumption**:
   - This area is the official application boundary for Arc payout execution logic.
 
+### `lib/api/`
+- **Confirmed**:
+  - Shared API error contract and payload-shape helpers; contains unit test files (`lib/api/*.test.mts`).
+
+### `lib/auth/`
+- **Confirmed**:
+  - `smart-account.ts` derives a deterministic smart-account address for the Google sign-in surface.
+
+### `lib/notifications/`
+- **Confirmed**:
+  - `webhook-dispatcher.ts` builds Discord embeds and dispatches webhook payloads (used by milestone repositories and `/api/v1/webhooks/test`).
+
+### `lib/context/` and `lib/hooks/`
+- **Confirmed**:
+  - `theme-context.tsx` (CSS-variable theme) and `use-scroll-lock.ts` (modal body-scroll lock) support the merged minimalist theme.
+
 ### `lib/utils/`
 - **Confirmed**:
   - Formatting helpers remain in the repository.
@@ -235,7 +278,7 @@ settleflow/
 
 ### Confirmed missing from inspected repository
 - No auth middleware or provider integration was found.
-- No test files matching common `*.test.*` / `*.spec.*` patterns were found.
+- No E2E/browser integration test suite exists; unit tests cover `lib/api` and `lib/repositories` only.
 
 ## Inspection Limits
 

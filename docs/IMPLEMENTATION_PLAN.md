@@ -1,5 +1,7 @@
 # Settleflow Landing Page – Implementation Plan
 
+> **Historical plan — superseded.** The landing page, header Launch App flow, and wallet-connect-then-navigate behavior described here were implemented. Routing later moved into the `app/(app)` route group, and the UI received a merged minimalist black/white theme refactor (see git history on `main`, e.g. `38129aa`). Keep for reference only.
+
 ## Goal
 Add a landing page at the root route (`/`) that introduces the project, displays a hero section, and provides a **Launch App** button in the header that navigates to `/app`. The button optionally triggers wallet connection before navigation.
 

@@ -1,7 +1,7 @@
 # CURRENT_STATE
 
 ## Summary
-This repository is now a full-stack Next.js application for SettleFlow, an Arc-native milestone-based USDC payout workflow for crypto teams. The current implementation has moved beyond a frontend-only demo: it now includes a PostgreSQL + Prisma data layer, repository-backed server reads/writes, and API routes for payout, milestone, and release actions. Arc release execution still remains environment-mode dependent rather than production-complete.
+This repository is now a full-stack Next.js application for SettleFlow, an Arc-native milestone-based USDC payout workflow for crypto teams. The current implementation has moved beyond a frontend-only demo: it now includes a PostgreSQL + Prisma data layer, repository-backed server reads/writes, and API routes for payout, milestone, and release actions. Arc release execution still remains environment-mode dependent rather than production-complete. A theme refactor (minimalist black/white CSS-variable design system) has been merged into `main` at `38129aa` (via branch `update/theme`), and the repo now also ships a narrow unit test layer plus contributor-management, activity-CSV-export, and webhook-scaffolding wedges.
 
 ## Fact vs Assumption Legend
 - **Confirmed**: directly verified from repository files or command output.
@@ -13,10 +13,14 @@ This repository is now a full-stack Next.js application for SettleFlow, an Arc-n
 ### Confirmed
 - The app is built with **Next.js 16**, **React 19**, and **TypeScript**.
 - The main user-visible routes are:
-  - `/`
+  - `/` (landing)
   - `/dashboard`
-  - `/payouts/new`
-  - `/payouts/[id]`
+  - `/payouts`, `/payouts/new`, `/payouts/[id]`
+  - `/contributors`
+  - `/activity`
+  - `/settings`
+  - `/app`
+- The product surface routes live inside the `app/(app)` route group.
 - The repository now contains a **PostgreSQL + Prisma** persistence layer:
   - `prisma/schema.prisma`
   - `prisma/migrations/20260807140115_init/`
@@ -27,7 +31,10 @@ This repository is now a full-stack Next.js application for SettleFlow, an Arc-n
 - The create payout flow uses `fetch("/api/v1/payouts", ...)`.
 - Contributor loading on the create payout page uses `fetch("/api/v1/contributors?status=active")`.
 - Arc configuration is still read from `NEXT_PUBLIC_*` env vars with defaults.
-- Arc release behavior is now mode-aware through `sendUsdcOnArc()` and `createReleaseExecutor()`, with `mock`, `demo`, and `real` execution paths.
+- Arc release behavior is now mode-aware through `sendUsdcOnArc()` and `createReleaseExecutor()`, with `mock`, `demo`, and `real` execution paths. `createReleaseExecutor()` is still a placeholder that returns "not wired yet" failures.
+- The app UI was refactored onto a minimalist black/white design system driven by CSS variables (`lib/context/theme-context.tsx`), with modal body-scroll locking (`lib/hooks/use-scroll-lock.ts`); this refactor is merged into `main` (`38129aa`).
+- A unit test layer exists under `lib/api/*.test.mts` and `lib/repositories/*.test.mts`; `npm test` runs `node --import tsx --test "lib/**/*.test.mts"`.
+- A webhook dispatcher (`lib/notifications/webhook-dispatcher.ts`) is wired into milestone repositories and dispatches `milestone_submitted`, `milestone_approved`/`milestone_rejected`, and `milestone_released` events when the environment variable `SETTLEFLOW_WEBHOOK_URL` is set. A test endpoint (`POST /api/v1/webhooks/test`) also exists for manual URL verification.
 
 ### Assumption
 - The repository is transitioning from checkpoint/demo-first implementation toward a more complete application wedge, while still preserving some demo-safe behavior for release execution.
@@ -66,6 +73,22 @@ This repository is now a full-stack Next.js application for SettleFlow, an Arc-n
   - release
 - Includes release retry and proof refresh API surfaces.
 
+### Contributors (`/contributors`)
+#### Confirmed
+- Lists contributors with search, status filter, and settled/payout metrics.
+- Add Contributor dialog creates contributors via `POST /api/contributors` (EVM address validation + duplicate-wallet guard).
+- Edit/archive of existing contributors is not implemented yet.
+
+### Activity Ledger (`/activity`)
+#### Confirmed
+- Shows payout workflow activity with event-category filters and pagination.
+- Includes a CSV export control for the visible activity ledger rows.
+
+### Settings (`/settings`)
+#### Confirmed
+- Workspace settings surface with webhook URL configuration and a "Test Webhook" action calling `POST /api/v1/webhooks/test`.
+- Includes the seeded-role actor/workspace switcher and identity/network surfaces.
+
 ## 3. Data, database, and API state
 
 ### Confirmed facts
@@ -90,6 +113,10 @@ This repository is now a full-stack Next.js application for SettleFlow, an Arc-n
   - release detail
   - release retry
   - release proof refresh
+  - payout activity (`/api/v1/payouts/[id]/activity`)
+  - webhook test (`/api/v1/webhooks/test`)
+  - feedback (`/api/v1/feedback`)
+  - google auth smart-account derivation (`/api/v1/auth/google`)
 - Legacy mock data files still exist in `lib/data/`, but application architecture is no longer accurately described as mock-only.
 
 ### Assumptions
@@ -130,11 +157,12 @@ This repository is now a full-stack Next.js application for SettleFlow, an Arc-n
 - Prisma seed configuration exists in `package.json#prisma.seed`.
 - ESLint is configured via `eslint.config.mjs`.
 - TypeScript strict mode is enabled in `tsconfig.json`.
-- No explicit repository test files were found under common naming patterns.
-- No Playwright/Jest/Vitest/Cypress test suites were found in application source.
+- The repository contains 16 unit test files under `lib/api/*.test.mts` and `lib/repositories/*.test.mts`.
+- `npm test` runs `node --import tsx --test "lib/**/*.test.mts"`.
+- No Playwright/Jest/Vitest/Cypress end-to-end or browser integration test suites exist yet.
 
 ### Notes
-- The repository now has stronger runtime/data infrastructure than before, but still lacks a first-class automated test suite.
+- Unit coverage is narrow by design (payload validation + repository logic); route-level integration and E2E coverage are still missing.
 
 ## 6. What appears complete
 
@@ -154,7 +182,7 @@ This repository is now a full-stack Next.js application for SettleFlow, an Arc-n
 ## 7. What appears unfinished
 
 ### Confirmed
-- No login/session-based authentication flow is implemented.
+- No session-based authentication flow is implemented; `app/api/v1/auth/google` and `lib/auth/smart-account.ts` provide a Google sign-in + deterministic smart-account address derivation surface without server-side sessions or middleware protection.
 - Mutation routes now have a request-derived actor boundary for the seeded workspace roles:
   - payout create
   - payout activate
@@ -165,7 +193,8 @@ This repository is now a full-stack Next.js application for SettleFlow, an Arc-n
   - release proof refresh
   - release retry
 - Core UI surfaces now mask actions by actor role and include a header actor switcher for seeded-role testing.
-- No automated tests were found.
+- No E2E/browser integration test suite exists; unit coverage is limited to payload validation and repository logic.
+- Contributor edit/archive is missing. The webhook dispatcher is wired into milestone events but reads the URL from env (`SETTLEFLOW_WEBHOOK_URL`) — the Settings UI webhook input does not persist to the dispatcher's env source.
 - Arc execution is not verified here as a production-safe live payment path; behavior still depends on execution mode.
 - Legacy mock-data files remain in the repository and may still represent transition-era coupling or fallback assumptions.
 
@@ -176,7 +205,7 @@ This repository is now a full-stack Next.js application for SettleFlow, an Arc-n
 
 ### Confirmed
 - Technical docs exist in English for README, canonical docs, workflow/domain/API planning docs, DB schema planning, and checkpoint materials.
-- Some documentation files were stale after the backend/data wedge and required refresh against current repository state.
+- Some documentation files were stale after the backend/data wedge and the merged theme refactor, and required refresh against current repository state.
 - Archived docs still preserve earlier progress phases under `docs/archive/`.
 
 ## 9. Unknowns that require further inspection
@@ -186,14 +215,15 @@ This repository is now a full-stack Next.js application for SettleFlow, an Arc-n
 - Whether the real Arc execution path is fully aligned with official Arc requirements for production release handling.
 - Whether remaining stale checkpoint/supporting docs still need rationalization.
 
+
 ## 10. Confidence statement
 
 ### High confidence
 - Route structure
 - dependency/tooling setup
 - presence of database/API/repository layers
-- absence of auth in the inspected source
-- absence of automated tests in the inspected source
+- absence of a real session-based auth/session model (only a Google sign-in scaffold + smart-account derivation)
+- presence of a narrow unit test layer (`lib/api` + `lib/repositories`) with no E2E coverage yet
 - mode-aware Arc send architecture
 
 ### Medium confidence

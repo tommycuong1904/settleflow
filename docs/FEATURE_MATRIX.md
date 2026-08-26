@@ -13,12 +13,12 @@
 | **1. Xác thực & Quản lý Ví (Auth & Wallet Core)** | 7 | 6 | 1 | 0 |
 | **2. Quản lý Thỏa thuận Payout (Payout Agreement Core)** | 6 | 5 | 1 | 0 |
 | **3. Vòng đời Milestone (Milestone State Machine)** | 5 | 5 | 0 | 0 |
-| **4. Giải ngân Blockchain & Bằng chứng (Release & Settlement)** | 7 | 4 | 2 | 1 |
+| **4. Giải ngân Blockchain & Bằng chứng (Release & Settlement)** | 7 | 5 | 1 | 1 |
 | **5. Quản lý Contributor (Contributor Registry)** | 5 | 3 | 1 | 1 |
 | **6. Phân quyền & Vai trò (RBAC & Policy Engine)** | 4 | 4 | 0 | 0 |
 | **7. Nhật ký hoạt động & Báo cáo (Audit & Reporting)** | 5 | 3 | 1 | 1 |
-| **8. Tích hợp & Tự động hóa (Webhooks & Notifications)** | 4 | 1 | 1 | 2 |
-| **TỔNG CỘNG** | **43** | **31 (72%)** | **7 (16%)** | **5 (12%)** |
+| **8. Tích hợp & Tự động hóa (Webhooks & Notifications)** | 4 | 2 | 0 | 2 |
+| **TỔNG CỘNG** | **43** | **33 (77%)** | **5 (12%)** | **5 (12%)** |
 
 ---
 
@@ -69,7 +69,7 @@
 | `REL-02` | **Tạo Bằng chứng Thanh toán Tức thì (Settlement Proof)** | Lưu trữ Transaction Hash, Block Number, Timestamp, Địa chỉ gửi, Địa chỉ nhận và số tiền USDC vào bảng `Release` và `SettlementProof`. | ✅ **Đã làm** |
 | `REL-03` | **Xác thực Trạng thái Giao dịch Onchain (Proof Verification)** | Tự động truy vấn RPC Arc Testnet để kiểm tra giao dịch đã được xác nhận (Confirmed) hay chưa qua `eth_getTransactionReceipt`. | ✅ **Đã làm** |
 | `REL-04` | **Tự động Cập nhật Số dư USDC (Live Balance Sync)** | Đọc số dư token ERC-20 USDC trực tiếp từ RPC Arc Testnet theo địa chỉ ví đang kết nối. | ✅ **Đã làm** |
-| `REL-05` | **Cơ chế Thử lại Giao dịch lỗi (Release Retry)** | Xử lý các trường hợp giao dịch bị nghẽn (nonce conflict / dropped transaction) cho phép thử lại với gas price mới. | ⏳ **Đang làm** |
+| `REL-05` | **Cơ chế Thử lại Giao dịch lỗi (Release Retry)** | Xử lý các trường hợp giao dịch bị nghẽn (nonce conflict / dropped transaction) cho phép thử lại với gas price mới. Đã có `lib/repositories/release-retry.ts` + API `POST /api/v1/releases/[id]/retry` (kèm unit test `release-queue-retry.test.mts`). | ✅ **Đã làm** |
 | `REL-06` | **Giải ngân Tự động qua Smart Account (Relayer/Paymaster)** | Tự động ký và gửi giao dịch giải ngân cho các tài khoản Web2 mà không bắt người nhận phải có đồng native token để trả gas. | ⏳ **Đang làm** |
 | `REL-07` | **Hỗ trợ Đa chuỗi (Multi-chain Bridge Settlement)** | Giải ngân USDC trên Arc và tự động bridge sang các mạng EVM khác (Ethereum, Arbitrum, Base) qua Circle CCTP. | 📋 **Chưa làm** |
 
@@ -82,7 +82,7 @@
 | `CONTRIB-01` | **Lưu trữ Hồ sơ Contributor (Profile & Wallet Mapping)** | Quản lý thông tin: Tên, Email, Địa chỉ ví nhận tiền chính, GitHub handle, Vai trò và Thẻ kỹ năng. | ✅ **Đã làm** |
 | `CONTRIB-02` | **Tra cứu Contributor Hoạt động (Active Registry Query)** | API `/api/v1/contributors` lọc và cung cấp danh sách contributor khả dụng cho quá trình tạo Payout. | ✅ **Đã làm** |
 | `CONTRIB-03` | **Lịch sử Thu nhập & Thống kê Tích lũy** | Tính toán tổng số tiền USDC đã nhận, số lượng milestone hoàn thành và số thỏa thuận đang tham gia của từng contributor. | ✅ **Đã làm** |
-| `CONTRIB-04` | **Thêm & Chỉnh sửa Contributor (CRUD Management)** | Thêm mới contributor từ dashboard, cập nhật địa chỉ ví nhận tiền và đổi trạng thái (`ACTIVE`, `INACTIVE`, `SUSPENDED`). | ⏳ **Đang làm** |
+| `CONTRIB-04` | **Thêm & Chỉnh sửa Contributor (CRUD Management)** | Phần **Thêm mới** từ giao diện (`/contributors` + Add Contributor Dialog + `POST /api/contributors`, validate EVM address + chống trùng ví) đã hoàn thành; phần cập nhật địa chỉ ví và đổi trạng thái (edit/archive) còn triển khai dở. | ⏳ **Đang làm** |
 | `CONTRIB-05` | **Xác minh Danh tính / Onchain KYC (KYC/KYB Attestation)** | Tích hợp xác thực danh tính contributor qua chứng chỉ số EAS (Ethereum Attestation Service) hoặc Gitcoin Passport. | 📋 **Chưa làm** |
 
 ---
@@ -105,7 +105,7 @@
 | `AUDIT-01` | **Nhật ký Hoạt động Giao dịch (Activity Ledger)** | Tự động ghi lại mọi sự kiện: Tạo thỏa thuận, Nộp bài, Duyệt bài, Từ chối, Giải ngân, Thất bại kèm Actor ID và Timestamp. | ✅ **Đã làm** |
 | `AUDIT-02` | **Bộ lọc & Phân trang Nhật ký (Activity Filtering & Pagination)** | Truy vấn nhật ký theo danh mục sự kiện, khoảng thời gian và phân trang 10 dòng/trang. | ✅ **Đã làm** |
 | `AUDIT-03` | **Truy xuất Biên nhận Onchain (Explorer Deep-linking)** | Tạo liên kết trực tiếp đến Transaction Hash trên Arc Explorer (`testnet.arcscan.io`). | ✅ **Đã làm** |
-| `AUDIT-04` | **Xuất Dữ liệu Báo cáo Kế toán (CSV/JSON Export)** | Xuất toàn bộ bảng kê thanh toán và đối soát thuế/kế toán ra định dạng CSV/JSON chuẩn. | ⏳ **Đang làm** |
+| `AUDIT-04` | **Xuất Dữ liệu Báo cáo Kế toán (CSV/JSON Export)** | CSV export cho Activity Ledger (`/activity`) đã hoàn thành; JSON export và export bảng kê cấp payout còn triển khai dở. | ⏳ **Đang làm** |
 | `AUDIT-05` | **Xuất Biên lai PDF Bằng chứng Giải ngân (PDF Receipt Generator)** | Tạo file PDF chứa chữ ký số và băm giao dịch chứng minh nguồn tiền đã được thanh toán minh bạch. | 📋 **Chưa làm** |
 
 ---
@@ -114,8 +114,8 @@
 
 | Mã | Tên Tính năng | Mô tả Nghiệp vụ & Kỹ thuật | Trạng thái |
 | :--- | :--- | :--- | :---: |
-| `INT-01` | **Cấu hình Webhook Thông báo (Discord / Slack Endpoint)** | Lưu cấu hình Webhook URL trong Settings để chuẩn bị bắn dữ liệu sự kiện. | ✅ **Đã làm** |
-| `INT-02` | **Bắn Sự kiện Tự động (Event Webhook Dispatcher)** | Gửi HTTP POST payload khi có sự kiện `milestone.submitted`, `milestone.approved`, `release.confirmed`. | ⏳ **Đang làm** |
+| `INT-01` | **Cấu hình Webhook Thông báo (Discord / Slack Endpoint)** | Lưu cấu hình Webhook URL trong Settings kèm nút "Test Webhook" (gọi `POST /api/v1/webhooks/test`) để xác nhận kết nối. | ✅ **Đã làm** |
+| `INT-02` | **Bắn Sự kiện Tự động (Event Webhook Dispatcher)** | Đã gắn vào `lib/repositories/milestone-submission.ts` (`milestone_submitted`), `milestone-review.ts` (`milestone_approved`/`milestone_rejected`) và `milestone-release.ts` (`milestone_released`). Dispatcher đọc webhook URL từ `process.env.SETTLEFLOW_WEBHOOK_URL` (hoặc `NEXT_PUBLIC_SETTLEFLOW_WEBHOOK_URL`). Settings UI có nút "Test Webhook" gọi `POST /api/v1/webhooks/test` với URL nhập trực tiếp. | ✅ **Đã làm** |
 | `INT-03` | **Đồng bộ PR GitHub Tự động (GitHub Bot Integration)** | Tự động đánh dấu Milestone hoàn thành khi Pull Request tương ứng trên GitHub được Merge. | 📋 **Chưa làm** |
 | `INT-04` | **Thông báo Email Tự động (Resend/SendGrid)** | Gửi email thông báo cho Contributor khi nhận được tiền USDC giải ngân vào ví. | 📋 **Chưa làm** |
 
@@ -128,8 +128,8 @@
    - Hoàn thiện `PAY-06`: Escrow Onchain Lock.
 
 2. **Sprint 2 (Quản trị & Đối soát Kế toán)**:
-   - Hoàn thiện `CONTRIB-04`: Thêm/Sửa Contributor trực tiếp từ giao diện.
-   - Hoàn thiện `AUDIT-04`: Xuất báo cáo CSV/JSON Payouts.
+   - Hoàn thiện nốt `CONTRIB-04`: cập nhật ví / đổi trạng thái (phần Thêm mới từ giao diện đã xong).
+   - Mở rộng `AUDIT-04`: JSON export và export bảng kê cấp payout (CSV activity ledger đã xong).
 
 3. **Sprint 3 (Tự động hóa & Tích hợp)**:
-   - Kích hoạt `INT-02`: Bắn Webhook Discord/Slack khi có giao dịch giải ngân thật.
+   - Mở rộng `INT-02`: cho phép cấu hình webhook URL từ Settings UI thay vì chỉ dùng biến môi trường, và thêm bảo vệ lỗi dispatch timeout.
