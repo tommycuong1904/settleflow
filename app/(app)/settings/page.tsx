@@ -155,7 +155,7 @@ export default function SettingsPage() {
 
       <form onSubmit={handleSaveSettings} className="space-y-8">
         {/* Section 1: General Workspace Profile */}
-        <div className="rounded-xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.72)] p-6 sm:p-8 space-y-6">
+        <div className="rounded-xl border border-[var(--border-soft)] p-6 sm:p-8 space-y-6">
           <div className="flex items-center gap-3 pb-4 border-b border-[var(--border-soft)]">
             <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--surface-muted)] border border-[var(--border-soft)] text-[var(--text-muted)]">
               <Sliders size={20} />
@@ -218,7 +218,7 @@ export default function SettingsPage() {
         </div>
 
         {/* Section 2: Arc Blockchain & Protocol Configuration */}
-        <div className="rounded-xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.72)] p-6 sm:p-8 space-y-6">
+        <div className="rounded-xl border border-[var(--border-soft)] p-6 sm:p-8 space-y-6">
           <div className="flex items-center justify-between gap-4 pb-4 border-b border-[var(--border-soft)]">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--surface-muted)] border border-[var(--border-soft)] text-[var(--text-muted)]">
@@ -298,7 +298,7 @@ export default function SettingsPage() {
         </div>
 
         {/* Section 3: Webhooks & Notifications */}
-        <div className="rounded-xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.72)] p-6 sm:p-8 space-y-6">
+        <div className="rounded-xl border border-[var(--border-soft)] p-6 sm:p-8 space-y-6">
           <div className="flex items-center gap-3 pb-4 border-b border-[var(--border-soft)]">
             <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--surface-muted)] border border-[var(--border-soft)] text-[var(--text-muted)]">
               <Bell size={20} />
@@ -378,7 +378,7 @@ export default function SettingsPage() {
         </div>
 
         {/* Section 4: Wallet & Security Session */}
-        <div className="rounded-xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.72)] p-6 sm:p-8 space-y-6">
+        <div className="rounded-xl border border-[var(--border-soft)] p-6 sm:p-8 space-y-6">
           <div className="flex items-center justify-between gap-4 pb-4 border-b border-[var(--border-soft)]">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--surface-muted)] border border-[var(--border-soft)] text-[var(--text-muted)]">

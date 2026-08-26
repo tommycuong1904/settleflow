@@ -14,7 +14,7 @@ export function ActivityTimeline({ items }: ActivityTimelineProps) {
       </CardHeader>
       <CardContent>
         {items.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-[var(--border-soft)] bg-[rgba(15,23,42,0.46)] p-4 text-sm text-[var(--text-primary)]">
+          <div className="rounded-2xl border border-dashed border-[var(--border-soft)] bg-[var(--surface-muted)] p-4 text-sm text-[var(--text-primary)]">
             No activity recorded yet.
           </div>
         ) : (
@@ -22,11 +22,11 @@ export function ActivityTimeline({ items }: ActivityTimelineProps) {
             {items.map((item) => (
               <div
                 key={item.id}
-                className="rounded-2xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.46)] p-4"
+                className="rounded-2xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-4"
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="space-y-1">
-                    <p className="text-sm font-semibold text-white">{item.title}</p>
+                    <p className="text-sm font-semibold text-[var(--foreground)]">{item.title}</p>
                     <p className="text-xs uppercase tracking-[0.16em] text-[var(--text-muted)]">
                       {item.actorLabel}
                     </p>

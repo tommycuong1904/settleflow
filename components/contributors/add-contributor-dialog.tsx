@@ -111,7 +111,7 @@ export function AddContributorDialog({
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-[500px] overflow-hidden rounded-3xl border border-cyan-500/20 bg-[#0c1322] p-6 sm:p-8 shadow-[0_0_60px_rgba(34,211,238,0.12)] text-white"
+        className="relative w-full max-w-[500px] overflow-hidden rounded-xl border bg-[var(--surface-muted)] p-6 sm:p-8"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Subtle background glow */}
@@ -122,7 +122,7 @@ export function AddContributorDialog({
         <button
           onClick={onClose}
           disabled={isSubmitting}
-          className="absolute right-5 top-5 rounded-full p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
+          className="absolute right-5 top-5 rounded-full p-1.5 hover:bg-slate-800 hover:text-white transition-colors"
           aria-label="Close modal"
         >
           <X size={18} />
@@ -130,14 +130,14 @@ export function AddContributorDialog({
 
         {/* Header */}
         <div className="flex items-center gap-3.5 mb-6">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-cyan-400/10 border border-cyan-400/30 text-cyan-300 shadow-[0_0_15px_rgba(34,211,238,0.2)] shrink-0">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl border shrink-0">
             <UserPlus size={20} />
           </div>
           <div>
-            <h2 className="text-xl font-bold tracking-tight text-white">
+            <h2 className="text-xl font-bold tracking-tight">
               Add New Contributor
             </h2>
-            <p className="text-xs text-slate-400 mt-0.5">
+            <p className="text-xs mt-0.5">
               Register a recipient address for milestone escrows & Arc settlements.
             </p>
           </div>
@@ -160,7 +160,7 @@ export function AddContributorDialog({
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Name */}
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+            <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5">
               Display Name / Pseudonym <span className="text-cyan-400">*</span>
             </label>
             <input
@@ -169,13 +169,13 @@ export function AddContributorDialog({
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Alice Walker, zkBuilder"
-              className="w-full rounded-xl border border-slate-700 bg-slate-900/90 py-2.5 px-3.5 text-sm text-white placeholder-slate-500 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400 transition-all"
+              className="w-full rounded-xl border border-slate-700 bg-slate py-2.5 px-3.5 text-sm placeholder-slate-500 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400 transition-all"
             />
           </div>
 
           {/* Wallet Address */}
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+            <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5">
               Arc / EVM Wallet Address <span className="text-cyan-400">*</span>
             </label>
             <div className="relative">
@@ -189,7 +189,7 @@ export function AddContributorDialog({
                 value={walletAddress}
                 onChange={(e) => setWalletAddress(e.target.value)}
                 placeholder="0x..."
-                className="w-full font-mono text-xs rounded-xl border border-slate-700 bg-slate-900/90 py-2.5 pl-10 pr-3.5 text-white placeholder-slate-500 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400 transition-all"
+                className="w-full font-mono text-xs rounded-xl border border-slate-700 bg-slate py-2.5 pl-10 pr-3.5 placeholder-slate-500 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400 transition-all"
               />
             </div>
           </div>
@@ -197,7 +197,7 @@ export function AddContributorDialog({
           {/* Role & Email row */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+              <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5">
                 Role / Discipline
               </label>
               <div className="relative">
@@ -210,13 +210,13 @@ export function AddContributorDialog({
                   value={role}
                   onChange={(e) => setRole(e.target.value)}
                   placeholder="e.g. Smart Contract Eng"
-                  className="w-full rounded-xl border border-slate-700 bg-slate-900/90 py-2.5 pl-10 pr-3.5 text-xs text-white placeholder-slate-500 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400 transition-all"
+                  className="w-full rounded-xl border border-slate-700 bg-slate py-2.5 pl-10 pr-3.5 text-xs placeholder-slate-500 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400 transition-all"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+              <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5">
                 Email (Optional)
               </label>
               <div className="relative">
@@ -229,7 +229,7 @@ export function AddContributorDialog({
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@example.com"
-                  className="w-full rounded-xl border border-slate-700 bg-slate-900/90 py-2.5 pl-10 pr-3.5 text-xs text-white placeholder-slate-500 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400 transition-all"
+                  className="w-full rounded-xl border border-slate-700 bg-slate py-2.5 pl-10 pr-3.5 text-xs placeholder-slate-500 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400 transition-all"
                 />
               </div>
             </div>
@@ -237,7 +237,7 @@ export function AddContributorDialog({
 
           {/* Notes */}
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+            <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5">
               Internal Notes (Optional)
             </label>
             <div className="relative">
@@ -250,7 +250,7 @@ export function AddContributorDialog({
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Key delivery agreements, Discord handle, Github profile..."
-                className="w-full rounded-xl border border-slate-700 bg-slate-900/90 py-2.5 pl-10 pr-3.5 text-xs text-white placeholder-slate-500 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400 transition-all resize-none"
+                className="w-full rounded-xl border border-slate-700 bg-slate py-2.5 pl-10 pr-3.5 text-xs placeholder-slate-500 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400 transition-all resize-none"
               />
             </div>
           </div>

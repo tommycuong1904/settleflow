@@ -176,7 +176,7 @@ export function PayoutListClient({
               payout.status === "completed"
                 ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300"
                 : payout.status === "active" || payout.status === "partially_released"
-                ? "border-sky-400/20 bg-sky-400/10 text-sky-200"
+                ? "border-sky-400/20 bg-sky-400/10 text-sky-700"
                 : "border-white/10 bg-white/5 text-slate-400";
 
             return (

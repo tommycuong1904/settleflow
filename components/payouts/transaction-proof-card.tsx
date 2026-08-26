@@ -8,7 +8,7 @@ type TransactionProofCardProps = {
 
 const statusStyles: Record<TransactionProof["status"], string> = {
   pending:
-    "border border-amber-300/25 bg-amber-400/10 text-amber-100",
+    "border border-amber-400/30 bg-amber-400/10 text-amber-200",
   confirmed:
     "border border-emerald-300/25 bg-emerald-400/10 text-emerald-100",
   failed:
@@ -34,8 +34,8 @@ export function TransactionProofCard({ proof, milestoneTitle }: TransactionProof
   if (!proof) {
     return (
       <div className="space-y-4 text-sm text-[var(--text-primary)]">
-        <div className="rounded-2xl border border-dashed border-[var(--border-soft)] bg-[rgba(15,23,42,0.46)] p-4">
-          <p className="font-semibold text-white">No settlement proof yet</p>
+        <div className="rounded-2xl border border-dashed border-[var(--border-soft)] bg-[var(--surface)]/46 p-4">
+          <p className="font-semibold text-[var(--foreground)]">No settlement proof yet</p>
           <p className="mt-1">
             Proof appears here after the payout is released on-chain.
           </p>
@@ -46,12 +46,12 @@ export function TransactionProofCard({ proof, milestoneTitle }: TransactionProof
 
   return (
     <div className="space-y-4 text-sm text-[var(--text-primary)]">
-      <div className="flex flex-wrap items-start justify-between gap-3 rounded-2xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.56)] p-4">
+      <div className="flex flex-wrap items-start justify-between gap-3 rounded-2xl border border-[var(--border-soft)] bg-[var(--surface)]/56 p-4">
         <div className="space-y-1.5">
           <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
             Settlement status
           </p>
-          <p className="text-base font-semibold text-white">{statusTitles[proof.status]}</p>
+          <p className="text-base font-semibold text-[var(--foreground)]">{statusTitles[proof.status]}</p>
           <p>{statusDescriptions[proof.status]}</p>
         </div>
         <span
@@ -62,23 +62,23 @@ export function TransactionProofCard({ proof, milestoneTitle }: TransactionProof
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        <div className="rounded-2xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.6)] p-4">
+        <div className="rounded-2xl border border-[var(--border-soft)] bg-[var(--surface)]/60 p-4">
           <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
             Network
           </p>
-          <p className="mt-2 font-semibold text-white">{proof.network}</p>
+          <p className="mt-2 font-semibold text-[var(--foreground)]">{proof.network}</p>
         </div>
-        <div className="rounded-2xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.6)] p-4">
+        <div className="rounded-2xl border border-[var(--border-soft)] bg-[var(--surface)]/60 p-4">
           <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
             Milestone proof
           </p>
-          <p className="mt-2 font-semibold text-white">{milestoneTitle ?? proof.milestoneId}</p>
+          <p className="mt-2 font-semibold text-[var(--foreground)]">{milestoneTitle ?? proof.milestoneId}</p>
         </div>
-        <div className="rounded-2xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.6)] p-4">
+        <div className="rounded-2xl border border-[var(--border-soft)] bg-[var(--surface)]/60 p-4">
           <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
             Confirmed at
           </p>
-          <p className="mt-2 font-semibold text-white">
+          <p className="mt-2 font-semibold text-[var(--foreground)]">
             {proof.confirmedAt
               ? new Date(proof.confirmedAt).toLocaleString()
               : proof.status === "failed"
@@ -86,11 +86,11 @@ export function TransactionProofCard({ proof, milestoneTitle }: TransactionProof
                 : "Awaiting confirmation"}
           </p>
         </div>
-        <div className="rounded-2xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.6)] p-4">
+        <div className="rounded-2xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-4">
           <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
             Failed at
           </p>
-          <p className="mt-2 font-semibold text-white">
+          <p className="mt-2 font-semibold text-[var(--foreground)]">
             {proof.failedAt
               ? new Date(proof.failedAt).toLocaleString()
               : proof.status === "failed"
@@ -98,11 +98,11 @@ export function TransactionProofCard({ proof, milestoneTitle }: TransactionProof
                 : "—"}
           </p>
         </div>
-        <div className="rounded-2xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.6)] p-4">
+        <div className="rounded-2xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-4">
           <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
             Block number
           </p>
-          <p className="mt-2 font-semibold text-white">{proof.blockNumber ?? "Pending / unavailable"}</p>
+          <p className="mt-2 font-semibold text-[var(--foreground)]">{proof.blockNumber ?? "Pending / unavailable"}</p>
         </div>
       </div>
 
@@ -115,7 +115,7 @@ export function TransactionProofCard({ proof, milestoneTitle }: TransactionProof
         </div>
       ) : null}
 
-      <div className="rounded-3xl border border-[var(--border-soft)] bg-[rgba(8,15,31,0.82)] p-4">
+      <div className="rounded-3xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
@@ -136,13 +136,13 @@ export function TransactionProofCard({ proof, milestoneTitle }: TransactionProof
               href={proof.explorerUrl}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center rounded-xl border border-cyan-300/25 bg-cyan-400/10 px-3 py-2 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-400/15 hover:text-cyan-50"
+              className="inline-flex items-center rounded-xl border border-cyan-300/25 bg-cyan-400/10 px-3 py-2 text-sm font-semibold text-cyan-500 hover:text-[var(--accent-cyan)] transition hover:bg-cyan-400/15"
             >
               View on Arc explorer
             </a>
           ) : null}
         </div>
-        <p className="mt-4 break-all rounded-2xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.68)] px-4 py-3 font-mono text-xs leading-6 text-cyan-100">
+        <p className="mt-4 break-all rounded-2xl border border-[var(--border-soft)] bg-[var(--surface)] px-4 py-3 font-mono text-xs leading-6 text-[var(--text-primary)]">
           {proof.txHash || "Pending / unavailable"}
         </p>
       </div>

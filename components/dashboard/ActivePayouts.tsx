@@ -27,6 +27,12 @@ export default function ActivePayouts({ activePayouts, payouts, contributors, mi
           const currentReleaseProof = nextReleaseReady
             ? transactionProofs.find((proof) => proof.milestoneId === nextReleaseReady.id)
             : undefined;
+          const statusClassMap: Record<string, string> = {
+            active: "border border-cyan-300/20 bg-cyan-400/10 text-cyan-700",
+            submitted: "border border-sky-400/20 bg-sky-400/10 text-sky-700",
+            // Add more status mappings as needed
+          };
+
           const payoutStatusLabel =
             payout.status === "partially_released"
               ? "Partially released"
@@ -57,27 +63,27 @@ export default function ActivePayouts({ activePayouts, payouts, contributors, mi
             : "Open the payout to continue milestone progress.";
 
           return (
-            <div key={payout.id} className="rounded-xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.62)] p-5">
+            <div key={payout.id} className="rounded-xl border border-[var(--border-soft)] bg-white p-5">
               <div className="space-y-3">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="text-lg font-semibold text-white">{payout.title}</p>
+                    <p className="text-lg font-semibold text-[var(--foreground)]">{payout.title}</p>
                     <p className="mt-1 text-sm text-[var(--text-primary)]">
                       {contributor?.name ?? payout.contributorId}
                     </p>
                   </div>
-                  <div className="inline-flex items-center rounded-full border border-cyan-300/20 bg-cyan-400/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-cyan-100">
+                  <span className={`inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] ${statusClassMap[payout.status] ?? "bg-gray-200 text-gray-800"}`}>
                     {payoutStatusLabel}
-                  </div>
+                  </span>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div>
                     <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">Total commitment</p>
-                    <p className="mt-1 font-semibold text-white">{formatUsdc(payout.totalAmount)} USDC</p>
+                    <p className="mt-1 font-semibold text-[var(--foreground)]">{formatUsdc(payout.totalAmount)} USDC</p>
                   </div>
                   <div>
                     <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">Released so far</p>
-                    <p className="mt-1 font-semibold text-white">{formatUsdc(releasedAmount)} / {formatUsdc(payout.totalAmount)} USDC</p>
+                    <p className="mt-1 font-semibold text-[var(--foreground)]">{formatUsdc(releasedAmount)} / {formatUsdc(payout.totalAmount)} USDC</p>
                   </div>
                 </div>
                 <div className="space-y-3">

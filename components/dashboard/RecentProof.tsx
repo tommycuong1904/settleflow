@@ -37,11 +37,11 @@ export default function RecentProof({ transactionProofs, milestones }: RecentPro
             return (
               <div
                 key={proof.id}
-                className="rounded-xl border border-[var(--border-soft)] bg-[rgba(8,15,31,0.72)] p-5"
+                className="rounded-xl border border-[var(--border-soft)] bg-white p-5"
               >
                 <div className="space-y-3">
                   <div className="flex flex-wrap items-center gap-3">
-                    <p className="text-lg font-semibold text-white">
+                    <p className="text-lg font-semibold text-[var(--foreground)]">
                       {milestone?.title ?? "Settlement event"}
                     </p>
                     <MilestoneStatusBadge
@@ -57,7 +57,7 @@ export default function RecentProof({ transactionProofs, milestones }: RecentPro
                   <p className="text-sm text-[var(--text-primary)]">
                     {formatUsdc(milestone?.amount ?? 0)} USDC · {proof.network ?? "Arc Testnet"}
                   </p>
-                  <p className="break-all font-mono text-xs leading-6 text-cyan-100">
+                  <p className="break-all font-mono text-xs leading-6">
                     {proof.txHash
                       ? shortenAddress(proof.txHash)
                       : proof.status === "pending"

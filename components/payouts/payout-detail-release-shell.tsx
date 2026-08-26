@@ -424,15 +424,15 @@ export function PayoutDetailReleaseShell({
         </CardHeader>
         <CardContent>
           <div className="space-y-4 text-sm text-[var(--text-primary)]">
-          <div className="rounded-3xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.74)] p-4">
-            <p className="font-semibold text-white">
+          <div className="rounded-3xl border border-[var(--border-soft)] bg-[var(--surface)]/74 p-4">
+            <p className="font-semibold text-[var(--foreground)]">
               {nextReleasableMilestone
                 ? nextReleasableMilestone.title
                 : resolvedProof
                   ? "Latest released milestone"
                   : "No release available yet"}
             </p>
-            <p className="mt-2 text-lg font-semibold text-white">
+            <p className="mt-2 text-lg font-semibold text-[var(--foreground)]">
               {nextReleasableMilestone
                 ? `${formatUsdc(nextReleasableMilestone.amount)} USDC`
                 : resolvedProof
@@ -479,9 +479,9 @@ export function PayoutDetailReleaseShell({
         <CardContent>
           <TransactionProofCard proof={resolvedProof} milestoneTitle={releaseMilestoneTitle} />
           {resolvedProof?.status === "pending" && resolvedProof.releaseId && isOwnerActor ? (
-            <div className="mt-4 space-y-4 rounded-2xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.42)] p-4">
+            <div className="mt-4 space-y-4 rounded-2xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-4">
               <div>
-                <p className="text-sm font-semibold text-white">Refresh pending settlement</p>
+                <p className="text-sm font-semibold text-[var(--foreground)]">Refresh pending settlement</p>
                 <p className="mt-1 text-sm text-[var(--text-muted)]">
                   Confirm the proof when the Arc transfer lands, or mark it failed to unblock a retry.
                 </p>
@@ -567,9 +567,9 @@ export function PayoutDetailReleaseShell({
           ].map((item, index) => (
             <div
               key={item}
-              className="flex gap-3 rounded-2xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.56)] p-4"
+              className="flex gap-3 rounded-2xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-4"
             >
-              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-cyan-300/30 bg-cyan-400/10 text-xs font-semibold text-cyan-100">
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[var(--border-strong)] bg-[var(--surface)] text-xs font-semibold text-[var(--foreground)]">
                 {index + 1}
               </div>
               <p className="leading-6">{item}</p>

@@ -76,26 +76,26 @@ export function ContributorListClient({
         <div className="relative flex-1 max-w-md">
           <Search
             size={16}
-            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]"
           />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search by name, role, email, or wallet..."
-            className="w-full rounded-2xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.72)] py-2.5 pl-10 pr-4 text-xs text-white placeholder-slate-500 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400 transition-all"
+            className="w-full rounded-2xl border border-[var(--border-soft)] bg-[var(--surface-muted)] py-2.5 pl-10 pr-4 text-xs text-[var(--foreground)] placeholder-[var(--text-muted)] focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400 transition-all"
           />
         </div>
 
         {/* Status Filters & Add Button */}
         <div className="flex items-center gap-3">
-          <div className="flex rounded-xl bg-slate-900/90 p-1 border border-slate-800 text-xs font-medium">
+          <div className="flex rounded-xl bg-[var(--surface)] p-1 border border-[var(--border-soft)] text-xs font-medium">
             <button
               onClick={() => setStatusFilter("all")}
               className={`rounded-lg px-3 py-1.5 transition-all ${
                 statusFilter === "all"
-                  ? "bg-cyan-400 text-slate-950 font-semibold shadow-sm"
-                  : "text-slate-400 hover:text-white"
+                  ? "bg-[var(--foreground)] text-[var(--background)] font-semibold shadow-sm"
+                  : "text-[var(--text-muted)] hover:text-[var(--foreground)]"
               }`}
             >
               All ({initialContributors.length})
@@ -104,8 +104,8 @@ export function ContributorListClient({
               onClick={() => setStatusFilter("active")}
               className={`rounded-lg px-3 py-1.5 transition-all ${
                 statusFilter === "active"
-                  ? "bg-cyan-400 text-slate-950 font-semibold shadow-sm"
-                  : "text-slate-400 hover:text-white"
+                  ? "bg-[var(--foreground)] text-[var(--background)] font-semibold shadow-sm"
+                  : "text-[var(--text-muted)] hover:text-[var(--foreground)]"
               }`}
             >
               Active
@@ -115,9 +115,9 @@ export function ContributorListClient({
                 onClick={() => setStatusFilter("archived")}
                 className={`rounded-lg px-3 py-1.5 transition-all ${
                   statusFilter === "archived"
-                    ? "bg-cyan-400 text-slate-950 font-semibold shadow-sm"
-                    : "text-slate-400 hover:text-white"
-                }`}
+                    ? "bg-[var(--foreground)] text-[var(--background)] font-semibold shadow-sm"
+                    : "text-[var(--text-muted)] hover:text-[var(--foreground)]"
+              }`}
               >
                 Archived
               </button>
@@ -178,32 +178,32 @@ export function ContributorListClient({
             return (
               <div
                 key={contributor.id}
-                className="rounded-3xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.68)] p-5 hover:border-cyan-500/30 transition-all flex flex-col justify-between gap-5 group"
+                className="rounded-3xl border border-[var(--border-soft)] bg-[var(--surface)] p-5 hover:border-cyan-500/30 transition-all flex flex-col justify-between gap-5 group"
               >
                 {/* Top Section: Avatar & Info */}
                 <div>
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3.5">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 font-bold text-base shadow-[0_0_15px_rgba(34,211,238,0.12)] shrink-0">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-cyan-500/10 border border-cyan-500/30 text-[var(--accent-cyan)] font-bold text-base shadow-[0_0_15px_rgba(34,211,238,0.12)] shrink-0">
                         {initials || "C"}
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <h3 className="text-base font-semibold text-white group-hover:text-cyan-200 transition-colors">
+                          <h3 className="text-base font-semibold text-[var(--foreground)] group-hover:text-[var(--accent-cyan)] transition-colors">
                             {contributor.displayName}
                           </h3>
                           <span
                             className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${
                               contributor.status === "active"
-                                ? "border border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
-                                : "border border-slate-700 bg-slate-800 text-slate-400"
+                                ? "border border-emerald-500/30 bg-emerald-500/10 text-emerald-500"
+                                : "border border-[var(--border-soft)] bg-[var(--surface-muted)] text-[var(--text-muted)]"
                             }`}
                           >
                             {contributor.status}
                           </span>
                         </div>
                         {contributor.role ? (
-                          <p className="mt-0.5 text-xs text-cyan-300/90 flex items-center gap-1.5">
+                          <p className="mt-0.5 text-xs text-[var(--accent-cyan)] flex items-center gap-1.5">
                             <Briefcase size={12} /> {contributor.role}
                           </p>
                         ) : null}
@@ -212,24 +212,24 @@ export function ContributorListClient({
                   </div>
 
                   {/* Wallet & Email */}
-                  <div className="mt-4 space-y-2 pt-3 border-t border-slate-800/80">
+                  <div className="mt-4 space-y-2 pt-3 border-t border-[var(--border-soft)]">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-[11px] uppercase tracking-wider text-slate-400 font-mono">
+                      <span className="text-[11px] uppercase tracking-wider text-[var(--text-muted)] font-mono">
                         Wallet
                       </span>
                       <div className="flex items-center gap-1.5">
-                        <span className="font-mono text-xs text-slate-300 bg-slate-900/80 px-2 py-0.5 rounded-lg border border-slate-800">
+                        <span className="font-mono text-xs text-[var(--text-primary)] bg-[var(--surface-muted)] px-2 py-0.5 rounded-lg border border-[var(--border-soft)]">
                           {shortenAddress(contributor.walletAddress)}
                         </span>
                         <button
                           onClick={() =>
                             handleCopy(`wallet-${contributor.id}`, contributor.walletAddress, contributor.displayName)
                           }
-                          className="inline-flex items-center gap-1.5 font-mono text-slate-300 hover:text-cyan-300 transition-colors"
+                          className="inline-flex items-center gap-1.5 font-mono text-[var(--text-muted)] hover:text-[var(--accent-cyan)] transition-colors"
                           title="Copy wallet address"
                         >
                           {isCopied ? (
-                            <Check size={13} className="text-emerald-400" />
+                            <Check size={13} className="text-emerald-500" />
                           ) : (
                             <Copy size={13} />
                           )}
@@ -239,7 +239,7 @@ export function ContributorListClient({
                           target="_blank"
                           rel="noopener noreferrer"
                           title="View on Arcscan"
-                          className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-cyan-300 transition-colors"
+                          className="rounded-lg p-1.5 text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--accent-cyan)] transition-colors"
                         >
                           <ExternalLink size={13} />
                         </a>
@@ -248,18 +248,18 @@ export function ContributorListClient({
 
                     {contributor.email && (
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-[11px] uppercase tracking-wider text-slate-400 font-mono">
+                        <span className="text-[11px] uppercase tracking-wider text-[var(--text-muted)] font-mono">
                           Email
                         </span>
-                        <span className="text-xs text-slate-300 flex items-center gap-1">
-                          <Mail size={12} className="text-slate-400" />{" "}
+                        <span className="text-xs text-[var(--text-primary)] flex items-center gap-1">
+                          <Mail size={12} className="text-[var(--text-muted)]" />{" "}
                           {contributor.email}
                         </span>
                       </div>
                     )}
 
                     {contributor.notes && (
-                      <p className="text-xs text-slate-400 italic pt-1 leading-relaxed">
+                      <p className="text-xs text-[var(--text-muted)] italic pt-1 leading-relaxed">
                         &quot;{contributor.notes}&quot;
                       </p>
                     )}
@@ -267,22 +267,22 @@ export function ContributorListClient({
                 </div>
 
                 {/* Bottom Section: Metrics & Actions */}
-                <div className="pt-3.5 border-t border-slate-800/80 flex items-center justify-between gap-3">
+                <div className="pt-3.5 border-t border-[var(--border-soft)] flex items-center justify-between gap-3">
                   <div className="flex items-center gap-4">
                     <div>
-                      <p className="text-[10px] uppercase tracking-wider text-slate-400">
+                      <p className="text-[10px] uppercase tracking-wider text-[var(--text-muted)]">
                         Settled
                       </p>
-                      <p className="text-xs font-semibold text-white font-mono">
+                      <p className="text-xs font-semibold text-[var(--foreground)] font-mono">
                         {formatUsdc(contributor.totalSettledUsdc)} USDC
                       </p>
                     </div>
-                    <div className="h-6 w-px bg-slate-800" />
+                    <div className="h-6 w-px bg-[var(--border-soft)]" />
                     <div>
-                      <p className="text-[10px] uppercase tracking-wider text-slate-400">
+                      <p className="text-[10px] uppercase tracking-wider text-[var(--text-muted)]">
                         Payouts
                       </p>
-                      <p className="text-xs font-semibold text-white font-mono">
+                      <p className="text-xs font-semibold text-[var(--foreground)] font-mono">
                         {contributor.payoutCount} ({contributor.activePayoutCount} active)
                       </p>
                     </div>

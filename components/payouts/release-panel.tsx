@@ -55,7 +55,7 @@ export function ReleasePanel({
       <Button variant="primary" onClick={onRelease} disabled={!canRelease}>
         {actionLabel ?? getButtonLabel(status)}
       </Button>
-      <div className="rounded-2xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.48)] px-4 py-3 text-sm text-white">
+      <div className="rounded-2xl border border-[var(--border-soft)] bg-[var(--surface-muted)] px-4 py-3 text-sm text-[var(--foreground)]">
         {statusLine}
         {modeLabel ? (
           <p className="mt-2 text-xs uppercase tracking-[0.16em] text-[var(--text-muted)]">

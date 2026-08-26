@@ -661,7 +661,7 @@ const [reviewingMilestoneId, setReviewingMilestoneId] = useState<string | null>(
   if (!isAuthorized) {
     return (
       <div className="sf-container flex flex-col py-12 md:py-16 items-center justify-center min-h-[60vh]">
-        <div className="w-full max-w-xl rounded-3xl border border-rose-500/30 bg-[#0c1322]/90 backdrop-blur-xl p-8 sm:p-10 shadow-[0_0_60px_rgba(244,63,94,0.1)] text-center space-y-6 animate-in fade-in zoom-in-95">
+        <div className="w-full max-w-xl rounded-3xl border border-rose-500/30 bg-[var(--surface)]/90 backdrop-blur-xl p-8 sm:p-10 shadow-[0_0_60px_rgba(244,63,94,0.1)] text-center space-y-6 animate-in fade-in zoom-in-95">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-rose-500/30 bg-rose-500/10 text-rose-400">
             <ShieldAlert size={32} />
           </div>
@@ -671,16 +671,16 @@ const [reviewingMilestoneId, setReviewingMilestoneId] = useState<string | null>(
               <Lock size={12} />
               <span>403 Restricted Access</span>
             </div>
-            <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
+            <h1 className="text-2xl font-bold tracking-tight text-[var(--foreground)] sm:text-3xl">
               Private Payout Agreement
             </h1>
             <p className="text-sm leading-relaxed text-slate-400">
-              You are viewing as <strong className="text-white font-medium">{requiredRoleLabel}</strong>. This payout agreement is confidential and your current connected wallet does not have permission to view or manage it.
+              You are viewing as <strong className="text-[var(--foreground)] font-medium">{requiredRoleLabel}</strong>. This payout agreement is confidential and your current connected wallet does not have permission to view or manage it.
             </p>
           </div>
 
           {/* Identity comparison card */}
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-4 text-xs text-left space-y-2.5">
+          <div className="rounded-2xl border border-slate-800 bg-[var(--surface)]/80 p-4 text-xs text-left space-y-2.5">
             <div className="flex items-center justify-between text-slate-400 pb-2 border-b border-slate-800">
               <span>Required Role / Identity:</span>
               <strong className="font-mono text-cyan-300">
@@ -754,11 +754,11 @@ const [reviewingMilestoneId, setReviewingMilestoneId] = useState<string | null>(
         {/* Header with Export Receipt CTA */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div className="space-y-3">
-            <p className="text-sm font-medium uppercase tracking-[0.22em] text-cyan-300">
+            <p className="text-sm font-medium uppercase tracking-[0.22em] text-[var(--text-muted)]">
               Payout detail
             </p>
             <div className="space-y-2">
-              <h1 className="text-3xl font-semibold tracking-tight text-white md:text-4xl">
+              <h1 className="text-3xl font-semibold tracking-tight text-[var(--foreground)] md:text-4xl">
                 {payoutTitleState}
               </h1>
               <p className="max-w-3xl text-sm leading-7 text-[var(--text-primary)] md:text-base">
@@ -808,11 +808,11 @@ const [reviewingMilestoneId, setReviewingMilestoneId] = useState<string | null>(
                   value: payoutStatusLabel,
                 },
               ].map((item) => (
-                <div key={item.label} className="rounded-2xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.62)] p-4">
+                <div key={item.label} className="rounded-2xl border border-[var(--border-soft)] bg-[var(--surface)]/60 p-4">
                   <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
                     {item.label}
                   </p>
-                  <p className="mt-2 break-all text-sm font-semibold text-white">
+                  <p className="mt-2 break-all text-sm font-semibold text-[var(--foreground)]">
                     {item.value}
                   </p>
                 </div>
@@ -913,7 +913,7 @@ const [reviewingMilestoneId, setReviewingMilestoneId] = useState<string | null>(
               <CardContent>
                 <div className="space-y-4">
                   {draftMilestonesState.map((milestone, index) => (
-                    <div key={milestone.id} className={`rounded-2xl border bg-[rgba(15,23,42,0.62)] p-4 ${milestoneDirtyStates[index]?.title || milestoneDirtyStates[index]?.description || milestoneDirtyStates[index]?.amount ? "border-cyan-300/40" : "border-[var(--border-soft)]"}`}>
+                    <div key={milestone.id} className={`rounded-2xl border bg-[var(--surface)]/60 p-4 ${milestoneDirtyStates[index]?.title || milestoneDirtyStates[index]?.description || milestoneDirtyStates[index]?.amount ? "border-cyan-300/40" : "border-[var(--border-soft)]"}`}>
                       <div className="flex items-center justify-between gap-3">
                         <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
                           Milestone {index + 1}
@@ -979,7 +979,7 @@ const [reviewingMilestoneId, setReviewingMilestoneId] = useState<string | null>(
             />
           </div>
           <div className="rounded-2xl border border-dashed border-[var(--border-soft)] px-4 py-3 text-sm text-[var(--text-muted)]">
-            <span className="font-semibold text-white">Next action:</span> {nextActionText}
+            <span className="font-semibold text-[var(--foreground)]">Next action:</span> {nextActionText}
           </div>
         </section>
 

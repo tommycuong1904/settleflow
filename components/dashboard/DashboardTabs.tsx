@@ -11,34 +11,36 @@ type TabItem = {
 };
 
 export default function DashboardTabs({ tabs }: { tabs: TabItem[] }) {
-  const [active, setActive] = useState(tabs[0]?.key ?? "");
   const productContext = useResolvedProductContext();
   const actor = productContext.actor;
-  // Owner sees all tabs; others see only subset (for now keep all)
   const visibleTabs = tabs.filter((tab) => {
-  if (hasRole(actor, "owner")) return true;
-  if (hasRole(actor, "reviewer")) return tab.key === "pending";
-  if (hasRole(actor, "contributor")) return tab.key === "active";
-  return false;
-});
+    if (hasRole(actor, "owner")) return true;
+    if (hasRole(actor, "reviewer")) return tab.key === "pending";
+    if (hasRole(actor, "contributor")) return tab.key === "active";
+    return false;
+  });
+  const [active, setActive] = useState(visibleTabs[0]?.key ?? "");
+  // Owner sees all tabs; others see only subset (for now keep all)
 
 
   return (
     <div className="space-y-4 w-full">
       {/* Tab headers */}
-          <div className="relative flex border-b border-[var(--border-soft)]" style={{ position: 'relative' }}>
+          <div className={`relative flex ${visibleTabs.length === 1 ? 'justify-center' : ''} ${visibleTabs.length > 1 ? 'border-b' : ''} border-[var(--border-soft)]`} style={{ position: 'relative' }}>
       {visibleTabs.map((tab, idx) => (
         <button
           key={tab.key}
           onClick={() => setActive(tab.key)}
-          className={`flex-1 px-4 py-3.5 -mb-px text-sm font-medium transition-colors cursor-pointer ${
+          className={`flex-1 px-4 py-3.5 ${visibleTabs.length > 1 ? '-mb-px' : ''} text-sm font-medium transition-colors cursor-pointer ${
             active === tab.key
+              ? visibleTabs.length > 1
                 ? "border-b-2 border-[var(--foreground)] text-[var(--foreground)]"
-                : "text-[var(--text-muted)] hover:text-[var(--foreground)]"
+                : "text-[var(--foreground)]"
+              : "text-[var(--text-muted)] hover:text-[var(--foreground)]"
           }`}
           style={active === tab.key ? { background: "var(--surface-muted)" } : undefined}
         >
-          {tab.label}
+          {tab.label}{' '}
           {tab.count !== undefined && (
             <span className="ml-1 rounded-full bg-[var(--surface-strong)] px-2 py-0.5 text-xs text-[var(--foreground)]">
               {tab.count}
@@ -46,7 +48,9 @@ export default function DashboardTabs({ tabs }: { tabs: TabItem[] }) {
           )}
         </button>
       ))}
-      {/* Animated underline */}
+      {visibleTabs.length > 1 && (
+        <>
+          {/* Animated underline */}
           <span
             className="absolute bottom-0 left-0 h-0.5 bg-[var(--foreground)] transition-transform duration-300 ease-out"
             style={{
@@ -54,6 +58,8 @@ export default function DashboardTabs({ tabs }: { tabs: TabItem[] }) {
               transform: `translateX(${visibleTabs.findIndex((t) => t.key === active) * 100}%)`,
             }}
           />
+        </>
+      )}
     </div>
 
 

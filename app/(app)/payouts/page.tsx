@@ -54,7 +54,7 @@ export default async function PayoutsPage() {
 
       {/* Summary Cards */}
       <div className="grid gap-4 sm:grid-cols-3">
-        <div className="rounded-xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.72)] p-5">
+        <div className="rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-5">
           <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
             Total Payouts
           </p>
@@ -65,7 +65,7 @@ export default async function PayoutsPage() {
             {activePayouts.length} active · {completedPayouts.length} completed
           </p>
         </div>
-        <div className="rounded-xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.72)] p-5">
+        <div className="rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-5">
           <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
             Total Value
           </p>
@@ -76,7 +76,7 @@ export default async function PayoutsPage() {
             Settled via Arc Testnet
           </p>
         </div>
-        <div className="rounded-xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.72)] p-5">
+        <div className="rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-5">
           <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
             Active Contributors
           </p>

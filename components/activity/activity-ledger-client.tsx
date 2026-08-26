@@ -126,13 +126,13 @@ export function ActivityLedgerClient({
               setCurrentPage(1);
             }}
             placeholder="Search by title, actor, txHash, or details..."
-            className="w-full rounded-2xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.72)] py-2.5 pl-10 pr-4 text-xs text-white placeholder-slate-500 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400 transition-all"
+            className="w-full rounded-2xl border border-[var(--border-soft)] py-2.5 pl-10 pr-4 text-xs placeholder-slate-500 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400 transition-all"
           />
         </div>
 
         {/* Filter Pills & Export CTA */}
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex rounded-xl bg-slate-900/90 p-1 border border-slate-800 text-xs font-medium">
+          <div className="flex rounded-xl bg-[var(--surface)] p-1 border border-[var(--border-soft)] text-xs font-medium">
             <button
               onClick={() => {
                 setSelectedFilter("all");
@@ -140,8 +140,8 @@ export function ActivityLedgerClient({
               }}
               className={`rounded-lg px-3 py-1.5 transition-all ${
                 selectedFilter === "all"
-                  ? "bg-cyan-400 text-slate-950 font-semibold shadow-sm"
-                  : "text-slate-400 hover:text-white"
+                  ? "bg-[var(--foreground)] text-[var(--background)] font-semibold shadow-sm"
+                  : "text-slate-400 hover:text-[var(--foreground)]"
               }`}
             >
               All ({initialActivities.length})
@@ -153,8 +153,8 @@ export function ActivityLedgerClient({
               }}
               className={`rounded-lg px-3 py-1.5 transition-all ${
                 selectedFilter === "proofs"
-                  ? "bg-cyan-400 text-slate-950 font-semibold shadow-sm"
-                  : "text-slate-400 hover:text-white"
+                  ? "bg-[var(--foreground)] text-[var(--background)] font-semibold shadow-sm"
+                  : "text-slate-400 hover:text-[var(--foreground)]"
               }`}
             >
               Proofs & Releases
@@ -166,8 +166,8 @@ export function ActivityLedgerClient({
               }}
               className={`rounded-lg px-3 py-1.5 transition-all ${
                 selectedFilter === "approvals"
-                  ? "bg-cyan-400 text-slate-950 font-semibold shadow-sm"
-                  : "text-slate-400 hover:text-white"
+                  ? "bg-[var(--foreground)] text-[var(--background)] font-semibold shadow-sm"
+                  : "text-slate-400 hover:text-[var(--foreground)]"
               }`}
             >
               Approvals
@@ -179,8 +179,8 @@ export function ActivityLedgerClient({
               }}
               className={`rounded-lg px-3 py-1.5 transition-all ${
                 selectedFilter === "submissions"
-                  ? "bg-cyan-400 text-slate-950 font-semibold shadow-sm"
-                  : "text-slate-400 hover:text-white"
+                  ? "bg-[var(--foreground)] text-[var(--background)] font-semibold shadow-sm"
+                  : "text-slate-400 hover:text-[var(--foreground)]"
               }`}
             >
               Submissions
@@ -190,7 +190,7 @@ export function ActivityLedgerClient({
           <button
             onClick={handleExportCsv}
             disabled={filteredActivities.length === 0}
-            className="flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800/80 px-3.5 py-2 text-xs font-medium text-slate-300 hover:bg-slate-700 hover:text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-sm shrink-0"
+            className="flex items-center gap-1.5 rounded-xl border border-slate-700 bg-[var(--foreground)] text-[var(--background)] px-3.5 py-2 text-xs font-medium hover:bg-slate-700 hover:text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-sm shrink-0"
             title="Download CSV report"
           >
             <Download size={14} /> Export CSV
@@ -232,25 +232,25 @@ export function ActivityLedgerClient({
               return (
                 <div
                   key={item.id}
-                  className="rounded-2xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.62)] p-5 hover:border-cyan-500/30 transition-all"
+                  className="rounded-2xl border border-[var(--border-soft)] p-5 hover:border-cyan-500/30 transition-all"
                 >
                   <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                     <div className="flex items-start gap-3.5">
                       <div className="mt-0.5 shrink-0">
                         {isApproval ? (
-                          <div className="h-8 w-8 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center">
+                          <div className="h-8 w-8 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center">
                             <CheckCircle2 size={16} />
                           </div>
                         ) : isRejected ? (
-                          <div className="h-8 w-8 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 flex items-center justify-center">
+                          <div className="h-8 w-8 rounded-full bg-rose-500/10 border border-rose-500/30 text-rose-400 flex items-center justify-center">
                             <XCircle size={16} />
                           </div>
                         ) : isProof || isRelease ? (
-                          <div className="h-8 w-8 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center shadow-[0_0_15px_rgba(34,211,238,0.15)]">
+                          <div className="h-8 w-8 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center shadow-[0_0_15px_rgba(34,211,238,0.15)]">
                             <ShieldCheck size={16} />
                           </div>
                         ) : (
-                          <div className="h-8 w-8 rounded-xl bg-slate-800 border border-slate-700 text-slate-400 flex items-center justify-center">
+                          <div className="h-8 w-8 rounded-full border border-slate-700 text-slate-400 flex items-center justify-center">
                             <Clock size={16} />
                           </div>
                         )}
@@ -258,16 +258,16 @@ export function ActivityLedgerClient({
 
                       <div className="space-y-1.5">
                         <div className="flex flex-wrap items-center gap-2.5">
-                          <span className="text-base font-semibold text-white">
+                          <span className="text-base font-semibold">
                             {item.title}
                           </span>
-                          <span className="inline-flex items-center rounded-full border border-slate-700 bg-slate-800/80 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-slate-300">
+                          <span className="inline-flex items-center rounded-full border border-slate-700 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider">
                             {item.actorLabel}
                           </span>
                         </div>
 
                         {item.description ? (
-                          <p className="text-xs leading-relaxed text-slate-300 font-mono">
+                          <p className="text-xs leading-relaxed font-mono">
                             {item.description}
                           </p>
                         ) : null}

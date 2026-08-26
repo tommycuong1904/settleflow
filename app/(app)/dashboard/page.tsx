@@ -135,7 +135,7 @@ export default async function DashboardPage() {
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-            <div className="rounded-xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.72)] p-5">
+            <div className="rounded-xl border border-[var(--border-soft)] p-5">
               <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
                 Ready to release
               </p>
@@ -146,7 +146,7 @@ export default async function DashboardPage() {
                 Approved milestone value that can move to Arc next.
               </p>
             </div>
-            <div className="rounded-xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.72)] p-5">
+            <div className="rounded-xl border border-[var(--border-soft)] p-5">
               <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
                 Released with proof
               </p>
@@ -207,7 +207,7 @@ export default async function DashboardPage() {
             },
             {
               key: "proof",
-              label: "Recent Settlement Proof",
+              label: "Recent Settlement Proofs",
               count: transactionProofs.length,
               content: (
                 <RecentProof transactionProofs={transactionProofs} milestones={milestones} />
