@@ -34,9 +34,9 @@ The current repository is being advanced as a real MVP with:
 - repository/API-backed payout, milestone, release, and proof state transitions
 - Arc integration scaffolding with a real execution boundary
 - a seeded-role product-context boundary for owner / reviewer / contributor workflow testing
-- contributor management (add/list/search) via `/contributors`
+- contributor management (add/list/search/edit/archive) via `/contributors`
 - activity ledger with CSV export via `/activity`
-- notification webhook configuration and test surface via `/settings`
+- per-workspace webhook configuration, event notification toggles, and test surface via `/settings`
 - a merged minimalist black/white theme driven by CSS variables
 - a unit test layer across `lib/api` and `lib/repositories`
 

@@ -66,6 +66,10 @@ model Workspace {
   defaultCurrency    String   @default("USDC")
   defaultChainId     String?
   defaultUsdcAddress String?
+  webhookUrl         String?
+  notifyOnSubmit     Boolean  @default(true)
+  notifyOnApprove    Boolean  @default(true)
+  notifyOnRelease    Boolean  @default(true)
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 

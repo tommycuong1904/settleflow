@@ -2,6 +2,7 @@
  * Notification Webhook Dispatcher
  * Sends real-time formatted event webhooks to Discord, Slack, Telegram, or custom endpoints.
  */
+import { getWorkspaceSettings } from "@/lib/repositories/workspace-settings";
 
 export type WebhookEventType =
   | "milestone_submitted"
@@ -189,4 +190,53 @@ export async function dispatchWebhookNotification(
     const errorMsg = err instanceof Error ? err.message : "Webhook dispatch failed.";
     return { success: false, error: errorMsg };
   }
+}
+
+/**
+ * Maps a webhook event to the workspace notification toggle that gates it.
+ * Returns null for events that are not user-configurable (e.g. test_event).
+ */
+export function eventNotificationToggle(
+  event: WebhookEventType,
+): "notifyOnSubmit" | "notifyOnApprove" | "notifyOnRelease" | null {
+  switch (event) {
+    case "milestone_submitted":
+      return "notifyOnSubmit";
+    case "milestone_approved":
+    case "milestone_rejected":
+      return "notifyOnApprove";
+    case "milestone_released":
+      return "notifyOnRelease";
+    case "test_event":
+    default:
+      return null;
+  }
+}
+
+/**
+ * Workspace-aware webhook dispatch.
+ *
+ * Resolves the webhook URL and per-event notification toggles from the
+ * workspace's persisted settings. When the workspace has no webhook URL
+ * configured, it falls back to the environment-configured
+ * `SETTLEFLOW_WEBHOOK_URL` so self-hosted/global deployments keep working.
+ */
+export async function dispatchWorkspaceWebhookNotification(
+  workspaceId: string,
+  payload: WebhookPayload,
+  fetchImpl: typeof globalThis.fetch = globalThis.fetch,
+): Promise<{ success: boolean; error?: string }> {
+  const settings = await getWorkspaceSettings(workspaceId);
+
+  const toggle = eventNotificationToggle(payload.event);
+  if (toggle && settings[toggle] === false) {
+    return { success: false, error: "Event notifications are disabled for this workspace." };
+  }
+
+  if (!settings.webhookUrl || !settings.webhookUrl.startsWith("http")) {
+    // No workspace-configured URL — fall back to the env-configured global URL.
+    return dispatchWebhookNotification(payload, undefined, fetchImpl);
+  }
+
+  return dispatchWebhookNotification(payload, settings.webhookUrl, fetchImpl);
 }

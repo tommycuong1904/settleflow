@@ -8,6 +8,7 @@ import { hasRole } from "@/lib/runtime/role-utils";
 import type { ContributorListItem } from "@/lib/repositories/contributors";
 import { formatUsdc, shortenAddress } from "@/lib/utils/format";
 import { AddContributorDialog } from "./add-contributor-dialog";
+import { EditContributorDialog } from "./edit-contributor-dialog";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Button } from "@/components/shared/button";
 import { useToast } from "@/lib/context/toast-context";
@@ -24,6 +25,7 @@ import {
   ArrowRight,
   ShieldCheck,
   Users,
+  Pencil,
 } from "lucide-react";
 
 type ContributorListClientProps = {
@@ -40,6 +42,8 @@ export function ContributorListClient({
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "archived">("all");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [editingContributor, setEditingContributor] = useState<ContributorListItem | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const handleCopy = (id: string, text: string, name?: string) => {
@@ -288,13 +292,27 @@ export function ContributorListClient({
                     </div>
                   </div>
 
-                  <Button
-                    href={`/payouts/new?contributorId=${contributor.id}`}
-                    variant="ghost"
-                    className="text-xs py-1.5 px-3 h-auto"
-                  >
-                    New Payout <ArrowRight size={13} className="ml-1" />
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    {hasRole(actor, "owner") && (
+                      <Button
+                        variant="outline"
+                        className="text-xs py-1.5 px-3 h-auto"
+                        onClick={() => {
+                          setEditingContributor(contributor);
+                          setIsEditModalOpen(true);
+                        }}
+                      >
+                        <Pencil size={13} /> Edit
+                      </Button>
+                    )}
+                    <Button
+                      href={`/payouts/new?contributorId=${contributor.id}`}
+                      variant="ghost"
+                      className="text-xs py-1.5 px-3 h-auto"
+                    >
+                      New Payout <ArrowRight size={13} className="ml-1" />
+                    </Button>
+                  </div>
                 </div>
               </div>
             );
@@ -306,6 +324,20 @@ export function ContributorListClient({
       <AddContributorDialog
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
+        onSuccess={() => {
+          router.refresh();
+        }}
+      />
+
+      {/* Edit Contributor Modal */}
+      <EditContributorDialog
+        key={editingContributor?.id ?? "none"}
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setEditingContributor(null);
+        }}
+        contributor={editingContributor}
         onSuccess={() => {
           router.refresh();
         }}

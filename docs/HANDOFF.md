@@ -24,11 +24,23 @@ The core product flow currently available in the repository is:
 7. refresh settlement proof to confirmed or failed
 8. retry a failed release
 9. inspect activity history throughout the flow
-10. manage contributors from `/contributors` (add/list/search; edit/archive pending)
+10. manage contributors from `/contributors` (add/list/search/edit/archive)
 11. export activity ledger rows as CSV
 12. configure and test notification webhooks from `/settings`
 
 ## What was completed in the latest execution wedge
+
+### Workspace webhook settings + contributor edit/archive wedge
+- `prisma/schema.prisma` — added `webhookUrl`, `notifyOnSubmit`, `notifyOnApprove`, `notifyOnRelease` columns to `Workspace`
+- `lib/repositories/workspace-settings.ts` — `getWorkspaceSettings` / `updateWorkspaceSettings` with defaults and webhook URL validation/trim
+- `app/api/v1/settings/route.ts` — `GET` loads workspace settings, `PUT` persists with validation
+- `lib/notifications/webhook-dispatcher.ts` — added `eventNotificationToggle()` (maps events to toggles) and `dispatchWorkspaceWebhookNotification()` (gates by toggle, falls back to env URL)
+- Milestone repositories (`submission`, `review`, `release`) — switched to workspace-aware dispatch via injectable `notify` callback
+- `app/(app)/settings/page.tsx` — loads persisted settings on mount; webhook URL field + toggle checkboxes now wired to `/api/v1/settings`
+- `lib/repositories/contributors.ts` — added `updateContributor()` with EVM validation, duplicate-wallet guard, workspace-scope check
+- `app/api/v1/contributors/[id]/route.ts` — `PATCH` endpoint with per-field validation
+- `components/contributors/edit-contributor-dialog.tsx` — edit form + archive/restore toggle, follows add-dialog pattern
+- `components/contributors/contributor-list-client.tsx` — owner-only "Edit" button, edit modal wiring, `router.refresh()` on success
 
 ### Workflow hardening
 - draft payout editing now has a real in-app harness on payout detail
@@ -53,10 +65,10 @@ The core product flow currently available in the repository is:
 ### Notifications wedge
 - `lib/notifications/webhook-dispatcher.ts` (Discord embed builder + generic payload)
 - `POST /api/v1/webhooks/test` + "Test Webhook" action in Settings
-- dispatcher is wired into milestone events (submission/review/release) and reads URL from `SETTLEFLOW_WEBHOOK_URL` env var
+- dispatcher is wired into milestone events (submission/review/release); webhook URL + per-event toggles are now persisted per-workspace via `GET/PUT /api/v1/settings`, with the `SETTLEFLOW_WEBHOOK_URL` env var kept as a fallback
 
 ### Unit test layer
-- 16 unit test files across `lib/api/*.test.mts` and `lib/repositories/*.test.mts`
+- 21 unit test files across `lib/api/*.test.mts`, `lib/notifications/*.test.mts`, `lib/repositories/*.test.mts`, and `lib/runtime/*.test.mts`
 - `npm test` = `node --import tsx --test "lib/**/*.test.mts"`
 
 ### Runtime verification
@@ -89,12 +101,11 @@ Confirmed during the latest checkpoint:
 - actor/workspace resolution still relies on seeded/demo assumptions (`ws-demo`, `payout-1/2`)
 - Arc live execution is not yet proven production-safe (`createReleaseExecutor` still returns "not wired yet" failures)
 - automated coverage is narrow (unit payload/repository-level only; no route/E2E layer)
-- contributor edit/archive is missing; webhook URL is read from env var, not from Settings UI
 - some mock/demo artifacts remain in the repository and docs
 
 ## Recommended next step
-Before expanding feature scope further, prioritize one of these:
-1. allow webhook URL to be configured from Settings UI (currently only reads from env var)
-2. finish contributor edit/archive (PATCH/DELETE + UI)
-3. replace seeded actor/workspace assumptions with real server-side auth/session
-4. implement the real Arc release path in `createReleaseExecutor`
+Workspace webhook configuration from Settings UI and contributor edit/archive are now implemented (this wedge). Before expanding feature scope further, prioritize one of these:
+1. replace seeded actor/workspace assumptions with real server-side auth/session
+2. implement the real Arc release path in `createReleaseExecutor`
+3. add route-level integration + E2E test coverage
+4. clean up legacy mock/demo artifacts and finalize ops docs (roadmap Phase 8)

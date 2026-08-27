@@ -1,7 +1,10 @@
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db/client";
 import { recordActivity } from "@/lib/repositories/activity-log";
-import { dispatchWebhookNotification } from "@/lib/notifications/webhook-dispatcher";
+import {
+  dispatchWorkspaceWebhookNotification,
+  type WebhookPayload,
+} from "@/lib/notifications/webhook-dispatcher";
 
 export type SubmitMilestoneInput = {
   contributorUserId: string;
@@ -36,7 +39,9 @@ export async function submitMilestone(
   milestoneId: string,
   workspaceId: string,
   input: SubmitMilestoneInput,
-  notify: typeof dispatchWebhookNotification = dispatchWebhookNotification,
+  notify: (payload: WebhookPayload) => void = (payload) => {
+    void dispatchWorkspaceWebhookNotification(workspaceId, payload);
+  },
 ) {
   const result = await db.$transaction(async (tx: Prisma.TransactionClient) => {
     const milestone = await tx.milestone.findUnique({

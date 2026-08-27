@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db/client";
 
 export type ContributorListItem = {
@@ -21,6 +22,53 @@ export type CreateContributorInput = {
   email?: string;
   role?: string;
   notes?: string;
+};
+
+export type UpdateContributorInput = {
+  name?: string;
+  walletAddress?: string;
+  email?: string | null;
+  role?: string | null;
+  notes?: string | null;
+  status?: "active" | "archived";
+};
+
+type ContributorRow = {
+  id: string;
+  name: string;
+  email: string | null;
+  walletAddress: string;
+  role: string | null;
+  notes: string | null;
+  status: "active" | "archived";
+  createdAt: Date;
+  payouts?: Array<{ id: string; status: string; totalAmountUsdc: unknown }>;
+};
+
+function toContributorListItem(c: ContributorRow): ContributorListItem {
+  const payouts = c.payouts ?? [];
+  const activePayouts = payouts.filter((p) =>
+    ["active", "partially_released"].includes(p.status),
+  );
+  const completedPayouts = payouts.filter((p) => p.status === "completed");
+  const totalSettled = completedPayouts.reduce(
+    (sum, p) => sum + Number(p.totalAmountUsdc),
+    0,
+  );
+
+  return {
+    id: c.id,
+    displayName: c.name,
+    walletAddress: c.walletAddress,
+    email: c.email || undefined,
+    role: c.role || undefined,
+    notes: c.notes || undefined,
+    status: c.status,
+    createdAt: c.createdAt.toISOString(),
+    payoutCount: payouts.length,
+    activePayoutCount: activePayouts.length,
+    totalSettledUsdc: totalSettled,
+  };
 };
 
 function isValidEvmAddress(address: string): boolean {
@@ -67,31 +115,7 @@ export async function listContributors(input?: {
     },
   });
 
-  return contributors.map((c) => {
-    const payouts = c.payouts || [];
-    const activePayouts = payouts.filter((p) =>
-      ["active", "partially_released"].includes(p.status),
-    );
-    const completedPayouts = payouts.filter((p) => p.status === "completed");
-    const totalSettled = completedPayouts.reduce(
-      (sum, p) => sum + Number(p.totalAmountUsdc),
-      0,
-    );
-
-    return {
-      id: c.id,
-      displayName: c.name,
-      walletAddress: c.walletAddress,
-      email: c.email || undefined,
-      role: c.role || undefined,
-      notes: c.notes || undefined,
-      status: c.status,
-      createdAt: c.createdAt.toISOString(),
-      payoutCount: payouts.length,
-      activePayoutCount: activePayouts.length,
-      totalSettledUsdc: totalSettled,
-    };
-  });
+  return contributors.map(toContributorListItem);
 }
 
 export async function createContributor(
@@ -131,17 +155,72 @@ export async function createContributor(
     },
   });
 
-  return {
-    id: created.id,
-    displayName: created.name,
-    walletAddress: created.walletAddress,
-    email: created.email || undefined,
-    role: created.role || undefined,
-    notes: created.notes || undefined,
-    status: created.status,
-    createdAt: created.createdAt.toISOString(),
-    payoutCount: 0,
-    activePayoutCount: 0,
-    totalSettledUsdc: 0,
-  };
+  return toContributorListItem(created);
+}
+
+export async function updateContributor(
+  contributorId: string,
+  input: UpdateContributorInput,
+  workspaceId?: string,
+): Promise<ContributorListItem> {
+  const existing = await db.contributor.findUnique({
+    where: { id: contributorId },
+    select: { id: true, workspaceId: true },
+  });
+  if (!existing) throw new Error("CONTRIBUTOR_NOT_FOUND");
+  if (workspaceId && existing.workspaceId !== workspaceId) {
+    throw new Error("CONTRIBUTOR_WORKSPACE_MISMATCH");
+  }
+
+  const data: Prisma.ContributorUpdateInput = {};
+
+  if (input.name !== undefined) {
+    const name = input.name.trim();
+    if (!name) throw new Error("Contributor name is required.");
+    data.name = name;
+  }
+
+  if (input.walletAddress !== undefined) {
+    const walletAddress = input.walletAddress.trim();
+    if (!isValidEvmAddress(walletAddress)) {
+      throw new Error("Invalid EVM wallet address. Must start with 0x and have 40 hexadecimal characters.");
+    }
+    const duplicate = await db.contributor.findFirst({
+      where: {
+        workspaceId: existing.workspaceId,
+        walletAddress: { equals: walletAddress, mode: "insensitive" },
+        id: { not: contributorId },
+      },
+      select: { id: true },
+    });
+    if (duplicate) {
+      throw new Error("A contributor with this wallet address already exists in this workspace.");
+    }
+    data.walletAddress = walletAddress;
+  }
+
+  if (input.email !== undefined) data.email = input.email?.trim() || null;
+  if (input.role !== undefined) data.role = input.role?.trim() || null;
+  if (input.notes !== undefined) data.notes = input.notes?.trim() || null;
+  if (input.status !== undefined) data.status = input.status;
+
+  const updated = await db.contributor.update({
+    where: { id: contributorId },
+    data,
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      walletAddress: true,
+      role: true,
+      notes: true,
+      status: true,
+      createdAt: true,
+      payouts: {
+        select: { id: true, status: true, totalAmountUsdc: true },
+      },
+    },
+  });
+
+  return toContributorListItem(updated);
 }

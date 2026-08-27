@@ -40,19 +40,51 @@ export default function SettingsPage() {
 
   const [workspaceName, setWorkspaceName] = useState("SettleFlow Core DAO");
   const [supportEmail, setSupportEmail] = useState("ops@settleflow.io");
-  const [webhookUrl, setWebhookUrl] = useState("https://discord.com/api/webhooks/...");
+  const [webhookUrl, setWebhookUrl] = useState("");
   const [notifyOnSubmit, setNotifyOnSubmit] = useState(true);
   const [notifyOnApprove, setNotifyOnApprove] = useState(true);
   const [notifyOnRelease, setNotifyOnRelease] = useState(true);
   const [rpcStatus, setRpcStatus] = useState<"idle" | "testing" | "healthy">("idle");
   const [latencyMs, setLatencyMs] = useState<number | null>(null);
   const [webhookBusy, setWebhookBusy] = useState(false);
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
 
   useEffect(() => {
     if (!isOwner) {
       router.replace("/dashboard");
     }
   }, [isOwner, router]);
+
+  // Load persisted workspace webhook & notification settings.
+  useEffect(() => {
+    if (!isOwner) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/v1/settings");
+        const json = (await res.json()) as {
+          data?: {
+            webhookUrl?: string;
+            notifyOnSubmit?: boolean;
+            notifyOnApprove?: boolean;
+            notifyOnRelease?: boolean;
+          };
+        };
+        if (cancelled || !res.ok || !json.data) return;
+        if (json.data.webhookUrl) setWebhookUrl(json.data.webhookUrl);
+        if (json.data.notifyOnSubmit !== undefined) setNotifyOnSubmit(json.data.notifyOnSubmit);
+        if (json.data.notifyOnApprove !== undefined) setNotifyOnApprove(json.data.notifyOnApprove);
+        if (json.data.notifyOnRelease !== undefined) setNotifyOnRelease(json.data.notifyOnRelease);
+      } catch {
+        // Keep defaults on failure; settings are non-critical and applied on save.
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isOwner]);
 
   if (!isOwner) {
     return null;
@@ -127,13 +159,41 @@ export default function SettingsPage() {
     }
   };
 
-  const handleSaveSettings = (e: React.FormEvent) => {
+  const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast({
-      variant: "success",
-      title: "Settings Saved",
-      description: "Workspace preferences and notifications updated successfully.",
-    });
+    if (isSavingSettings) return;
+
+    setIsSavingSettings(true);
+    try {
+      const res = await fetch("/api/v1/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          webhookUrl: webhookUrl.trim() || null,
+          notifyOnSubmit,
+          notifyOnApprove,
+          notifyOnRelease,
+        }),
+      });
+      const data = (await res.json()) as { error?: string; message?: string };
+      if (!res.ok || data.error) {
+        throw new Error(data.error || data.message || "Failed to save settings.");
+      }
+      toast({
+        variant: "success",
+        title: "Settings Saved",
+        description: "Workspace preferences and notifications updated successfully.",
+      });
+    } catch (err) {
+      toast({
+        variant: "error",
+        title: "Save Failed",
+        description:
+          err instanceof Error ? err.message : "Unable to save workspace settings.",
+      });
+    } finally {
+      setIsSavingSettings(false);
+    }
   };
 
   return (
@@ -479,8 +539,9 @@ export default function SettingsPage() {
             variant="primary"
             size="lg"
             icon={<Save size={16} />}
+            disabled={isSavingSettings}
           >
-            Save Workspace Settings
+            {isSavingSettings ? "Saving..." : "Save Workspace Settings"}
           </Button>
         </div>
       </form>

@@ -34,7 +34,8 @@ This repository is now a full-stack Next.js application for SettleFlow, an Arc-n
 - Arc release behavior is now mode-aware through `sendUsdcOnArc()` and `createReleaseExecutor()`, with `mock`, `demo`, and `real` execution paths. `createReleaseExecutor()` is still a placeholder that returns "not wired yet" failures.
 - The app UI was refactored onto a minimalist black/white design system driven by CSS variables (`lib/context/theme-context.tsx`), with modal body-scroll locking (`lib/hooks/use-scroll-lock.ts`); this refactor is merged into `main` (`38129aa`).
 - A unit test layer exists under `lib/api/*.test.mts` and `lib/repositories/*.test.mts`; `npm test` runs `node --import tsx --test "lib/**/*.test.mts"`.
-- A webhook dispatcher (`lib/notifications/webhook-dispatcher.ts`) is wired into milestone repositories and dispatches `milestone_submitted`, `milestone_approved`/`milestone_rejected`, and `milestone_released` events when the environment variable `SETTLEFLOW_WEBHOOK_URL` is set. A test endpoint (`POST /api/v1/webhooks/test`) also exists for manual URL verification.
+- A webhook dispatcher (`lib/notifications/webhook-dispatcher.ts`) is wired into milestone repositories and dispatches `milestone_submitted`, `milestone_approved`/`milestone_rejected`, and `milestone_released` events. Webhook destination and per-event notification toggles are now persisted per-workspace (`webhookUrl`, `notifyOnSubmit`, `notifyOnApprove`, `notifyOnRelease` on the `Workspace` record) and managed from the Settings UI via `GET/PUT /api/v1/settings`; `dispatchWorkspaceWebhookNotification()` gates events by toggle and falls back to the env `SETTLEFLOW_WEBHOOK_URL` when no workspace URL is configured. A test endpoint (`POST /api/v1/webhooks/test`) also exists for manual URL verification.
+- Contributor records can now be edited (name, wallet, email, role, notes) and archived/restored from the Contributors page via an edit dialog backed by `PATCH /api/v1/contributors/[id]` and repository `updateContributor` (EVM-address validation + duplicate-wallet guard + workspace-scope check).
 
 ### Assumption
 - The repository is transitioning from checkpoint/demo-first implementation toward a more complete application wedge, while still preserving some demo-safe behavior for release execution.
@@ -194,7 +195,6 @@ This repository is now a full-stack Next.js application for SettleFlow, an Arc-n
   - release retry
 - Core UI surfaces now mask actions by actor role and include a header actor switcher for seeded-role testing.
 - No E2E/browser integration test suite exists; unit coverage is limited to payload validation and repository logic.
-- Contributor edit/archive is missing. The webhook dispatcher is wired into milestone events but reads the URL from env (`SETTLEFLOW_WEBHOOK_URL`) — the Settings UI webhook input does not persist to the dispatcher's env source.
 - Arc execution is not verified here as a production-safe live payment path; behavior still depends on execution mode.
 - Legacy mock-data files remain in the repository and may still represent transition-era coupling or fallback assumptions.
 

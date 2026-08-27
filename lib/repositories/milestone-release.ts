@@ -4,7 +4,10 @@ import { db } from "@/lib/db/client";
 import type { ReleaseExecutionMode } from "@/lib/arc/types";
 import { recordActivity } from "@/lib/repositories/activity-log";
 import { hasWorkspaceRole } from "@/lib/repositories/permissions";
-import { dispatchWebhookNotification } from "@/lib/notifications/webhook-dispatcher";
+import {
+  dispatchWorkspaceWebhookNotification,
+  type WebhookPayload,
+} from "@/lib/notifications/webhook-dispatcher";
 
 type QueueReleasePayload = {
   payoutId: string;
@@ -43,7 +46,9 @@ export async function queueMilestoneRelease(
   workspaceId: string,
   amountUsdc: string,
   executionMode: ReleaseExecutionMode = "browser_wallet",
-  notify: typeof dispatchWebhookNotification = dispatchWebhookNotification,
+  notify: (payload: WebhookPayload) => void = (payload) => {
+    void dispatchWorkspaceWebhookNotification(workspaceId, payload);
+  },
 ) {
   const result = await db.$transaction(async (tx: Prisma.TransactionClient) => {
     const milestone = await tx.milestone.findUnique({

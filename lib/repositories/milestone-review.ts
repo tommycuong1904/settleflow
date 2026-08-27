@@ -2,7 +2,10 @@ import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db/client";
 import { recordActivity } from "@/lib/repositories/activity-log";
 import { hasWorkspaceRole } from "@/lib/repositories/permissions";
-import { dispatchWebhookNotification } from "@/lib/notifications/webhook-dispatcher";
+import {
+  dispatchWorkspaceWebhookNotification,
+  type WebhookPayload,
+} from "@/lib/notifications/webhook-dispatcher";
 
 type ReviewDecisionUpdate = {
   status: "approved" | "rejected";
@@ -35,7 +38,9 @@ export async function reviewMilestone(
   workspaceId: string,
   decision: "approved" | "rejected",
   comment?: string,
-  notify: typeof dispatchWebhookNotification = dispatchWebhookNotification,
+  notify: (payload: WebhookPayload) => void = (payload) => {
+    void dispatchWorkspaceWebhookNotification(workspaceId, payload);
+  },
 ) {
   const result = await db.$transaction(async (tx: Prisma.TransactionClient) => {
     const milestone = await tx.milestone.findUnique({

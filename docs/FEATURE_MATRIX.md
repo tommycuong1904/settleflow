@@ -14,11 +14,11 @@
 | **2. Quản lý Thỏa thuận Payout (Payout Agreement Core)** | 6 | 5 | 1 | 0 |
 | **3. Vòng đời Milestone (Milestone State Machine)** | 5 | 5 | 0 | 0 |
 | **4. Giải ngân Blockchain & Bằng chứng (Release & Settlement)** | 7 | 5 | 1 | 1 |
-| **5. Quản lý Contributor (Contributor Registry)** | 5 | 3 | 1 | 1 |
+| **5. Quản lý Contributor (Contributor Registry)** | 5 | 4 | 0 | 1 |
 | **6. Phân quyền & Vai trò (RBAC & Policy Engine)** | 4 | 4 | 0 | 0 |
 | **7. Nhật ký hoạt động & Báo cáo (Audit & Reporting)** | 5 | 3 | 1 | 1 |
 | **8. Tích hợp & Tự động hóa (Webhooks & Notifications)** | 4 | 2 | 0 | 2 |
-| **TỔNG CỘNG** | **43** | **33 (77%)** | **5 (12%)** | **5 (12%)** |
+| **TỔNG CỘNG** | **43** | **34 (79%)** | **4 (9%)** | **5 (12%)** |
 
 ---
 
@@ -82,7 +82,7 @@
 | `CONTRIB-01` | **Lưu trữ Hồ sơ Contributor (Profile & Wallet Mapping)** | Quản lý thông tin: Tên, Email, Địa chỉ ví nhận tiền chính, GitHub handle, Vai trò và Thẻ kỹ năng. | ✅ **Đã làm** |
 | `CONTRIB-02` | **Tra cứu Contributor Hoạt động (Active Registry Query)** | API `/api/v1/contributors` lọc và cung cấp danh sách contributor khả dụng cho quá trình tạo Payout. | ✅ **Đã làm** |
 | `CONTRIB-03` | **Lịch sử Thu nhập & Thống kê Tích lũy** | Tính toán tổng số tiền USDC đã nhận, số lượng milestone hoàn thành và số thỏa thuận đang tham gia của từng contributor. | ✅ **Đã làm** |
-| `CONTRIB-04` | **Thêm & Chỉnh sửa Contributor (CRUD Management)** | Phần **Thêm mới** từ giao diện (`/contributors` + Add Contributor Dialog + `POST /api/contributors`, validate EVM address + chống trùng ví) đã hoàn thành; phần cập nhật địa chỉ ví và đổi trạng thái (edit/archive) còn triển khai dở. | ⏳ **Đang làm** |
+| `CONTRIB-04` | **Thêm & Chỉnh sửa Contributor (CRUD Management)** | Thêm mới (`POST /api/contributors`) và chỉnh sửa/archive (`PATCH /api/v1/contributors/[id]` + Edit Contributor Dialog) đã hoàn thành: cập nhật tên, ví, email, vai trò, ghi chú và đổi trạng thái active/archived; có validate EVM address + chống trùng ví + kiểm tra workspace scope. | ✅ **Đã làm** |
 | `CONTRIB-05` | **Xác minh Danh tính / Onchain KYC (KYC/KYB Attestation)** | Tích hợp xác thực danh tính contributor qua chứng chỉ số EAS (Ethereum Attestation Service) hoặc Gitcoin Passport. | 📋 **Chưa làm** |
 
 ---
@@ -115,7 +115,7 @@
 | Mã | Tên Tính năng | Mô tả Nghiệp vụ & Kỹ thuật | Trạng thái |
 | :--- | :--- | :--- | :---: |
 | `INT-01` | **Cấu hình Webhook Thông báo (Discord / Slack Endpoint)** | Lưu cấu hình Webhook URL trong Settings kèm nút "Test Webhook" (gọi `POST /api/v1/webhooks/test`) để xác nhận kết nối. | ✅ **Đã làm** |
-| `INT-02` | **Bắn Sự kiện Tự động (Event Webhook Dispatcher)** | Đã gắn vào `lib/repositories/milestone-submission.ts` (`milestone_submitted`), `milestone-review.ts` (`milestone_approved`/`milestone_rejected`) và `milestone-release.ts` (`milestone_released`). Dispatcher đọc webhook URL từ `process.env.SETTLEFLOW_WEBHOOK_URL` (hoặc `NEXT_PUBLIC_SETTLEFLOW_WEBHOOK_URL`). Settings UI có nút "Test Webhook" gọi `POST /api/v1/webhooks/test` với URL nhập trực tiếp. | ✅ **Đã làm** |
+| `INT-02` | **Bắn Sự kiện Tự động (Event Webhook Dispatcher)** | Đã gắn vào `lib/repositories/milestone-submission.ts` (`milestone_submitted`), `milestone-review.ts` (`milestone_approved`/`milestone_rejected`) và `milestone-release.ts` (`milestone_released`). Dispatcher đọc webhook URL từ settings workspace (lưu qua `GET/PUT /api/v1/settings` từ Settings UI), fallback về `process.env.SETTLEFLOW_WEBHOOK_URL` / `NEXT_PUBLIC_SETTLEFLOW_WEBHOOK_URL` khi workspace chưa cấu hình. Mỗi sự kiện có thể bật/tắt qua toggle `notifyOnSubmit`/`notifyOnApprove`/`notifyOnRelease`. Nút "Test Webhook" gọi `POST /api/v1/webhooks/test`. | ✅ **Đã làm** |
 | `INT-03` | **Đồng bộ PR GitHub Tự động (GitHub Bot Integration)** | Tự động đánh dấu Milestone hoàn thành khi Pull Request tương ứng trên GitHub được Merge. | 📋 **Chưa làm** |
 | `INT-04` | **Thông báo Email Tự động (Resend/SendGrid)** | Gửi email thông báo cho Contributor khi nhận được tiền USDC giải ngân vào ví. | 📋 **Chưa làm** |
 
@@ -128,8 +128,8 @@
    - Hoàn thiện `PAY-06`: Escrow Onchain Lock.
 
 2. **Sprint 2 (Quản trị & Đối soát Kế toán)**:
-   - Hoàn thiện nốt `CONTRIB-04`: cập nhật ví / đổi trạng thái (phần Thêm mới từ giao diện đã xong).
+   - `CONTRIB-04` đã hoàn thành: thêm + chỉnh sửa + archive/restore contributor từ giao diện.
    - Mở rộng `AUDIT-04`: JSON export và export bảng kê cấp payout (CSV activity ledger đã xong).
 
 3. **Sprint 3 (Tự động hóa & Tích hợp)**:
-   - Mở rộng `INT-02`: cho phép cấu hình webhook URL từ Settings UI thay vì chỉ dùng biến môi trường, và thêm bảo vệ lỗi dispatch timeout.
+   - Cấu hình webhook URL + toggles từ Settings UI theo workspace đã xong (có timeout 5s khi dispatch). Việc tiếp theo: `INT-03` (GitHub PR bot) và `INT-04` (email notification) nếu mở rộng phạm vi tự động hóa.

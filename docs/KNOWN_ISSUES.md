@@ -43,9 +43,10 @@ This document lists issues, gaps, inconsistencies, and inspection risks visible 
 - Some supporting/checkpoint docs may still reflect earlier frontend-first assumptions or pre-backend wording.
 - They were not all fully re-audited in this pass.
 
-### 7. Webhook dispatcher reads URL from env var, not from Settings UI
+### 7. Webhook dispatcher URL source (partially resolved)
 - The dispatcher is wired into `lib/repositories/milestone-submission.ts`, `milestone-review.ts`, and `milestone-release.ts` for `milestone_submitted`, `milestone_approved`/`milestone_rejected`, and `milestone_released` events.
-- The URL source is `process.env.SETTLEFLOW_WEBHOOK_URL` (or `NEXT_PUBLIC_SETTLEFLOW_WEBHOOK_URL`); the Settings UI webhook input only supports the "Test Webhook" action but does not persist the URL to the dispatcher's env source.
+- **Resolved:** the Settings UI webhook input now persists per-workspace (`webhookUrl` + `notifyOnSubmit`/`notifyOnApprove`/`notifyOnRelease` toggles) via `GET/PUT /api/v1/settings`; `dispatchWorkspaceWebhookNotification()` gates events by toggle and falls back to `SETTLEFLOW_WEBHOOK_URL` when no workspace URL is set.
+- **Remaining:** no webhook replay/retry queue beyond a 5s dispatch timeout; dispatch failures are non-blocking and not surfaced to users.
 
 ## Confirmed Inconsistencies
 
@@ -102,7 +103,7 @@ This document lists issues, gaps, inconsistencies, and inspection risks visible 
   - allowed state transitions
   - error responses
   - release/retry/proof-refresh flows
-- Finish contributor edit/archive (PATCH/DELETE + UI) and allow webhook URL to be configured from Settings UI instead of only env var.
+- Contributor edit/archive (PATCH + UI) and Settings-UI webhook URL persistence are now implemented (see `docs/HANDOFF.md`); the remaining safe next step is the smallest real auth/session boundary before broader feature expansion.
 - Then define the smallest real auth/session boundary before broader feature expansion.
 
 ### Why this is safest
