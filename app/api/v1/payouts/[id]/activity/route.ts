@@ -2,14 +2,14 @@ import { NextResponse } from "next/server";
 import { apiError } from "@/lib/api/errors";
 import { getPayoutActivity } from "@/lib/repositories/payout-activity";
 import { getPayoutDetail } from "@/lib/repositories/payouts";
-import { resolveProductContextFromRequest } from "@/lib/runtime/product-context-server";
+import { resolveProductContextFromRequestWithSession } from "@/lib/auth/session-server";
 
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
-  const productContext = resolveProductContextFromRequest(request);
+  const productContext = await resolveProductContextFromRequestWithSession(request);
   const detail = await getPayoutDetail(id, productContext.workspaceId);
 
   if (!detail) {

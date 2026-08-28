@@ -41,6 +41,23 @@ const WalletContext = createContext<WalletContextValue | undefined>(undefined);
 
 const STORAGE_KEY = "settleflow_auth_session";
 
+/**
+ * Best-effort server-side session establishment. Never throws — the UI must
+ * not block on a network hiccup; the local (client) session still stands.
+ * Used so the proxy gate sees a valid `sf_session` cookie on later mutations.
+ */
+async function syncServerSession(path: string, body: Record<string, unknown>) {
+  try {
+    await fetch(path, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  } catch (err) {
+    console.warn(`Session sync to ${path} failed:`, err);
+  }
+}
+
 interface StoredSession {
   isConnected: boolean;
   address: string | null;
@@ -143,6 +160,11 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         const connectedAddr = result.connectedAddress || "0x71C...49A2";
         const wName = result.walletName || preferredWallet || "MetaMask";
 
+        await syncServerSession("/api/v1/auth/wallet", {
+          address: connectedAddr,
+          walletName: wName,
+        });
+
         setIsConnected(true);
         setAddress(connectedAddr);
         setEmail(null);
@@ -171,6 +193,12 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         // Fallback for mock/demo testing if no wallet extension is available
         const mockAddr = "0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7";
         const wName = preferredWallet || "Web3 Wallet";
+
+        await syncServerSession("/api/v1/auth/wallet", {
+          address: mockAddr,
+          walletName: wName,
+        });
+
         setIsConnected(true);
         setAddress(mockAddr);
         setEmail(null);
@@ -208,6 +236,13 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         const smartAccount = deriveSmartAccountAddress(profile.sub || profile.email);
         const name = profile.name || profile.email.split("@")[0];
         const avatar = profile.picture || null;
+
+        await syncServerSession("/api/v1/auth/google", {
+          email: profile.email,
+          sub: profile.sub,
+          name: profile.name,
+          picture: profile.picture,
+        });
 
         setIsConnected(true);
         setAddress(smartAccount);
@@ -249,6 +284,12 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         const smartAccount = deriveSmartAccountAddress(userEmail);
         const name = userEmail.split("@")[0];
 
+        await syncServerSession("/api/v1/auth/google", {
+          email: userEmail,
+          sub: userEmail,
+          name,
+        });
+
         setIsConnected(true);
         setAddress(smartAccount);
         setEmail(userEmail);
@@ -288,6 +329,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   }, [isConnected, authType, email]);
 
   const disconnect = useCallback(() => {
+    void syncServerSession("/api/v1/auth/logout", {});
     setIsConnected(false);
     setAddress(null);
     setEmail(null);

@@ -37,7 +37,7 @@ export default function RecentProof({ transactionProofs, milestones }: RecentPro
             return (
               <div
                 key={proof.id}
-                className="rounded-xl border border-[var(--border-soft)] bg-white p-5"
+                className="rounded-xl border border-[var(--border-soft)] bg-[var(--surface)] p-5"
               >
                 <div className="space-y-3">
                   <div className="flex flex-wrap items-center gap-3">

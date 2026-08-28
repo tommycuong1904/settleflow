@@ -3,7 +3,7 @@ import { apiError, apiErrorFromCode } from "@/lib/api/errors";
 import { hasReleaseAmountPayload } from "@/lib/api/release-payload";
 import { queueMilestoneRelease } from "@/lib/repositories/milestone-release";
 import { assertCanReleaseMilestone } from "@/lib/runtime/product-policy";
-import { resolveProductContextFromRequest } from "@/lib/runtime/product-context-server";
+import { resolveProductContextFromRequestWithSession } from "@/lib/auth/session-server";
 
 export async function POST(
   request: Request,
@@ -11,7 +11,7 @@ export async function POST(
 ) {
   const { id } = await params;
   try {
-    const productContext = resolveProductContextFromRequest(request);
+    const productContext = await resolveProductContextFromRequestWithSession(request);
     const body = await request.json();
     const ownerUserId = productContext.ownerUserId;
     if (!hasReleaseAmountPayload(body, ownerUserId)) {

@@ -3,14 +3,14 @@ import { apiError, apiErrorFromCode } from "@/lib/api/errors";
 import { hasOwnerWorkspaceContext } from "@/lib/api/release-payload";
 import { retryFailedRelease } from "@/lib/repositories/release-retry";
 import { assertCanRetryRelease } from "@/lib/runtime/product-policy";
-import { resolveProductContextFromRequest } from "@/lib/runtime/product-context-server";
+import { resolveProductContextFromRequestWithSession } from "@/lib/auth/session-server";
 
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
-  const productContext = resolveProductContextFromRequest(request);
+  const productContext = await resolveProductContextFromRequestWithSession(request);
   const ownerUserId = productContext.ownerUserId;
 
   if (!hasOwnerWorkspaceContext({ workspaceId: productContext.workspaceId, ownerUserId })) {

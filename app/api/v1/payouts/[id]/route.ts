@@ -10,14 +10,14 @@ import {
 import { getPayoutDetail } from "@/lib/repositories/payouts";
 import { updatePayoutDraft } from "@/lib/repositories/payout-editing";
 import { assertCanEditPayoutDraft, assertCanViewPayout } from "@/lib/runtime/product-policy";
-import { resolveProductContextFromRequest } from "@/lib/runtime/product-context-server";
+import { resolveProductContextFromRequestWithSession } from "@/lib/auth/session-server";
 
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
-  const productContext = resolveProductContextFromRequest(request);
+  const productContext = await resolveProductContextFromRequestWithSession(request);
 
   try {
     const detail = await getPayoutDetail(id, productContext.workspaceId);
@@ -55,7 +55,7 @@ export async function PATCH(
 ) {
   const { id } = await params;
   try {
-    const productContext = resolveProductContextFromRequest(request);
+    const productContext = await resolveProductContextFromRequestWithSession(request);
     const body = await request.json();
     if (!isNonEmptyString(productContext.workspaceId)) {
       return apiError("INVALID_PAYOUT_UPDATE_PAYLOAD", { message: "workspace context is required.", status: 400 });

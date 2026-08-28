@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { PayoutDetailClient } from "@/components/payouts/payout-detail-client";
 import { getPayoutActivity } from "@/lib/repositories/payout-activity";
 import { getPayoutDetail } from "@/lib/repositories/payouts";
-import { resolveProductContextFromCookies } from "@/lib/runtime/product-context-server";
+import { resolveProductContextFromCookiesWithSession } from "@/lib/auth/session-server";
 
 type PayoutDetailPageProps = {
   params: Promise<{ id: string }>;
@@ -18,7 +18,7 @@ export default async function PayoutDetailPage({
   const { id } = await params;
   const resolvedSearchParams = (await searchParams) ?? {};
   const cookieStore = await cookies();
-  const productContext = resolveProductContextFromCookies(cookieStore, {
+  const productContext = await resolveProductContextFromCookiesWithSession(cookieStore, {
     actor: Array.isArray(resolvedSearchParams.actor)
       ? resolvedSearchParams.actor[0]
       : resolvedSearchParams.actor,

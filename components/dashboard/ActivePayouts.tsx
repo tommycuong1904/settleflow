@@ -63,7 +63,7 @@ export default function ActivePayouts({ activePayouts, payouts, contributors, mi
             : "Open the payout to continue milestone progress.";
 
           return (
-            <div key={payout.id} className="rounded-xl border border-[var(--border-soft)] bg-white p-5">
+            <div key={payout.id} className="rounded-xl border border-[var(--border-soft)] bg-[var(--surface)] p-5">
               <div className="space-y-3">
                 <div className="flex items-start justify-between gap-3">
                   <div>
@@ -72,7 +72,7 @@ export default function ActivePayouts({ activePayouts, payouts, contributors, mi
                       {contributor?.name ?? payout.contributorId}
                     </p>
                   </div>
-                  <span className={`inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] ${statusClassMap[payout.status] ?? "bg-gray-200 text-gray-800"}`}>
+                  <span className={`inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] ${statusClassMap[payout.status] ?? "bg-[var(--surface-muted)] text-[var(--text-muted)]"}`}>
                     {payoutStatusLabel}
                   </span>
                 </div>

@@ -97,15 +97,15 @@ Confirmed during the latest checkpoint:
 - release execution remains mode-aware behind the Arc execution boundary
 
 ### Still not the same as production-ready
-- no server-side auth/session; the Google sign-in route derives a smart-account address but issues no session/cookie
-- actor/workspace resolution still relies on seeded/demo assumptions (`ws-demo`, `payout-1/2`)
-- Arc live execution is not yet proven production-safe (`createReleaseExecutor` still returns "not wired yet" failures)
-- automated coverage is narrow (unit payload/repository-level only; no route/E2E layer)
-- some mock/demo artifacts remain in the repository and docs
+- **Phase 4 (auth/session) is now implemented and verified** (JWT cookie + DB User/WorkspaceMember → `getProductContext()`; 7/7 tests pass). Anonymous mutations blocked; real role-based scoping works.
+- `/payouts/new` UI is fully light-theme consistent (Phase 5 remnant cleanup complete).
+- Arc live execution is not yet proven production-safe (`createReleaseExecutor` still returns "not wired yet" failures).
+- automated coverage is narrow (unit payload/repository-level only; no route/E2E layer).
+- some mock/demo artifacts remain in the repository and docs.
+- **Dev server**: use `npx next dev -p 3001` (port 3000 is occupied by LumenFlow).
 
 ## Recommended next step
-Workspace webhook configuration from Settings UI and contributor edit/archive are now implemented (this wedge). Before expanding feature scope further, prioritize one of these:
-1. replace seeded actor/workspace assumptions with real server-side auth/session
-2. implement the real Arc release path in `createReleaseExecutor`
-3. add route-level integration + E2E test coverage
-4. clean up legacy mock/demo artifacts and finalize ops docs (roadmap Phase 8)
+Auth/session (Phase 4) and `/payouts/new` light-theme alignment (Phase 5) are now complete. The next priority is:
+1. **Implement the real Arc release path** in `createReleaseExecutor` (Phase 6) — the current stub returns "not wired yet".
+2. Add route-level integration + E2E test coverage (Phase 7).
+3. Clean up legacy mock/demo artifacts and finalize ops docs (Phase 8).

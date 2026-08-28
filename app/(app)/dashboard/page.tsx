@@ -9,13 +9,13 @@ import PendingReview from "@/components/dashboard/PendingReview";
 import ActivePayouts from "@/components/dashboard/ActivePayouts";
 import RecentProof from "@/components/dashboard/RecentProof";
 import { getDashboardData } from "@/lib/repositories/dashboard";
-import { resolveProductContextFromCookies } from "@/lib/runtime/product-context-server";
+import { resolveProductContextFromCookiesWithSession } from "@/lib/auth/session-server";
 import { WalletGate } from "@/components/dashboard/wallet-gate";
 import { formatUsdc, shortenAddress } from "@/lib/utils/format";
 
 export default async function DashboardPage() {
   const cookieStore = await cookies();
-  const productContext = resolveProductContextFromCookies(cookieStore);
+  const productContext = await resolveProductContextFromCookiesWithSession(cookieStore);
   const workspaceId = productContext.workspaceId;
   const { payouts, milestones, contributors, transactionProofs } =
     await getDashboardData(workspaceId);

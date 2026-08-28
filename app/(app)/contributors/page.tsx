@@ -2,13 +2,13 @@ import { cookies } from "next/headers";
 import { WalletGate } from "@/components/dashboard/wallet-gate";
 import { ContributorListClient } from "@/components/contributors/contributor-list-client";
 import { listContributors } from "@/lib/repositories/contributors";
-import { resolveProductContextFromCookies } from "@/lib/runtime/product-context-server";
+import { resolveProductContextFromCookiesWithSession } from "@/lib/auth/session-server";
 import { formatUsdc } from "@/lib/utils/format";
 import { Users, Coins, CheckCircle2 } from "lucide-react";
 
 export default async function ContributorsPage() {
   const cookieStore = await cookies();
-  const productContext = resolveProductContextFromCookies(cookieStore);
+  const productContext = await resolveProductContextFromCookiesWithSession(cookieStore);
   const workspaceId = productContext.workspaceId;
 
   const contributors = await listContributors({ workspaceId });

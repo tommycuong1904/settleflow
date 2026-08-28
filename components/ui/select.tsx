@@ -22,7 +22,7 @@ function SelectTrigger({ className, children, ...props }: React.ComponentProps<t
   return (
     <SelectPrimitive.Trigger
       className={cn(
-        "flex h-11 w-full items-center justify-between rounded-2xl border border-[var(--border-soft)] bg-[rgba(8,15,31,0.78)] px-4 py-3 text-sm text-white outline-none transition-colors data-[placeholder]:text-[var(--text-muted)] focus:border-cyan-300/40 focus:bg-[rgba(8,15,31,0.92)]",
+        "flex h-11 w-full items-center justify-between rounded-2xl border border-[var(--border-soft)] bg-[var(--surface-muted)] px-4 py-3 text-sm text-[var(--foreground)] outline-none transition-colors data-[placeholder]:text-[var(--text-muted)] focus:border-[var(--border-strong)] focus:bg-[var(--surface)]",
         className,
       )}
       {...props}
@@ -40,7 +40,7 @@ function SelectContent({ className, children, position = "popper", ...props }: R
     <SelectPrimitive.Portal>
       <SelectPrimitive.Content
         className={cn(
-          "relative z-50 max-h-96 min-w-[8rem] overflow-hidden rounded-2xl border border-[var(--border-soft)] bg-slate-950 text-white shadow-md",
+          "relative z-50 max-h-96 min-w-[8rem] overflow-hidden rounded-2xl border border-[var(--border-soft)] bg-[var(--surface)] text-[var(--foreground)] shadow-md",
           position === "popper" && "data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1",
           className,
         )}
@@ -65,7 +65,7 @@ function SelectItem({ className, children, ...props }: React.ComponentProps<type
   return (
     <SelectPrimitive.Item
       className={cn(
-        "relative flex w-full cursor-default select-none items-center rounded-xl py-2 pl-8 pr-2 text-sm outline-none focus:bg-cyan-400/10 focus:text-white data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+        "relative flex w-full cursor-default select-none items-center rounded-xl py-2 pl-8 pr-2 text-sm outline-none focus:bg-[var(--surface-muted)] focus:text-[var(--foreground)] data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
         className,
       )}
       {...props}

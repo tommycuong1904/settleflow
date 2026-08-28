@@ -3,7 +3,7 @@ import { apiError, apiErrorFromCode } from "@/lib/api/errors";
 import { hasOwnerWorkspaceContext, isValidProofRefreshStatus } from "@/lib/api/release-payload";
 import { refreshReleaseProof, type RefreshProofInput } from "@/lib/repositories/release-proof";
 import { assertCanRefreshProof } from "@/lib/runtime/product-policy";
-import { resolveProductContextFromRequest } from "@/lib/runtime/product-context-server";
+import { resolveProductContextFromRequestWithSession } from "@/lib/auth/session-server";
 
 export async function POST(
   request: Request,
@@ -22,7 +22,7 @@ export async function POST(
     return apiError("INVALID_PROOF_STATUS", { message: "status must be confirmed or failed.", status: 400 });
   }
 
-  const productContext = resolveProductContextFromRequest(request);
+  const productContext = await resolveProductContextFromRequestWithSession(request);
   const ownerUserId = productContext.ownerUserId;
 
   if (!hasOwnerWorkspaceContext({ workspaceId: productContext.workspaceId, ownerUserId })) {

@@ -5,13 +5,13 @@ import { WalletGate } from "@/components/dashboard/wallet-gate";
 import { PayoutListClient } from "@/components/payouts/payout-list-client";
 import { listPayouts } from "@/lib/repositories/payouts";
 import { listContributors } from "@/lib/repositories/contributors";
-import { resolveProductContextFromCookies } from "@/lib/runtime/product-context-server";
+import { resolveProductContextFromCookiesWithSession } from "@/lib/auth/session-server";
 import { formatUsdc } from "@/lib/utils/format";
 import { Plus } from "lucide-react";
 
 export default async function PayoutsPage() {
   const cookieStore = await cookies();
-  const productContext = resolveProductContextFromCookies(cookieStore);
+  const productContext = await resolveProductContextFromCookiesWithSession(cookieStore);
   const workspaceId = productContext.workspaceId;
 
   const [payouts, contributors] = await Promise.all([

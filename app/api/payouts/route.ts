@@ -6,7 +6,7 @@ import {
   payoutStatuses,
 } from "@/lib/api/list-query";
 import { listPayouts } from "@/lib/repositories/payouts";
-import { resolveProductContextFromRequest } from "@/lib/runtime/product-context-server";
+import { resolveProductContextFromRequestWithSession } from "@/lib/auth/session-server";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -16,7 +16,7 @@ export async function GET(request: Request) {
     return apiError("INVALID_PAYOUT_STATUS", { message: "Invalid payout status.", status: 400 });
   }
 
-  const productContext = resolveProductContextFromRequest(request);
+  const productContext = await resolveProductContextFromRequestWithSession(request);
 
   // Contributors can only see payouts where they are the linked user
   const linkedUserId =

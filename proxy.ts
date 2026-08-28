@@ -4,8 +4,23 @@ import {
   PRODUCT_CONTEXT_HEADER_NAMES,
   readNonEmpty,
 } from "@/lib/runtime/product-context";
+import { SESSION_COOKIE_NAME, verifySessionToken } from "@/lib/auth/session";
 
 const PRODUCT_CONTEXT_COOKIE_OPTIONS = { path: "/", sameSite: "lax" as const, maxAge: 60 * 60 * 24 * 365 };
+
+const MUTATION_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+
+/**
+ * Routes that establish or tear down an authenticated session — they must be
+ * reachable without an existing session so sign-in/logout keep working.
+ */
+const OPEN_AUTH_PREFIXES = ["/api/v1/auth/"];
+
+/**
+ * Mutation routes intentionally left public because they are used by anonymous
+ * guests (e.g. feedback). Everything else under /api is gated on a session.
+ */
+const PUBLIC_MUTATION_PREFIXES = ["/api/feedback", "/api/v1/feedback"];
 
 function shouldHandle(pathname: string) {
   if (pathname.startsWith("/_next") || pathname.startsWith("/favicon") || pathname.startsWith("/public")) {
@@ -28,9 +43,41 @@ function firstDefined(...values: Array<string | null | undefined>) {
   return undefined;
 }
 
-export function proxy(request: NextRequest) {
+function isOpenAuthPath(pathname: string) {
+  return OPEN_AUTH_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+}
+
+function isPublicMutationPath(pathname: string) {
+  return PUBLIC_MUTATION_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+}
+
+function unauthorizedResponse() {
+  return NextResponse.json(
+    {
+      error: "AUTH_REQUIRED",
+      message: "Sign in is required to perform this action. Please connect your wallet or sign in to continue.",
+    },
+    { status: 401 },
+  );
+}
+
+export async function proxy(request: NextRequest) {
   if (!shouldHandle(request.nextUrl.pathname)) {
     return NextResponse.next();
+  }
+
+  // ---- Session gate for mutation routes ----
+  if (
+    MUTATION_METHODS.has(request.method) &&
+    request.nextUrl.pathname.startsWith("/api/") &&
+    !isOpenAuthPath(request.nextUrl.pathname) &&
+    !isPublicMutationPath(request.nextUrl.pathname)
+  ) {
+    const sessionToken = request.cookies.get(SESSION_COOKIE_NAME)?.value;
+    const session = sessionToken ? await verifySessionToken(sessionToken) : null;
+    if (!session) {
+      return unauthorizedResponse();
+    }
   }
 
   const requestHeaders = new Headers(request.headers);

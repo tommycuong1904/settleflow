@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { apiError } from "@/lib/api/errors";
 import { updateContributor } from "@/lib/repositories/contributors";
-import { resolveWorkspaceIdFromRequest } from "@/lib/runtime/product-context-server";
+import { resolveWorkspaceIdFromRequestWithSession } from "@/lib/auth/session-server";
 
 export async function PATCH(
   request: Request,
@@ -11,7 +11,7 @@ export async function PATCH(
 
   try {
     const body = await request.json();
-    const workspaceId = resolveWorkspaceIdFromRequest(request);
+    const workspaceId = await resolveWorkspaceIdFromRequestWithSession(request);
 
     if (!body || typeof body !== "object") {
       return apiError("INVALID_REQUEST_BODY", {

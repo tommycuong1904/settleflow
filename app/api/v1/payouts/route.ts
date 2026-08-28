@@ -8,11 +8,11 @@ import {
 } from "@/lib/api/payout-payload";
 import { createPayout } from "@/lib/repositories/payout-creation";
 import { assertCanCreatePayout } from "@/lib/runtime/product-policy";
-import { resolveProductContextFromRequest } from "@/lib/runtime/product-context-server";
+import { resolveProductContextFromRequestWithSession } from "@/lib/auth/session-server";
 
 export async function POST(request: Request) {
   try {
-    const productContext = resolveProductContextFromRequest(request);
+    const productContext = await resolveProductContextFromRequestWithSession(request);
     const body = await request.json();
     const milestones = Array.isArray(body.milestones) ? body.milestones : [];
     const required = [productContext.workspaceId, productContext.ownerUserId, body.title, body.contributorId,

@@ -4,13 +4,13 @@ import {
   getWorkspaceSettings,
   updateWorkspaceSettings,
 } from "@/lib/repositories/workspace-settings";
-import { resolveWorkspaceIdFromRequest } from "@/lib/runtime/product-context-server";
+import { resolveWorkspaceIdFromRequestWithSession } from "@/lib/auth/session-server";
 
 const NOTIFICATION_KEYS = ["notifyOnSubmit", "notifyOnApprove", "notifyOnRelease"] as const;
 
 export async function GET(request: Request) {
   try {
-    const workspaceId = resolveWorkspaceIdFromRequest(request);
+    const workspaceId = await resolveWorkspaceIdFromRequestWithSession(request);
     const settings = await getWorkspaceSettings(workspaceId);
     return NextResponse.json({ data: settings });
   } catch (error) {
@@ -23,7 +23,7 @@ export async function GET(request: Request) {
 export async function PUT(request: Request) {
   try {
     const body = await request.json();
-    const workspaceId = resolveWorkspaceIdFromRequest(request);
+    const workspaceId = await resolveWorkspaceIdFromRequestWithSession(request);
 
     if (!body || typeof body !== "object") {
       return apiError("INVALID_REQUEST_BODY", {

@@ -3,11 +3,11 @@ import { WalletGate } from "@/components/dashboard/wallet-gate";
 import { SectionCard } from "@/components/shared/section-card";
 import { ActivityLedgerClient } from "@/components/activity/activity-ledger-client";
 import { getWorkspaceActivity } from "@/lib/repositories/payout-activity";
-import { resolveProductContextFromCookies } from "@/lib/runtime/product-context-server";
+import { resolveProductContextFromCookiesWithSession } from "@/lib/auth/session-server";
 
 export default async function ActivityPage() {
   const cookieStore = await cookies();
-  const productContext = resolveProductContextFromCookies(cookieStore);
+  const productContext = await resolveProductContextFromCookiesWithSession(cookieStore);
   const workspaceId = productContext.workspaceId;
 
   const activities = await getWorkspaceActivity(workspaceId);

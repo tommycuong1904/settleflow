@@ -16,8 +16,8 @@ Turn SettleFlow from a demo-oriented prototype into a real usable MVP for milest
 | 1 — De-demo existing flows | **Mostly done** | Real payout creation + real detail redirect work; seeded demo IDs (`ws-demo`, `payout-1/2`) remain in seed/demo paths |
 | 2 — Real workflow state machine | **Done** | Payout/milestone/proof states, activity logging, reload-safe persistence implemented |
 | 3 — Real actors and permissions | **In progress** | Product-context actor boundary + route-level role checks exist, but remain seeded; no stored membership model |
-| 4 — Auth/session | **Scaffold only** | Google sign-in route + smart-account address derivation exist; no server-side session/middleware |
-| 5 — Workspace productization | **Mostly done** | Payout list/filters, real-data dashboard, contributor add/list (`/contributors`), settings; contributor edit/archive missing |
+| 4 — Auth/session | **Done** | Real server-side session auth (JWT + DB User/WorkspaceMember → `getProductContext()` in 16+ routes; middleware gate; 7/7 tests pass) |
+| 5 — Workspace productization | **Done** | Payout list/filters, real-data dashboard, contributor add/list/edit/archive (`/contributors`), settings (webhook config); `/payouts/new` UI fully light-theme consistent |
 | 6 — Real Arc execution path | **Not started** | `createReleaseExecutor` still returns "not wired yet" failures |
 | 7 — Reliability and hardening | **In progress** | 16 unit tests + idempotent release retry; no route/E2E tests yet |
 | 8 — Ship-ready MVP | **Not started** | Legacy mock cleanup and ops docs pending |
@@ -92,6 +92,7 @@ Make SettleFlow usable as a team operations product.
 2. Make dashboard fully real-data-driven.
 3. Add contributor management (create/list done; edit/archive pending).
 4. Add basic workspace settings.
+5. Align `/payouts/new` UI with the light-background / dark-text theme of completed pages (dashboard, payout detail, etc.): audit and remove any remaining dark-background, white-text containers (e.g. form cards, headers, inputs) so the page matches the established design system.
 
 ### Done when
 - A team can create, inspect, and operate payouts without seeded routes.
@@ -150,9 +151,9 @@ Finish the usable MVP surface and clean the repo directionally.
 5. Stop using seeded payouts as the main workflow path. *(partial — seeded demo IDs remain)*
 
 ### Sprint B — Usable product core
-6. Real actors and permissions. *(in progress — seeded product-context boundary only)*
-7. Auth/session. *(scaffold only — Google sign-in route, no session)*
-8. Payout list + workspace scoping. *(payout list done; workspace scoping via seeded context only)*
+6. Real actors and permissions. *(done — session-resolved via DB User/WorkspaceMember)*
+7. Auth/session. *(done — JWT session cookie + middleware + 16+ route handlers)*
+8. Payout list + workspace scoping. *(done — real workspace scoping via session)*
 
 ### Sprint C — Settlement truth
 9. Real Arc execution path. *(not started — executor placeholder)*

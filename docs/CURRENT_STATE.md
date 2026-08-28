@@ -183,8 +183,14 @@ This repository is now a full-stack Next.js application for SettleFlow, an Arc-n
 ## 7. What appears unfinished
 
 ### Confirmed
-- No session-based authentication flow is implemented; `app/api/v1/auth/google` and `lib/auth/smart-account.ts` provide a Google sign-in + deterministic smart-account address derivation surface without server-side sessions or middleware protection.
-- Mutation routes now have a request-derived actor boundary for the seeded workspace roles:
+- **Phase 4 (auth/session) is complete**: real server-side session auth is now implemented.
+  - Google sign-in (`POST /api/v1/auth/google`) creates/login a `User` DB record, issues a `sf_session` JWT cookie (signed with `SESSION_SECRET`).
+  - Middleware (`middleware.ts`) validates the session on every API request and resolves `ProductContext` from the DB (`User` → `WorkspaceMember` → workspace roles).
+  - `await getProductContext()` is wired into 16+ API route handlers, replacing the old default fallback.
+  - Anonymous mutations are blocked with `401 { error: "AUTH_REQUIRED" }`.
+  - Logout (`POST /api/v1/auth/logout`) clears the `sf_session` cookie.
+  - 7/7 automated checks pass (`scripts/test-phase4.sh`).
+- Mutation routes now have a request-derived actor boundary from the real session (not seeded roles):
   - payout create
   - payout activate
   - payout draft edit
@@ -193,7 +199,8 @@ This repository is now a full-stack Next.js application for SettleFlow, an Arc-n
   - milestone release
   - release proof refresh
   - release retry
-- Core UI surfaces now mask actions by actor role and include a header actor switcher for seeded-role testing.
+- Core UI surfaces now mask actions by actor role and include a header actor switcher for role testing.
+- **Dev server runs on port 3001** (port 3000 is occupied by another project, LumenFlow).
 - No E2E/browser integration test suite exists; unit coverage is limited to payload validation and repository logic.
 - Arc execution is not verified here as a production-safe live payment path; behavior still depends on execution mode.
 - Legacy mock-data files remain in the repository and may still represent transition-era coupling or fallback assumptions.
@@ -222,7 +229,8 @@ This repository is now a full-stack Next.js application for SettleFlow, an Arc-n
 - Route structure
 - dependency/tooling setup
 - presence of database/API/repository layers
-- absence of a real session-based auth/session model (only a Google sign-in scaffold + smart-account derivation)
+- **real server-side session auth (Phase 4) is implemented and verified** (7/7 check pass)
+- `/payouts/new` UI is fully light-theme consistent (Phase 5 cleanup complete)
 - presence of a narrow unit test layer (`lib/api` + `lib/repositories`) with no E2E coverage yet
 - mode-aware Arc send architecture
 

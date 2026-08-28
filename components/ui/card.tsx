@@ -6,7 +6,7 @@ function Card({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       className={cn(
-        "rounded-xl border border-[var(--border-soft)] bg-[rgba(15,23,42,0.72)] text-[var(--foreground)] shadow-[0_0_0_1px_rgba(255,255,255,0.02)]",
+        "rounded-xl border border-[var(--border-soft)] bg-[var(--surface)] text-[var(--foreground)]",
         className,
       )}
       {...props}
@@ -19,7 +19,7 @@ function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
 }
 
 function CardTitle({ className, ...props }: React.ComponentProps<"div">) {
-  return <div className={cn("text-lg font-semibold tracking-tight text-white", className)} {...props} />;
+  return <div className={cn("text-lg font-semibold tracking-tight text-[var(--foreground)]", className)} {...props} />;
 }
 
 function CardDescription({ className, ...props }: React.ComponentProps<"div">) {
