@@ -159,6 +159,7 @@ export async function POST(request: Request) {
           : "pending",
       txHash: sendResult.txHash ?? null,
       explorerUrl: sendResult.explorerUrl ?? null,
+      sourceWalletAddress: sendResult.sourceWalletAddress ?? null,
       failureReason: sendResult.errorMessage ?? null,
       executedAt: isConfirmed ? new Date() : null,
       failedAt: isFailed ? new Date() : null,

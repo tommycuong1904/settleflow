@@ -21,4 +21,5 @@ export type ArcSendResult = {
   network?: string;
   errorMessage?: string;
   confirmedAt?: string;
+  sourceWalletAddress?: string;
 };

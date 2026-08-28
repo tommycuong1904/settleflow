@@ -1,7 +1,7 @@
 import { createPublicClient, http, formatUnits, erc20Abi, type Address } from "viem";
 import { ARC_CONFIG } from "@/lib/arc/config";
 
-const arcChain = {
+export const arcChain = {
   id: ARC_CONFIG.chainId,
   name: "Arc Testnet",
   nativeCurrency: {

@@ -546,7 +546,7 @@ export function PayoutDetailReleaseShell({
           ) : null}
         <div className="mt-4 rounded-2xl border border-dashed border-[var(--border-soft)] px-4 py-3 text-sm text-[var(--text-muted)]">
           {ARC_CONFIG.executionMode === "real"
-            ? "Real wallet execution is the intended final path, but the live Arc transfer wiring is not complete in this repository yet."
+            ? "Real USDC moves on Arc. Browser-wallet releases are signed in your wallet; Circle Wallets releases are executed server-side. The settlement proof is attached to the payout after the transfer settles."
             : ARC_CONFIG.executionMode === "demo"
               ? "This proof comes from the current staged Arc path while live settlement execution is still being completed."
               : "This proof comes from the current mock Arc path while live settlement execution is still being completed."}
