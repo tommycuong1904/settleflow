@@ -1,5 +1,7 @@
 # CURRENT_STATE
 
+> **TL;DR** — This file is the **single source of truth** for live numbers/status. Current: Phases 1–6 done (real Arc release via `circle_wallet`), auth implemented, full unit suite across `lib/**/*.test.mts`; no route/E2E tests yet. If another doc disagrees, this one wins.
+
 ## Summary
 This repository is now a full-stack Next.js application for SettleFlow, an Arc-native milestone-based USDC payout workflow for crypto teams. The current implementation has moved beyond a frontend-only demo: it now includes a PostgreSQL + Prisma data layer, repository-backed server reads/writes, and API routes for payout, milestone, and release actions. Real Arc release execution is wired through `createReleaseExecutor` (Phase 6): `circle_wallet` mode sends real USDC from a server-side EOA, while `browser_wallet` fails explicitly on the server. Session auth (Phase 4), contributor management + settings/productization (Phase 5), a minimalist black/white theme refactor, and a 126-test unit layer are also merged into `main`.
 
@@ -175,7 +177,7 @@ This repository is now a full-stack Next.js application for SettleFlow, an Arc-n
 - A Prisma-backed database layer exists.
 - A repository/service-style server data layer exists.
 - API surfaces exist for the main payout and milestone actions.
-- Product framing docs and checkpoint docs exist.
+- Product framing docs and reference docs exist; historical/checkpoint docs are archived under `docs/archive/`.
 - Arc integration has a mode-aware adapter boundary rather than a single placeholder send stub.
 
 ### Assumption
@@ -212,7 +214,7 @@ This repository is now a full-stack Next.js application for SettleFlow, an Arc-n
 ## 8. Documentation state
 
 ### Confirmed
-- Technical docs exist in English for README, canonical docs, workflow/domain/API planning docs, DB schema planning, and checkpoint materials.
+- Technical docs exist in English for README, canonical docs, and reference docs; historical/planning/checkpoint materials are archived under `docs/archive/`.
 - Some documentation files were stale after the backend/data wedge and the merged theme refactor, and required refresh against current repository state.
 - Archived docs still preserve earlier progress phases under `docs/archive/`.
 
@@ -221,7 +223,7 @@ This repository is now a full-stack Next.js application for SettleFlow, an Arc-n
 - Whether all route handlers return a fully standardized error contract.
 - Whether all release/retry/proof-refresh flows have been manually verified end-to-end against the seeded database.
 - Whether the `circle_wallet` execution path is fully aligned with official Arc requirements for production release handling (server key custody, gas funding, and fee strategy).
-- Whether remaining stale checkpoint/supporting docs still need rationalization.
+- Historical/checkpoint docs were rationalized into `docs/archive/`; whether remaining reference docs still need refresh is open.
 
 
 ## 10. Confidence statement

@@ -122,7 +122,7 @@ In the app, click the **USDC balance badge** in the header → **"Request Testne
 ## Running Tests
 
 ```bash
-# Full test suite (126 tests across lib/api, lib/arc, lib/auth, lib/notifications, lib/repositories, lib/runtime)
+# Full test suite (current count: see docs/CURRENT_STATE.md)
 node --import tsx --test 'lib/**/*.test.mts'
 
 # Lint

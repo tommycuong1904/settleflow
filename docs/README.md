@@ -1,47 +1,35 @@
 # Docs Guide
 
-## Canonical Docs
-Read these first:
-1. `PROJECT.md`
-2. `ARCHITECTURE.md`
-3. `CONVENTIONS.md`
-4. `CURRENT_STATE.md`
+## Entry point
+- `../CONTEXT.md` (repo root) — one-file cheat sheet for any new model/agent. **Read it first.**
+- `AGENTS.md` (repo root) — task routing rules (which doc to load per workflow).
 
-These files are the primary reference set for understanding the product, architecture, repository conventions, and current implementation state.
+## Canonical Docs (read these first)
+1. `PROJECT.md` — product vision (why/what)
+2. `ARCHITECTURE.md` — how the system fits together
+3. `CONVENTIONS.md` — code/test/doc conventions
+4. `CURRENT_STATE.md` — current state; **single source of truth for live numbers**
 
-`AGENTS.md` points future agents to this file first as the docs entrypoint.
+These are the primary reference set for understanding the product, architecture, repository conventions, and current implementation state.
 
-## Supporting Docs
-Use these as secondary references when needed:
-- `mvp-scope.md`
-- `PROJECT_MAP.md`
-- `KNOWN_ISSUES.md`
-- `checkpoint-2-demo-flow.md`
-- `checkpoint-2-deck-outline.md`
-- `checkpoint-2-submission-draft.md`
-- `progress-summary-checkpoint-2.md`
-- `screenshots/`
-
-## Checkpoint 2 Packaging Path
-Use these files in this order when preparing a checkpoint/demo package:
-1. `checkpoint-2-submission-draft.md` — primary checkpoint submission narrative
-2. `checkpoint-2-demo-flow.md` — route order and live demo talk track
-3. `checkpoint-2-deck-outline.md` — presentation/deck structure
-4. `progress-summary-checkpoint-2.md` — supporting proof of implemented and verified state
-
-This keeps checkpoint packaging work focused without treating the checkpoint files as canonical product architecture docs.
+## Supporting Docs (secondary references)
+- `PROJECT_MAP.md` — repository structure map
+- `DOMAIN_MODEL.md` — domain entities
+- `WORKFLOW_STATE_MACHINE.md` — payout/milestone/release/proof state transitions
+- `FEATURE_MATRIX.md` — feature-by-feature status table
+- `KNOWN_ISSUES.md` — known gaps and risks
+- `REAL_PRODUCT_ROADMAP.md` — roadmap & phases
+- `HANDOFF.md` — handoff notes + recommended next steps
+- `DEMO_GUIDE.md` — step-by-step demo walkthrough
+- `GOOGLE_OAUTH_SETUP.md` — Google OAuth client setup
+- `screenshots/` — demo screenshots
 
 ## Archive
-Archived files live under `archive/`.
-
-These files are kept for historical reference but should not be treated as the current source of truth.
-
-Archived legacy files currently include:
-- `archive/architecture.md`
-- `archive/project-status.md`
-- `archive/workboard.md`
+Archived files live under `archive/` — kept for historical reference, **not** current truth.
+Includes the earlier `architecture.md`, `project-status.md`, `workboard.md`, plus superseded planning/checkpoint docs (`API_PLAN.md`, `DB_SCHEMA.md`, `IMPLEMENTATION_PLAN.md`, `mvp-scope.md`, `WALLET_ONBOARDING_PLAN.md`, `MERGE_PREP_AUTH_BOUNDARY_V1.md`, `PR_BODY_AUTH_BOUNDARY_V1.md`, `checkpoint-2-*`, `core-release-wedge-progress.md`, `progress-summary-checkpoint-2.md`).
 
 ## Notes
-- Prefer canonical docs over older planning or checkpoint files when there is a conflict.
-- Supporting docs may remain useful for packaging, demos, and historical context.
-- Archived docs are preserved to avoid losing prior planning context while keeping the main `docs/` directory cleaner.
+- Prefer canonical docs over older planning/checkpoint files when there is a conflict.
+- For any live number (test count, phase status, commit), trust `docs/CURRENT_STATE.md`.
+- `docs/archive/` preserves prior planning context while keeping the main `docs/` directory lean.
+

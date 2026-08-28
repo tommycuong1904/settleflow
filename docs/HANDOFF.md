@@ -2,9 +2,9 @@
 
 ## Repository state note (latest)
 
-- Default branch: `main` at `32a0bf9` (Phase 6 merged fast-forward from `feature/settings-contributor-export`); pushed to `origin/main`.
+- Default branch: `main` tracks `origin/main` (last code merge: Phase 6 from `feature/settings-contributor-export`; current state: see `docs/CURRENT_STATE.md`).
 - The Phase 6 wedge (real Arc release execution) was fast-forward merged into `main`.
-- The earlier handoff branch `feat/auth-boundary-v1` was superseded by later wedges; its merge-prep docs (`docs/MERGE_PREP_AUTH_BOUNDARY_V1.md`, `docs/PR_BODY_AUTH_BOUNDARY_V1.md`) are preserved for history.
+- The earlier handoff branch `feat/auth-boundary-v1` was superseded by later wedges; its merge-prep docs (`docs/archive/MERGE_PREP_AUTH_BOUNDARY_V1.md`, `docs/archive/PR_BODY_AUTH_BOUNDARY_V1.md`) are preserved for history.
 - Last confirmed checks:
   - `npx tsc --noEmit`
   - `npm run build`
@@ -68,7 +68,7 @@ The core product flow currently available in the repository is:
 - dispatcher is wired into milestone events (submission/review/release); webhook URL + per-event toggles are now persisted per-workspace via `GET/PUT /api/v1/settings`, with the `SETTLEFLOW_WEBHOOK_URL` env var kept as a fallback
 
 ### Unit test layer
-- 126 tests across `lib/api/*.test.mts`, `lib/arc/*.test.mts`, `lib/auth/*.test.mts`, `lib/notifications/*.test.mts`, `lib/repositories/*.test.mts`, and `lib/runtime/*.test.mts`
+- Full unit suite across `lib/**/*.test.mts` (current count: see `docs/CURRENT_STATE.md`)
 - `npm test` = `node --import tsx --test "lib/**/*.test.mts"`
 
 ### Runtime verification

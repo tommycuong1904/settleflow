@@ -1,5 +1,7 @@
 # ARCHITECTURE
 
+> **TL;DR** — Next.js (App Router) full-stack MVP: Route Handlers (`app/api/v1/*`) → repositories → PostgreSQL/Prisma; `lib/arc/` is the Arc execution boundary (release-executor + onchain + browser-wallet). Auth/session is implemented (Phase 4); remaining work is Arc production hardening + broader test coverage. For live status and numbers, see `docs/CURRENT_STATE.md`.
+
 ## Overview
 SettleFlow is currently structured as a Next.js application moving toward a real MVP architecture: typed domain models, repository/API-backed workflow mutations, database persistence, and an Arc execution boundary.
 

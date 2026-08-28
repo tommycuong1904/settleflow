@@ -37,7 +37,7 @@ This is not a full auth/session implementation yet, but it establishes a clearer
 This branch is broader than auth-boundary-only scope. In addition to the boundary work, it also carries nearby workflow-hardening improvements already present on the branch, including payout activity timeline work, payout detail enrichments, draft editing harness improvements, and proof/retry hardening.
 
 ## Merge checklist
-- [ ] Re-read `docs/MERGE_PREP_AUTH_BOUNDARY_V1.md`
+- [ ] Re-read `docs/archive/MERGE_PREP_AUTH_BOUNDARY_V1.md`
 - [ ] Confirm broad-scope branch merge is acceptable
 - [ ] Confirm `AGENTS.md` and `.hermes/` stay out of merge
 - [ ] Merge only after latest `npx tsc --noEmit` and `npm run build` remain green

@@ -7,6 +7,10 @@ Use this file as the single execution router.
 Load docs progressively by task type. Do not read docs by default.
 Read only as far as needed, and only when the active workflow requires it.
 
+Read `CONTEXT.md` (repo root) first — it is the one-file cheat sheet: stack, key commands, structure, doc map.
+`docs/CURRENT_STATE.md` is the single source of truth for live numbers (test count, phase status, current commit).
+Historical/planning/checkpoint docs live under `docs/archive/` and are not current truth.
+
 Task-based doc loading rules:
 
 - `bug`

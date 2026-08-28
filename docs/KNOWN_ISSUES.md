@@ -15,7 +15,7 @@ This document lists issues, gaps, inconsistencies, and inspection risks visible 
 - Route-level integration and E2E tests have not yet been written; coverage is limited to unit tests for session and auth logic.
 
 ### 2. Automated test coverage is still narrow
-- The repository now contains 126 unit tests across `lib/api/*.test.mts`, `lib/arc/*.test.mts`, `lib/auth/*.test.mts`, `lib/notifications/*.test.mts`, `lib/repositories/*.test.mts`, and `lib/runtime/*.test.mts`; `npm test` runs `node --import tsx --test "lib/**/*.test.mts"`.
+- Unit tests exist across `lib/**/*.test.mts` (current count: see `docs/CURRENT_STATE.md`); `npm test` runs `node --import tsx --test "lib/**/*.test.mts"`.
 - Coverage is limited to payload validation, repository logic, Arc executor logic, and session/auth logic; there are no route-level integration tests and no E2E/browser test suite.
 
 ### 3. Arc release execution is wired but not yet proven production-safe
@@ -36,7 +36,7 @@ This document lists issues, gaps, inconsistencies, and inspection risks visible 
 - This creates a risk that future work is planned from outdated assumptions unless canonical docs are kept in sync with code.
 
 ### 6. Potential route-map/documentation drift in supporting docs
-- Some supporting/checkpoint docs may still reflect earlier frontend-first assumptions or pre-backend wording.
+- Historical/checkpoint/planning docs now live under `docs/archive/`; they may still reflect earlier frontend-first assumptions or pre-backend wording and are not current truth.
 - They were not all fully re-audited in this pass.
 
 ### 7. Webhook dispatcher URL source (partially resolved)

@@ -232,23 +232,24 @@ settleflow/
 ## Docs Structure
 
 ### Confirmed
-- Canonical docs:
+- Canonical docs (read first — see `docs/README.md`):
   - `docs/PROJECT.md`
   - `docs/ARCHITECTURE.md`
   - `docs/CONVENTIONS.md`
   - `docs/CURRENT_STATE.md`
+- Reference docs:
   - `docs/PROJECT_MAP.md`
-  - `docs/KNOWN_ISSUES.md`
-- Domain/planning docs:
   - `docs/DOMAIN_MODEL.md`
   - `docs/WORKFLOW_STATE_MACHINE.md`
-  - `docs/API_PLAN.md`
-  - `docs/DB_SCHEMA.md`
-- Supporting docs:
-  - `docs/mvp-scope.md`
-  - checkpoint and submission materials
-  - screenshots
-- Archive docs:
+  - `docs/FEATURE_MATRIX.md`
+  - `docs/KNOWN_ISSUES.md`
+  - `docs/REAL_PRODUCT_ROADMAP.md`
+  - `docs/HANDOFF.md`
+  - `docs/DEMO_GUIDE.md`
+  - `docs/GOOGLE_OAUTH_SETUP.md`
+- Screenshots:
+  - `docs/screenshots/`
+- Archive (historical/planning docs, not current truth):
   - `docs/archive/*`
 
 ## Configuration and Tooling

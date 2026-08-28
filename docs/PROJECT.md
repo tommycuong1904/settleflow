@@ -1,5 +1,7 @@
 # PROJECT
 
+> **TL;DR** — Product: milestone-based USDC payout workflow for crypto teams on Arc Testnet. Flow: payout → milestones → submit → approve → release → onchain proof. For what is actually built and live status, see `docs/CURRENT_STATE.md`.
+
 ## Name
 SettleFlow
 

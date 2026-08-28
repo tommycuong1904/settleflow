@@ -1,5 +1,7 @@
 # CONVENTIONS
 
+> **TL;DR** — English for code/UI/docs; Next.js App Router; runtime data = PostgreSQL + Prisma (`lib/data/` are transitional mocks); tests under `lib/**/*.test.mts` (run via `node --import tsx --test`); canonical docs live in `docs/`, historical/planning docs in `docs/archive/`. For live numbers, see `docs/CURRENT_STATE.md`.
+
 ## Purpose
 This document records the current repository conventions that can be confirmed from the codebase and the current working process.
 
@@ -71,11 +73,11 @@ This document records the current repository conventions that can be confirmed f
 
 ### Confirmed
 - Technical markdown docs exist under `docs/`.
-- Product, architecture, checkpoint, and planning docs are all stored there.
+- Canonical docs live in `docs/`; historical/planning/checkpoint docs are moved to `docs/archive/` and are not current truth.
 
 ### Recommended convention for future consistency
 - canonical product docs should be uppercase or clearly named if intended as primary reference docs
-- checkpoint-specific drafts should stay separate from canonical architecture/state docs
+- checkpoint-specific drafts should live in `docs/archive/`, separate from canonical architecture/state docs
 
 ## Repository Hygiene Conventions
 
@@ -90,7 +92,7 @@ This document records the current repository conventions that can be confirmed f
 - Lint script exists: `npm run lint`
 
 ### Confirmed
-- A unit test convention is established: `npm test` runs `node --import tsx --test "lib/**/*.test.mts"` (126 tests across `lib/api`, `lib/arc`, `lib/auth`, `lib/notifications`, `lib/repositories`, `lib/runtime`).
+- A unit test convention is established: `npm test` runs `node --import tsx --test "lib/**/*.test.mts"` (current count: see `docs/CURRENT_STATE.md`).
 
 ## Current Practical Constraints
 
