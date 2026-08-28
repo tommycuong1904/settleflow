@@ -9,6 +9,7 @@ import type { ContributorListItem } from "@/lib/repositories/contributors";
 import { formatUsdc, shortenAddress } from "@/lib/utils/format";
 import { AddContributorDialog } from "./add-contributor-dialog";
 import { EditContributorDialog } from "./edit-contributor-dialog";
+import { DeleteContributorDialog } from "./delete-contributor-dialog";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Button } from "@/components/shared/button";
 import { useToast } from "@/lib/context/toast-context";
@@ -26,6 +27,7 @@ import {
   ShieldCheck,
   Users,
   Pencil,
+  Trash2,
 } from "lucide-react";
 
 type ContributorListClientProps = {
@@ -38,13 +40,23 @@ export function ContributorListClient({
   const router = useRouter();
   const productContext = useResolvedProductContext();
   const actor = productContext.actor;
+  const activeUserId = productContext.activeUserId;
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "archived">("all");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingContributor, setEditingContributor] = useState<ContributorListItem | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [deletingContributor, setDeletingContributor] = useState<ContributorListItem | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  /**
+   * A contributor can be edited/deleted by its creator (the wallet that added it)
+   * or by any owner (ops maps to owner via the role hierarchy).
+   */
+  const canManageContributor = (c: ContributorListItem) =>
+    hasRole(actor, "owner") || (Boolean(activeUserId) && c.createdByUserId === activeUserId);
 
   const handleCopy = (id: string, text: string, name?: string) => {
     navigator.clipboard.writeText(text);
@@ -293,7 +305,7 @@ export function ContributorListClient({
                   </div>
 
                   <div className="flex items-center gap-2">
-                    {hasRole(actor, "owner") && (
+                    {canManageContributor(contributor) && (
                       <Button
                         variant="outline"
                         className="text-xs py-1.5 px-3 h-auto"
@@ -303,6 +315,18 @@ export function ContributorListClient({
                         }}
                       >
                         <Pencil size={13} /> Edit
+                      </Button>
+                    )}
+                    {canManageContributor(contributor) && (
+                      <Button
+                        variant="outline"
+                        className="text-xs py-1.5 px-3 h-auto text-red-400 border-red-400/40 hover:bg-red-500/10"
+                        onClick={() => {
+                          setDeletingContributor(contributor);
+                          setIsDeleteModalOpen(true);
+                        }}
+                      >
+                        <Trash2 size={13} /> Delete
                       </Button>
                     )}
                     <Button
@@ -338,6 +362,19 @@ export function ContributorListClient({
           setEditingContributor(null);
         }}
         contributor={editingContributor}
+        onSuccess={() => {
+          router.refresh();
+        }}
+      />
+
+      {/* Delete Contributor Modal */}
+      <DeleteContributorDialog
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setDeletingContributor(null);
+        }}
+        contributor={deletingContributor}
         onSuccess={() => {
           router.refresh();
         }}

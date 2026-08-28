@@ -39,6 +39,34 @@ export function assertCanCreatePayout({ productContext, actorUserId }: PolicyInp
   );
 }
 
+export function assertCanCreateContributor({ productContext, actorUserId }: PolicyInput) {
+  return (
+    assertActor(productContext, "owner", "FORBIDDEN_CONTRIBUTOR_CREATE_ACTOR", "Only owners can create contributors in this flow.") ??
+    assertActorUserAlignment(productContext, actorUserId, "FORBIDDEN_CONTRIBUTOR_CREATE_CONTEXT", "Create contributor context does not match the active owner.")
+  );
+}
+
+export type ContributorManagePolicyInput = PolicyInput & {
+  createdByUserId?: string | null;
+};
+
+export function assertCanManageContributor({
+  productContext,
+  actorUserId,
+  createdByUserId,
+}: ContributorManagePolicyInput) {
+  // The wallet that created this contributor has full rights over it.
+  if (createdByUserId && productContext.activeUserId && createdByUserId === productContext.activeUserId) {
+    return null;
+  }
+
+  // Otherwise, owners (and ops, via role mapping) can manage any contributor.
+  return (
+    assertActor(productContext, "owner", "FORBIDDEN_CONTRIBUTOR_MANAGE_ACTOR", "Only the creator of this contributor or an owner can manage it in this flow.") ??
+    assertActorUserAlignment(productContext, actorUserId, "FORBIDDEN_CONTRIBUTOR_MANAGE_CONTEXT", "Manage contributor context does not match the active owner.")
+  );
+}
+
 export function assertCanActivatePayout({ productContext, actorUserId }: PolicyInput) {
   return (
     assertActor(productContext, "owner", "FORBIDDEN_PAYOUT_ACTIVATE_ACTOR", "Only owners can activate payouts in this flow.") ??

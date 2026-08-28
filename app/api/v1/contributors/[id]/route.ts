@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
 import { apiError } from "@/lib/api/errors";
-import { updateContributor } from "@/lib/repositories/contributors";
-import { resolveWorkspaceIdFromRequestWithSession } from "@/lib/auth/session-server";
+import {
+  deleteContributor,
+  getContributorOwnership,
+  updateContributor,
+} from "@/lib/repositories/contributors";
+import { resolveProductContextFromRequestWithSession } from "@/lib/auth/session-server";
+import { assertCanManageContributor } from "@/lib/runtime/product-policy";
 
 export async function PATCH(
   request: Request,
@@ -11,7 +16,33 @@ export async function PATCH(
 
   try {
     const body = await request.json();
-    const workspaceId = await resolveWorkspaceIdFromRequestWithSession(request);
+    const productContext = await resolveProductContextFromRequestWithSession(request);
+
+    const ownership = await getContributorOwnership(id);
+    if (!ownership) {
+      return apiError("CONTRIBUTOR_NOT_FOUND", {
+        message: "Contributor not found.",
+        status: 404,
+      });
+    }
+    if (ownership.workspaceId !== productContext.workspaceId) {
+      return apiError("CONTRIBUTOR_WORKSPACE_MISMATCH", {
+        message: "Contributor does not belong to this workspace.",
+        status: 404,
+      });
+    }
+
+    const permissionViolation = assertCanManageContributor({
+      productContext,
+      actorUserId: productContext.activeUserId,
+      createdByUserId: ownership.createdByUserId,
+    });
+    if (permissionViolation) {
+      return apiError(permissionViolation.code, {
+        message: permissionViolation.message,
+        status: permissionViolation.status,
+      });
+    }
 
     if (!body || typeof body !== "object") {
       return apiError("INVALID_REQUEST_BODY", {
@@ -69,7 +100,7 @@ export async function PATCH(
       input.notes = typeof body.notes === "string" ? body.notes : null;
     }
 
-    const contributor = await updateContributor(id, input, workspaceId);
+    const contributor = await updateContributor(id, input, productContext.workspaceId);
     return NextResponse.json({ data: contributor });
   } catch (error) {
     if (error instanceof SyntaxError) {
@@ -78,5 +109,61 @@ export async function PATCH(
     const message =
       error instanceof Error ? error.message : "Failed to update contributor.";
     return apiError("CONTRIBUTOR_UPDATE_FAILED", { message, status: 400 });
+  }
+}
+
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const { id } = await params;
+
+  try {
+    const productContext = await resolveProductContextFromRequestWithSession(_request);
+
+    const ownership = await getContributorOwnership(id);
+    if (!ownership) {
+      return apiError("CONTRIBUTOR_NOT_FOUND", {
+        message: "Contributor not found.",
+        status: 404,
+      });
+    }
+    if (ownership.workspaceId !== productContext.workspaceId) {
+      return apiError("CONTRIBUTOR_WORKSPACE_MISMATCH", {
+        message: "Contributor does not belong to this workspace.",
+        status: 404,
+      });
+    }
+
+    const permissionViolation = assertCanManageContributor({
+      productContext,
+      actorUserId: productContext.activeUserId,
+      createdByUserId: ownership.createdByUserId,
+    });
+    if (permissionViolation) {
+      return apiError(permissionViolation.code, {
+        message: permissionViolation.message,
+        status: permissionViolation.status,
+      });
+    }
+
+    const deleted = await deleteContributor(id, productContext.workspaceId);
+    return NextResponse.json({ data: deleted });
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Failed to delete contributor.";
+    if (message === "CONTRIBUTOR_NOT_FOUND") {
+      return apiError("CONTRIBUTOR_NOT_FOUND", {
+        message: "Contributor not found.",
+        status: 404,
+      });
+    }
+    if (message === "CONTRIBUTOR_WORKSPACE_MISMATCH") {
+      return apiError("CONTRIBUTOR_WORKSPACE_MISMATCH", {
+        message: "Contributor does not belong to this workspace.",
+        status: 404,
+      });
+    }
+    return apiError("CONTRIBUTOR_DELETE_FAILED", { message, status: 400 });
   }
 }

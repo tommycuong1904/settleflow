@@ -9,6 +9,7 @@ export type ContributorListItem = {
   role?: string;
   notes?: string;
   status: "active" | "archived";
+  createdByUserId: string | null;
   createdAt: string;
   payoutCount: number;
   activePayoutCount: number;
@@ -22,6 +23,7 @@ export type CreateContributorInput = {
   email?: string;
   role?: string;
   notes?: string;
+  createdByUserId?: string | null;
 };
 
 export type UpdateContributorInput = {
@@ -41,8 +43,15 @@ type ContributorRow = {
   role: string | null;
   notes: string | null;
   status: "active" | "archived";
+  createdByUserId: string | null;
   createdAt: Date;
   payouts?: Array<{ id: string; status: string; totalAmountUsdc: unknown }>;
+};
+
+export type ContributorOwnership = {
+  id: string;
+  workspaceId: string;
+  createdByUserId: string | null;
 };
 
 function toContributorListItem(c: ContributorRow): ContributorListItem {
@@ -64,6 +73,7 @@ function toContributorListItem(c: ContributorRow): ContributorListItem {
     role: c.role || undefined,
     notes: c.notes || undefined,
     status: c.status,
+    createdByUserId: c.createdByUserId,
     createdAt: c.createdAt.toISOString(),
     payoutCount: payouts.length,
     activePayoutCount: activePayouts.length,
@@ -104,6 +114,7 @@ export async function listContributors(input?: {
       role: true,
       notes: true,
       status: true,
+      createdByUserId: true,
       createdAt: true,
       payouts: {
         select: {
@@ -151,6 +162,7 @@ export async function createContributor(
       email: input.email?.trim() || null,
       role: input.role?.trim() || null,
       notes: input.notes?.trim() || null,
+      createdByUserId: input.createdByUserId ?? null,
       status: "active",
     },
   });
@@ -215,6 +227,7 @@ export async function updateContributor(
       role: true,
       notes: true,
       status: true,
+      createdByUserId: true,
       createdAt: true,
       payouts: {
         select: { id: true, status: true, totalAmountUsdc: true },
@@ -224,3 +237,60 @@ export async function updateContributor(
 
   return toContributorListItem(updated);
 }
+
+/**
+ * Pure guard: a contributor can only be hard-deleted when it has no payouts
+ * (payouts reference contributors via a Restrict FK). Contributors with any
+ * payouts must be archived instead so historical records stay intact.
+ */
+export function assertContributorDeletable(payoutCount: number): string | null {
+  if (payoutCount > 0) {
+    return "This contributor has payouts and cannot be deleted. Archive it instead to preserve payout history.";
+  }
+  return null;
+}
+
+/**
+ * Fetches the ownership metadata (workspace + creator) for a contributor,
+ * used by route-level permission checks before mutating.
+ */
+export async function getContributorOwnership(
+  contributorId: string,
+): Promise<ContributorOwnership | null> {
+  return db.contributor.findUnique({
+    where: { id: contributorId },
+    select: {
+      id: true,
+      workspaceId: true,
+      createdByUserId: true,
+    },
+  });
+}
+
+/**
+ * Hard-deletes a contributor. Only allowed when the contributor has no payouts.
+ * Pass `workspaceId` to enforce workspace scoping.
+ */
+export async function deleteContributor(
+  contributorId: string,
+  workspaceId?: string,
+): Promise<{ id: string }> {
+  const existing = await db.contributor.findUnique({
+    where: { id: contributorId },
+    select: { id: true, workspaceId: true },
+  });
+  if (!existing) throw new Error("CONTRIBUTOR_NOT_FOUND");
+  if (workspaceId && existing.workspaceId !== workspaceId) {
+    throw new Error("CONTRIBUTOR_WORKSPACE_MISMATCH");
+  }
+
+  const payoutCount = await db.payout.count({
+    where: { contributorId },
+  });
+  const deleteGuard = assertContributorDeletable(payoutCount);
+  if (deleteGuard) throw new Error(deleteGuard);
+
+  await db.contributor.delete({ where: { id: contributorId } });
+  return { id: contributorId };
+}
+

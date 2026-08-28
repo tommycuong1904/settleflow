@@ -9,7 +9,9 @@ import {
   createContributor,
   listContributors,
 } from "@/lib/repositories/contributors";
-import { resolveWorkspaceIdFromRequest } from "@/lib/runtime/product-context-server";
+import { resolveProductContextFromRequestWithSession } from "@/lib/auth/session-server";
+import { resolveWorkspaceIdFromRequestWithSession } from "@/lib/auth/session-server";
+import { assertCanCreateContributor } from "@/lib/runtime/product-policy";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -23,7 +25,7 @@ export async function GET(request: Request) {
   }
 
   const contributors = await listContributors({
-    workspaceId: resolveWorkspaceIdFromRequest(request),
+    workspaceId: await resolveWorkspaceIdFromRequestWithSession(request),
     status: parseEnumQueryValue(status, contributorStatuses),
     search: searchParams.get("search") ?? undefined,
   });
@@ -34,7 +36,18 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const workspaceId = resolveWorkspaceIdFromRequest(request);
+    const productContext = await resolveProductContextFromRequestWithSession(request);
+
+    const permissionViolation = assertCanCreateContributor({
+      productContext,
+      actorUserId: productContext.activeUserId,
+    });
+    if (permissionViolation) {
+      return apiError(permissionViolation.code, {
+        message: permissionViolation.message,
+        status: permissionViolation.status,
+      });
+    }
 
     if (!body || typeof body !== "object") {
       return apiError("INVALID_REQUEST_BODY", {
@@ -65,12 +78,13 @@ export async function POST(request: Request) {
     }
 
     const contributor = await createContributor({
-      workspaceId,
+      workspaceId: productContext.workspaceId,
       name: name.trim(),
       walletAddress: walletAddress.trim(),
       email: typeof email === "string" ? email.trim() : undefined,
       role: typeof role === "string" ? role.trim() : undefined,
       notes: typeof notes === "string" ? notes.trim() : undefined,
+      createdByUserId: productContext.activeUserId,
     });
 
     return NextResponse.json({ data: contributor }, { status: 201 });

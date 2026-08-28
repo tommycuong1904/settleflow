@@ -90,6 +90,7 @@ model User {
 
   memberships        WorkspaceMember[]
   createdPayouts     Payout[]              @relation("PayoutCreator")
+  createdContributors Contributor[]        @relation("ContributorCreator")
   submissions        MilestoneSubmission[]
   reviews            MilestoneReview[]
   releases           Release[]
@@ -112,20 +113,22 @@ model WorkspaceMember {
 }
 
 model Contributor {
-  id            String            @id @default(uuid())
-  workspaceId   String
-  linkedUserId  String?
-  name          String
-  email         String?
-  walletAddress String
-  role          String?
-  notes         String?
-  status        ContributorStatus @default(active)
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
+  id              String            @id @default(uuid())
+  workspaceId     String
+  linkedUserId    String?
+  createdByUserId String?
+  name            String
+  email           String?
+  walletAddress   String
+  role            String?
+  notes           String?
+  status          ContributorStatus @default(active)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
 
   workspace  Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   linkedUser User?     @relation("LinkedContributor", fields: [linkedUserId], references: [id], onDelete: SetNull)
+  createdBy  User?     @relation("ContributorCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
   payouts    Payout[]
 
   @@index([workspaceId, status])
