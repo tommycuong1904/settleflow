@@ -10,21 +10,17 @@ This document lists issues, gaps, inconsistencies, and inspection risks visible 
 
 ## Confirmed Issues and Gaps
 
-### 1. No full authentication system
-- No server-side session handling, auth provider config, or middleware protection was found; the Google sign-in route (`app/api/v1/auth/google`) exists but issues no session/cookie.
-- Search did not find `nextauth`, `clerk`, `getServerSession`, or middleware-based route protection.
-- The application surface is still public at the HTTP layer.
-- A Google sign-in surface exists (`app/api/v1/auth/google` + `lib/auth/smart-account.ts`) that derives a deterministic smart-account address, but it issues no session/cookie and routes remain unprotected.
-- Core mutation routes now have a minimal repository-backed permission boundary for seeded workspace roles, but this is not a full auth/session model.
+### 1. Auth/session is implemented but route-level integration coverage is absent
+- Real server-side session auth (JWT cookie + middleware + DB User/WorkspaceMember → `getProductContext()`) is implemented across 16+ API routes (Phase 4). Anonymous mutations are blocked with `401 { error: "AUTH_REQUIRED" }`.
+- Route-level integration and E2E tests have not yet been written; coverage is limited to unit tests for session and auth logic.
 
-### 2. Automated test coverage is narrow
-- The repository now contains 16 unit test files under `lib/api/*.test.mts` and `lib/repositories/*.test.mts`; `npm test` runs `node --import tsx --test "lib/**/*.test.mts"`.
-- Coverage is limited to payload validation and repository logic; there are no route-level integration tests and no E2E/browser test suite.
+### 2. Automated test coverage is still narrow
+- The repository now contains 126 unit tests across `lib/api/*.test.mts`, `lib/arc/*.test.mts`, `lib/auth/*.test.mts`, `lib/notifications/*.test.mts`, `lib/repositories/*.test.mts`, and `lib/runtime/*.test.mts`; `npm test` runs `node --import tsx --test "lib/**/*.test.mts"`.
+- Coverage is limited to payload validation, repository logic, Arc executor logic, and session/auth logic; there are no route-level integration tests and no E2E/browser test suite.
 
-### 3. Arc release execution is not yet proven production-safe
-- `lib/arc/send.ts` now supports `mock`, `demo`, and `real` execution modes.
-- The existence of a real-mode adapter boundary is confirmed.
-- This inspection did **not** verify a production-safe end-to-end live release path against official Arc execution requirements.
+### 3. Arc release execution is wired but not yet proven production-safe
+- `lib/arc/release-executor.ts` now supports `circle_wallet` (real server-side EOA execution via viem) and `browser_wallet` (server-side failure — browser signs via wallet adapter). `sendUsdcOnArc()` in `lib/arc/onchain.ts` coordinates the send and proof update.
+- Real-mode execution is confirmed at the unit-test level but has not been verified as a production-safe end-to-end live release path against official Arc execution requirements.
 - `sendUsdcOnArc()` still returns synthetic results in `mock` and `demo` modes.
 
 ### 4. Legacy mock-data artifacts remain in the repository
@@ -89,8 +85,7 @@ This document lists issues, gaps, inconsistencies, and inspection risks visible 
 ## Highest-Risk Areas
 
 ### Confirmed high-risk
-1. **No full auth/session model**
-2. **Narrow automated test coverage (no route/E2E layer)**
+1. **Narrow automated test coverage (no route/E2E layer)**
 3. **Production readiness of Arc release execution remains unverified**
 4. **Stale supporting docs can mislead future work**
 5. **Mock-era artifacts may blur architecture understanding**

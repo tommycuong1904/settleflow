@@ -2,8 +2,8 @@
 
 ## Repository state note (latest)
 
-- Default branch: `main` at `38129aa`; working tree clean; not pushed (`main` is 62 commits ahead of `origin/main`).
-- The theme refactor (minimalist black/white CSS-variable design system) was fast-forward merged from `update/theme` into `main`.
+- Default branch: `main` at `32a0bf9` (Phase 6 merged fast-forward from `feature/settings-contributor-export`); pushed to `origin/main`.
+- The Phase 6 wedge (real Arc release execution) was fast-forward merged into `main`.
 - The earlier handoff branch `feat/auth-boundary-v1` was superseded by later wedges; its merge-prep docs (`docs/MERGE_PREP_AUTH_BOUNDARY_V1.md`, `docs/PR_BODY_AUTH_BOUNDARY_V1.md`) are preserved for history.
 - Last confirmed checks:
   - `npx tsc --noEmit`
@@ -68,7 +68,7 @@ The core product flow currently available in the repository is:
 - dispatcher is wired into milestone events (submission/review/release); webhook URL + per-event toggles are now persisted per-workspace via `GET/PUT /api/v1/settings`, with the `SETTLEFLOW_WEBHOOK_URL` env var kept as a fallback
 
 ### Unit test layer
-- 21 unit test files across `lib/api/*.test.mts`, `lib/notifications/*.test.mts`, `lib/repositories/*.test.mts`, and `lib/runtime/*.test.mts`
+- 126 tests across `lib/api/*.test.mts`, `lib/arc/*.test.mts`, `lib/auth/*.test.mts`, `lib/notifications/*.test.mts`, `lib/repositories/*.test.mts`, and `lib/runtime/*.test.mts`
 - `npm test` = `node --import tsx --test "lib/**/*.test.mts"`
 
 ### Runtime verification
@@ -99,13 +99,13 @@ Confirmed during the latest checkpoint:
 ### Still not the same as production-ready
 - **Phase 4 (auth/session) is now implemented and verified** (JWT cookie + DB User/WorkspaceMember → `getProductContext()`; 7/7 tests pass). Anonymous mutations blocked; real role-based scoping works.
 - `/payouts/new` UI is fully light-theme consistent (Phase 5 remnant cleanup complete).
-- Arc live execution is not yet proven production-safe (`createReleaseExecutor` still returns "not wired yet" failures).
+- Arc live execution is wired (Phase 6): `circle_wallet` (server EOA via `ARC_SERVER_PRIVATE_KEY`) sends real USDC and persists proof + source wallet; `browser_wallet` fails explicitly on the server. Production-safe verification and operational hardening are still pending.
 - automated coverage is narrow (unit payload/repository-level only; no route/E2E layer).
 - some mock/demo artifacts remain in the repository and docs.
 - **Dev server**: use `npx next dev -p 3001` (port 3000 is occupied by LumenFlow).
 
 ## Recommended next step
-Auth/session (Phase 4) and `/payouts/new` light-theme alignment (Phase 5) are now complete. The next priority is:
-1. **Implement the real Arc release path** in `createReleaseExecutor` (Phase 6) — the current stub returns "not wired yet".
+Real Arc release execution (Phase 6) is now wired. The next priorities are:
+1. **Verify real Arc release execution on staging** (fund a server EOA with native USDC, confirm a `circle_wallet` release produces a real tx hash + Arcscan proof).
 2. Add route-level integration + E2E test coverage (Phase 7).
 3. Clean up legacy mock/demo artifacts and finalize ops docs (Phase 8).

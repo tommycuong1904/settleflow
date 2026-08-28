@@ -8,7 +8,7 @@ Current architecture is best described as:
 - product-first MVP
 - repository/API-driven for the core payout workflow
 - persistence-backed with transitional legacy artifacts still present
-- prepared for stricter auth/session and production-safe Arc execution work
+- auth/session is implemented (Phase 4); remaining work is production hardening of Arc execution and broader test coverage
 
 ## Main Layers
 
@@ -78,7 +78,10 @@ Located in `lib/arc/`.
 Confirmed files:
 - `config.ts`
 - `types.ts`
-- `send.ts`
+- `onchain.ts`
+- `release-executor.ts`
+- `browser-wallet.ts`
+- `map-send-result-to-proof.ts`
 
 Responsibilities:
 - Arc configuration
@@ -86,7 +89,7 @@ Responsibilities:
 - future settlement abstraction
 
 Current limitation:
-- `sendUsdcOnArc()` has a real-adapter boundary but live production-safe Arc execution is not yet fully verified against official requirements
+- `sendUsdcOnArc()` supports `circle_wallet` (real server-side EOA execution via viem) and `browser_wallet` (server-side failure — browser signs via wallet adapter). Production-safe live Arc execution against official requirements is not yet fully verified (requires a funded server key, gas fee strategy, and compliance review).
 
 ### 6. Utility Layer
 Located in `lib/utils/`.
@@ -178,8 +181,8 @@ Current confirmed flow:
 4. components render status-specific UI blocks and mutation results
 
 Current non-confirmed / incomplete flow:
-- no complete auth/session-backed actor resolution
-- no full production-safe onchain release verification path
+- real auth/session-backed actor resolution is implemented (Phase 4) but route-level integration/E2E test coverage is still absent
+- `circle_wallet` release execution is wired (Phase 6) but production hardening is pending
 - some transitional seeded-role and seeded-workspace assumptions still remain
 
 ## Product Context Boundary
@@ -194,8 +197,7 @@ Confirmed behavior:
 - a global actor switcher exists to exercise owner/reviewer/contributor flows without a real auth provider
 
 Current limitation:
-- this boundary is still seeded-context based, not session-authenticated identity
-- context integrity is not yet backed by signed session claims or a real authorization provider
+- the seeded-context fallback still exists for local development and role switching, but real session-authenticated identity is now the primary actor resolution path (Phase 4); context integrity is backed by signed JWT session claims
 
 ## Configuration
 
@@ -215,17 +217,19 @@ Confirmed public env usage:
 - ESLint
 
 ## What Is Not Present in the Current Architecture
+Completed in recent phases:
+- real server-side session auth + middleware route protection (Phase 4, implemented)
+- `circle_wallet` release execution with real transaction sending (Phase 6, implemented)
+
 Still incomplete or not yet confirmed:
-- full authentication provider/session layer
-- authorization middleware tied to resolved user identity
-- production-safe live Arc release execution verification
-- comprehensive automated test coverage
+- production-safe live Arc release execution verification (server key custody, gas funding, fee strategy, and official Arc compliance)
+- comprehensive automated test coverage (route-level integration and E2E)
 
 ## Architectural Risks
 - seeded/demo-era assumptions may still leak into UI and mutation entry points
-- actor resolution is now more centralized, but still seeded-context based instead of auth-derived
+- actor resolution is now session-based (Phase 4), but the seeded fallback remains for local development — unclear if it can mask real auth gaps
 - legacy mock files and wording can mislead future implementation decisions
-- live Arc execution safety requirements may force adapter or workflow changes
+- live Arc execution safety requirements may force adapter or workflow changes even after the Phase 6 wiring
 
 ## Recommended Next Architecture Step
 Before expanding into new feature surfaces, prioritize:

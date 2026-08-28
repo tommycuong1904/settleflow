@@ -13,12 +13,12 @@
 | **1. Xác thực & Quản lý Ví (Auth & Wallet Core)** | 7 | 6 | 1 | 0 |
 | **2. Quản lý Thỏa thuận Payout (Payout Agreement Core)** | 6 | 5 | 1 | 0 |
 | **3. Vòng đời Milestone (Milestone State Machine)** | 5 | 5 | 0 | 0 |
-| **4. Giải ngân Blockchain & Bằng chứng (Release & Settlement)** | 7 | 5 | 1 | 1 |
+| **4. Giải ngân Blockchain & Bằng chứng (Release & Settlement)** | 7 | 6 | 0 | 1 |
 | **5. Quản lý Contributor (Contributor Registry)** | 5 | 4 | 0 | 1 |
 | **6. Phân quyền & Vai trò (RBAC & Policy Engine)** | 4 | 4 | 0 | 0 |
 | **7. Nhật ký hoạt động & Báo cáo (Audit & Reporting)** | 5 | 3 | 1 | 1 |
 | **8. Tích hợp & Tự động hóa (Webhooks & Notifications)** | 4 | 2 | 0 | 2 |
-| **TỔNG CỘNG** | **43** | **34 (79%)** | **4 (9%)** | **5 (12%)** |
+| **TỔNG CỘNG** | **43** | **35 (81%)** | **3 (7%)** | **5 (12%)** |
 
 ---
 
@@ -70,7 +70,7 @@
 | `REL-03` | **Xác thực Trạng thái Giao dịch Onchain (Proof Verification)** | Tự động truy vấn RPC Arc Testnet để kiểm tra giao dịch đã được xác nhận (Confirmed) hay chưa qua `eth_getTransactionReceipt`. | ✅ **Đã làm** |
 | `REL-04` | **Tự động Cập nhật Số dư USDC (Live Balance Sync)** | Đọc số dư token ERC-20 USDC trực tiếp từ RPC Arc Testnet theo địa chỉ ví đang kết nối. | ✅ **Đã làm** |
 | `REL-05` | **Cơ chế Thử lại Giao dịch lỗi (Release Retry)** | Xử lý các trường hợp giao dịch bị nghẽn (nonce conflict / dropped transaction) cho phép thử lại với gas price mới. Đã có `lib/repositories/release-retry.ts` + API `POST /api/v1/releases/[id]/retry` (kèm unit test `release-queue-retry.test.mts`). | ✅ **Đã làm** |
-| `REL-06` | **Giải ngân Tự động qua Smart Account (Relayer/Paymaster)** | Tự động ký và gửi giao dịch giải ngân cho các tài khoản Web2 mà không bắt người nhận phải có đồng native token để trả gas. | ⏳ **Đang làm** |
+| `REL-06` | **Giải ngân Tự động qua Server EOA (Circle Wallets)** | `createReleaseExecutor` mode `circle_wallet` tự ký và gửi giao dịch USDC từ server-side EOA (viem, `ARC_SERVER_PRIVATE_KEY`): native USDC gửi dạng value transfer, ERC-20 USDC qua `transfer` 6 decimals; lưu source wallet + tx hash và refresh proof. Mode `browser_wallet` trả lỗi rõ ràng từ server. | ✅ **Đã làm** |
 | `REL-07` | **Hỗ trợ Đa chuỗi (Multi-chain Bridge Settlement)** | Giải ngân USDC trên Arc và tự động bridge sang các mạng EVM khác (Ethereum, Arbitrum, Base) qua Circle CCTP. | 📋 **Chưa làm** |
 
 ---
@@ -124,7 +124,7 @@
 ## 🎯 Gợi ý Lộ trình Thực hiện Tiếp theo (Recommended Next Sprints)
 
 1. **Sprint 1 (Khép kín cốt lõi Blockchain)**:
-   - Hoàn thiện `REL-06`: Giải ngân tự động cho ví Smart Account.
+   - `REL-06` đã hoàn thành: release tự động qua server EOA (`circle_wallet`) chạy thật trên Arc Testnet khi có `ARC_SERVER_PRIVATE_KEY`.
    - Hoàn thiện `PAY-06`: Escrow Onchain Lock.
 
 2. **Sprint 2 (Quản trị & Đối soát Kế toán)**:

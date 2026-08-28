@@ -25,7 +25,7 @@ SettleFlow turns contributor compensation into a milestone-based payout workflow
 
 - **Arc** acts as the settlement rail
 - **USDC** is the core payment and settlement layer (native on Arc)
-- **Circle App Kit** is the payout execution path for browser wallets
+- **Circle Wallets** is the payout execution path: a connected browser wallet (`browser_wallet`) or a server-side EOA derived from `ARC_SERVER_PRIVATE_KEY` (`circle_wallet`)
 
 ---
 
@@ -67,8 +67,13 @@ NEXT_PUBLIC_ARC_CHAIN_ID=5042002
 NEXT_PUBLIC_ARC_RPC_URL=https://rpc.testnet.arc.io
 NEXT_PUBLIC_ARC_EXPLORER_URL=https://testnet.arcscan.app
 
-# Circle App Kit (optional — only needed for live USDC transfers)
+# Circle Wallets (optional — required only for server-side `circle_wallet` release execution)
 NEXT_PUBLIC_CIRCLE_APP_ID=your_circle_app_id
+
+# Server-side private key for Circle Wallets release execution (executionMode=circle_wallet).
+# The server account is derived from this key and must hold native USDC on Arc to pay gas.
+# Keep it secret and server-only (never NEXT_PUBLIC_); leave unset to fail explicitly.
+# ARC_SERVER_PRIVATE_KEY=0x...
 
 # Webhook Notifications (optional — Discord, Slack, or custom endpoint)
 SETTLEFLOW_WEBHOOK_URL=https://discord.com/api/webhooks/...
@@ -117,8 +122,8 @@ In the app, click the **USDC balance badge** in the header → **"Request Testne
 ## Running Tests
 
 ```bash
-# Unit tests (payout state machine — 16 tests)
-node --import tsx --test lib/repositories/payout-state-machine.test.mts
+# Full test suite (126 tests across lib/api, lib/arc, lib/auth, lib/notifications, lib/repositories, lib/runtime)
+node --import tsx --test 'lib/**/*.test.mts'
 
 # Lint
 npm run lint
@@ -152,7 +157,7 @@ npm run build
 | `/api/v1/milestones/[id]/submit`      | POST      | Submit a milestone deliverable     |
 | `/api/v1/milestones/[id]/approve`     | POST      | Approve a submitted milestone      |
 | `/api/v1/milestones/[id]/reject`      | POST      | Reject a milestone with feedback   |
-| `/api/v1/milestones/[id]/release`     | POST      | Queue a USDC release               |
+| `/api/v1/milestones/[id]/release`     | POST      | Release USDC (sync `circle_wallet` or browser-signed) |
 | `/api/v1/releases/[id]/proof/refresh` | POST      | Refresh transaction proof from Arc |
 | `/api/v1/webhooks/test`               | POST      | Test a Discord/Slack webhook       |
 
@@ -177,7 +182,7 @@ settleflow/
 │   ├── dashboard/      # KPI stats, wallet gate
 │   └── shared/         # AppHeader, AppSidebar, AuthModal, RoleSwitcher
 ├── lib/
-│   ├── arc/            # Arc Testnet config, browser wallet, onchain helpers
+│   ├── arc/            # Arc Testnet config, release executor, browser wallet, onchain helpers
 │   ├── context/        # WalletContext, ToastContext
 │   ├── models/         # TypeScript domain types
 │   ├── notifications/  # Webhook dispatcher (Discord, Slack, custom)
@@ -216,7 +221,7 @@ Role switching is available in the top-right header for demo and local testing.
 | Database           | PostgreSQL + Prisma                           |
 | Blockchain         | Arc Testnet (Chain ID `5042002`)              |
 | Settlement token   | USDC (native on Arc)                          |
-| Wallet integration | Circle App Kit + Viem v2 adapter              |
+| Wallet integration | Circle Wallets (browser EOA) + Viem v2 server EOA (`circle_wallet`) |
 | Notifications      | Webhook dispatcher (Discord, Slack, Telegram) |
 
 ---

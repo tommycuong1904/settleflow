@@ -9,7 +9,7 @@ Turn SettleFlow from a demo-oriented prototype into a real usable MVP for milest
 - Only brand-new pages may use temporary mockup/demo UI before real data wiring.
 - Arc execution decisions must rely only on official Arc documentation.
 
-## Phase status snapshot (as of `main` `38129aa`)
+## Phase status snapshot (as of `main` `32a0bf9`)
 
 | Phase | Status | Notes |
 | :--- | :--- | :--- |
@@ -18,8 +18,8 @@ Turn SettleFlow from a demo-oriented prototype into a real usable MVP for milest
 | 3 — Real actors and permissions | **In progress** | Product-context actor boundary + route-level role checks exist, but remain seeded; no stored membership model |
 | 4 — Auth/session | **Done** | Real server-side session auth (JWT + DB User/WorkspaceMember → `getProductContext()` in 16+ routes; middleware gate; 7/7 tests pass) |
 | 5 — Workspace productization | **Done** | Payout list/filters, real-data dashboard, contributor add/list/edit/archive (`/contributors`), settings (webhook config); `/payouts/new` UI fully light-theme consistent |
-| 6 — Real Arc execution path | **Not started** | `createReleaseExecutor` still returns "not wired yet" failures |
-| 7 — Reliability and hardening | **In progress** | 16 unit tests + idempotent release retry; no route/E2E tests yet |
+| 6 — Real Arc execution path | **Done** | `createReleaseExecutor` wired: `circle_wallet` (server EOA via `ARC_SERVER_PRIVATE_KEY`) sends real USDC; `browser_wallet` fails explicitly; proof + source wallet persisted |
+| 7 — Reliability and hardening | **In progress** | 126 unit tests + idempotent release retry; no route/E2E tests yet |
 | 8 — Ship-ready MVP | **Not started** | Legacy mock cleanup and ops docs pending |
 
 ## Phase 1 — De-demo existing flows
@@ -156,7 +156,7 @@ Finish the usable MVP surface and clean the repo directionally.
 8. Payout list + workspace scoping. *(done — real workspace scoping via session)*
 
 ### Sprint C — Settlement truth
-9. Real Arc execution path. *(not started — executor placeholder)*
+9. Real Arc execution path. *(done — `circle_wallet` server EOA executes real USDC sends)*
 10. Real proof/retry. *(done — proof refresh + idempotent release retry)*
 11. Reliability + tests. *(in progress — unit tests added, E2E pending)*
 

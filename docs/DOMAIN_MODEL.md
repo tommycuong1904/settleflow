@@ -55,7 +55,7 @@ Current UI implies a single-team demo. Real app will need data ownership boundar
 Represents authenticated person interacting with system.
 
 #### Why it exists
-Auth is not yet implemented, but future review, release, and audit actions require actor identity.
+Auth (Phase 4) is implemented: a session cookie + middleware resolves the authenticated principal; `getProductContext()` derives the workspace role per route and anonymous mutations are rejected. User, Workspace, and WorkspaceMember rows back review, release, and audit actions.
 
 #### Required fields
 - `id`

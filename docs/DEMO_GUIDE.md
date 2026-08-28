@@ -1,7 +1,7 @@
 # SettleFlow — Demo Guide
 
 > **Thời gian chạy thử:** ~5 phút  
-> **URL dev:** `http://localhost:3000`  
+> **URL dev:** `http://localhost:3001`  
 > **Mạng:** Arc Testnet (Chain ID `5042002`, USDC native)
 
 ---
@@ -104,9 +104,11 @@ Owner tạo Payout
 1. Chuyển Role Switcher sang **Owner**
 2. Panel bên phải hiển thị milestone đã được Approve và nút **"Release Milestone"**
 3. Kiểm tra số tiền: `500 USDC` → địa chỉ ví contributor
-4. Bấm **"Release Milestone"** → MetaMask / Rabby sẽ popup yêu cầu ký giao dịch USDC
-5. Ký giao dịch → Đợi xác nhận (~5-15 giây trên Arc Testnet)
-6. Trạng thái chuyển sang `released` — hệ thống gửi Discord notification kèm địa chỉ ví và số tiền
+4. Bấm **"Release Milestone"**:
+   - Nếu execution mode là **`circle_wallet`** (server EOA qua `ARC_SERVER_PRIVATE_KEY`): server tự ký và gửi USDC — không cần popup MetaMask.
+   - Nếu mode là **`browser_wallet`**: API trả về lỗi rõ ràng vì server không giữ ví — việc ký nằm ở phía browser/wallet adapter.
+5. Đợi xác nhận (~5-15 giây trên Arc Testnet)
+6. Trạng thái chuyển sang `released` — hệ thống gửi Discord notification kèm địa chỉ ví, source wallet và số tiền
 
 ---
 
@@ -189,4 +191,4 @@ Owner tạo Payout
 
 ---
 
-*Tài liệu này phản ánh trạng thái hiện tại: Arc Testnet với USDC native, toàn bộ state machine được backed bởi Prisma/PostgreSQL, và webhook notification tự động.*
+*Tài liệu này phản ánh trạng thái hiện tại: Arc Testnet với USDC native, toàn bộ state machine được backed bởi Prisma/PostgreSQL, webhook notification tự động, và release execution chạy thật qua `circle_wallet` (server EOA) khi đã cấu hình `ARC_SERVER_PRIVATE_KEY`.*

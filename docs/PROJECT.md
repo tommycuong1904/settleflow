@@ -32,13 +32,13 @@ The current repository is being advanced as a real MVP with:
 - create payout flow
 - payout detail flow
 - repository/API-backed payout, milestone, release, and proof state transitions
-- Arc integration scaffolding with a real execution boundary
+- Arc integration with a real execution boundary and a wired `circle_wallet` executor (Phase 6)
 - a seeded-role product-context boundary for owner / reviewer / contributor workflow testing
 - contributor management (add/list/search/edit/archive) via `/contributors`
 - activity ledger with CSV export via `/activity`
 - per-workspace webhook configuration, event notification toggles, and test surface via `/settings`
 - a merged minimalist black/white theme driven by CSS variables
-- a unit test layer across `lib/api` and `lib/repositories`
+- a unit test layer across `lib/api`, `lib/arc`, `lib/auth`, `lib/notifications`, `lib/repositories`, and `lib/runtime`
 
 ## Primary User
 - founder
@@ -70,14 +70,14 @@ At the time of writing:
 - the repository now contains database-backed read/write paths for the payout workflow
 - auth/session is still incomplete and remains the main product gap
 - core workflow mutations now resolve actor identity from request product context rather than client body actor IDs
-- Arc send integration is scaffolded behind an execution boundary but is not yet verified as production-safe live settlement
+- Arc release execution is wired for `circle_wallet` (server-side EOA) but is not yet verified as production-safe live settlement (requires a funded server key, official Arc compliance, and operational hardening)
 - legacy mock/demo artifacts still exist and should be treated as migration debt, not product direction
 - a unit test layer covers payload validation and repository logic, but route/E2E coverage does not exist yet
 
 ## Out of Scope for the Current Repository State
 The repository still does not confirm full implementation of:
 - production-grade auth/session infrastructure
-- production-safe live onchain release execution
+- production-safe live onchain release execution (server key custody, gas funding, fee strategy, and Arc compliance)
 - complete operational hardening for wallet/key management
 - broad automated test coverage beyond the existing unit test layer (route-level integration and E2E)
 

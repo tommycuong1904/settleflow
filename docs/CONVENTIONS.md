@@ -28,7 +28,7 @@ This document records the current repository conventions that can be confirmed f
 ### Domain and Data
 - Domain types live under `lib/models/`.
 - Mock/demo data lives under `lib/data/`.
-- Integration helpers live under `lib/arc/`.
+- Integration helpers live under `lib/arc/` (config, types, onchain helpers, release executor).
 - utility helpers live under `lib/utils/`.
 
 ## TypeScript Conventions
@@ -63,8 +63,8 @@ This document records the current repository conventions that can be confirmed f
 ## Data Conventions
 
 ### Confirmed
-- Current runtime data is mock data.
-- Route-level pages derive metrics and selected entities directly from mock arrays.
+- Runtime data is now persisted through PostgreSQL + Prisma; repository/API-backed reads and mutations drive the core payout workflow.
+- Legacy mock arrays still exist under `lib/data/` and are treated as transitional artifacts, not the runtime data source.
 - Transaction proof is represented as a first-class domain concept.
 
 ## Documentation Conventions
@@ -89,8 +89,8 @@ This document records the current repository conventions that can be confirmed f
 - Build script exists: `npm run build`
 - Lint script exists: `npm run lint`
 
-### Confirmed missing
-- No automated test convention is currently established in source.
+### Confirmed
+- A unit test convention is established: `npm test` runs `node --import tsx --test "lib/**/*.test.mts"` (126 tests across `lib/api`, `lib/arc`, `lib/auth`, `lib/notifications`, `lib/repositories`, `lib/runtime`).
 
 ## Current Practical Constraints
 
