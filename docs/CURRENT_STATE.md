@@ -99,6 +99,7 @@ This repository is now a full-stack Next.js application for SettleFlow, an Arc-n
 - The repository has a Prisma schema and migration history.
 - The configured datasource is PostgreSQL.
 - The repository has a seed script at `prisma/seed.js`.
+- Vercel deployments (`settleflow-dev.vercel.app`) build with `prisma migrate deploy && prisma generate && npm run build` (see `vercel.json`), so pending Prisma migrations are applied automatically on every deploy — this prevents the DB/schema drift that previously made `/payouts` and `/contributors` return an HTTP 200 app shell with empty content (the deployed DB was missing `Contributor.createdByUserId` from migration `20260828145326_add_contributor_created_by`).
 - The repository contains repository modules for:
   - contributors
   - dashboard

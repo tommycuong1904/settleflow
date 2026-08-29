@@ -81,6 +81,7 @@ This document lists issues, gaps, inconsistencies, and inspection risks visible 
 
 ### 4. Data migration / reseeding workflow
 - Unknown whether the current migration + seed workflow is stable enough for repeated developer resets across environments.
+- **Partially resolved (Aug 28):** `vercel.json` build command now runs `prisma migrate deploy` before `prisma generate && npm run build`, so deployed environments apply pending migrations automatically on each deploy. This fixed the `/payouts` and `/contributors` empty-content bug (HTTP 200 shell without page data) caused by the deployed DB missing migration `20260828145326_add_contributor_created_by` (`Contributor.createdByUserId`), which `listContributors` selects. `npx prisma migrate deploy` still requires the build to reach the database.
 
 ## Highest-Risk Areas
 
