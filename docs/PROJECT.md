@@ -1,91 +1,73 @@
 # PROJECT
 
-> **TL;DR** — Product: milestone-based USDC payout workflow for crypto teams on Arc Testnet. Flow: payout → milestones → submit → approve → release → onchain proof. For what is actually built and live status, see `docs/CURRENT_STATE.md`.
+Status: current
+SSoT: Product decisions and stable project context
+Last verified: 2026-08
 
-## Name
-SettleFlow
+> Stable product and project context. For implementation status, see `docs/CURRENT_STATE.md`.
 
-## One-line Summary
-SettleFlow is an Arc-native USDC payout workflow for crypto teams.
+## Product
 
-## Product Goal
-SettleFlow is designed to turn contributor compensation into a milestone-based payout workflow instead of ad hoc wallet transfers.
+SettleFlow is an Arc-native USDC payout workflow for crypto teams. It turns contributor compensation into a milestone-based agreement with approval-gated release and onchain settlement proof.
 
-## Core Problem
-Crypto teams often manage contributor payouts through chats, spreadsheets, and manual transfers. This creates:
-- weak visibility into payout state
-- inconsistent approval flow
-- unclear release timing
-- poor settlement traceability
+## Problem
 
-## Core Solution
-SettleFlow structures payouts around a single workflow:
-1. create a payout
-2. define milestones
-3. review submitted work
-4. approve or reject milestone completion
-5. release USDC after approval
-6. show settlement proof
+Teams often manage contributor payments through chats, spreadsheets, and manual wallet transfers. That makes payout state, approval responsibility, release timing, and settlement evidence difficult to track consistently.
 
-## Current Product Shape
-The current repository is being advanced as a real MVP with:
-- landing page
-- dashboard
-- create payout flow
-- payout detail flow
-- repository/API-backed payout, milestone, release, and proof state transitions
-- Arc integration with a real execution boundary and a wired `circle_wallet` executor (Phase 6)
-- a seeded-role product-context boundary for owner / reviewer / contributor workflow testing
-- contributor management (add/list/search/edit/archive) via `/contributors`
-- activity ledger with CSV export via `/activity`
-- per-workspace webhook configuration, event notification toggles, and test surface via `/settings`
-- a merged minimalist black/white theme driven by CSS variables
-- a unit test layer across `lib/api`, `lib/arc`, `lib/auth`, `lib/notifications`, `lib/repositories`, and `lib/runtime`
+## Product concept
 
-## Primary User
-- founder
-- operations lead
-- PM
-- team lead in a crypto-native team
+The stable product loop is:
 
-## Secondary User
-- contributor receiving milestone-based payment
+1. Create a payout agreement.
+2. Split the agreement into milestones.
+3. Submit evidence of completed work.
+4. Review and approve or reject the milestone.
+5. Release USDC after approval.
+6. Retain and display settlement proof.
 
-## Core Workflow
-- Create payout
-- Split payout into milestones
-- Track submission state
-- Review milestone work
-- Approve before release
-- Release USDC
-- Attach or display settlement proof
+The product is organized around explicit workflow state, workspace-scoped records, role-aware actions, and a clear distinction between approval and settlement.
 
-## Current Routes
-- `/` — landing page
-- `/dashboard` — payout operations overview
-- `/payouts/new` — create payout
-- `/payouts/[id]` — payout detail
+## Users
 
-## Current State
-At the time of writing:
-- the core product UI is implemented and is being treated as the real MVP surface
-- the repository now contains database-backed read/write paths for the payout workflow
-- auth/session is still incomplete and remains the main product gap
-- core workflow mutations now resolve actor identity from request product context rather than client body actor IDs
-- Arc release execution is wired for `circle_wallet` (server-side EOA) but is not yet verified as production-safe live settlement (requires a funded server key, official Arc compliance, and operational hardening)
-- legacy mock/demo artifacts still exist and should be treated as migration debt, not product direction
-- a unit test layer covers payload validation and repository logic, but route/E2E coverage does not exist yet
+Primary users are founders, operations leads, PMs, and team leads at crypto-native teams. Contributors are secondary users who submit milestone work and receive settlement.
 
-## Out of Scope for the Current Repository State
-The repository still does not confirm full implementation of:
-- production-grade auth/session infrastructure
-- production-safe live onchain release execution (server key custody, gas funding, fee strategy, and Arc compliance)
-- complete operational hardening for wallet/key management
-- broad automated test coverage beyond the existing unit test layer (route-level integration and E2E)
+## Stable scope
 
-## Success Definition for the Current Stage
-The repository should now move toward proving:
-- a real payout can be created and read back from persistence
-- milestone review and release state transitions work through the application stack
-- permission boundaries are explicit enough for a usable MVP
-- Arc and USDC remain central to the settlement path without overstating live execution readiness
+SettleFlow covers:
+
+- milestone-based contributor payout agreements;
+- workspace-scoped contributor and payout records;
+- submission, review, approval, rejection, release, and proof states;
+- USDC settlement on Arc;
+- role-aware team operations and settlement visibility.
+
+The current authorization model is documented in `docs/AUTHORIZATION.md`. Security guarantees and limitations are documented in `docs/SECURITY_INVARIANTS.md`.
+
+## Product principles
+
+- Approval precedes release.
+- Every release should have inspectable settlement evidence.
+- Workspace boundaries must be respected.
+- Product permissions must be explicit rather than inferred from UI visibility.
+- Arc and USDC remain central to the settlement experience.
+- Product documentation should distinguish stable concepts from current implementation status.
+
+## Out of scope
+
+The product context does not promise capabilities that are not part of the verified current system, including:
+
+- arbitrary multi-chain settlement or bridging;
+- escrow smart-contract functionality unless separately verified;
+- multi-signature approval thresholds;
+- KYC/KYB or onchain identity attestations;
+- production operational guarantees for custody, funding, compliance, or payment reliability.
+
+Current implementation readiness and open gaps belong in `docs/CURRENT_STATE.md` and `docs/REAL_PRODUCT_ROADMAP.md`, not in this stable context document.
+
+## Related canonical documents
+
+- `docs/CURRENT_STATE.md` — live implementation status and numbers.
+- `docs/ARCHITECTURE.md` — current system structure and data flow.
+- `docs/AUTHORIZATION.md` — current roles, actors, and permissions.
+- `docs/SECURITY_INVARIANTS.md` — current security and integrity invariants.
+- `docs/REAL_PRODUCT_ROADMAP.md` — planned product hardening and future work.

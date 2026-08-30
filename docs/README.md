@@ -4,6 +4,26 @@
 - `../CONTEXT.md` (repo root) — one-file cheat sheet for any new model/agent. **Read it first.**
 - `AGENTS.md` (repo root) — task routing rules (which doc to load per workflow).
 
+## Documentation hierarchy and ownership
+
+| Document | Owns |
+|---|---|
+| `PROJECT.md` | Stable product/project context |
+| `ARCHITECTURE.md` | Current architecture and data flow |
+| `DOMAIN_MODEL.md` | Implemented domain model |
+| `WORKFLOW_STATE_MACHINE.md` | Implemented workflow/state behavior |
+| `AUTHORIZATION.md` | Authorization model |
+| `SECURITY_INVARIANTS.md` | Security invariants |
+| `CURRENT_STATE.md` | Live current state and verification |
+| `FEATURE_MATRIX.md` | Feature-level status |
+| `REAL_PRODUCT_ROADMAP.md` | Future work and sequencing |
+
+Runtime code is authoritative for behavior; `prisma/schema.prisma` and migrations are authoritative for persistence. Canonical docs describe verified implementation, `CURRENT_STATE.md` summarizes live status, the feature matrix summarizes feature status, and the roadmap describes future intent. Documentation does not override code or schema. `CURRENT_STATE.md`, `FEATURE_MATRIX.md`, and `REAL_PRODUCT_ROADMAP.md` are not implementation evidence by themselves. Archive material is historical/reference-only until independently re-verified.
+
+## Read before coding
+
+Use the task-specific loading rules in `AGENTS.md`; do not read every document for every task. As a shortcut: auth → authorization/security/architecture; domain/database → domain/architecture; workflow → workflow/domain/authorization; Arc/release → architecture/security/workflow; UI/product → project/current state; planning → current state/feature matrix/roadmap.
+
 ## Canonical Docs (read these first)
 1. `PROJECT.md` — product vision (why/what)
 2. `ARCHITECTURE.md` — how the system fits together
@@ -32,4 +52,4 @@ Includes the earlier `architecture.md`, `project-status.md`, `workboard.md`, plu
 - Prefer canonical docs over older planning/checkpoint files when there is a conflict.
 - For any live number (test count, phase status, commit), trust `docs/CURRENT_STATE.md`.
 - `docs/archive/` preserves prior planning context while keeping the main `docs/` directory lean.
-
+- Claims that materially affect engineering decisions must be traceable to current code/schema or a canonical implementation document. Use `Implemented`, `Partially implemented`, `Planned`, or `Not verified` rather than vague status labels.

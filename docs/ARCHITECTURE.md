@@ -1,241 +1,92 @@
 # ARCHITECTURE
 
-> **TL;DR** — Next.js (App Router) full-stack MVP: Route Handlers (`app/api/v1/*`) → repositories → PostgreSQL/Prisma; `lib/arc/` is the Arc execution boundary (release-executor + onchain + browser-wallet). Auth/session is implemented (Phase 4); remaining work is Arc production hardening + broader test coverage. For live status and numbers, see `docs/CURRENT_STATE.md`.
+Status: current
+SSoT: Current repository implementation and runtime structure
+Last verified: 2026-08
+
+> Current implementation architecture. Live status and readiness claims belong in `docs/CURRENT_STATE.md`.
 
 ## Overview
-SettleFlow is currently structured as a Next.js application moving toward a real MVP architecture: typed domain models, repository/API-backed workflow mutations, database persistence, and an Arc execution boundary.
 
-## Architecture Style
-Current architecture is best described as:
-- product-first MVP
-- repository/API-driven for the core payout workflow
-- persistence-backed with transitional legacy artifacts still present
-- auth/session is implemented (Phase 4); remaining work is production hardening of Arc execution and broader test coverage
+SettleFlow is a Next.js App Router application. Its primary workflow is served by route pages and API handlers, backed by repository modules and PostgreSQL through Prisma. Arc integration is isolated behind `lib/arc/` execution boundaries.
 
-## Main Layers
+## Repository structure
 
-### 1. Application / Route Layer
-Located in `app/`.
+- `app/(marketing)/` — marketing and landing routes.
+- `app/(app)/` — product routes: dashboard, payouts, contributors, activity, settings, and app entry.
+- `app/api/v1/` — versioned handlers for auth, payouts, contributors, milestones, releases, settings, webhooks, dashboard, and feedback.
+- `app/api/` — legacy/compatibility handlers that remain present alongside the versioned API.
+- `components/` — reusable presentation and workflow components.
+- `lib/repositories/` — Prisma-backed data access and workflow transitions.
+- `lib/api/` — request payload and error utilities.
+- `lib/auth/` — session, identity mapping, OAuth/wallet auth, and smart-account helpers.
+- `lib/runtime/` — product context and policy logic.
+- `lib/arc/` — Arc configuration, wallet integration, onchain helpers, and release execution.
+- `prisma/` — schema, migrations, and seed configuration.
+- `lib/data/` — legacy mock-data artifacts; not the primary persistence path.
 
-Confirmed routes:
-- `app/page.tsx`
-- `app/dashboard/page.tsx`
-- `app/payouts/new/page.tsx`
-- `app/payouts/[id]/page.tsx`
-- `app/layout.tsx`
+## User-facing routes
 
-Responsibilities:
-- page composition
-- route-level data loading and mutation entry points
-- overall navigation and layout
-- product workflow presentation
+The actual page files are:
 
-### 2. UI Component Layer
-Located in `components/`.
+- `app/(marketing)/page.tsx` — `/`.
+- `app/(app)/dashboard/page.tsx` — `/dashboard`.
+- `app/(app)/payouts/page.tsx` — `/payouts`.
+- `app/(app)/payouts/new/page.tsx` — `/payouts/new`.
+- `app/(app)/payouts/[id]/page.tsx` — `/payouts/[id]`.
+- `app/(app)/contributors/page.tsx` — `/contributors`.
+- `app/(app)/activity/page.tsx` — `/activity`.
+- `app/(app)/settings/page.tsx` — `/settings`.
+- `app/(app)/app/page.tsx` — `/app`.
 
-Subareas:
-- `components/shared/`
-- `components/dashboard/`
-- `components/milestones/`
-- `components/payouts/`
+The `(marketing)` and `(app)` directories are route groups and are not included in public URLs.
 
-Responsibilities:
-- reusable buttons, cards, and empty states
-- stat display
-- milestone row rendering
-- review controls
-- release panel
-- settlement proof display
+## Request and authentication flow
 
-### 3. Domain Model Layer
-Located in `lib/models/`.
+`proxy.ts` is the request boundary. For `POST`, `PUT`, `PATCH`, and `DELETE` requests under `/api/`, it verifies the `sf_session` cookie and returns `401 AUTH_REQUIRED` unless the path is an open auth endpoint or explicitly public feedback. It also bridges product-context headers, cookies, and query values.
 
-Confirmed models:
-- `Contributor`
-- `Payout`
-- `Milestone`
-- `TransactionProof`
+`lib/auth/session.ts` creates and verifies signed, expiring session tokens. Session-aware handlers use `lib/auth/session-server.ts` to verify the session, load the user and first workspace membership, and build product context through `lib/auth/session-mapping.ts`.
 
-Responsibilities:
-- define core business entities
-- define status enums / allowed states
-- provide typed contracts for UI and future backend integration
+## Authorization and product context
 
-### 4. Data Layer
-Primary runtime data now flows through the database, repositories, and API routes. Legacy mock files still exist in `lib/data/` as transitional artifacts and should not be treated as the target architecture.
+`lib/runtime/product-context.ts` defines runtime actors and context. `lib/auth/session-mapping.ts` maps stored membership roles to actors. `lib/runtime/product-policy.ts` enforces operation-specific permissions and actor/user alignment. `lib/runtime/role-utils.ts` provides hierarchy helpers.
 
-Confirmed primary runtime pieces:
-- Prisma/database-backed repositories under `lib/repositories/`
-- route handlers under `app/api/v1/`
-- legacy mock files under `lib/data/` that still need cleanup or explicit dev-only positioning
+Detailed permissions and workspace rules are owned by `docs/AUTHORIZATION.md`; security guarantees and limitations are owned by `docs/SECURITY_INVARIANTS.md`.
 
-Current behavior:
-- core payout workflow supports persistence-backed reads and mutations
-- route views increasingly derive content from repository-backed data
-- some transitional/demo-era assumptions may still exist around seeded IDs, seeded roles, or mock/dev helper paths
-
-### 5. Integration Layer
-Located in `lib/arc/`.
-
-Confirmed files:
-- `config.ts`
-- `types.ts`
-- `onchain.ts`
-- `release-executor.ts`
-- `browser-wallet.ts`
-- `map-send-result-to-proof.ts`
-
-Responsibilities:
-- Arc configuration
-- typed send request / result shapes
-- future settlement abstraction
-
-Current limitation:
-- `sendUsdcOnArc()` supports `circle_wallet` (real server-side EOA execution via viem) and `browser_wallet` (server-side failure — browser signs via wallet adapter). Production-safe live Arc execution against official requirements is not yet fully verified (requires a funded server key, gas fee strategy, and compliance review).
-
-### 6. Utility Layer
-Located in `lib/utils/`.
-
-Confirmed helpers:
-- `formatUsdc()`
-- `shortenAddress()`
-
-## Release Execution Model
-
-SettleFlow supports two mutually exclusive execution modes for an approved release:
-
-- `browser_wallet`: a connected operator wallet signs and submits the transaction in the browser.
-- `circle_wallet`: a server-side Circle Wallets integration signs and submits the transaction through a protected backend boundary.
-
-Both modes share the same release workflow, state machine, and transaction proof model. They differ only in who controls signing and where transaction credentials are held. The UI and domain service must not implement separate payout state machines for the two modes.
-
-The release service selects an execution adapter from the release configuration:
+## API and data flow
 
 ```text
-approve milestone
-  -> create queued release
-  -> select browser_wallet or circle_wallet adapter
-  -> submit USDC transfer on Arc
-  -> reconcile transaction result
-  -> persist transaction proof and activity log
+Next.js page or client action
+  -> app/api/v1 route handler
+  -> session/context and policy checks
+  -> lib/repositories operation
+  -> Prisma client
+  -> PostgreSQL
 ```
 
-Security boundaries:
+Repositories enforce resource/workspace relationships where required. `prisma/schema.prisma` and migrations are authoritative for persisted entities, relations, and status enums.
 
-- Browser wallet calls are client-initiated and require explicit user confirmation.
-- Circle Wallets calls are server-only; credentials must never use `NEXT_PUBLIC_*` variables.
-- A release is not confirmed merely because a send request was accepted; confirmation must be reconciled and persisted.
-- Both adapters must use string/decimal money values and idempotent release handling.
+## Workflow and state
 
-## Route Responsibilities
+Workflow transitions are coordinated by repository modules including `payout-creation.ts`, `payout-activation.ts`, `milestone-submission.ts`, `milestone-review.ts`, `milestone-release.ts`, `release-proof.ts`, and `release-retry.ts`.
 
-### `/`
-Purpose:
-- product framing
-- workflow summary
-- operator entry point into the payout workflow
+## Arc and wallet boundaries
 
-### `/dashboard`
-Purpose:
-- payout operations overview
-- review queue visibility
-- payout and proof summaries
+`lib/arc/` contains Arc configuration, browser-wallet integration, onchain helpers, and the release executor:
 
-### `/payouts/new`
-Purpose:
-- draft/create payout agreement flow
-- define contributor, amount, and milestone structure
+- `browser_wallet` — signing is performed by a connected browser wallet; the server executor fails explicitly for this mode.
+- `circle_wallet` — the server derives an account from server-only `ARC_SERVER_PRIVATE_KEY` and sends the configured USDC transfer.
 
-### `/payouts/[id]`
-Purpose:
-- view payout details
-- inspect milestone states
-- review / release / proof surfaces
-
-## State Model
-
-### Payout Status
-Confirmed in code:
-- `draft`
-- `active`
-- `partially_released`
-- `completed`
-
-### Milestone Status
-Confirmed in code:
-- `pending`
-- `submitted`
-- `approved`
-- `released`
-- `rejected`
-
-### Transaction Proof Status
-Confirmed in code:
-- `pending`
-- `confirmed`
-- `failed`
-
-## Data Flow
-Current confirmed flow:
-1. route or page triggers repository/API-backed reads and mutations
-2. repositories coordinate payout, milestone, release, and proof state transitions against persistence
-3. typed data flows into presentational components
-4. components render status-specific UI blocks and mutation results
-
-Current non-confirmed / incomplete flow:
-- real auth/session-backed actor resolution is implemented (Phase 4) but route-level integration/E2E test coverage is still absent
-- `circle_wallet` release execution is wired (Phase 6) but production hardening is pending
-- some transitional seeded-role and seeded-workspace assumptions still remain
-
-## Product Context Boundary
-
-SettleFlow now contains a dedicated product-context runtime boundary for seeded-role operation and auth-shaped workflow control.
-
-Confirmed behavior:
-- request context is resolved from header -> cookie -> query -> default fallback
-- proxy logic bridges context through request headers and cookie persistence
-- core workflow mutation routes derive actor identity from request context instead of trusting client-supplied actor IDs in JSON bodies
-- client UI surfaces mask controls by actor capability
-- a global actor switcher exists to exercise owner/reviewer/contributor flows without a real auth provider
-
-Current limitation:
-- the seeded-context fallback still exists for local development and role switching, but real session-authenticated identity is now the primary actor resolution path (Phase 4); context integrity is backed by signed JWT session claims
+Release proof and source-wallet information are persisted through release/proof repositories. Production custody, funding, gas, compliance, and operational readiness are not asserted here; see `docs/CURRENT_STATE.md` and `docs/SECURITY_INVARIANTS.md`.
 
 ## Configuration
 
-### Environment
-Confirmed public env usage:
-- `NEXT_PUBLIC_APP_NAME`
-- `NEXT_PUBLIC_ARC_CHAIN_ID`
-- `NEXT_PUBLIC_ARC_RPC_URL`
-- `NEXT_PUBLIC_ARC_EXPLORER_URL`
-- `NEXT_PUBLIC_USDC_ADDRESS`
+Public Arc/network values are read by `lib/arc/config.ts` from `NEXT_PUBLIC_*` variables with defaults. The server signing key is read by `lib/arc/release-executor.ts` from `ARC_SERVER_PRIVATE_KEY` and is not a public configuration value.
 
-### Tooling
-- Next.js 16
-- React 19
-- TypeScript
-- Tailwind CSS v4
-- ESLint
+## Implemented versus planned
 
-## What Is Not Present in the Current Architecture
-Completed in recent phases:
-- real server-side session auth + middleware route protection (Phase 4, implemented)
-- `circle_wallet` release execution with real transaction sending (Phase 6, implemented)
+Implemented components include the route groups, versioned API handlers, session gate and session-aware context resolution, Prisma persistence, repository workflow operations, and mode-aware Arc release execution. Production hardening, comprehensive route/E2E coverage, and future escrow, multi-chain, or advanced approval components are not represented as implemented here.
 
-Still incomplete or not yet confirmed:
-- production-safe live Arc release execution verification (server key custody, gas funding, fee strategy, and official Arc compliance)
-- comprehensive automated test coverage (route-level integration and E2E)
+## Verification sources
 
-## Architectural Risks
-- seeded/demo-era assumptions may still leak into UI and mutation entry points
-- actor resolution is now session-based (Phase 4), but the seeded fallback remains for local development — unclear if it can mask real auth gaps
-- legacy mock files and wording can mislead future implementation decisions
-- live Arc execution safety requirements may force adapter or workflow changes even after the Phase 6 wiring
-
-## Recommended Next Architecture Step
-Before expanding into new feature surfaces, prioritize:
-- removing seeded/demo assumptions from existing payout flows
-- replacing hardcoded actor/workspace values with real product boundaries
-- tightening auth/permission scope
-- validating the release execution policy and adapter boundary (`browser_wallet` vs `circle_wallet`) against official Arc constraints
+Checked against `app/(marketing)/**`, `app/(app)/**`, `app/api/**`, `proxy.ts`, `lib/auth/**`, `lib/runtime/**`, `lib/repositories/**`, `lib/arc/**`, `prisma/schema.prisma`, and `prisma/migrations/**`.

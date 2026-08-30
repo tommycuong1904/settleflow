@@ -1,6 +1,10 @@
 # CURRENT_STATE
 
-> **TL;DR** — This file is the **single source of truth** for live numbers/status. Current: Phases 1–6 done (real Arc release via `circle_wallet`), auth implemented, full unit suite across `lib/**/*.test.mts`; no route/E2E tests yet. If another doc disagrees, this one wins.
+Status: current
+SSoT: Current repository implementation and verification
+Last verified: 2026-08
+
+> **TL;DR** — This file is the **single source of truth** for live numbers/status. Current: Phases 1–6 done (real Arc release via `circle_wallet`), auth implemented, full unit suite across `lib/**/*.test.mts` (126/126 green, D3). A5 real-auth E2E flows verified manually against the Vercel preview (`settleflow-dev.vercel.app`) via uncommitted `/tmp/a5_e2e.sh` — 23/23 checks pass (2026-08). If another doc disagrees, this one wins.
 
 ## Summary
 This repository is now a full-stack Next.js application for SettleFlow, an Arc-native milestone-based USDC payout workflow for crypto teams. The current implementation has moved beyond a frontend-only demo: it now includes a PostgreSQL + Prisma data layer, repository-backed server reads/writes, and API routes for payout, milestone, and release actions. Real Arc release execution is wired through `createReleaseExecutor` (Phase 6): `circle_wallet` mode sends real USDC from a server-side EOA, while `browser_wallet` fails explicitly on the server. Session auth (Phase 4), contributor management + settings/productization (Phase 5), a minimalist black/white theme refactor, and a 126-test unit layer are also merged into `main`.
@@ -143,9 +147,10 @@ This repository is now a full-stack Next.js application for SettleFlow, an Arc-n
   - UI capability masking for owner / reviewer / contributor actions
 
 ### Conclusion
-- **No authentication flow is currently implemented in the inspected repository.**
-- **A stronger auth-shaped boundary now exists for the seeded workspace model, but it is still not a full auth system.**
-- **Actor identity for core workflow mutations is now derived from request product context rather than client-supplied body actor IDs.**
+- **Server-side session authentication is implemented for the current MVP flow.**
+- Google and wallet auth routes issue signed `sf_session` cookies; `proxy.ts` gates protected API mutations.
+- Session-aware handlers resolve the authenticated user and workspace membership into product context.
+- Actor identity for core workflow mutations is derived from request/session context rather than trusted client body actor IDs.
 
 ### Unknown
 - Whether the current permission boundary is intended only as a demo/dev safeguard or as the basis for a future production auth model.
@@ -188,8 +193,8 @@ This repository is now a full-stack Next.js application for SettleFlow, an Arc-n
 
 ### Confirmed
 - **Phase 4 (auth/session) is complete**: real server-side session auth is now implemented.
-  - Google sign-in (`POST /api/v1/auth/google`) creates/login a `User` DB record, issues a `sf_session` JWT cookie (signed with `SESSION_SECRET`).
-  - Middleware (`middleware.ts`) validates the session on every API request and resolves `ProductContext` from the DB (`User` → `WorkspaceMember` → workspace roles).
+  - Google sign-in (`POST /api/v1/auth/google`) issues a signed `sf_session` cookie; wallet sign-in is available at `POST /api/v1/auth/wallet`.
+  - `proxy.ts` validates the session for protected API mutations; `lib/auth/session-server.ts` resolves the session to `User` → `WorkspaceMember` → product context.
   - `await getProductContext()` is wired into 16+ API route handlers, replacing the old default fallback.
   - Anonymous mutations are blocked with `401 { error: "AUTH_REQUIRED" }`.
   - Logout (`POST /api/v1/auth/logout`) clears the `sf_session` cookie.
@@ -205,7 +210,7 @@ This repository is now a full-stack Next.js application for SettleFlow, an Arc-n
   - release retry
 - Core UI surfaces now mask actions by actor role and include a header actor switcher for role testing.
 - **Dev server runs on port 3001** (port 3000 is occupied by another project, LumenFlow).
-- No E2E/browser integration test suite exists; unit coverage is limited to payload validation and repository logic.
+- **No committed E2E/browser integration test suite exists**, but A5 (2026-08) manually verified 23 real-auth API flows end-to-end against the Vercel preview `settleflow-dev.vercel.app` via the uncommitted script `/tmp/a5_e2e.sh` (anonymous gate, owner/contributor/reviewer sign-in, contributor create/edit/archive, invalid-wallet + contributor-role policy, payout create/activate, milestone submit/approve/release, settings GET/PUT, webhook test, logout); unit coverage is limited to payload validation and repository logic.
 - Arc execution now has a real server-side path (`circle_wallet` via `ARC_SERVER_PRIVATE_KEY`); it is not yet verified as a production-safe live payment path — it still depends on execution mode and a funded server key, and `browser_wallet` fails explicitly on the server.
 - Legacy mock-data files remain in the repository and may still represent transition-era coupling or fallback assumptions.
 
@@ -235,7 +240,7 @@ This repository is now a full-stack Next.js application for SettleFlow, an Arc-n
 - presence of database/API/repository layers
 - **real server-side session auth (Phase 4) is implemented and verified** (7/7 check pass)
 - `/payouts/new` UI is fully light-theme consistent (Phase 5 cleanup complete)
-- presence of a narrow unit test layer (`lib/api` + `lib/repositories`) with no E2E coverage yet
+- presence of a narrow unit test layer (`lib/api` + `lib/repositories`); E2E verified manually via A5 script but not committed
 - mode-aware Arc send architecture
 
 ### Medium confidence

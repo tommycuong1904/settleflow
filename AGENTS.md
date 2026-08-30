@@ -11,6 +11,34 @@ Read `CONTEXT.md` (repo root) first — it is the one-file cheat sheet: stack, k
 `docs/CURRENT_STATE.md` is the single source of truth for live numbers (test count, phase status, current commit).
 Historical/planning/checkpoint docs live under `docs/archive/` and are not current truth.
 
+## Documentation source of truth
+
+Use this precedence when documentation and implementation disagree:
+
+1. Runtime source code — actual behavior, routes, validation, authorization, and execution.
+2. `prisma/schema.prisma` and migrations — persisted models, relations, enums, and database constraints.
+3. Canonical implementation docs — architecture, domain, workflow, authorization, and security.
+4. `docs/CURRENT_STATE.md` — current verified status and limitations.
+5. `docs/FEATURE_MATRIX.md` — feature-level status.
+6. `docs/REAL_PRODUCT_ROADMAP.md` — future intent and sequencing.
+7. `docs/archive/**` — historical/reference material only.
+
+Documentation does not override implementation. Verify against code when statements conflict; verify against Prisma when persistence facts conflict.
+
+### Read before coding
+
+Load only the task-specific documents needed:
+
+- Authentication: `AUTHORIZATION.md`, `SECURITY_INVARIANTS.md`, `ARCHITECTURE.md`
+- Authorization/workspace: `AUTHORIZATION.md`, `SECURITY_INVARIANTS.md`, `DOMAIN_MODEL.md`
+- Database/domain: `DOMAIN_MODEL.md`, `ARCHITECTURE.md`
+- Payout/milestone/release: `WORKFLOW_STATE_MACHINE.md`, `DOMAIN_MODEL.md`, `AUTHORIZATION.md`; add `SECURITY_INVARIANTS.md` when relevant
+- Arc/release execution: `ARCHITECTURE.md`, `SECURITY_INVARIANTS.md`, `WORKFLOW_STATE_MACHINE.md`
+- UI/product behavior: `PROJECT.md`, `CURRENT_STATE.md`, and relevant domain/workflow docs
+- Planning: `CURRENT_STATE.md`, `FEATURE_MATRIX.md`, `REAL_PRODUCT_ROADMAP.md`
+
+When changing routes, models/enums, policy, security boundaries, state transitions, or feature implementation, check the affected canonical docs for drift. Do not treat roadmap entries, feature-matrix entries, archives, or historical plans as implementation evidence. Prefer the status terms `Implemented`, `Partially implemented`, `Planned`, and `Not verified`; implemented-in-development is not production-ready. Preserve pre-existing working-tree changes and never reset or discard unrelated changes.
+
 Task-based doc loading rules:
 
 - `bug`
