@@ -1,5 +1,7 @@
 # SettleFlow Core Release Wedge Progress
 
+Archive status: historical
+
 ## Goal
 Build one hackathon-credible core flow:
 

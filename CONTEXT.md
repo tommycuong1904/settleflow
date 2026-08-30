@@ -11,7 +11,7 @@ It is a full-stack Next.js app: create payout → define milestones → submit w
 - **Next.js 16 / React 19 / TypeScript** (App Router; Route Handlers under `app/api/v1/*`)
 - **PostgreSQL + Prisma** — runtime data (repository/API-backed). `lib/data/` contains transitional mocks only.
 - **Arc Testnet** (chain `5042002`), **USDC native**; **viem** for onchain work
-- **Auth (Phase 4)**: JWT session cookie + middleware + DB `User`/`WorkspaceMember` → `getProductContext()`; anonymous mutations rejected with `401 { error: "AUTH_REQUIRED" }`
+- **Auth (Phase 4)**: JWT session cookie + request/session boundary + DB `User`/`WorkspaceMember` → product context; anonymous mutations rejected with `401 { error: "AUTH_REQUIRED" }`
 - **Release execution (Phase 6)**: `lib/arc/release-executor.ts`
   - `circle_wallet` → server-side EOA from `ARC_SERVER_PRIVATE_KEY` sends real USDC (sync), persists proof + source wallet
   - `browser_wallet` → fails explicitly on the server (browser signs via wallet adapter)

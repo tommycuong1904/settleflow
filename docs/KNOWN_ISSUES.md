@@ -66,12 +66,12 @@ This document lists issues, gaps, inconsistencies, and inspection risks visible 
 - **Assumption**: once live execution becomes important, retry semantics, proof refresh behavior, and release state transitions will need deeper adversarial/manual validation.
 
 ### 3. Public application surface still carries risk despite minimal permissions
-- **Assumption**: the current seeded-role permission checks reduce obvious mutation risk, but the lack of a real auth/session boundary will become more serious as backend capabilities expand.
+- **Assumption**: the current session-aware permission checks reduce obvious mutation risk, but broader production hardening and route-level coverage remain necessary as backend capabilities expand.
 
 ## Unknown Areas Requiring Further Inspection
 
 ### 1. Authorization model
-- Unknown which actor roles should eventually be enforced at the route or workspace layer.
+- The current session-aware actor and workspace policy is implemented; future role refinements or additional boundaries are not verified as requirements.
 
 ### 2. Production Arc requirements
 - Unknown whether the current real-mode executor is fully sufficient under official Arc documentation and deployment constraints.

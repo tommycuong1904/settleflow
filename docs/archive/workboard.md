@@ -1,5 +1,7 @@
 # Bảng công việc SettleFlow
 
+Archive status: historical
+
 ## Đang làm
 - [ ] Phase 4 — Landing polish
 - [ ] Review messaging và hierarchy hiện tại của landing

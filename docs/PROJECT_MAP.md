@@ -75,18 +75,18 @@ settleflow/
   - Presents product narrative, workflow steps, reviewer-facing proof messaging, and CTAs.
   - Includes the `#workflow` anchor for landing-page navigation.
 
-### `app/dashboard/page.tsx`
+### `app/(app)/dashboard/page.tsx`
 - **Confirmed**:
   - Dashboard view for payout operations.
   - Represents the read-model surface for key payout metrics, review queue, and proof visibility.
 
-### `app/payouts/new/page.tsx`
+### `app/(app)/payouts/new/page.tsx`
 - **Confirmed**:
   - Create Payout UI.
   - Loads contributor options from an API route.
   - Submits payout creation through the v1 payout API.
 
-### `app/payouts/[id]/page.tsx`
+### `app/(app)/payouts/[id]/page.tsx`
 - **Confirmed**:
   - Dynamic payout detail route.
   - Displays payout summary, milestone workflow, release target, and settlement proof.

@@ -1,5 +1,7 @@
 # DB_SCHEMA
 
+Archive status: implemented-by: `prisma/schema.prisma`
+
 ## Purpose
 This document proposes the first persistent database schema for SettleFlow.
 

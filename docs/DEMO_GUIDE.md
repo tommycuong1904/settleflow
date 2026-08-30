@@ -32,7 +32,7 @@ Owner tạo Payout
 
 ## Bước 0 — Kết nối Ví & Thiết lập Arc Testnet
 
-1. Mở `http://localhost:3000/` → Bấm **"Get Started"** hoặc **"Connect Wallet"**
+1. Mở `http://localhost:3001/` → Bấm **"Get Started"** hoặc **"Connect Wallet"**
 2. Trong modal **Auth**, chọn **tab Web3** → Bấm **"Add / Switch Arc Testnet in MetaMask"**
 3. MetaMask sẽ prompt thêm mạng → **Chấp nhận**
 4. Bấm **"Connect MetaMask / Rabby"** để đăng nhập (hoặc chọn tab **Web2** để dùng Google)
@@ -156,7 +156,7 @@ Owner tạo Payout
 ## Luồng hoàn chỉnh trong 5 phút
 
 ```
-00:00  Mở localhost:3000 → Giải thích vấn đề & giải pháp (Landing Page)
+00:00  Mở localhost:3001 → Giải thích vấn đề & giải pháp (Landing Page)
 00:45  Kết nối ví MetaMask / Login Google → vào Dashboard
 01:15  Tạo payout Q3 bounty với 3 milestones (Owner)
 01:50  Submit Milestone 1 kèm GitHub PR link (Contributor)

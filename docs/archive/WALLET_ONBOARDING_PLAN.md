@@ -1,5 +1,7 @@
 # SettleFlow – Hybrid Web2 & Web3 Onboarding / Wallet Connection Plan
 
+Archive status: historical/reference-only
+
 > **Mục tiêu:** Xây dựng luồng kết nối ví & đăng nhập tối ưu (Hybrid Web2.5 UX) phục vụ cho cả người dùng Web2 (Email / Social / Smart Account) và người dùng Web3 (MetaMask, Rabby, WalletConnect), áp dụng mô hình **Explore First (Inline Gate)** trong Dashboard.
 
 ---
@@ -99,4 +101,3 @@
 | *2026-08-19* | Phase 1: Tạo Wallet Context, AuthModal, WalletGate, Header | 🟢 Hoàn thành | Hoàn tất Phase 1 |
 | *2026-08-19* | Cấu hình Route `/app` tương đương Dashboard | 🟢 Hoàn thành | `app/(app)/app/page.tsx` |
 | *2026-08-19* | Phase 3: Tích hợp Action Guards (New Payout & Release Shell) | 🟢 Hoàn thành | `payouts/new` & `payout-detail-release-shell` |
-

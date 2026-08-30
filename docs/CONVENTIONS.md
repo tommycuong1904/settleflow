@@ -17,7 +17,7 @@ This document records the current repository conventions that can be confirmed f
 ### Routing
 - Next.js App Router structure is used.
 - Route files live under `app/`.
-- Dynamic payout detail route uses `app/payouts/[id]/page.tsx`.
+- Dynamic payout detail route uses `app/(app)/payouts/[id]/page.tsx` (public URL: `/payouts/[id]`).
 
 ### Components
 - Reusable UI components live under `components/`.

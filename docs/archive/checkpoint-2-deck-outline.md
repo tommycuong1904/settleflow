@@ -1,5 +1,7 @@
 # SettleFlow — Checkpoint 2 Deck Outline
 
+Archive status: historical
+
 ## Slide 1 — Title
 SettleFlow
 Arc-native USDC payout workflow for crypto teams

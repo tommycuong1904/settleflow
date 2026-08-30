@@ -1,5 +1,7 @@
 # Checkpoint 2 Progress Summary — SettleFlow
 
+Archive status: historical
+
 ## Project Direction
 
 SettleFlow is an Arc-native USDC payout workflow for crypto teams. It helps teams create milestone-based contributor payouts, review submitted work, and release funds only after approval.

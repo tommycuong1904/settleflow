@@ -1,5 +1,7 @@
 # PR_BODY_AUTH_BOUNDARY_V1
 
+Archive status: superseded-by: `docs/AUTHORIZATION.md` and current auth implementation
+
 ## Title
 Auth boundary v1 and workflow hardening for seeded-role payout flows
 

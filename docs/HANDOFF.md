@@ -2,6 +2,8 @@
 
 ## Repository state note (latest)
 
+Current implementation status and verification state are owned by `docs/CURRENT_STATE.md`; this document is a handoff/orientation summary. Authorization and security details are owned by `docs/AUTHORIZATION.md` and `docs/SECURITY_INVARIANTS.md`.
+
 - Default branch: `main` tracks `origin/main` (last code merge: Phase 6 from `feature/settings-contributor-export`; current state: see `docs/CURRENT_STATE.md`).
 - The Phase 6 wedge (real Arc release execution) was fast-forward merged into `main`.
 - The earlier handoff branch `feat/auth-boundary-v1` was superseded by later wedges; its merge-prep docs (`docs/archive/MERGE_PREP_AUTH_BOUNDARY_V1.md`, `docs/archive/PR_BODY_AUTH_BOUNDARY_V1.md`) are preserved for history.

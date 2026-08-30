@@ -1,5 +1,7 @@
 # API_PLAN
 
+Archive status: implemented-by: `app/api/v1/**`
+
 ## Purpose
 This document defines proposed backend API surface for SettleFlow after the current demo phase.
 

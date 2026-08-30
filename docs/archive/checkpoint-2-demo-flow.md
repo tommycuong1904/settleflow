@@ -1,5 +1,7 @@
 # SettleFlow — Checkpoint 2 Demo Flow
 
+Archive status: historical
+
 ## Goal
 Show that SettleFlow already has a credible product direction, visible payout workflow, and clear Arc / USDC alignment.
 

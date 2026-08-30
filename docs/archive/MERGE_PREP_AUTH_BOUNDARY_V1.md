@@ -1,5 +1,7 @@
 # MERGE_PREP_AUTH_BOUNDARY_V1
 
+Archive status: superseded-by: `docs/AUTHORIZATION.md` and current auth implementation
+
 ## Branch
 - `feat/auth-boundary-v1`
 

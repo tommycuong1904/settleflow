@@ -1,5 +1,7 @@
 # SettleFlow Architecture
 
+Archive status: superseded-by: `docs/ARCHITECTURE.md`
+
 ## Overview
 
 SettleFlow is an Arc-native USDC payout workflow for crypto teams.

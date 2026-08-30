@@ -1,5 +1,7 @@
 # SettleFlow MVP Scope
 
+Archive status: superseded-by: `docs/PROJECT.md`
+
 ## Product Definition
 
 SettleFlow is an Arc-native USDC payout workflow for crypto teams.

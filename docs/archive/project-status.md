@@ -1,5 +1,7 @@
 # Trạng thái dự án SettleFlow
 
+Archive status: historical
+
 ## Mục tiêu
 SettleFlow đang được nâng cấp từ một MVP sạch thành một bản demo workflow payout native cho Arc với cảm giác sản phẩm rõ ràng hơn.
 Đợt nâng cấp UI/UX hiện tại tập trung vào:

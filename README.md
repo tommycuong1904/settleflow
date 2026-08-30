@@ -95,7 +95,7 @@ npx prisma db seed
 npm run dev
 ```
 
-App runs at **[http://localhost:3000](http://localhost:3000)**
+App runs at **[http://localhost:3001](http://localhost:3001)** in this workspace.
 
 ### 5. Connect Arc Testnet to MetaMask
 
@@ -190,7 +190,7 @@ settleflow/
 │   └── runtime/        # ProductContext, policy, server helpers
 ├── prisma/
 │   ├── schema.prisma   # Database schema
-│   └── seed.ts         # Demo workspace seed
+│   └── seed.js          # Demo workspace seed
 └── docs/               # Architecture, conventions, demo guide, current state
 ```
 
