@@ -10,11 +10,25 @@ import {
   hasRequiredLegacyReleaseFields,
   type ReleaseRequestBody,
 } from "@/lib/api/legacy-release";
-import { resolveWorkspaceIdFromRequest } from "@/lib/runtime/product-context-server";
+import { resolveProductContextFromRequestWithSession } from "@/lib/auth/session-server";
+import { assertCanReleaseMilestone } from "@/lib/runtime/product-policy";
 
 
 export async function POST(request: Request) {
-  const workspaceId = resolveWorkspaceIdFromRequest(request);
+  let productContext;
+  try {
+    productContext = await resolveProductContextFromRequestWithSession(request);
+  } catch (error) {
+    if (error instanceof Error && error.message === "AUTH_CONTEXT_REQUIRED") {
+      return NextResponse.json({ error: "Authorized workspace membership required.", code: "AUTH_CONTEXT_REQUIRED" }, { status: 403 });
+    }
+    return NextResponse.json({ error: "Unable to resolve authorization context." }, { status: 500 });
+  }
+  const workspaceId = productContext.workspaceId;
+  const permissionViolation = assertCanReleaseMilestone({ productContext, actorUserId: productContext.activeUserId });
+  if (permissionViolation) {
+    return NextResponse.json({ error: permissionViolation.message, code: permissionViolation.code }, { status: permissionViolation.status });
+  }
   let body: ReleaseRequestBody;
 
   try {
@@ -35,17 +49,6 @@ export async function POST(request: Request) {
 
   const { payoutId, milestoneId, recipientAddress, amount, executionMode } =
     body;
-
-  // --- Step 1: Find or create a demo user (no auth yet) ---
-  let user = await db.user.findFirst();
-  if (!user) {
-    user = await db.user.create({
-      data: {
-        displayName: "Demo Operator",
-        email: "demo@settleflow.local",
-      },
-    });
-  }
 
   // --- Step 2: Validate milestone state and create release + proof in DB ---
   let releaseResult: {
@@ -99,7 +102,7 @@ export async function POST(request: Request) {
         data: {
           payoutId: milestone.payout.id,
           milestoneId,
-          triggeredByUserId: user!.id,
+          triggeredByUserId: productContext.activeUserId,
           amountUsdc: requestedAmount,
           executionMode: executionMode ?? "browser_wallet",
           sourceWalletAddress: null,

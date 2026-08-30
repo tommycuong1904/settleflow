@@ -28,6 +28,8 @@ Implemented
 ### Invariant
 The session cookie is signed and must be valid and unexpired before it is accepted.
 
+After verification, protected handlers must resolve the session to a persisted user and workspace membership. No seeded/default user or membership is created for an authenticated request. Workspace selectors are authorization-checked against all memberships; missing, ambiguous, or unauthorized context fails with `AUTH_CONTEXT_REQUIRED` (403).
+
 ### Why it matters
 It prevents callers from treating an arbitrary cookie value as an authenticated identity.
 

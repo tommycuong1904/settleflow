@@ -6,9 +6,15 @@ import {
   payoutStatuses,
 } from "@/lib/api/list-query";
 import { listPayouts } from "@/lib/repositories/payouts";
-import { resolveProductContextFromRequestWithSession } from "@/lib/auth/session-server";
+import {
+  getSessionFromRequest,
+  resolveProductContextFromRequestWithSession,
+} from "@/lib/auth/session-server";
 
 export async function GET(request: Request) {
+  if (!(await getSessionFromRequest(request))) {
+    return apiError("AUTH_REQUIRED", { message: "Sign in is required.", status: 401 });
+  }
   const { searchParams } = new URL(request.url);
   const status = searchParams.get("status");
 
@@ -16,7 +22,15 @@ export async function GET(request: Request) {
     return apiError("INVALID_PAYOUT_STATUS", { message: "Invalid payout status.", status: 400 });
   }
 
-  const productContext = await resolveProductContextFromRequestWithSession(request);
+  let productContext;
+  try {
+    productContext = await resolveProductContextFromRequestWithSession(request);
+  } catch (error) {
+    if (error instanceof Error && error.message === "AUTH_CONTEXT_REQUIRED") {
+      return apiError("AUTH_CONTEXT_REQUIRED", { status: 403 });
+    }
+    return apiError("PAYOUT_LIST_LOAD_FAILED", { message: "Unable to load payouts.", status: 500 });
+  }
 
   // Contributors can only see payouts where they are the linked user
   const linkedUserId =

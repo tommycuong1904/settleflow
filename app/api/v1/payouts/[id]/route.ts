@@ -10,12 +10,15 @@ import {
 import { getPayoutDetail } from "@/lib/repositories/payouts";
 import { updatePayoutDraft } from "@/lib/repositories/payout-editing";
 import { assertCanEditPayoutDraft, assertCanViewPayout } from "@/lib/runtime/product-policy";
-import { resolveProductContextFromRequestWithSession } from "@/lib/auth/session-server";
+import { getSessionFromRequest, resolveProductContextFromRequestWithSession } from "@/lib/auth/session-server";
 
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  if (!(await getSessionFromRequest(request))) {
+    return apiError("AUTH_REQUIRED", { message: "Sign in is required.", status: 401 });
+  }
   const { id } = await params;
   const productContext = await resolveProductContextFromRequestWithSession(request);
 

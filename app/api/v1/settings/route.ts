@@ -4,11 +4,18 @@ import {
   getWorkspaceSettings,
   updateWorkspaceSettings,
 } from "@/lib/repositories/workspace-settings";
-import { resolveWorkspaceIdFromRequestWithSession } from "@/lib/auth/session-server";
+import {
+  resolveProductContextFromRequestWithSession,
+  resolveWorkspaceIdFromRequestWithSession,
+  getSessionFromRequest,
+} from "@/lib/auth/session-server";
 
 const NOTIFICATION_KEYS = ["notifyOnSubmit", "notifyOnApprove", "notifyOnRelease"] as const;
 
 export async function GET(request: Request) {
+  if (!(await getSessionFromRequest(request))) {
+    return apiError("AUTH_REQUIRED", { message: "Sign in is required.", status: 401 });
+  }
   try {
     const workspaceId = await resolveWorkspaceIdFromRequestWithSession(request);
     const settings = await getWorkspaceSettings(workspaceId);
@@ -23,7 +30,15 @@ export async function GET(request: Request) {
 export async function PUT(request: Request) {
   try {
     const body = await request.json();
-    const workspaceId = await resolveWorkspaceIdFromRequestWithSession(request);
+    const productContext = await resolveProductContextFromRequestWithSession(request);
+    const workspaceId = productContext.workspaceId;
+
+    if (productContext.actor !== "owner") {
+      return apiError("FORBIDDEN_SETTINGS_UPDATE", {
+        message: "Only workspace owners can update settings.",
+        status: 403,
+      });
+    }
 
     if (!body || typeof body !== "object") {
       return apiError("INVALID_REQUEST_BODY", {

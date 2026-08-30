@@ -19,7 +19,7 @@ export function apiErrorFromCode(
   fallback: ApiErrorOptions = {},
 ) {
   return apiError(code, {
-    status: statuses[code] ?? fallback.status ?? 500,
+    status: statuses[code] ?? (code === "AUTH_CONTEXT_REQUIRED" ? 403 : fallback.status ?? 500),
     message: messages[code] ?? fallback.message ?? code,
   });
 }

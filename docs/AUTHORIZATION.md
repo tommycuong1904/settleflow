@@ -49,13 +49,13 @@ These are the permissions explicitly represented by `lib/runtime/product-policy.
 
 Requests carry a workspace context, and repository operations receive the workspace ID when enforcing scope. Resource lookups and mutations reject or return no result for records belonging to another workspace, including contributor, payout, milestone, release, proof, and activity operations where the relevant repository check exists.
 
-The request context resolver has development/default fallbacks when values are absent. The session-backed route paths are responsible for resolving the authenticated product context before protected mutations. The exact behavior of every route not using the `v1` handlers is not treated as verified here.
+The request context resolver retains development/default fallbacks only when no session is present. For a verified session, `lib/auth/session-server.ts` requires a persisted `User` and `WorkspaceMember`; actor and user IDs are derived from the selected membership. A workspace selector is accepted only when it matches one of the user's memberships, and ambiguous multi-workspace sessions must select a workspace. Missing or unauthorized membership context returns `AUTH_CONTEXT_REQUIRED` (403).
 
 ## Authentication and actor alignment
 
 Protected API mutations require a valid `sf_session` cookie. `proxy.ts` verifies the signed session token and returns `401` with `AUTH_REQUIRED` for non-public API mutations without a valid session. Authentication endpoints remain open, and feedback endpoints are explicitly public mutations.
 
-`buildProductContextFromMembership` derives the actor from the stored membership role and sets the active user ID to the authenticated user. Policy functions compare optional actor user IDs with `activeUserId`; mismatches produce a `403` policy violation. Route handlers also pass the authenticated/context user and workspace IDs into repository and policy operations.
+`buildProductContextFromMembership` derives the actor from the stored membership role and sets the active user ID to the authenticated user. `ops` continues to map to the `owner` product actor. Policy functions compare optional actor user IDs with `activeUserId`; mismatches produce a `403` policy violation. Settings updates additionally require the owner actor.
 
 ## Where decisions are enforced
 

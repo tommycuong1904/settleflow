@@ -9,11 +9,14 @@ import {
   createContributor,
   listContributors,
 } from "@/lib/repositories/contributors";
-import { resolveProductContextFromRequestWithSession } from "@/lib/auth/session-server";
+import { getSessionFromRequest, resolveProductContextFromRequestWithSession } from "@/lib/auth/session-server";
 import { resolveWorkspaceIdFromRequestWithSession } from "@/lib/auth/session-server";
 import { assertCanCreateContributor } from "@/lib/runtime/product-policy";
 
 export async function GET(request: Request) {
+  if (!(await getSessionFromRequest(request))) {
+    return apiError("AUTH_REQUIRED", { message: "Sign in is required.", status: 401 });
+  }
   const { searchParams } = new URL(request.url);
   const status = searchParams.get("status");
 

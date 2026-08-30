@@ -13,9 +13,23 @@ import {
 } from "@/lib/runtime/product-context-server";
 import {
   readNonEmpty,
+  PRODUCT_CONTEXT_COOKIE_NAMES,
+  PRODUCT_CONTEXT_HEADER_NAMES,
   type ProductContext,
   type ProductContextInput,
 } from "@/lib/runtime/product-context";
+
+function readWorkspaceCookie(request: Request): string | undefined {
+  const header = request.headers.get("cookie");
+  if (!header) return undefined;
+  for (const segment of header.split(";")) {
+    const [name, ...rest] = segment.trim().split("=");
+    if (name === PRODUCT_CONTEXT_COOKIE_NAMES.workspaceId && rest.length > 0) {
+      return readNonEmpty(decodeURIComponent(rest.join("=")));
+    }
+  }
+  return undefined;
+}
 
 /**
  * Server-side (Node.js runtime only) session resolution helpers.
@@ -24,11 +38,9 @@ import {
  * so they resolve a verified session to a real `User` + `WorkspaceMember`
  * and produce a workspace-scoped `ProductContext` from stored membership.
  *
- * Resolution priority (mirrors the transitional behavior while preserving the
- * seeded dev tooling):
- *   1. explicit request-scoped overrides (headers / query params / passed overrides)
- *   2. verified session → real DB membership
- *   3. persisted product-context cookies / seeded defaults
+ * Protected resolution is session-authoritative. Request context may select a
+ * workspace only after that workspace is verified against the user's
+ * memberships; actor and user IDs are always derived from that membership.
  */
 
 /**
@@ -54,9 +66,9 @@ export async function getSessionFromCookieStore(
  * Returns null when the user has no stored membership (e.g. a freshly signed-up
  * Google account that has not been invited to any workspace).
  */
-async function resolveSessionMembership(
+async function resolveSessionMemberships(
   session: SessionPayload,
-): Promise<{ user: SessionUserInfo; membership: { workspaceId: string; role: string } } | null> {
+): Promise<{ user: SessionUserInfo; memberships: Array<{ workspaceId: string; role: string }> } | null> {
   const email = readNonEmpty(session.email);
   const address = readNonEmpty(session.address);
 
@@ -87,11 +99,12 @@ async function resolveSessionMembership(
 
   if (!userId) return null;
 
-  const membership = await db.workspaceMember.findFirst({
+  const memberships = await db.workspaceMember.findMany({
     where: { userId },
     orderBy: { createdAt: "asc" },
+    select: { workspaceId: true, role: true },
   });
-  if (!membership) return null;
+  if (memberships.length === 0) return null;
 
   return {
     user: {
@@ -100,10 +113,7 @@ async function resolveSessionMembership(
       displayName,
       walletAddress: address ?? null,
     },
-    membership: {
-      workspaceId: membership.workspaceId,
-      role: membership.role,
-    },
+    memberships,
   };
 }
 
@@ -114,11 +124,34 @@ async function resolveSessionMembership(
 export async function resolveSessionContext(
   session: SessionPayload,
 ): Promise<{ productContext: ProductContext; user: SessionUserInfo } | null> {
-  const resolved = await resolveSessionMembership(session);
+  const resolved = await resolveSessionMemberships(session);
   if (!resolved) return null;
 
+  if (resolved.memberships.length !== 1) return null;
+
   return {
-    productContext: buildProductContextFromMembership(resolved.user, resolved.membership),
+    productContext: buildProductContextFromMembership(resolved.user, resolved.memberships[0]),
+    user: resolved.user,
+  };
+}
+
+async function resolveSessionContextForWorkspace(
+  session: SessionPayload,
+  requestedWorkspaceId?: string,
+): Promise<{ productContext: ProductContext; user: SessionUserInfo } | null> {
+  const resolved = await resolveSessionMemberships(session);
+  if (!resolved) return null;
+
+  const workspaceId = requestedWorkspaceId?.trim();
+  const membership = workspaceId
+    ? resolved.memberships.find((item) => item.workspaceId === workspaceId)
+    : resolved.memberships.length === 1
+      ? resolved.memberships[0]
+      : null;
+  if (!membership) return null;
+
+  return {
+    productContext: buildProductContextFromMembership(resolved.user, membership),
     user: resolved.user,
   };
 }
@@ -129,34 +162,22 @@ export async function resolveSessionContext(
 export async function resolveProductContextFromRequestWithSession(
   request: Request,
 ): Promise<ProductContext> {
-  // 1. Explicit request-scoped overrides (query params) win.
+  // A workspace selector is permitted only after membership validation.
   const { searchParams } = new URL(request.url);
-  const explicit: ProductContextInput = {
-    workspaceId: searchParams.get("workspaceId"),
-    actor: searchParams.get("actor"),
-    ownerUserId: searchParams.get("ownerUserId"),
-    reviewerUserId: searchParams.get("reviewerUserId"),
-    contributorUserId: searchParams.get("contributorUserId"),
-  };
-  const hasExplicitOverride = Object.values(explicit).some((value) => readNonEmpty(value));
-
-  const base = resolveProductContextFromRequest(request);
-
-  if (hasExplicitOverride) {
-    return base;
-  }
-
-  // 2. Otherwise, resolve from the real session when one is present.
   const session = await getSessionFromRequest(request);
   if (session) {
-    const sessionContext = await resolveSessionContext(session);
+    const requestedWorkspaceId =
+      readNonEmpty(searchParams.get("workspaceId")) ??
+      readNonEmpty(request.headers.get(PRODUCT_CONTEXT_HEADER_NAMES.workspaceId)) ??
+      readWorkspaceCookie(request);
+    const sessionContext = await resolveSessionContextForWorkspace(session, requestedWorkspaceId);
     if (sessionContext) {
       return sessionContext.productContext;
     }
+    throw new Error("AUTH_CONTEXT_REQUIRED");
   }
 
-  // 3. Fall back to persisted cookies / seeded defaults (dev actor switcher, guests).
-  return base;
+  return resolveProductContextFromRequest(request);
 }
 
 /**
@@ -167,22 +188,16 @@ export async function resolveProductContextFromCookiesWithSession(
   cookieStore: CookieStoreLike,
   overrides: ProductContextInput = {},
 ): Promise<ProductContext> {
-  const hasExplicitOverride = Object.values(overrides).some((value) => readNonEmpty(value));
-  const base = resolveProductContextFromCookies(cookieStore, overrides);
-
-  if (hasExplicitOverride) {
-    return base;
-  }
-
   const session = await getSessionFromCookieStore(cookieStore);
   if (session) {
-    const sessionContext = await resolveSessionContext(session);
+    const sessionContext = await resolveSessionContextForWorkspace(session, readNonEmpty(overrides.workspaceId));
     if (sessionContext) {
       return sessionContext.productContext;
     }
+    throw new Error("AUTH_CONTEXT_REQUIRED");
   }
 
-  return base;
+  return resolveProductContextFromCookies(cookieStore, overrides);
 }
 
 /**
@@ -193,18 +208,16 @@ export async function resolveWorkspaceIdFromRequestWithSession(
   request: Request,
 ): Promise<string> {
   const { searchParams } = new URL(request.url);
-  const explicitWorkspaceId = readNonEmpty(searchParams.get("workspaceId"));
-
-  if (explicitWorkspaceId) {
-    return explicitWorkspaceId;
-  }
-
   const session = await getSessionFromRequest(request);
   if (session) {
-    const sessionContext = await resolveSessionContext(session);
+    const requestedWorkspaceId =
+      readNonEmpty(searchParams.get("workspaceId")) ??
+      readNonEmpty(request.headers.get(PRODUCT_CONTEXT_HEADER_NAMES.workspaceId));
+    const sessionContext = await resolveSessionContextForWorkspace(session, requestedWorkspaceId);
     if (sessionContext) {
       return sessionContext.productContext.workspaceId;
     }
+    throw new Error("AUTH_CONTEXT_REQUIRED");
   }
 
   return resolveProductContextFromRequest(request).workspaceId;

@@ -57,3 +57,8 @@ test("apiErrorFromCode prefers mapped status/message before fallback", async () 
     code: "UNKNOWN_CODE",
   });
 });
+
+test("apiErrorFromCode returns 403 for a missing authorized session context", async () => {
+  const response = apiErrorFromCode("AUTH_CONTEXT_REQUIRED", {}, {}, { status: 500 });
+  assert.equal(response.status, 403);
+});
