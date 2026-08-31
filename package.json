@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --import tsx --test \"lib/**/*.test.mts\""
+    "test": "node --import tsx --test \"lib/**/*.test.mts\"",
+    "test:integration:db": "NODE_ENV=test node --import tsx --test \"test/integration/*.test.mts\""
   },
   "dependencies": {
     "@circle-fin/adapter-viem-v2": "^1.15.0",
