@@ -4,10 +4,10 @@ Status: current
 SSoT: Current repository implementation and verification
 Last verified: 2026-08
 
-> **TL;DR** — This file is the **single source of truth** for live numbers/status. Current: Phases 1–6 done (real Arc release via `circle_wallet`), auth implemented, unit suite across `lib/**/*.test.mts` (24/24 green). A5 real-auth E2E flows verified manually against the Vercel preview (`settleflow-dev.vercel.app`) via uncommitted `/tmp/a5_e2e.sh` — 23/23 checks pass (2026-08). If another doc disagrees, this one wins.
+> **TL;DR** — This file is the **single source of truth** for live numbers/status. Current checkpoint: `b74925e` (production auth secret fail-closed and Settings error-contract fixes), with Reliability Hardening at `6004b05`. Tests and DB integration pass for covered paths, but operational readiness is **PARTIAL**, production readiness is **NOT READY**, and real Arc execution is **NOT AUTHORIZED**. Operational hardening is the next phase. If another doc disagrees, this one wins.
 
 ## Summary
-This repository is now a full-stack Next.js application for SettleFlow, an Arc-native milestone-based USDC payout workflow for crypto teams. The current implementation has moved beyond a frontend-only demo: it now includes a PostgreSQL + Prisma data layer, repository-backed server reads/writes, and API routes for payout, milestone, and release actions. Real Arc release execution is wired through `createReleaseExecutor` (Phase 6): `circle_wallet` mode sends real USDC from a server-side EOA, while `browser_wallet` fails explicitly on the server. Session auth (Phase 4), contributor management + settings/productization (Phase 5), a minimalist black/white theme refactor, and a 24-test unit layer are also merged into `main`.
+This repository is now a full-stack Next.js application for SettleFlow, an Arc-native milestone-based USDC payout workflow for crypto teams. The current implementation has moved beyond a frontend-only demo: it now includes a PostgreSQL + Prisma data layer, repository-backed server reads/writes, and API routes for payout, milestone, and release actions. Real Arc release execution is wired through `createReleaseExecutor` (Phase 6): `circle_wallet` mode sends real USDC from a server-side EOA, while `browser_wallet` fails explicitly on the server. Session auth (Phase 4), contributor management + settings/productization (Phase 5), a minimalist black/white theme refactor, and the `6004b05` Reliability Hardening test coverage are merged into `main`.
 
 ## Fact vs Assumption Legend
 - **Confirmed**: directly verified from repository files or command output.
@@ -39,10 +39,17 @@ This repository is now a full-stack Next.js application for SettleFlow, an Arc-n
 - Arc configuration is still read from `NEXT_PUBLIC_*` env vars with defaults.
 - Arc release behavior is now mode-aware through `sendUsdcOnArc()` and `createReleaseExecutor()`, with `mock`, `demo`, and `real` execution paths. `createReleaseExecutor()` supports `circle_wallet` (server-side EOA via `ARC_SERVER_PRIVATE_KEY`, sends real USDC with viem) and `browser_wallet` (explicit server failure — browser signs via wallet adapter). The executor registers the source wallet on the release record, persists the transaction hash, and refreshes proof on success.
 - The app UI was refactored onto a minimalist black/white design system driven by CSS variables (`lib/context/theme-context.tsx`), with modal body-scroll locking (`lib/hooks/use-scroll-lock.ts`); this refactor is merged into `main` (`38129aa`).
-- A unit test layer exists under `lib/api/*.test.mts`, `lib/arc/*.test.mts`, `lib/auth/*.test.mts`, `lib/notifications/*.test.mts`, `lib/repositories/*.test.mts`, and `lib/runtime/*.test.mts`; `npm test` runs `node --import tsx --test "lib/**/*.test.mts"` (24 tests).
+- A unit test layer exists under `lib/**/*.test.mts`, and committed DB-backed integration tests exist under `test/integration/`. The Reliability Hardening checkpoint (`6004b05`) verified `npm test` (138/138), `npm run test:integration:db` (9/9), and TypeScript. This is evidence for covered paths, not complete production readiness.
 - A webhook dispatcher (`lib/notifications/webhook-dispatcher.ts`) is wired into milestone repositories and dispatches `milestone_submitted`, `milestone_approved`/`milestone_rejected`, and `milestone_released` events. Webhook destination and per-event notification toggles are now persisted per-workspace (`webhookUrl`, `notifyOnSubmit`, `notifyOnApprove`, `notifyOnRelease` on the `Workspace` record) and managed from the Settings UI via `GET/PUT /api/v1/settings`; `dispatchWorkspaceWebhookNotification()` gates events by toggle and falls back to the env `SETTLEFLOW_WEBHOOK_URL` when no workspace URL is configured. A test endpoint (`POST /api/v1/webhooks/test`) also exists for manual URL verification.
 - Contributor records can now be edited (name, wallet, email, role, notes) and archived/restored from the Contributors page via an edit dialog backed by `PATCH /api/v1/contributors/[id]` and repository `updateContributor` (EVM-address validation + duplicate-wallet guard + workspace-scope check).
 - **Phase 6 complete**: real Arc release execution is wired. `createReleaseExecutor` with `circle_wallet` mode sends USDC via a viem wallet derived from `ARC_SERVER_PRIVATE_KEY`; native USDC is sent as a plain value transfer, ERC-20 USDC uses `transfer` with 6 decimals. The `browser_wallet` mode returns an explicit server-side failure (the browser signs via wallet adapter). Source wallet address is persisted on the release record, and proof is refreshed on success.
+
+### Operational boundary
+
+- Production auth secret fail-closed behavior and the Settings `AUTH_CONTEXT_REQUIRED` → HTTP 403 contract are implemented in code and checkpointed at `b74925e`.
+- Passing unit/integration tests and an implemented Arc executor are not operational or production payment verification.
+- Deployment isolation, secret custody, staging wallet controls, monitoring, reconciliation, incident recovery, and webhook isolation remain required before real Arc staging.
+- See `docs/OPERATIONS_RUNBOOK.md` and linked runbooks. Real Arc remains **NOT AUTHORIZED**.
 
 ### Assumption
 - The repository is transitioning from checkpoint/demo-first implementation toward a more complete application wedge, while still preserving some demo-safe behavior for release execution.
@@ -173,7 +180,7 @@ This repository is now a full-stack Next.js application for SettleFlow, an Arc-n
 - No Playwright/Jest/Vitest/Cypress end-to-end or browser integration test suites exist yet.
 
 ### Notes
-- Unit coverage is narrow by design (payload validation + repository logic); route-level integration and E2E coverage are still missing.
+- Unit coverage remains limited in scope, but DB-backed route-level authorization and release reliability coverage is now committed. A committed browser/E2E suite and deterministic concurrency coverage remain deferred.
 
 ## 6. What appears complete
 

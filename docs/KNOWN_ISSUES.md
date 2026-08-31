@@ -10,18 +10,38 @@ This document lists issues, gaps, inconsistencies, and inspection risks visible 
 
 ## Confirmed Issues and Gaps
 
-### 1. Auth/session is implemented but route-level integration coverage is absent
+### 1. Auth/session is implemented; broader browser coverage remains
 - Real server-side session auth (JWT cookie + middleware + DB User/WorkspaceMember → `getProductContext()`) is implemented across 16+ API routes (Phase 4). Anonymous mutations are blocked with `401 { error: "AUTH_REQUIRED" }`.
-- Route-level integration and E2E tests have not yet been written; coverage is limited to unit tests for session and auth logic.
+- Route-level DB-backed integration coverage is committed and verified. Broader browser/E2E coverage remains limited.
 
 ### 2. Automated test coverage is still narrow
 - Unit tests exist across `lib/**/*.test.mts` (current count: see `docs/CURRENT_STATE.md`); `npm test` runs `node --import tsx --test "lib/**/*.test.mts"`.
-- Coverage is limited to payload validation, repository logic, Arc executor logic, and session/auth logic; there are no route-level integration tests and no E2E/browser test suite.
+- Coverage includes DB-backed authorization and route-level release reliability. No committed browser/E2E suite exists, and deterministic concurrency remains deferred.
 
 ### 3. Arc release execution is wired but not yet proven production-safe
 - `lib/arc/release-executor.ts` now supports `circle_wallet` (real server-side EOA execution via viem) and `browser_wallet` (server-side failure — browser signs via wallet adapter). `sendUsdcOnArc()` in `lib/arc/onchain.ts` coordinates the send and proof update.
 - Real-mode execution is confirmed at the unit-test level but has not been verified as a production-safe end-to-end live release path against official Arc execution requirements.
 - `sendUsdcOnArc()` still returns synthetic results in `mock` and `demo` modes.
+
+### 3a. Reliability Hardening checkpoint
+- **Completed:** checkpoint `6004b05` verifies isolated PostgreSQL integration, route-level authorization/release reliability, failure/retry/proof-refresh/idempotency behavior, and safe non-executing test paths.
+- Real Arc/RPC transactions, real funds, production signing keys, and production webhooks were not used.
+- Deterministic concurrency coverage remains deferred because no dedicated concurrency primitive has been introduced.
+
+## Fixed Code Issues
+
+### Settings error contract — FIXED
+- `GET /api/v1/settings` now maps missing or unauthorized membership context to `AUTH_CONTEXT_REQUIRED` / HTTP 403.
+- Unexpected settings failures remain HTTP 500. The fix is checkpointed at `b74925e`; no authorization bypass was identified.
+
+## Operational Readiness Blockers
+
+- Deployment/database environment isolation, secret custody and rotation, staging wallet/funding controls, monitoring, reconciliation, incident recovery, and webhook destination isolation are not yet operationally verified.
+- Real Arc execution remains **NOT AUTHORIZED**.
+
+## Deferred Hardening
+
+- Deterministic concurrency coverage, durable idempotency, transaction limits/recipient allowlists, ambiguous transaction automation, and browser/E2E expansion remain deferred pending roadmap approval.
 
 ### 4. Legacy mock-data artifacts remain in the repository
 - `lib/data/` still contains:

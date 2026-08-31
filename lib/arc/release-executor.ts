@@ -119,7 +119,19 @@ async function executeCircleWallet(
           }),
         });
 
-    const receipt = await resolvedDeps.waitForReceipt(txHash);
+    let receipt: { status: "success" | "reverted" | undefined };
+    try {
+      receipt = await resolvedDeps.waitForReceipt(txHash);
+    } catch (error) {
+      return {
+        status: "pending",
+        txHash,
+        explorerUrl: `${ARC_CONFIG.explorerUrl}/tx/${txHash}`,
+        network: "Arc Testnet",
+        sourceWalletAddress: resolvedDeps.sourceAddress,
+        errorMessage: `Arc submission outcome requires reconciliation: ${error instanceof Error ? error.message : "receipt unavailable"}`,
+      };
+    }
     if (receipt.status !== "success") {
       return failedResult("Arc transfer reverted on-chain.");
     }
@@ -133,11 +145,11 @@ async function executeCircleWallet(
       sourceWalletAddress: resolvedDeps.sourceAddress,
     };
   } catch (error) {
-    return failedResult(
-      error instanceof Error
-        ? `Arc transfer failed: ${error.message}`
-        : "Arc transfer failed.",
-    );
+    return {
+      status: "pending",
+      network: "Arc Testnet",
+      errorMessage: `Arc submission outcome requires reconciliation: ${error instanceof Error ? error.message : "submission unavailable"}`,
+    };
   }
 }
 

@@ -159,7 +159,7 @@ test("circle_wallet mode reports a reverted on-chain receipt as failed", async (
   }
 });
 
-test("circle_wallet mode surfaces RPC/send failures as explicit failures", async () => {
+test("circle_wallet mode preserves an uncertain submission as pending reconciliation", async () => {
   const original = process.env.ARC_SERVER_PRIVATE_KEY;
   process.env.ARC_SERVER_PRIVATE_KEY = VALID_TEST_KEY;
   try {
@@ -172,8 +172,8 @@ test("circle_wallet mode surfaces RPC/send failures as explicit failures", async
     });
     const result = await executor(makeRequest());
 
-    assert.equal(result.status, "failed");
-    assert.match(result.errorMessage ?? "", /Arc transfer failed: boom/);
+    assert.equal(result.status, "pending");
+    assert.match(result.errorMessage ?? "", /requires reconciliation/);
   } finally {
     if (original === undefined) delete process.env.ARC_SERVER_PRIVATE_KEY;
     else process.env.ARC_SERVER_PRIVATE_KEY = original;

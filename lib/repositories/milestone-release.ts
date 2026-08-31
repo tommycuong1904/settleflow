@@ -50,7 +50,9 @@ export async function queueMilestoneRelease(
     void dispatchWorkspaceWebhookNotification(workspaceId, payload);
   },
 ) {
-  const result = await db.$transaction(async (tx: Prisma.TransactionClient) => {
+  let result;
+  try {
+    result = await db.$transaction(async (tx: Prisma.TransactionClient) => {
     const milestone = await tx.milestone.findUnique({
       where: { id: milestoneId },
       select: {
@@ -149,7 +151,13 @@ export async function queueMilestoneRelease(
       amountUsdc: milestone.amountUsdc.toString(),
       recipientAddress: milestone.payout.targetWalletAddress,
     };
-  });
+    });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      throw new Error("RELEASE_ALREADY_EXISTS");
+    }
+    throw error;
+  }
 
   // Non-blocking Webhook dispatch
   void notify({
@@ -162,4 +170,3 @@ export async function queueMilestoneRelease(
 
   return { release: result.release, proof: result.proof };
 }
-

@@ -107,7 +107,6 @@ Confirmed during the latest checkpoint:
 - **Dev server**: use `npx next dev -p 3001` (port 3000 is occupied by LumenFlow).
 
 ## Recommended next step
-Real Arc release execution (Phase 6) is now wired. The next priorities are:
-1. **Verify real Arc release execution on staging** (fund a server EOA with native USDC, confirm a `circle_wallet` release produces a real tx hash + Arcscan proof).
-2. Add route-level integration + E2E test coverage (Phase 7).
-3. Clean up legacy mock/demo artifacts and finalize ops docs (Phase 8).
+The current checkpoint is `b74925e`; Reliability Hardening is complete at `6004b05`. Phase 4A is operational documentation and safety planning. Follow the runbooks in `docs/OPERATIONS_RUNBOOK.md` before any infrastructure or transaction work.
+
+Current blockers are environment/database isolation, secret custody and rotation, staging wallet/funding controls, monitoring, reconciliation, incident recovery, and webhook destination isolation. Real Arc execution remains **NOT AUTHORIZED**.

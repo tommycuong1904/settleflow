@@ -4,6 +4,11 @@ const executionMode =
   (process.env.NEXT_PUBLIC_ARC_EXECUTION_MODE as ArcExecutionMode | undefined) ??
   "demo";
 
+/** Server-only gate; public UI configuration can never enable live execution alone. */
+export function isServerRealExecutionAuthorized(): boolean {
+  return process.env.SETTLEFLOW_REAL_EXECUTION_AUTHORIZATION === "enabled";
+}
+
 export const ARC_CONFIG = {
   chainId: Number(process.env.NEXT_PUBLIC_ARC_CHAIN_ID ?? 5042002),
   rpcUrl:

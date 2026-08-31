@@ -1,4 +1,4 @@
-import { ARC_CONFIG } from "@/lib/arc/config";
+import { ARC_CONFIG, isServerRealExecutionAuthorized } from "@/lib/arc/config";
 import type { ArcSendRequest, ArcSendResult } from "@/lib/arc/types";
 import { createReleaseExecutor } from "@/lib/arc/release-executor";
 
@@ -61,6 +61,13 @@ export async function sendUsdcOnArc(
     case "demo":
       return sendDemoUsdcOnArc(request);
     case "real":
+      if (!isServerRealExecutionAuthorized()) {
+        return {
+          status: "failed",
+          network: "Arc Testnet",
+          errorMessage: "Server-side real execution is not authorized.",
+        };
+      }
       return sendRealUsdcOnArc(request);
     case "mock":
     default:

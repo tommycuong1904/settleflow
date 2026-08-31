@@ -12,14 +12,15 @@ Move SettleFlow from an active MVP implementation toward a reliable, operable pa
 
 Core payout, milestone, session, workspace, contributor, proof, and mode-aware Arc execution paths exist in code. The remaining roadmap focuses on verification, operational hardening, and explicitly future product capabilities. See `docs/CURRENT_STATE.md` for live facts.
 
-## Next: reliability and hardening
+## Reliability and hardening checkpoint
 
-1. Add committed route-level integration and browser/E2E coverage for authenticated and workspace-scoped flows.
-2. Verify failure, retry, proof-refresh, and idempotency behavior across release paths.
-3. Establish operational controls for server signing keys, funding, gas/fee handling, monitoring, and incident recovery.
-4. Reconcile remaining legacy mock/demo paths and document any intentionally retained development fallback.
+Completed at `6004b05`:
 
-Why: implementation exists, but these checks are required before claiming production-safe payments or broad regression confidence.
+1. Committed DB-backed route-level integration for authenticated, workspace-scoped authorization and release flows.
+2. Verification of release failure, retry, proof-refresh, duplicate prevention, actor tampering, and cross-workspace behavior.
+3. Isolated PostgreSQL test database infrastructure and safe non-executing test paths.
+
+Browser/E2E coverage and deterministic concurrency remain deferred. Reliability verification does not claim production-safe payments.
 
 ## Then: ship-ready MVP
 
@@ -28,7 +29,20 @@ Why: implementation exists, but these checks are required before claiming produc
 3. Establish release reconciliation/observability expectations.
 4. Validate Arc operational and compliance requirements for the selected execution mode.
 
+Before any controlled real Arc staging transaction, establish a dedicated staging environment/database and wallet, secret custody/rotation, transaction guardrails, reconciliation, monitoring, incident recovery, webhook destination isolation, and explicit staging approval.
+
 No delivery dates are assigned here.
+
+## Phase 4 operational sequence
+
+1. **4A — Operational Documentation & Safety Planning:** establish the runbook set, ownership, environment matrix, and explicit safety gates.
+2. **4B — Staging Infrastructure Isolation:** provision independently scoped staging app, database, secrets, wallet, webhook destination, and monitoring.
+3. **4C — Approved Production-Code Hardening:** only narrowly approved limits, idempotency/concurrency, reconciliation, logging, or execution-mode controls.
+4. **4D — Staging Verification Without Transaction:** verify deployment, migration, auth, isolation, monitoring, and incident procedures without sending funds.
+5. **4E — Real Arc Staging:** one bounded transaction only after a separate written safety gate and explicit approval.
+6. **4F — Post-Transaction Reconciliation & Documentation:** reconcile proof/state, record incidents, and decide next steps.
+
+Real Arc execution is **NOT AUTHORIZED** by this roadmap until all required gates are satisfied.
 
 ## Future product capabilities
 

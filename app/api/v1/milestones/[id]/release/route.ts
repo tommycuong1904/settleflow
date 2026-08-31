@@ -5,7 +5,7 @@ import { ARC_CONFIG } from "@/lib/arc/config";
 import { sendUsdcOnArc } from "@/lib/arc/send";
 import { db } from "@/lib/db/client";
 import { queueMilestoneRelease } from "@/lib/repositories/milestone-release";
-import { refreshReleaseProof } from "@/lib/repositories/release-proof";
+import { markReleaseReconciliationPending, refreshReleaseProof } from "@/lib/repositories/release-proof";
 import { assertCanReleaseMilestone } from "@/lib/runtime/product-policy";
 import { resolveProductContextFromRequestWithSession } from "@/lib/auth/session-server";
 
@@ -62,6 +62,15 @@ export async function POST(
         }
 
         return NextResponse.json(refreshed, { status: 201 });
+      }
+      if (sendResult.status === "pending" && sendResult.errorMessage) {
+        const pending = await markReleaseReconciliationPending(result.release.id, productContext.workspaceId, {
+          txHash: sendResult.txHash,
+          network: sendResult.network,
+          explorerUrl: sendResult.explorerUrl,
+          reason: sendResult.errorMessage,
+        });
+        return NextResponse.json(pending, { status: 202 });
       }
     }
 

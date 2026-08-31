@@ -13,7 +13,7 @@ Last verified: 2026-08
 | Milestone approval/rejection | Implemented | `reviewMilestone`, required rejection comment |
 | Release queue and proof records | Implemented | `queueMilestoneRelease`, `refreshReleaseProof` |
 | Arc browser-wallet path | Partially implemented | Browser boundary exists; server executor fails explicitly for `browser_wallet` |
-| Arc server release path | Implemented in code; production readiness not verified | `createReleaseExecutor`, `ARC_SERVER_PRIVATE_KEY`, viem send path |
+| Arc server release path | Implemented in code; operationally unverified | `createReleaseExecutor`, `ARC_SERVER_PRIVATE_KEY`, viem send path; not production-ready |
 | Release retry | Implemented | `retryFailedRelease`, retry API route |
 | Session authentication | Implemented for current MVP flow | Google/wallet auth routes, signed `sf_session`, `proxy.ts` gate |
 | Workspace membership and actor mapping | Implemented | Prisma `WorkspaceMemberRole`; `ops → owner` in `session-mapping.ts` |
@@ -21,7 +21,7 @@ Last verified: 2026-08
 | Contributor create/edit/archive | Implemented | contributor routes/repository; EVM validation and duplicate-wallet guard |
 | Activity ledger and CSV export | Implemented | activity repositories and `/activity` surface |
 | Workspace webhook settings/test | Implemented | settings and webhook routes/repository |
-| Automated unit coverage | Implemented, scope limited | Tests exist under `lib/**`; route/E2E suite is not committed |
+| Automated test coverage | Implemented, scope limited; operational verification not implied | `npm test` 138/138; DB-backed route integration is committed; browser/E2E and deterministic concurrency remain deferred |
 | Escrow smart contract | Planned | No implemented escrow contract path verified |
 | Multi-chain bridging | Planned | No implemented bridge path verified |
 | Multi-signature approval | Planned | No implemented threshold model verified |

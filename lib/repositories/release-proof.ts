@@ -192,3 +192,24 @@ export async function refreshReleaseProof(
     };
   });
 }
+
+/** Preserve an uncertain external submission as non-retryable pending state. */
+export async function markReleaseReconciliationPending(
+  releaseId: string,
+  workspaceId: string,
+  input: { txHash?: string; network?: string; explorerUrl?: string; reason: string },
+) {
+  return db.$transaction(async (tx) => {
+    const release = await tx.release.findUnique({
+      where: { id: releaseId },
+      select: { id: true, payout: { select: { workspaceId: true } }, proofs: { orderBy: { createdAt: "desc" }, take: 1, select: { id: true } } },
+    });
+    if (!release) throw new Error("RELEASE_NOT_FOUND");
+    if (release.payout.workspaceId !== workspaceId) throw new Error("WORKSPACE_SCOPE_MISMATCH");
+    const proof = release.proofs[0];
+    if (!proof) throw new Error("PROOF_NOT_FOUND");
+    await tx.release.update({ where: { id: release.id }, data: { status: "pending", failureReason: input.reason } });
+    await tx.transactionProof.update({ where: { id: proof.id }, data: { status: "pending", txHash: input.txHash, network: input.network, explorerUrl: input.explorerUrl, failureReason: input.reason } });
+    return { releaseId: release.id, proofId: proof.id, status: "pending" as const };
+  });
+}
