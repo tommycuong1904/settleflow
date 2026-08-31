@@ -63,12 +63,12 @@ export async function POST(
 
         return NextResponse.json(refreshed, { status: 201 });
       }
-      if (sendResult.status === "pending" && sendResult.errorMessage) {
+      if (sendResult.status === "pending") {
         const pending = await markReleaseReconciliationPending(result.release.id, productContext.workspaceId, {
           txHash: sendResult.txHash,
           network: sendResult.network,
           explorerUrl: sendResult.explorerUrl,
-          reason: sendResult.errorMessage,
+          reason: sendResult.errorMessage ?? "Arc submission outcome requires reconciliation.",
         });
         return NextResponse.json(pending, { status: 202 });
       }
