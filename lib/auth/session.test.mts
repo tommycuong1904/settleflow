@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 
 import {
   createSessionToken,
+  getSessionSecret,
   verifySessionToken,
   type SessionPayload,
 } from "./session";
@@ -35,6 +36,38 @@ const samplePayload: SessionPayload = {
   address: null,
   authType: "web2_google",
 };
+
+test("fails closed in production when the session secret is missing", () => {
+  const env = process.env as Record<string, string | undefined>;
+  const previousEnv = env.NODE_ENV;
+  const previousSecret = env.SETTLEFLOW_AUTH_SECRET;
+  env.NODE_ENV = "production";
+  delete env.SETTLEFLOW_AUTH_SECRET;
+  try {
+    assert.throws(() => getSessionSecret(), /required in production/);
+  } finally {
+    if (previousEnv === undefined) delete env.NODE_ENV;
+    else env.NODE_ENV = previousEnv;
+    if (previousSecret === undefined) delete env.SETTLEFLOW_AUTH_SECRET;
+    else env.SETTLEFLOW_AUTH_SECRET = previousSecret;
+  }
+});
+
+test("uses the configured production session secret", () => {
+  const env = process.env as Record<string, string | undefined>;
+  const previousEnv = env.NODE_ENV;
+  const previousSecret = env.SETTLEFLOW_AUTH_SECRET;
+  env.NODE_ENV = "production";
+  env.SETTLEFLOW_AUTH_SECRET = "configured-test-secret";
+  try {
+    assert.equal(getSessionSecret(), "configured-test-secret");
+  } finally {
+    if (previousEnv === undefined) delete env.NODE_ENV;
+    else env.NODE_ENV = previousEnv;
+    if (previousSecret === undefined) delete env.SETTLEFLOW_AUTH_SECRET;
+    else env.SETTLEFLOW_AUTH_SECRET = previousSecret;
+  }
+});
 
 test("round-trips a valid session token with the correct secret", async () => {
   const token = await createSessionToken(samplePayload, SECRET);

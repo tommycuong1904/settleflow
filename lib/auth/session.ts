@@ -33,10 +33,12 @@ export const SESSION_COOKIE_OPTIONS = {
 };
 
 export function getSessionSecret(): string {
-  return (
-    process.env.SETTLEFLOW_AUTH_SECRET ??
-    "dev-session-secret-do-not-use-in-prod"
-  );
+  const configured = process.env.SETTLEFLOW_AUTH_SECRET;
+  if (configured) return configured;
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("SETTLEFLOW_AUTH_SECRET is required in production.");
+  }
+  return "dev-session-secret-do-not-use-in-prod";
 }
 
 function base64UrlEncodeBytes(bytes: Uint8Array): string {
