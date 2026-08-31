@@ -73,3 +73,62 @@ test("release failure, retry, proof refresh, idempotency, and workspace scope us
     await db.user.deleteMany({ where: { id: { in: [user.id, otherUser.id] } } });
   }
 });
+test("concurrent/duplicate retry hits the active-release uniqueness index and maps to RELEASE_ALREADY_EXISTS", async () => {
+  const suffix = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const user = await db.user.create({ data: { displayName: "Retry Owner", email: `retry-owner-${suffix}@example.com` } });
+  const workspace = await db.workspace.create({ data: { name: "Retry Workspace", slug: `retry-${suffix}` } });
+  await db.workspaceMember.create({ data: { workspaceId: workspace.id, userId: user.id, role: "owner" } });
+  const contributor = await db.contributor.create({
+    data: { workspaceId: workspace.id, createdByUserId: user.id, name: "Retry Contributor", walletAddress: destination },
+  });
+  const payout = await db.payout.create({
+    data: { workspaceId: workspace.id, contributorId: contributor.id, createdByUserId: user.id, title: "Retry Payout", totalAmountUsdc: "10", status: "active", targetWalletAddress: destination },
+  });
+  const milestone = await db.milestone.create({
+    data: { payoutId: payout.id, title: "Retry milestone", description: "Concurrent retry test", amountUsdc: "10", sequence: 1, status: "approved" },
+  });
+
+  try {
+    // Deterministically simulate the concurrent retry race:
+    // an active queued release already exists for the milestone (as if Request A committed),
+    // while Request B retries the newest failed release and attempts to create another queued release.
+    const queued = await queueMilestoneRelease(milestone.id, user.id, workspace.id, "10", "browser_wallet", () => undefined);
+    assert.equal(queued.release.status, "queued");
+
+    const failedRelease = await db.release.create({
+      data: {
+        payoutId: payout.id,
+        milestoneId: milestone.id,
+        triggeredByUserId: user.id,
+        amountUsdc: "10",
+        status: "failed",
+        executionMode: "browser_wallet",
+        sourceWalletAddress: null,
+        destinationWalletAddress: destination,
+      },
+    });
+    await db.transactionProof.create({
+      data: {
+        payoutId: payout.id,
+        milestoneId: milestone.id,
+        releaseId: failedRelease.id,
+        status: "failed",
+        failureReason: "deterministic test failure",
+      },
+    });
+
+    await assert.rejects(
+      retryFailedRelease(failedRelease.id, user.id, workspace.id),
+      /RELEASE_ALREADY_EXISTS/,
+    );
+  } finally {
+    await db.transactionProof.deleteMany({ where: { payoutId: payout.id } });
+    await db.release.deleteMany({ where: { payoutId: payout.id } });
+    await db.milestone.delete({ where: { id: milestone.id } });
+    await db.payout.delete({ where: { id: payout.id } });
+    await db.contributor.delete({ where: { id: contributor.id } });
+    await db.workspaceMember.deleteMany({ where: { workspaceId: workspace.id } });
+    await db.workspace.delete({ where: { id: workspace.id } });
+    await db.user.delete({ where: { id: user.id } });
+  }
+});

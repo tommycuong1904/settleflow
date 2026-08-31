@@ -43,6 +43,7 @@ export async function POST(
         DESTINATION_WALLET_MISSING: 422,
         USER_NOT_FOUND: 404,
         FORBIDDEN_RELEASE_RETRY: 403,
+        RELEASE_ALREADY_EXISTS: 409,
       },
       {
         RELEASE_NOT_FOUND: "Release not found.",
@@ -55,6 +56,7 @@ export async function POST(
         DESTINATION_WALLET_MISSING: "Destination wallet is missing.",
         USER_NOT_FOUND: "Owner context user not found.",
         FORBIDDEN_RELEASE_RETRY: "User is not allowed to retry this release.",
+        RELEASE_ALREADY_EXISTS: "A release already exists for this milestone.",
       },
       { message: "Unable to retry release.", status: 500 },
     );
