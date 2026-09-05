@@ -118,7 +118,7 @@ export function PayoutReceiptModal({
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl border border-cyan-500/20 bg-[#0c1322] p-6 sm:p-8 shadow-[0_0_60px_rgba(34,211,238,0.15)] text-white print:border-none print:shadow-none print:bg-white print:text-black"
+        className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl border border-[var(--border-strong)] bg-[var(--surface)] p-6 sm:p-8 shadow-2xl text-[var(--foreground)] print:border-none print:shadow-none print:bg-white print:text-black"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Glow */}
@@ -128,24 +128,24 @@ export function PayoutReceiptModal({
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute right-5 top-5 rounded-full p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors print:hidden"
+          className="absolute right-5 top-5 rounded-full p-1.5 text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--foreground)] transition-colors print:hidden"
           aria-label="Close modal"
         >
           <X size={18} />
         </button>
 
         {/* Receipt Document Header */}
-        <div className="border-b border-slate-800 pb-6 print:border-slate-300">
+        <div className="border-b border-[var(--border-soft)] pb-6 print:border-slate-300">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-cyan-400/10 border border-cyan-400/30 text-cyan-300 shadow-[0_0_15px_rgba(34,211,238,0.2)] print:border-slate-800 print:text-slate-900">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--accent-cyan)]/10 border border-[var(--accent-cyan)]/30 text-[var(--accent-cyan)] print:border-slate-800 print:text-slate-900">
                 <FileCheck size={20} />
               </div>
               <div>
-                <span className="text-xs uppercase tracking-[0.2em] text-cyan-400 font-semibold print:text-cyan-800">
+                <span className="text-xs uppercase tracking-[0.2em] text-[var(--accent-cyan)] font-semibold print:text-cyan-800">
                   Official Settlement Receipt
                 </span>
-                <h2 className="text-xl font-bold tracking-tight text-white print:text-black">
+                <h2 className="text-xl font-bold tracking-tight text-[var(--foreground)] print:text-black">
                   {payout.title}
                 </h2>
               </div>
@@ -159,15 +159,15 @@ export function PayoutReceiptModal({
         </div>
 
         {/* Recipient & Rail Meta */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-5 border-b border-slate-800 text-xs print:border-slate-300">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-5 border-b border-[var(--border-soft)] text-xs print:border-slate-300">
           <div>
-            <p className="text-[11px] uppercase tracking-wider text-slate-400 font-medium">
+            <p className="text-[11px] uppercase tracking-wider text-[var(--text-muted)] font-medium">
               Recipient Contributor
             </p>
-            <p className="mt-1 text-sm font-semibold text-white print:text-black">
+            <p className="mt-1 text-sm font-semibold text-[var(--foreground)] print:text-black">
               {contributor?.name ?? "Designated Contributor"}
             </p>
-            <p className="mt-0.5 font-mono text-slate-300 print:text-slate-700">
+            <p className="mt-0.5 font-mono text-[var(--text-primary)] print:text-slate-700 break-all">
               {contributor?.walletAddress ? (
                 <span>Address: {contributor.walletAddress}</span>
               ) : (
@@ -177,15 +177,15 @@ export function PayoutReceiptModal({
           </div>
 
           <div className="sm:text-right">
-            <p className="text-[11px] uppercase tracking-wider text-slate-400 font-medium">
+            <p className="text-[11px] uppercase tracking-wider text-[var(--text-muted)] font-medium">
               Settlement Protocol
             </p>
-            <p className="mt-1 text-sm font-semibold text-cyan-300 print:text-cyan-700">
+            <p className="mt-1 text-sm font-semibold text-[var(--accent-cyan)] print:text-cyan-700">
               Arc Testnet (Circle USDC)
             </p>
-            <p className="mt-0.5 text-slate-300 print:text-slate-700">
+            <p className="mt-0.5 text-[var(--text-primary)] print:text-slate-700">
               Status:{" "}
-              <strong className="capitalize text-white print:text-black">
+              <strong className="capitalize text-[var(--foreground)] print:text-black">
                 {payout.status.replace("_", " ")}
               </strong>
             </p>
@@ -193,8 +193,8 @@ export function PayoutReceiptModal({
         </div>
 
         {/* Milestone Breakdown Table */}
-        <div className="py-5 border-b border-slate-800 print:border-slate-300 space-y-3">
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-300 print:text-slate-800">
+        <div className="py-5 border-b border-[var(--border-soft)] print:border-slate-300 space-y-3">
+          <p className="text-xs font-semibold uppercase tracking-wider text-[var(--foreground)] print:text-slate-800">
             Milestone Settlement Breakdown
           </p>
 
@@ -206,36 +206,36 @@ export function PayoutReceiptModal({
               return (
                 <div
                   key={m.id}
-                  className="flex items-center justify-between p-3 rounded-xl bg-slate-900/60 border border-slate-800 print:bg-slate-100 print:border-slate-200"
+                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-xl bg-[var(--surface-muted)] border border-[var(--border-soft)] print:bg-slate-100 print:border-slate-200"
                 >
                   <div className="space-y-0.5">
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-xs text-slate-400">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-mono text-xs text-[var(--text-muted)]">
                         #{idx + 1}
                       </span>
-                      <span className="text-xs font-semibold text-white print:text-black">
+                      <span className="text-xs font-semibold text-[var(--foreground)] print:text-black">
                         {m.title}
                       </span>
                       <span
                         className={`inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wider ${
                           isReleased
-                            ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
+                            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
                             : isApproved
-                            ? "bg-cyan-500/10 text-cyan-300 border border-cyan-500/30"
-                            : "bg-slate-800 text-slate-400 border border-slate-700"
+                            ? "bg-cyan-500/10 text-cyan-600 dark:text-cyan-300 border border-cyan-500/30"
+                            : "bg-[var(--surface-strong)] text-[var(--text-muted)] border border-[var(--border-soft)]"
                         }`}
                       >
                         {m.status}
                       </span>
                     </div>
                     {m.description && (
-                      <p className="text-[11px] text-slate-400 truncate max-w-md print:text-slate-600">
+                      <p className="text-[11px] text-[var(--text-muted)] truncate max-w-md print:text-slate-600">
                         {m.description}
                       </p>
                     )}
                   </div>
 
-                  <div className="text-right font-mono text-xs font-semibold text-white print:text-black">
+                  <div className="text-left sm:text-right font-mono text-xs font-semibold text-[var(--foreground)] print:text-black shrink-0">
                     {formatUsdc(Number(m.amount))} USDC
                   </div>
                 </div>
@@ -245,28 +245,28 @@ export function PayoutReceiptModal({
         </div>
 
         {/* Financial Summary */}
-        <div className="py-5 border-b border-slate-800 print:border-slate-300">
+        <div className="py-5 border-b border-[var(--border-soft)] print:border-slate-300">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="space-y-1">
-              <p className="text-xs uppercase tracking-wider text-slate-400">
+              <p className="text-xs uppercase tracking-wider text-[var(--text-muted)]">
                 Settled Amount
               </p>
-              <p className="text-2xl font-bold tracking-tight text-emerald-400 print:text-emerald-700 font-mono">
+              <p className="text-2xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400 print:text-emerald-700 font-mono">
                 {formatUsdc(totalSettled)} USDC
               </p>
-              <p className="text-[11px] text-slate-400">
+              <p className="text-[11px] text-[var(--text-muted)]">
                 {releasedMilestones.length} of {milestones.length} milestones disbursed
               </p>
             </div>
 
             <div className="sm:text-right space-y-1">
-              <p className="text-xs uppercase tracking-wider text-slate-400">
+              <p className="text-xs uppercase tracking-wider text-[var(--text-muted)]">
                 Total Agreement Value
               </p>
-              <p className="text-2xl font-bold tracking-tight text-white print:text-black font-mono">
+              <p className="text-2xl font-bold tracking-tight text-[var(--foreground)] print:text-black font-mono">
                 {formatUsdc(totalAmount)} USDC
               </p>
-              <p className="text-[11px] text-slate-400">
+              <p className="text-[11px] text-[var(--text-muted)]">
                 Remaining: {formatUsdc(remainingAmount)} USDC
               </p>
             </div>
@@ -276,19 +276,19 @@ export function PayoutReceiptModal({
         {/* Latest Onchain Proof Verification */}
         {releaseProof?.txHash && (
           <div className="pt-4 pb-2 space-y-1.5">
-            <div className="flex items-center gap-2 text-xs text-cyan-300 print:text-cyan-800">
+            <div className="flex items-center gap-2 text-xs text-[var(--accent-cyan)] print:text-cyan-800">
               <ShieldCheck size={15} />
               <span className="font-semibold uppercase tracking-wider">
                 Cryptographic Settlement Proof
               </span>
             </div>
-            <div className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-cyan-950/20 border border-cyan-500/20 text-xs font-mono text-slate-300 print:bg-slate-100 print:border-slate-300 print:text-black">
+            <div className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-[var(--surface-muted)] border border-[var(--border-soft)] text-xs font-mono text-[var(--text-primary)] print:bg-slate-100 print:border-slate-300 print:text-black">
               <span className="truncate">Tx: {releaseProof.txHash}</span>
               <a
                 href={`https://testnet.arcscan.app/tx/${releaseProof.txHash}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-cyan-400 hover:underline flex items-center gap-1 shrink-0 print:hidden"
+                className="text-[var(--accent-cyan)] hover:underline flex items-center gap-1 shrink-0 print:hidden"
               >
                 Arcscan <ExternalLink size={12} />
               </a>
@@ -297,7 +297,7 @@ export function PayoutReceiptModal({
         )}
 
         {/* Action CTAs */}
-        <div className="mt-6 pt-4 border-t border-slate-800 flex items-center justify-end gap-3 print:hidden">
+        <div className="mt-6 pt-4 border-t border-[var(--border-soft)] flex items-center justify-end gap-3 print:hidden">
           <Button
             type="button"
             variant="secondary"

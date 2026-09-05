@@ -38,10 +38,9 @@ export function SubmitMilestoneDialog({
   const [error, setError] = useState<string | null>(null);
 
   useScrollLock(isOpen);
+  const { address: connectedAddress } = useWallet();
 
   if (!isOpen) return null;
-
-  const { address: connectedAddress } = useWallet();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,14 +94,14 @@ export function SubmitMilestoneDialog({
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-lg rounded-3xl border border-cyan-500/20 bg-[#0c1322] p-6 sm:p-8 shadow-[0_0_60px_rgba(34,211,238,0.15)] text-white"
+        className="relative w-full max-w-lg rounded-3xl border border-[var(--border-strong)] bg-[var(--surface)] p-6 sm:p-8 shadow-2xl text-[var(--foreground)]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close Button */}
         <button
           onClick={onClose}
           disabled={submitting}
-          className="absolute right-5 top-5 rounded-full p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
+          className="absolute right-5 top-5 rounded-full p-1.5 text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--foreground)] transition-colors"
           aria-label="Close dialog"
         >
           <X size={18} />
@@ -113,11 +112,11 @@ export function SubmitMilestoneDialog({
           <span className="text-[11px] uppercase tracking-[0.2em] text-cyan-400 font-semibold">
             Deliverable Submission
           </span>
-          <h2 className="text-xl font-bold tracking-tight text-white mt-1">
+          <h2 className="text-xl font-bold tracking-tight text-[var(--foreground)] mt-1">
             Submit &quot;{milestone.title}&quot;
           </h2>
-          <p className="text-xs text-slate-400 mt-1">
-            Value: <strong className="text-cyan-300 font-mono">{formatUsdc(milestone.amount)} USDC</strong> • Escrow release unlocks upon reviewer approval.
+          <p className="text-xs text-[var(--text-muted)] mt-1">
+            Value: <strong className="text-[var(--foreground)] font-mono font-semibold">{formatUsdc(milestone.amount)} USDC</strong> • Escrow release unlocks upon reviewer approval.
           </p>
         </div>
 
@@ -139,7 +138,7 @@ export function SubmitMilestoneDialog({
               value={summary}
               onChange={(e) => setSummary(e.target.value)}
               placeholder="Describe what has been delivered, features built, or bugs solved..."
-              className="w-full rounded-xl border border-slate-700 bg-slate-900/90 p-3 text-xs text-white placeholder-slate-500 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400 transition-all resize-none"
+              className="w-full rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-3 text-xs text-[var(--foreground)] placeholder-[var(--text-muted)] focus:border-[var(--foreground)] focus:outline-none focus:ring-1 focus:ring-[var(--foreground)] transition-all resize-none"
             />
           </div>
 
@@ -155,7 +154,7 @@ export function SubmitMilestoneDialog({
                 value={artifactUrl}
                 onChange={(e) => setArtifactUrl(e.target.value)}
                 placeholder="https://github.com/org/repo/pull/123 or https://figma.com/file/..."
-                className="w-full rounded-xl border border-slate-700 bg-slate-900/90 py-2.5 pl-9 pr-3 text-xs text-white placeholder-slate-500 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400 transition-all"
+                className="w-full rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] py-2.5 pl-9 pr-3 text-xs text-[var(--foreground)] placeholder-[var(--text-muted)] focus:border-[var(--foreground)] focus:outline-none focus:ring-1 focus:ring-[var(--foreground)] transition-all"
               />
             </div>
           </div>
@@ -195,7 +194,7 @@ export function SubmitMilestoneDialog({
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="e.g. Test credentials, staging URL environment variables, or review tips"
-              className="w-full rounded-xl border border-slate-700 bg-slate-900/90 py-2.5 px-3 text-xs text-white placeholder-slate-500 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400 transition-all"
+              className="w-full rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] py-2.5 px-3 text-xs text-[var(--foreground)] placeholder-[var(--text-muted)] focus:border-[var(--foreground)] focus:outline-none focus:ring-1 focus:ring-[var(--foreground)] transition-all"
             />
           </div>
 

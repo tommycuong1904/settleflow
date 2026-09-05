@@ -67,7 +67,7 @@ export function DeleteContributorDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md transition-opacity animate-in fade-in">
-      <div className="relative w-full max-w-[460px] overflow-hidden rounded-xl border bg-[var(--surface-muted)] p-6 sm:p-8">
+      <div className="relative w-full max-w-[460px] overflow-hidden rounded-2xl border border-[var(--border-strong)] bg-[var(--surface)] p-6 sm:p-8 shadow-2xl text-[var(--foreground)]">
         <button
           type="button"
           onClick={onClose}

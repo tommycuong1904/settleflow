@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { MilestoneStatusBadge } from "@/components/milestones/milestone-status-badge";
 import { Button } from "@/components/shared/button";
+import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { SectionCard } from "@/components/shared/section-card";
 import DashboardTabs from "@/components/dashboard/DashboardTabs";
@@ -88,32 +89,21 @@ export default async function DashboardPage() {
           : "No urgent payout blockers are open right now.";
 
   return (
-    <div className="sf-app-wrapper flex flex-col py-10 md:py-12 gap-8">
-      <div className="w-full flex flex-col gap-4">
-        <div className="w-full">
-          <p className="text-sm font-medium uppercase tracking-[0.22em] text-[var(--text-muted)]">
-            Payout operations
-          </p>
-          <h1 className="text-2xl font-semibold tracking-tight text-[var(--foreground)] md:text-3xl w-full">
-            Review queue, release readiness, and settlement proof in one place.
-          </h1>
-          <p className="text-sm leading-7 text-[var(--text-primary)] md:text-base">
-            SettleFlow keeps contributor payouts visible from submitted work to
-            approved release and onchain proof, so teams can move faster
-            without losing control.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-3">
-          {nextActionPayoutId && nextActionLabel ? (
-            <Button href={`/payouts/${nextActionPayoutId}`} variant="secondary">
-              {nextActionLabel}
-            </Button>
-          ) : null}
-          <Button href="/payouts/new" variant="primary">
-            New Payout
+    <div className="sf-app-wrapper flex flex-col py-8 md:py-12 gap-8">
+      <PageHeader
+        eyebrow="Payout operations"
+        title="Review queue, release readiness, and settlement proof in one place."
+        description="SettleFlow keeps contributor payouts visible from submitted work to approved release and onchain proof, so teams can move faster without losing control."
+      >
+        {nextActionPayoutId && nextActionLabel ? (
+          <Button href={`/payouts/${nextActionPayoutId}`} variant="secondary" size="sm">
+            {nextActionLabel}
           </Button>
-        </div>
-      </div>
+        ) : null}
+        <Button href="/payouts/new" variant="primary" size="sm">
+          New Payout
+        </Button>
+      </PageHeader>
 
       {/* Inline Wallet Connection Gate (Hybrid Web2.5) */}
       <WalletGate />

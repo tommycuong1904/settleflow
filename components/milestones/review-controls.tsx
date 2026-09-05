@@ -16,7 +16,7 @@ export function ReviewControls({
   return (
     <div className="space-y-4">
       <div className="space-y-1.5">
-        <p className="font-semibold text-white">Awaiting reviewer approval</p>
+        <p className="font-semibold text-[var(--foreground)]">Awaiting reviewer approval</p>
         <p className="text-sm text-[var(--text-muted)]">
           Submitted {submittedAt ? submittedAt.slice(0, 10) : "recently"}. Approving this milestone makes it eligible for release.
         </p>

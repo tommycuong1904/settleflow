@@ -171,9 +171,15 @@ h1 {
 .sf-app-wrapper {
   width: 100%;
   margin: 0 auto;
-  padding: 32px 40px;
+  padding: 20px 16px;
   min-height: 100dvh;
   overflow-y: auto;
+}
+
+@media (min-width: 768px) {
+  .sf-app-wrapper {
+    padding: 32px 40px;
+  }
 }
 
 /* ─── App shell / sidebar layout ─────────────────────────── */
@@ -185,7 +191,7 @@ h1 {
 .sf-sidebar {
   width: 220px;
   flex-shrink: 0;
-  display: flex;
+  display: none;
   flex-direction: column;
   background: var(--sidebar-bg);
   border-right: 1px solid var(--sidebar-border);
@@ -195,6 +201,12 @@ h1 {
   height: 100dvh;
   overflow-y: auto;
   scrollbar-width: none;
+}
+
+@media (min-width: 768px) {
+  .sf-sidebar {
+    display: flex;
+  }
 }
 
 .sf-sidebar::-webkit-scrollbar { display: none; }
@@ -318,10 +330,14 @@ h1 {
 /* ─── Header within app layout ───────────────────── */
 .sf-app-header {
   display: flex;
-  gap: 12px;
   align-items: center;
-  justify-content: flex-end;
   padding: 8px 16px;
+}
+
+@media (min-width: 768px) {
+  .sf-app-header {
+    padding: 10px 24px;
+  }
 }
 
 
@@ -1861,6 +1877,76 @@ h1 {
 
   .sf-final-flow i {
     width: 20px;
+  }
+}
+
+/* ─── Toast Notifications ───────────────────── */
+.sf-toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 2147483647;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 10px;
+  pointer-events: none;
+  max-width: calc(100vw - 32px);
+}
+
+@media (max-width: 767px) {
+  .sf-toast-container {
+    left: 16px !important;
+    right: 16px !important;
+    bottom: calc(24px + env(safe-area-inset-bottom, 12px)) !important;
+    transform: none !important;
+    width: auto !important;
+    max-width: none !important;
+    align-items: center !important;
+  }
+
+  .sf-toast-item {
+    max-width: 420px !important;
+  }
+}
+
+.sf-toast-item {
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+  padding: 13px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background-color: #059669;
+  color: #ffffff;
+  box-shadow: 0 12px 36px -4px rgba(5, 150, 105, 0.38), 0 4px 12px rgba(0, 0, 0, 0.15);
+  animation: sf-toast-in 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes sf-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.sf-toast-item--closing {
+  animation: sf-toast-out 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes sf-toast-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(8px) scale(0.95);
   }
 }
 

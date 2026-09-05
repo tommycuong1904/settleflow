@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { Button } from "@/components/shared/button";
+import { PageHeader } from "@/components/shared/page-header";
 import { SectionCard } from "@/components/shared/section-card";
 import { WalletGate } from "@/components/dashboard/wallet-gate";
 import { PayoutListClient } from "@/components/payouts/payout-list-client";
@@ -26,28 +27,17 @@ export default async function PayoutsPage() {
   const totalValue = payouts.reduce((sum, p) => sum + Number(p.totalAmount), 0);
 
   return (
-    <div className="sf-app-wrapper flex flex-col py-10 md:py-12 gap-8">
+    <div className="sf-app-wrapper flex flex-col py-8 md:py-12 gap-8">
       {/* Header */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div className="space-y-3">
-          <p className="text-sm font-medium uppercase tracking-[0.22em] text-[var(--text-muted)]">
-            Escrow Contracts
-          </p>
-          <div className="space-y-2">
-            <h1 className="text-2xl font-semibold tracking-tight text-[var(--foreground)] md:text-3xl">
-              Contributor Payouts
-            </h1>
-            <p className="max-w-3xl text-sm leading-7 text-[var(--text-primary)] md:text-base">
-              Manage milestone-based payment agreements, inspect release readiness, and track Arc onchain settlement history.
-            </p>
-          </div>
-        </div>
-        <div>
-          <Button href="/payouts/new" variant="primary">
-            <Plus size={16} className="mr-1.5" /> New Payout
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        eyebrow="Escrow Contracts"
+        title="Contributor Payouts"
+        description="Manage milestone-based payment agreements, inspect release readiness, and track Arc onchain settlement history."
+      >
+        <Button href="/payouts/new" variant="primary" size="sm">
+          <Plus size={15} className="mr-1.5" /> New Payout
+        </Button>
+      </PageHeader>
 
       {/* Inline Wallet Connection Gate */}
       <WalletGate />

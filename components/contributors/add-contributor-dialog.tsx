@@ -111,7 +111,7 @@ export function AddContributorDialog({
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-[500px] overflow-hidden rounded-xl border bg-[var(--surface-muted)] p-6 sm:p-8"
+        className="relative w-full max-w-[500px] overflow-hidden rounded-2xl border border-[var(--border-strong)] bg-[var(--surface)] p-6 sm:p-8 shadow-2xl text-[var(--foreground)]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Subtle background glow */}
@@ -169,7 +169,7 @@ export function AddContributorDialog({
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Alice Walker, zkBuilder"
-              className="w-full rounded-xl border border-slate-700 bg-slate py-2.5 px-3.5 text-sm placeholder-slate-500 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400 transition-all"
+              className="w-full rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] py-2.5 px-3.5 text-sm text-[var(--foreground)] placeholder-[var(--text-muted)] focus:border-[var(--foreground)] focus:outline-none focus:ring-1 focus:ring-[var(--foreground)] transition-all"
             />
           </div>
 
@@ -189,7 +189,7 @@ export function AddContributorDialog({
                 value={walletAddress}
                 onChange={(e) => setWalletAddress(e.target.value)}
                 placeholder="0x..."
-                className="w-full font-mono text-xs rounded-xl border border-slate-700 bg-slate py-2.5 pl-10 pr-3.5 placeholder-slate-500 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400 transition-all"
+                className="w-full font-mono text-xs rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] py-2.5 pl-10 pr-3.5 text-[var(--foreground)] placeholder-[var(--text-muted)] focus:border-[var(--foreground)] focus:outline-none focus:ring-1 focus:ring-[var(--foreground)] transition-all"
               />
             </div>
           </div>
@@ -250,7 +250,7 @@ export function AddContributorDialog({
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Key delivery agreements, Discord handle, Github profile..."
-                className="w-full rounded-xl border border-slate-700 bg-slate py-2.5 pl-10 pr-3.5 text-xs placeholder-slate-500 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400 transition-all resize-none"
+                className="w-full rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] py-2.5 pl-10 pr-3.5 text-xs text-[var(--foreground)] placeholder-[var(--text-muted)] focus:border-[var(--foreground)] focus:outline-none focus:ring-1 focus:ring-[var(--foreground)] transition-all resize-none"
               />
             </div>
           </div>

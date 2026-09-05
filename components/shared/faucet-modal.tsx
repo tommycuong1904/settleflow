@@ -92,7 +92,7 @@ export function FaucetModal({ isOpen, onClose, userAddress }: FaucetModalProps) 
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-lg overflow-hidden rounded-3xl border border-cyan-500/20 bg-[#0c1322] p-6 sm:p-8 shadow-[0_0_60px_rgba(34,211,238,0.15)] text-white"
+        className="relative w-full max-w-lg overflow-hidden rounded-3xl border border-[var(--border-strong)] bg-[var(--surface)] p-6 sm:p-8 shadow-2xl text-[var(--foreground)]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Subtle background glow */}
@@ -102,7 +102,7 @@ export function FaucetModal({ isOpen, onClose, userAddress }: FaucetModalProps) 
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute right-5 top-5 rounded-full p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
+          className="absolute right-5 top-5 rounded-full p-1.5 text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--foreground)] transition-colors"
           aria-label="Close modal"
         >
           <X size={18} />
@@ -114,10 +114,10 @@ export function FaucetModal({ isOpen, onClose, userAddress }: FaucetModalProps) 
             <Coins size={20} />
           </div>
           <div>
-            <h2 className="text-xl font-bold tracking-tight text-white">
+            <h2 className="text-xl font-bold tracking-tight text-[var(--foreground)]">
               Arc Testnet Faucet & Setup
             </h2>
-            <p className="text-xs text-slate-400 mt-0.5">
+            <p className="text-xs text-[var(--text-muted)] mt-0.5">
               Get free testnet USDC to fund milestone escrows and simulate onchain payouts.
             </p>
           </div>
@@ -142,13 +142,13 @@ export function FaucetModal({ isOpen, onClose, userAddress }: FaucetModalProps) 
 
         <div className="space-y-4">
           {/* Faucet Claim Section */}
-          <div className="rounded-2xl border border-cyan-500/30 bg-cyan-950/20 p-4 space-y-3">
+          <div className="rounded-2xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-4 space-y-3">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-sm font-semibold text-white flex items-center gap-1.5">
-                  <Sparkles size={15} className="text-cyan-400" /> Official Circle Faucet
+                <p className="text-sm font-semibold text-[var(--foreground)] flex items-center gap-1.5">
+                  <Sparkles size={15} className="text-[var(--accent-cyan)]" /> Official Circle Faucet
                 </p>
-                <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+                <p className="text-xs text-[var(--text-muted)] mt-1 leading-relaxed">
                   Request 10 to 50 testnet USDC sent directly to your connected wallet.
                 </p>
               </div>
@@ -181,7 +181,7 @@ export function FaucetModal({ isOpen, onClose, userAddress }: FaucetModalProps) 
           </Button>
 
           {/* Network Parameter Reference */}
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 space-y-2.5 text-xs">
+          <div className="rounded-2xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-4 space-y-2.5 text-xs">
             <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
               Manual RPC Details
             </p>

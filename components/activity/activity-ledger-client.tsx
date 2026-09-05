@@ -307,7 +307,7 @@ export function ActivityLedgerClient({
               >
                 Previous
               </Button>
-              <span className="text-sm text-white">
+              <span className="text-sm font-medium text-[var(--foreground)]">
                 Page {effectivePage} of {totalPages}
               </span>
               <Button

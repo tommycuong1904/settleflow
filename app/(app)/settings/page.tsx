@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/shared/button";
+import { PageHeader } from "@/components/shared/page-header";
 import { useRouter } from "next/navigation";
 import { useResolvedProductContext } from "@/lib/runtime/product-context-client";
 import { hasRole } from "@/lib/runtime/role-utils";
@@ -197,21 +198,13 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="sf-app-wrapper flex flex-col py-10 md:py-12 gap-8">
+    <div className="sf-app-wrapper flex flex-col py-8 md:py-12 gap-8">
       {/* Header */}
-      <div className="space-y-3">
-        <p className="text-sm font-medium uppercase tracking-[0.22em] text-[var(--text-muted)]">
-          Preferences & Configuration
-        </p>
-        <div className="space-y-2">
-          <h1 className="text-2xl font-semibold tracking-tight text-[var(--foreground)] md:text-3xl w-full">
-            Workspace Settings
-          </h1>
-          <p className="max-w-3xl text-sm leading-7 text-[var(--text-primary)] md:text-base">
-            Configure your workspace defaults, Arc Testnet blockchain parameters, and event notification webhooks.
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        eyebrow="Preferences & Configuration"
+        title="Workspace Settings"
+        description="Configure your workspace defaults, Arc Testnet blockchain parameters, and event notification webhooks."
+      />
 
       <form onSubmit={handleSaveSettings} className="space-y-8">
         {/* Section 1: General Workspace Profile */}

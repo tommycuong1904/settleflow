@@ -6,8 +6,8 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useResolvedProductContext } from "@/lib/runtime/product-context-client";
 import { PRODUCT_CONTEXT_COOKIE_NAMES, type ProductActor } from "@/lib/runtime/product-context";
-import { Crown, CheckCircle2, Search, Code2, ChevronDown, Check } from "lucide-react";
-import { useToast } from "@/lib/context/toast-context";
+import { Crown, Search, Code2, ChevronDown, Check } from "lucide-react";
+import { showGlobalToast } from "@/lib/context/toast-context";
 
 type RoleOption = {
   actor: ProductActor;
@@ -53,7 +53,6 @@ export function RoleSwitcher() {
   const router = useRouter();
   const productContext = useResolvedProductContext();
   const currentActor = productContext.actor;
-  const { toast } = useToast();
 
   const [activeActor, setActiveActor] = useState(currentActor);
 
@@ -71,20 +70,21 @@ export function RoleSwitcher() {
   const ActiveIcon = activeRole.icon;
 
   const handleSelectRole = (nextActor: ProductActor) => {
-    // Set cookie for 1 year
     document.cookie = `${PRODUCT_CONTEXT_COOKIE_NAMES.actor}=${nextActor}; path=/; max-age=31536000; SameSite=Lax`;
     setIsOpen(false);
     setActiveActor(nextActor);
-    // Update URL query to reflect actor change
-    router.push(`?actor=${nextActor}`);
+
     const nextRole = ROLES.find((r) => r.actor === nextActor);
-    toast({
-      variant: "info",
+    showGlobalToast({
+      variant: "success",
       title: "Role Switched",
       description: `Viewing application as ${nextRole?.badge}`,
-      durationMs: 2500,
+      durationMs: 3000,
     });
-    router.refresh();
+
+    window.setTimeout(() => {
+      router.push(`?actor=${nextActor}`);
+    }, 150);
   };
 
   if (!mounted) {

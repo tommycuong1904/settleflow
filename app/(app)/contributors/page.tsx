@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { PageHeader } from "@/components/shared/page-header";
 import { WalletGate } from "@/components/dashboard/wallet-gate";
 import { ContributorListClient } from "@/components/contributors/contributor-list-client";
 import { listContributors } from "@/lib/repositories/contributors";
@@ -24,21 +25,13 @@ export default async function ContributorsPage() {
   );
 
   return (
-    <div className="sf-app-wrapper flex flex-col py-10 md:py-12 gap-8">
+    <div className="sf-app-wrapper flex flex-col py-8 md:py-12 gap-8">
       {/* Header */}
-      <div className="space-y-3">
-        <p className="text-sm font-medium uppercase tracking-[0.22em] text-[var(--text-muted)]">
-          Recipient Directory
-        </p>
-        <div className="space-y-2">
-          <h1 className="text-2xl font-semibold tracking-tight text-[var(--foreground)] md:text-3xl">
-            Contributors & Wallets
-          </h1>
-          <p className="max-w-3xl text-sm leading-7 text-[var(--text-primary)] md:text-base">
-            Register and manage team members, freelance developers, and audit partners. Assign Arc Testnet settlement wallets to enable automated milestone releases.
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        eyebrow="Recipient Directory"
+        title="Contributors & Wallets"
+        description="Register and manage team members, freelance developers, and audit partners. Assign Arc Testnet settlement wallets to enable automated milestone releases."
+      />
 
       {/* Inline Wallet Gate */}
       <WalletGate />

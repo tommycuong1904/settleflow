@@ -9,7 +9,7 @@ import { FeedbackModal } from "@/components/shared/feedback-modal";
 import { useWallet } from "@/lib/context/wallet-context";
 import { addArcNetworkToWallet } from "@/lib/arc/onchain";
 import { useToast } from "@/lib/context/toast-context";
-import { ExternalLink, LogOut, Wallet, User, ChevronDown, RefreshCw, Droplets, KeyRound, Copy, MessageSquareHeart, Sun, Moon } from "lucide-react";
+import { ExternalLink, LogOut, Wallet, User, ChevronDown, RefreshCw, Droplets, KeyRound, Copy, MessageSquareHeart, Sun, Moon, Menu } from "lucide-react";
 import { useTheme } from "@/lib/context/theme-context";
 
 export function AppHeader() {
@@ -36,6 +36,12 @@ export function AppHeader() {
   const [isFaucetOpen, setIsFaucetOpen] = useState(false);
   const [isExportKeyOpen, setIsExportKeyOpen] = useState(false);
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+
+  React.useEffect(() => {
+    const handleOpenFeedback = () => setIsFeedbackOpen(true);
+    window.addEventListener("open-feedback-modal", handleOpenFeedback);
+    return () => window.removeEventListener("open-feedback-modal", handleOpenFeedback);
+  }, []);
 
   const handleAddArcNetwork = async () => {
     try {
@@ -65,59 +71,82 @@ export function AppHeader() {
     ? `${address.slice(0, 6)}...${address.slice(-4)}`
     : "Connected";
 
+  const handleOpenMobileSidebar = () => {
+    window.dispatchEvent(new CustomEvent("toggle-mobile-sidebar"));
+  };
+
   return (
-    <div className="sf-app-header relative flex flex-wrap items-center gap-3">
-      {/* Role Switcher */}
-      <RoleSwitcher />
+    <header className="sf-app-header relative w-full flex items-center">
+      {/* Left group: Hamburger + SettleFlow wordmark (Mobile only) */}
+      <div className="flex items-center gap-2 md:hidden shrink-0">
+        <button
+          type="button"
+          onClick={handleOpenMobileSidebar}
+          className="inline-flex items-center justify-center p-1.5 text-[var(--foreground)] hover:opacity-75 transition-opacity"
+          aria-label="Open navigation menu"
+        >
+          <Menu size={20} />
+        </button>
+        <span className="font-bold text-sm tracking-tight text-[var(--foreground)]">
+          SettleFlow
+        </span>
+      </div>
 
-      {/* Light / Dark Mode Toggle */}
-      <button
-        onClick={toggleTheme}
-        className="inline-flex items-center justify-center p-2 rounded-full text-[var(--text-muted)] hover:text-[var(--foreground)] bg-[var(--surface-muted)] hover:bg-[var(--surface-strong)] transition-all border border-[var(--border-soft)]"
-        title={`Switch to ${theme === "dark" ? "Light Mode" : "Dark Mode"}`}
-        aria-label="Toggle theme"
-      >
-        {theme === "dark" ? (
-          <Sun size={15} className="text-[var(--foreground)]" />
-        ) : (
-          <Moon size={15} className="text-[var(--foreground)]" />
-        )}
-      </button>
+      {/* Right group: Desktop Utilities & Wallet / Account (pushed to the right using ml-auto) */}
+      <div className="ml-auto flex items-center justify-end gap-2 sm:gap-2.5">
+        {/* Role Switcher on Desktop */}
+        <div className="hidden md:block">
+          <RoleSwitcher />
+        </div>
 
-      {/* Get test USDC — opens official Circle Arc faucet in a new tab */}
-      <a
-        href="https://faucet.circle.com"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium text-[var(--text-muted)] hover:text-[var(--foreground)] hover:bg-[var(--surface-muted)] transition-colors border border-transparent hover:border-[var(--border-soft)]"
-        title="Open Circle Arc Testnet Faucet in a new tab"
-      >
-        <Droplets size={13} className="text-[var(--foreground)]" /> Get test USDC
-        <ExternalLink size={11} className="opacity-60 ml-0.5" />
-      </a>
+        {/* Light / Dark Mode Toggle on Desktop */}
+        <button
+          onClick={toggleTheme}
+          className="hidden md:inline-flex items-center justify-center p-2 rounded-full text-[var(--text-muted)] hover:text-[var(--foreground)] bg-[var(--surface-muted)] hover:bg-[var(--surface-strong)] transition-all border border-[var(--border-soft)]"
+          title={`Switch to ${theme === "dark" ? "Light Mode" : "Dark Mode"}`}
+          aria-label="Toggle theme"
+        >
+          {theme === "dark" ? (
+            <Sun size={15} className="text-[var(--foreground)]" />
+          ) : (
+            <Moon size={15} className="text-[var(--foreground)]" />
+          )}
+        </button>
 
-      {/* Feedback Button */}
-      <button
-        onClick={() => setIsFeedbackOpen(true)}
-        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-[var(--text-muted)] hover:text-[var(--foreground)] bg-[var(--surface-muted)] hover:bg-[var(--surface-strong)] transition-all border border-[var(--border-soft)]"
-        title="Send feedback or report an issue"
-      >
-        <MessageSquareHeart size={13} className="opacity-70" /> Feedback
-      </button>
+        {/* Get test USDC on Desktop */}
+        <a
+          href="https://faucet.circle.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hidden lg:inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium text-[var(--text-muted)] hover:text-[var(--foreground)] hover:bg-[var(--surface-muted)] transition-colors border border-transparent hover:border-[var(--border-soft)]"
+          title="Open Circle Arc Testnet Faucet in a new tab"
+        >
+          <Droplets size={13} className="text-[var(--foreground)]" /> Get test USDC
+          <ExternalLink size={11} className="opacity-60 ml-0.5" />
+        </a>
 
-      {/* Network indicator with 1-click Add/Switch Arc Testnet */}
-      <button
-        onClick={handleAddArcNetwork}
-        title="Click to add / switch to Arc Testnet in your Web3 wallet"
-        className={`inline-flex items-center gap-2 rounded-full border border-[var(--border-soft)] bg-[var(--surface)] hover:bg-[var(--surface-muted)] transition-all px-3 py-1.5 text-xs ${network === "Arc Testnet" ? "text-[var(--text-muted)]" : "text-rose-500"}`}
-      >
-        {network === "Arc Testnet" ? (
-          <span className="sf-net-dot shrink-0" aria-hidden="true" />
-        ) : (
-          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-rose-500" />
-        )}
-        <span className="font-medium">{network === "Arc Testnet" ? network : "Wrong network"}</span>
-      </button>
+        {/* Feedback Button on Desktop */}
+        <button
+          onClick={() => setIsFeedbackOpen(true)}
+          className="hidden lg:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-[var(--text-muted)] hover:text-[var(--foreground)] bg-[var(--surface-muted)] hover:bg-[var(--surface-strong)] transition-all border border-[var(--border-soft)]"
+          title="Send feedback or report an issue"
+        >
+          <MessageSquareHeart size={13} className="opacity-70" /> Feedback
+        </button>
+
+        {/* Network indicator on Desktop */}
+        <button
+          onClick={handleAddArcNetwork}
+          title="Click to add / switch to Arc Testnet in your Web3 wallet"
+          className={`hidden md:inline-flex items-center gap-2 rounded-full border border-[var(--border-soft)] bg-[var(--surface)] hover:bg-[var(--surface-muted)] transition-all px-3 py-1.5 text-xs ${network === "Arc Testnet" ? "text-[var(--text-muted)]" : "text-rose-500"}`}
+        >
+          {network === "Arc Testnet" ? (
+            <span className="sf-net-dot shrink-0" aria-hidden="true" />
+          ) : (
+            <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-rose-500" />
+          )}
+          <span className="font-medium">{network === "Arc Testnet" ? network : "Wrong network"}</span>
+        </button>
 
       {/* Auth state button */}
       {!isConnected ? (
@@ -255,6 +284,7 @@ export function AppHeader() {
           )}
         </div>
       )}
+      </div>
 
       {/* Faucet Modal */}
       <FaucetModal
@@ -277,6 +307,6 @@ export function AppHeader() {
         isOpen={isFeedbackOpen}
         onClose={() => setIsFeedbackOpen(false)}
       />
-    </div>
+    </header>
   );
 }

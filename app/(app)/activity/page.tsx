@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { PageHeader } from "@/components/shared/page-header";
 import { WalletGate } from "@/components/dashboard/wallet-gate";
 import { SectionCard } from "@/components/shared/section-card";
 import { ActivityLedgerClient } from "@/components/activity/activity-ledger-client";
@@ -23,21 +24,13 @@ export default async function ActivityPage() {
   );
 
   return (
-    <div className="sf-app-wrapper flex flex-col py-10 md:py-12 gap-8">
+    <div className="sf-app-wrapper flex flex-col py-8 md:py-12 gap-8">
       {/* Header */}
-      <div className="space-y-3">
-        <p className="text-sm font-medium uppercase tracking-[0.22em] text-[var(--text-muted)]">
-          Audit & Settlement Ledger
-        </p>
-        <div className="space-y-2">
-          <h1 className="text-2xl font-semibold tracking-tight text-[var(--foreground)] md:text-3xl w-full">
-            Activity & Settlement Log
-          </h1>
-          <p className="max-w-3xl text-sm leading-7 text-[var(--text-primary)] md:text-base">
-            Complete cryptographic audit trail of milestone submissions, reviewer approvals, USDC payouts, and Arc Testnet transaction proofs.
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        eyebrow="Audit & Settlement Ledger"
+        title="Activity & Settlement Log"
+        description="Complete cryptographic audit trail of milestone submissions, reviewer approvals, USDC payouts, and Arc Testnet transaction proofs."
+      />
 
       {/* Inline Wallet Gate */}
       <WalletGate />

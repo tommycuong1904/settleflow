@@ -4,7 +4,7 @@ import React, {
   createContext,
   useCallback,
   useContext,
-  useState,
+  useSyncExternalStore,
   type ReactNode,
 } from "react";
 
@@ -27,27 +27,64 @@ interface ToastContextValue {
 const ToastContext = createContext<ToastContextValue | undefined>(undefined);
 
 let _counter = 0;
+let _toasts: Toast[] = [];
+const _listeners = new Set<() => void>();
+const EMPTY_TOASTS: Toast[] = [];
+
+function notify() {
+  _listeners.forEach((listener) => {
+    try {
+      listener();
+    } catch {
+      // Ignore listener error
+    }
+  });
+}
+
+export function showGlobalToast(opts: Omit<Toast, "id">) {
+  const id = `toast-${++_counter}-${Date.now()}`;
+  const duration = opts.durationMs ?? 3500;
+  const newToast: Toast = { ...opts, id };
+
+  _toasts = [newToast, ..._toasts].slice(0, 5);
+  notify();
+
+  setTimeout(() => {
+    dismissGlobalToast(id);
+  }, duration);
+
+  return id;
+}
+
+export function dismissGlobalToast(id: string) {
+  const beforeLen = _toasts.length;
+  _toasts = _toasts.filter((t) => t.id !== id);
+  if (_toasts.length !== beforeLen) {
+    notify();
+  }
+}
+
+function subscribe(listener: () => void) {
+  _listeners.add(listener);
+  return () => {
+    _listeners.delete(listener);
+  };
+}
+
+function getSnapshot() {
+  return _toasts;
+}
 
 export function ToastProvider({ children }: { children: ReactNode }) {
-  const [toasts, setToasts] = useState<Toast[]>([]);
+  const toasts = useSyncExternalStore(subscribe, getSnapshot, () => EMPTY_TOASTS);
 
-  const dismiss = useCallback((id: string) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id));
+  const toast = useCallback((opts: Omit<Toast, "id">) => {
+    showGlobalToast(opts);
   }, []);
 
-  const toast = useCallback(
-    (opts: Omit<Toast, "id">) => {
-      const id = `toast-${++_counter}`;
-      const duration = opts.durationMs ?? 3500;
-
-      setToasts((prev) => [{ ...opts, id }, ...prev].slice(0, 5));
-
-      setTimeout(() => {
-        setToasts((prev) => prev.filter((t) => t.id !== id));
-      }, duration);
-    },
-    [],
-  );
+  const dismiss = useCallback((id: string) => {
+    dismissGlobalToast(id);
+  }, []);
 
   return (
     <ToastContext.Provider value={{ toasts, toast, dismiss }}>
@@ -58,6 +95,12 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 
 export function useToast() {
   const ctx = useContext(ToastContext);
-  if (!ctx) throw new Error("useToast must be used within ToastProvider");
+  if (!ctx) {
+    return {
+      toasts: _toasts,
+      toast: showGlobalToast,
+      dismiss: dismissGlobalToast,
+    };
+  }
   return ctx;
 }

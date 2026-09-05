@@ -130,7 +130,7 @@ export function MilestoneRow({
             )}
           </div>
 
-          <div className="sf-panel min-w-[240px] rounded-3xl p-4 text-sm text-[var(--text-primary)]">
+          <div className="sf-panel w-full md:w-auto md:min-w-[240px] rounded-3xl p-4 text-sm text-[var(--text-primary)]">
             {isSubmitted ? (
               <div className="space-y-3">
                 <div className="space-y-1">
@@ -152,7 +152,7 @@ export function MilestoneRow({
 
             {isApproved ? (
               <div className="space-y-2">
-                <p className="font-semibold text-white">
+                <p className="font-semibold text-[var(--foreground)]">
                   {isOwnerActor ? "Ready for release" : isReviewerActor ? "Review complete" : "Waiting for release"}
                 </p>
                 <p>
@@ -167,7 +167,7 @@ export function MilestoneRow({
 
             {isReleased ? (
               <div className="space-y-2">
-                <p className="font-semibold text-white">Released in USDC on Arc</p>
+                <p className="font-semibold text-[var(--foreground)]">Released in USDC on Arc</p>
                 <p>Settlement proof is now available in the side panel.</p>
                 <p className="text-xs text-[var(--text-muted)]">
                   Released {milestone.releasedAt ? milestone.releasedAt.slice(0, 10) : "recently"}
@@ -178,7 +178,7 @@ export function MilestoneRow({
             {isRejected ? (
               <div className="space-y-3">
                 <div className="space-y-2">
-                  <p className="font-semibold text-white">Revision requested</p>
+                  <p className="font-semibold text-[var(--foreground)]">Revision requested</p>
                   <p>The contributor needs to resubmit this milestone before review can continue.</p>
                 </div>
                 {isContributorActor ? (
@@ -194,7 +194,7 @@ export function MilestoneRow({
             {!isSubmitted && !isApproved && !isReleased && !isRejected ? (
               <div className="space-y-3">
                 <div className="space-y-2">
-                  <p className="font-semibold text-white">Waiting for contributor submission</p>
+                  <p className="font-semibold text-[var(--foreground)]">Waiting for contributor submission</p>
                   <p>Review and release actions will unlock after work is submitted.</p>
                 </div>
                 {isContributorActor ? (
@@ -208,7 +208,7 @@ export function MilestoneRow({
             ) : null}
 
             {submissionError ? (
-              <p className="mt-3 text-xs text-rose-300">{submissionError}</p>
+              <p className="mt-3 text-xs text-rose-600 dark:text-rose-300">{submissionError}</p>
             ) : null}
           </div>
         </div>

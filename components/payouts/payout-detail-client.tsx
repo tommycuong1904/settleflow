@@ -8,6 +8,7 @@ import { StatCard } from "@/components/dashboard/stat-card";
 import { MilestoneRow } from "@/components/milestones/milestone-row";
 import { PayoutDetailReleaseShell } from "@/components/payouts/payout-detail-release-shell";
 import { Button } from "@/components/shared/button";
+import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -680,16 +681,16 @@ const [reviewingMilestoneId, setReviewingMilestoneId] = useState<string | null>(
           </div>
 
           {/* Identity comparison card */}
-          <div className="rounded-2xl border border-slate-800 bg-[var(--surface)]/80 p-4 text-xs text-left space-y-2.5">
-            <div className="flex items-center justify-between text-slate-400 pb-2 border-b border-slate-800">
+          <div className="rounded-2xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-4 text-xs text-left space-y-2.5">
+            <div className="flex items-center justify-between text-[var(--text-muted)] pb-2 border-b border-[var(--border-soft)]">
               <span>Required Role / Identity:</span>
-              <strong className="font-mono text-cyan-300">
+              <strong className="font-mono text-[var(--foreground)] font-semibold">
                 {designatedIdentity}
               </strong>
             </div>
-            <div className="flex items-center justify-between text-slate-400">
+            <div className="flex items-center justify-between text-[var(--text-muted)]">
               <span>Your Connected Identity:</span>
-              <span className="font-mono text-rose-300 font-medium">
+              <span className="font-mono text-rose-500 dark:text-rose-300 font-medium">
                 {connectedAddress
                   ? shortenAddress(connectedAddress)
                   : connectedEmail || "Not connected"}
@@ -723,10 +724,10 @@ const [reviewingMilestoneId, setReviewingMilestoneId] = useState<string | null>(
         <div
           className={`rounded-2xl border p-4 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
               hasRole(currentActor, "owner")
-                ? "bg-amber-500/10 border-amber-500/30 text-amber-200"
+                ? "bg-amber-500/10 border-amber-500/30 text-amber-900 dark:text-amber-200"
                 : hasRole(currentActor, "reviewer")
-                ? "bg-cyan-500/10 border-cyan-500/30 text-cyan-200"
-                : "bg-emerald-500/10 border-emerald-500/30 text-emerald-200"
+                ? "bg-cyan-500/10 border-cyan-500/30 text-cyan-900 dark:text-cyan-200"
+                : "bg-emerald-500/10 border-emerald-500/30 text-emerald-900 dark:text-emerald-200"
             }`}
         >
           <div className="flex items-center gap-2.5">
@@ -752,35 +753,25 @@ const [reviewingMilestoneId, setReviewingMilestoneId] = useState<string | null>(
         </div>
 
         {/* Header with Export Receipt CTA */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-          <div className="space-y-3">
-            <p className="text-sm font-medium uppercase tracking-[0.22em] text-[var(--text-muted)]">
-              Payout detail
-            </p>
-            <div className="space-y-2">
-              <h1 className="text-3xl font-semibold tracking-tight text-[var(--foreground)] md:text-4xl">
-                {payoutTitleState}
-              </h1>
-              <p className="max-w-3xl text-sm leading-7 text-[var(--text-primary)] md:text-base">
-                {payoutDescriptionState.trim().length > 0
-                  ? payoutDescriptionState
-                  : "Review milestone submissions, approve release in sequence, and keep Arc settlement proof attached to the payout flow."}
-              </p>
-            </div>
-          </div>
-
-          <div className="shrink-0">
-            <Button
-              type="button"
-              variant="secondary"
-              size="md"
-              onClick={() => setIsReceiptModalOpen(true)}
-              icon={<FileCheck size={15} className="text-cyan-400" />}
-            >
-              Export Settlement Receipt
-            </Button>
-          </div>
-        </div>
+        <PageHeader
+          eyebrow="Payout detail"
+          title={payoutTitleState}
+          description={
+            payoutDescriptionState.trim().length > 0
+              ? payoutDescriptionState
+              : "Review milestone submissions, approve release in sequence, and keep Arc settlement proof attached to the payout flow."
+          }
+        >
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={() => setIsReceiptModalOpen(true)}
+            icon={<FileCheck size={15} className="text-[var(--accent-cyan)]" />}
+          >
+            Export Settlement Receipt
+          </Button>
+        </PageHeader>
 
         <Card className="sf-shell">
           <CardHeader className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -835,12 +826,12 @@ const [reviewingMilestoneId, setReviewingMilestoneId] = useState<string | null>(
         {payoutStatusState === "draft" && isOwnerActor ? (
           <>
             {reviewError ? (
-              <div className="rounded-2xl border border-rose-400/30 bg-rose-400/10 px-4 py-3 text-sm text-rose-100">
+              <div className="rounded-2xl border border-rose-400/30 bg-rose-400/10 px-4 py-3 text-sm text-rose-600 dark:text-rose-200">
                 {reviewError}
               </div>
             ) : null}
             {draftSaveNotice ? (
-              <div className="rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-100">
+              <div className="rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-600 dark:text-emerald-200">
                 {draftSaveNotice}
               </div>
             ) : null}

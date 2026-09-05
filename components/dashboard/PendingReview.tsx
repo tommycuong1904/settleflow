@@ -36,7 +36,7 @@ export default function PendingReview({ pendingApprovals, payouts, contributors,
                       </p>
                     </div>
                     <div className="space-y-1.5">
-                      <p className="text-lg font-semibold text-white">{milestone.title}</p>
+                      <p className="text-lg font-semibold text-[var(--foreground)]">{milestone.title}</p>
                       <p className="text-sm text-[var(--text-primary)]">
                         {contributor?.name ?? payout?.contributorId ?? "Unknown contributor"} · {formatUsdc(milestone.amount)} USDC awaiting review
                       </p>

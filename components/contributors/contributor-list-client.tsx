@@ -104,7 +104,7 @@ export function ContributorListClient({
         </div>
 
         {/* Status Filters & Add Button */}
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <div className="flex rounded-xl bg-[var(--surface)] p-1 border border-[var(--border-soft)] text-xs font-medium">
             <button
               onClick={() => setStatusFilter("all")}
@@ -283,7 +283,7 @@ export function ContributorListClient({
                 </div>
 
                 {/* Bottom Section: Metrics & Actions */}
-                <div className="pt-3.5 border-t border-[var(--border-soft)] flex items-center justify-between gap-3">
+                <div className="pt-3.5 border-t border-[var(--border-soft)] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="flex items-center gap-4">
                     <div>
                       <p className="text-[10px] uppercase tracking-wider text-[var(--text-muted)]">
