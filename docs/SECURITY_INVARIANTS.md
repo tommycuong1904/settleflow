@@ -76,6 +76,28 @@ Repositories receive workspace IDs and compare resource ownership, returning no 
 ### Status
 Implemented
 
+## Contributor resource isolation
+
+### Invariant
+An authenticated Contributor may access only tested resources assigned through the persisted linked contributor identity within the authorized workspace.
+
+### Evidence
+DB-backed same-workspace Contributor A/B testing verified isolation for payout detail, payout activity, release, contributor listing, and dashboard reads. Contributor A's tested mutations against Contributor B's resources were denied.
+
+### Status
+Verified for tested paths; direct milestone, submission, review, and proof GET coverage remains not verified.
+
+## Denied mutation database integrity
+
+### Invariant
+A mutation denied by authorization must not change unauthorized database state.
+
+### Evidence
+The DB-backed adversarial test compared payout, milestone, contributor, release, and transaction-proof records before and after rejected mutations; the records were unchanged.
+
+### Status
+Verified for tested scenarios; not a claim of complete route coverage.
+
 ## Wallet validation
 
 ### Invariant

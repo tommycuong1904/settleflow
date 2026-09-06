@@ -36,6 +36,22 @@ Unknown stored role strings are rejected by `mapMembershipRoleToActor`; they do 
 
 ## Current actor permissions
 
+### VERIFIED behavior
+- DB-backed adversarial tests verified cross-workspace denial and same-workspace Contributor A/B isolation for tested payout, activity, release, contributor-list, and dashboard reads.
+- Contributor A's tested payout, milestone, release, proof, and contributor mutations against Contributor B's resources were denied.
+- Rejected mutations left the checked payout, milestone, contributor, release, and transaction-proof records unchanged.
+- Forged actor/workspace/user fields did not replace session authority in the tested routes.
+- The completed tests found **0 confirmed authorization vulnerabilities**.
+
+### ARCHITECTURAL RISK
+- `WorkspaceMember` permits multiple role rows for one user/workspace (`@@unique([workspaceId, userId, role])`); the resolver selects the first matching membership ordered by `createdAt`.
+- `ops` maps to the `owner` ProductActor. This is current behavior; whether it exceeds intended product policy is not decided here.
+- Complete legacy/v1 parity and repository scope coverage are not established by the focused tests.
+
+### NOT VERIFIED
+- Direct reads for milestone, submission, review, and transaction proof were not separately verified where no dedicated GET route was covered.
+- Full legacy `/api/**` versus `/api/v1/**` parity, multi-role privilege escalation, `ops` privilege escalation, and complete forged cookie/header/body coverage remain unverified.
+
 The centralized policy functions currently enforce:
 
 - `owner`: create contributors and payouts, activate and edit draft payouts, release milestones, refresh release proof, and retry failed releases; owners and reviewers can view all payouts.

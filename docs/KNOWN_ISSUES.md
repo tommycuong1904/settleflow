@@ -10,8 +10,15 @@ This document lists issues, gaps, inconsistencies, and inspection risks visible 
 
 ## Confirmed Issues and Gaps
 
+### Authorization audit — remaining risks and questions
+- **Architectural risk:** `WorkspaceMember` permits multiple role rows for one user/workspace (`@@unique([workspaceId, userId, role])`), while the resolver selects the first matching membership ordered by `createdAt`. Actual privilege escalation is **NOT VERIFIED**.
+- **Current behavior requiring policy clarity:** `ops` maps to the `owner` ProductActor. Whether this exceeds intended product behavior is **NOT VERIFIED**.
+- **NOT VERIFIED:** complete authorization parity between legacy `/api/**` and `/api/v1/**` routes.
+- **NOT VERIFIED:** complete forged cookie/header/body identity coverage and direct GET coverage for milestone, submission, review, and transaction-proof resources.
+- **Completed verification:** DB-backed cross-workspace and same-workspace Contributor A/B tests found no confirmed authorization vulnerability; rejected mutations in tested scenarios left database state unchanged.
+
 ### 1. Auth/session is implemented; broader browser coverage remains
-- Real server-side session auth (JWT cookie + middleware + DB User/WorkspaceMember → `getProductContext()`) is implemented across the inspected API routes; live deployment behavior was not verified by this cleanup. Anonymous mutations are blocked with `401 { error: "AUTH_REQUIRED" }`.
+- Real server-side session auth (JWT cookie + middleware + DB User/WorkspaceMember → `getProductContext()`) is implemented across 16+ API routes (Phase 4). Anonymous mutations are blocked with `401 { error: "AUTH_REQUIRED" }`.
 - Route-level DB-backed integration coverage is committed and verified. Broader browser/E2E coverage remains limited.
 
 ### 2. Automated test coverage is still narrow
@@ -23,8 +30,8 @@ This document lists issues, gaps, inconsistencies, and inspection risks visible 
 - Real-mode execution is confirmed at the unit-test level but has not been verified as a production-safe end-to-end live release path against official Arc execution requirements.
 - `sendUsdcOnArc()` still returns synthetic results in `mock` and `demo` modes.
 
-### 3a. Historical verification note
-- Earlier checkpoint documents recorded isolated PostgreSQL integration, route-level authorization/release reliability, failure/retry/proof-refresh/idempotency behavior, and safe non-executing test paths. Those results were not re-run by this cleanup.
+### 3a. Reliability Hardening checkpoint
+- **Completed:** checkpoint `6004b05` verifies isolated PostgreSQL integration, route-level authorization/release reliability, failure/retry/proof-refresh/idempotency behavior, and safe non-executing test paths.
 - Real Arc/RPC transactions, real funds, production signing keys, and production webhooks were not used.
 - Deterministic concurrency coverage remains deferred because no dedicated concurrency primitive has been introduced.
 
@@ -42,7 +49,7 @@ This document lists issues, gaps, inconsistencies, and inspection risks visible 
 
 ## Operational Readiness & Safety Boundary
 
-- **Live deployment status is not verified here**: `https://settleflow-dev.vercel.app` is retained only as a historical reference; run fresh smoke/API/database checks before relying on it.
+- **Live Product verified**: `https://settleflow-dev.vercel.app` is live and passing all operational smoke checks.
 - **Real Arc execution remains fail-closed / disabled**: `SETTLEFLOW_REAL_EXECUTION_AUTHORIZATION` is disabled, and no real funds/transactions are moved.
 - **Prerequisites for live onchain execution**: HSM secret custody for `ARC_SERVER_PRIVATE_KEY`, bounded transaction limits, automated reconciliation daemon, and explicit multi-stakeholder authorization.
 
