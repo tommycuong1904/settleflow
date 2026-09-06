@@ -21,7 +21,7 @@ Last verified: 2026-08
 | Contributor create/edit/archive | Implemented | contributor routes/repository; EVM validation and duplicate-wallet guard |
 | Activity ledger and CSV export | Implemented | activity repositories and `/activity` surface |
 | Workspace webhook settings/test | Implemented | settings and webhook routes/repository |
-| Automated test coverage | Implemented, scope limited; operational verification not implied | `npm test` 138/138; DB-backed route integration is committed; browser/E2E and deterministic concurrency remain deferred |
+| Automated test coverage | Implemented, scope limited; operational verification not implied | `npm test` 144/144 on the current working tree; DB-backed route integration is committed; browser/E2E and deterministic concurrency remain deferred |
 | Escrow smart contract | Planned | No implemented escrow contract path verified |
 | Multi-chain bridging | Planned | No implemented bridge path verified |
 | Multi-signature approval | Planned | No implemented threshold model verified |

@@ -244,7 +244,7 @@ settleflow/
   - `docs/FEATURE_MATRIX.md`
   - `docs/KNOWN_ISSUES.md`
   - `docs/REAL_PRODUCT_ROADMAP.md`
-  - `docs/HANDOFF.md`
+  - `docs/archive/HANDOFF_2026-archive.md` (historical only)
   - `docs/DEMO_GUIDE.md`
   - `docs/GOOGLE_OAUTH_SETUP.md`
 - Screenshots:

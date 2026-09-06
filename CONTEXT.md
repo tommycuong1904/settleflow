@@ -48,7 +48,7 @@ lib/runtime/**        Runtime utilities
 - `KNOWN_ISSUES.md` — known gaps
 - `FEATURE_MATRIX.md` — feature-by-feature status
 - `REAL_PRODUCT_ROADMAP.md` — roadmap & phases
-- `HANDOFF.md` — handoff notes + recommended next steps
+- Historical handoff notes are archived under `docs/archive/`; do not treat them as current truth.
 - `README.md` — docs index (see also `docs/README.md`)
 - `archive/` — historical/planning docs; **do not treat as current truth**
 

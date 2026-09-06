@@ -32,7 +32,7 @@ The implemented mapping is:
 | `reviewer` | `reviewer` | review operations |
 | `contributor` | `contributor` | submission and contributor-scoped viewing |
 
-Unknown stored role strings fall back to `owner` in `mapMembershipRoleToActor`; this behavior is documented here as implemented, not as a recommended design.
+Unknown stored role strings are rejected by `mapMembershipRoleToActor`; they do not receive Owner-equivalent authority.
 
 ## Current actor permissions
 

@@ -11,7 +11,7 @@ This document lists issues, gaps, inconsistencies, and inspection risks visible 
 ## Confirmed Issues and Gaps
 
 ### 1. Auth/session is implemented; broader browser coverage remains
-- Real server-side session auth (JWT cookie + middleware + DB User/WorkspaceMember → `getProductContext()`) is implemented across 16+ API routes (Phase 4). Anonymous mutations are blocked with `401 { error: "AUTH_REQUIRED" }`.
+- Real server-side session auth (JWT cookie + middleware + DB User/WorkspaceMember → `getProductContext()`) is implemented across the inspected API routes; live deployment behavior was not verified by this cleanup. Anonymous mutations are blocked with `401 { error: "AUTH_REQUIRED" }`.
 - Route-level DB-backed integration coverage is committed and verified. Broader browser/E2E coverage remains limited.
 
 ### 2. Automated test coverage is still narrow
@@ -23,21 +23,28 @@ This document lists issues, gaps, inconsistencies, and inspection risks visible 
 - Real-mode execution is confirmed at the unit-test level but has not been verified as a production-safe end-to-end live release path against official Arc execution requirements.
 - `sendUsdcOnArc()` still returns synthetic results in `mock` and `demo` modes.
 
-### 3a. Reliability Hardening checkpoint
-- **Completed:** checkpoint `6004b05` verifies isolated PostgreSQL integration, route-level authorization/release reliability, failure/retry/proof-refresh/idempotency behavior, and safe non-executing test paths.
+### 3a. Historical verification note
+- Earlier checkpoint documents recorded isolated PostgreSQL integration, route-level authorization/release reliability, failure/retry/proof-refresh/idempotency behavior, and safe non-executing test paths. Those results were not re-run by this cleanup.
 - Real Arc/RPC transactions, real funds, production signing keys, and production webhooks were not used.
 - Deterministic concurrency coverage remains deferred because no dedicated concurrency primitive has been introduced.
 
-## Fixed Code Issues
+## Fixed Code & Security Issues
+
+### Webhook Test Endpoint Authorization — FIXED
+- `POST /api/v1/webhooks/test` is now strictly protected with `getSessionFromRequest()` and Owner-role assertion (`productContext.actor === 'owner'`). Unauthenticated and non-owner callers receive 401/403.
+
+### Preview/Staging Auth Context & Reload — FIXED & VERIFIED
+- Workspace membership provisioning on Staging DB resolved `AUTH_CONTEXT_REQUIRED` errors on Preview (`settleflow-dev.vercel.app`). Page reload (F5) on `/dashboard` and `/payouts` works seamlessly without 403 blocks.
 
 ### Settings error contract — FIXED
-- `GET /api/v1/settings` now maps missing or unauthorized membership context to `AUTH_CONTEXT_REQUIRED` / HTTP 403.
-- Unexpected settings failures remain HTTP 500. The fix is checkpointed at `b74925e`; no authorization bypass was identified.
+- `GET /api/v1/settings` maps missing membership context to `AUTH_CONTEXT_REQUIRED` / HTTP 403.
+- Unexpected settings failures remain HTTP 500.
 
-## Operational Readiness Blockers
+## Operational Readiness & Safety Boundary
 
-- Deployment/database environment isolation, secret custody and rotation, staging wallet/funding controls, monitoring, reconciliation, incident recovery, and webhook destination isolation are not yet operationally verified.
-- Real Arc execution remains **NOT AUTHORIZED**.
+- **Live deployment status is not verified here**: `https://settleflow-dev.vercel.app` is retained only as a historical reference; run fresh smoke/API/database checks before relying on it.
+- **Real Arc execution remains fail-closed / disabled**: `SETTLEFLOW_REAL_EXECUTION_AUTHORIZATION` is disabled, and no real funds/transactions are moved.
+- **Prerequisites for live onchain execution**: HSM secret custody for `ARC_SERVER_PRIVATE_KEY`, bounded transaction limits, automated reconciliation daemon, and explicit multi-stakeholder authorization.
 
 ## Deferred Hardening
 
@@ -119,7 +126,7 @@ This document lists issues, gaps, inconsistencies, and inspection risks visible 
   - allowed state transitions
   - error responses
   - release/retry/proof-refresh flows
-- Contributor edit/archive (PATCH + UI) and Settings-UI webhook URL persistence are now implemented (see `docs/HANDOFF.md`); the remaining safe next step is the smallest real auth/session boundary before broader feature expansion.
+- Contributor edit/archive (PATCH + UI) and Settings-UI webhook URL persistence are now implemented; remaining gaps are tracked in this document and `docs/CURRENT_STATE.md`.
 - Then define the smallest real auth/session boundary before broader feature expansion.
 
 ### Why this is safest

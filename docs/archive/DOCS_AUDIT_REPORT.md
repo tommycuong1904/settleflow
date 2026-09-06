@@ -1,3 +1,5 @@
+> **Historical / Superseded — not current SSoT.**
+
 # Báo cáo Audit: Kiến trúc tài liệu SettleFlow & Thiết kế an toàn / tổ chức
 
 > **Loại tài liệu**: Audit report (phân tích + thiết kế) — **không kèm chỉnh sửa code/doc**.

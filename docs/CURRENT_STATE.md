@@ -4,10 +4,10 @@ Status: current
 SSoT: Current repository implementation and verification
 Last verified: 2026-08
 
-> **TL;DR** — This file is the **single source of truth** for live numbers/status. Current checkpoint: `0cfc321` (Phase 4C safety hardening: ARC executor, webhook isolation, release-per-milestone migration, and doc updates). Tests and DB integration pass for covered paths, but operational readiness is **PARTIAL**, production readiness is **NOT READY**, and real Arc execution is **NOT AUTHORIZED**. Operational hardening is the next phase. If another doc disagrees, this one wins.
+> **TL;DR** — This file is the single source of truth for current implementation status. The repository contains the implemented surfaces described below; live-deployment, historical checkpoint, and phase claims are not current evidence unless explicitly marked as historical. On the current working tree, `npm test` passes 144/144. Real Arc execution must not be inferred as operationally authorized from repository tests alone.
 
 ## Summary
-This repository is now a full-stack Next.js application for SettleFlow, an Arc-native milestone-based USDC payout workflow for crypto teams. The current implementation has moved beyond a frontend-only demo: it now includes a PostgreSQL + Prisma data layer, repository-backed server reads/writes, and API routes for payout, milestone, and release actions. Real Arc release execution is wired through `createReleaseExecutor` (Phase 6): `circle_wallet` mode sends real USDC from a server-side EOA, while `browser_wallet` fails explicitly on the server. Session auth (Phase 4), contributor management + settings/productization (Phase 5), a minimalist black/white theme refactor, and the `6004b05` Reliability Hardening test coverage are merged into `main`.
+This repository is now a full-stack Next.js application for SettleFlow, an Arc-native milestone-based USDC payout workflow for crypto teams. The current implementation has moved beyond a frontend-only demo: it now includes a PostgreSQL + Prisma data layer, repository-backed server reads/writes, and API routes for payout, milestone, and release actions. Real Arc release execution is wired through `createReleaseExecutor`: `circle_wallet` mode sends real USDC from a server-side EOA, while `browser_wallet` fails explicitly on the server. Session auth, contributor management, settings/productization, and the minimalist black/white theme refactor are represented in the repository.
 
 ## Fact vs Assumption Legend
 - **Confirmed**: directly verified from repository files or command output.
@@ -38,15 +38,15 @@ This repository is now a full-stack Next.js application for SettleFlow, an Arc-n
 - Contributor loading on the create payout page uses `fetch("/api/v1/contributors?status=active")`.
 - Arc configuration is still read from `NEXT_PUBLIC_*` env vars with defaults.
 - Arc release behavior is now mode-aware through `sendUsdcOnArc()` and `createReleaseExecutor()`, with `mock`, `demo`, and `real` execution paths. `createReleaseExecutor()` supports `circle_wallet` (server-side EOA via `ARC_SERVER_PRIVATE_KEY`, sends real USDC with viem) and `browser_wallet` (explicit server failure — browser signs via wallet adapter). The executor registers the source wallet on the release record, persists the transaction hash, and refreshes proof on success.
-- The app UI was refactored onto a minimalist black/white design system driven by CSS variables (`lib/context/theme-context.tsx`), with modal body-scroll locking (`lib/hooks/use-scroll-lock.ts`); this refactor is merged into `main` (`38129aa`).
-- A unit test layer exists under `lib/**/*.test.mts`, and committed DB-backed integration tests exist under `test/integration/`. The Reliability Hardening checkpoint (`6004b05`) and the Phase 4C safety-hardening checkpoint (`0cfc321`) verified `npm test` (144/144), `npm run test:integration:db` (10/10), and TypeScript. This is evidence for covered paths, not complete production readiness.
+- The app UI was refactored onto a minimalist black/white design system driven by CSS variables (`lib/context/theme-context.tsx`), with modal body-scroll locking (`lib/hooks/use-scroll-lock.ts`); this refactor is present in the repository.
+- A unit test layer exists under `lib/**/*.test.mts`, and committed DB-backed integration tests exist under `test/integration/`. The repository test command was run during this cleanup: `npm test` passed 144/144. Other historical test/build claims are not re-verified here. This is evidence for covered paths, not complete production readiness.
 - A webhook dispatcher (`lib/notifications/webhook-dispatcher.ts`) is wired into milestone repositories and dispatches `milestone_submitted`, `milestone_approved`/`milestone_rejected`, and `milestone_released` events. Webhook destination and per-event notification toggles are now persisted per-workspace (`webhookUrl`, `notifyOnSubmit`, `notifyOnApprove`, `notifyOnRelease` on the `Workspace` record) and managed from the Settings UI via `GET/PUT /api/v1/settings`; `dispatchWorkspaceWebhookNotification()` gates events by toggle and falls back to the env `SETTLEFLOW_WEBHOOK_URL` when no workspace URL is configured. A test endpoint (`POST /api/v1/webhooks/test`) also exists for manual URL verification.
 - Contributor records can now be edited (name, wallet, email, role, notes) and archived/restored from the Contributors page via an edit dialog backed by `PATCH /api/v1/contributors/[id]` and repository `updateContributor` (EVM-address validation + duplicate-wallet guard + workspace-scope check).
-- **Phase 6 complete**: real Arc release execution is wired. `createReleaseExecutor` with `circle_wallet` mode sends USDC via a viem wallet derived from `ARC_SERVER_PRIVATE_KEY`; native USDC is sent as a plain value transfer, ERC-20 USDC uses `transfer` with 6 decimals. The `browser_wallet` mode returns an explicit server-side failure (the browser signs via wallet adapter). Source wallet address is persisted on the release record, and proof is refreshed on success.
+- **Repository implementation:** real Arc release execution is wired. `createReleaseExecutor` with `circle_wallet` mode sends USDC via a viem wallet derived from `ARC_SERVER_PRIVATE_KEY`; native USDC is sent as a plain value transfer, ERC-20 USDC uses `transfer` with 6 decimals. The `browser_wallet` mode returns an explicit server-side failure (the browser signs via wallet adapter). Source wallet address is persisted on the release record, and proof is refreshed on success.
 
 ### Operational boundary
 
-- Production auth secret fail-closed behavior and the Settings `AUTH_CONTEXT_REQUIRED` → HTTP 403 contract are implemented in code and checkpointed at `b74925e`; Phase 4C safety hardening (ARC executor, webhook isolation, and the release-per-milestone migration) is checkpointed at `0cfc321`.
+- Production auth secret fail-closed behavior, the Settings `AUTH_CONTEXT_REQUIRED` → HTTP 403 contract, the Arc executor boundary, webhook isolation, and release-per-milestone behavior are represented in the repository. Their runtime/deployment status is not verified by this cleanup.
 - Passing unit/integration tests and an implemented Arc executor are not operational or production payment verification.
 - Deployment isolation, secret custody, staging wallet controls, monitoring, reconciliation, incident recovery, and webhook isolation remain required before real Arc staging.
 - See `docs/OPERATIONS_RUNBOOK.md` and linked runbooks. Real Arc remains **NOT AUTHORIZED**.
@@ -65,44 +65,42 @@ This repository is now a full-stack Next.js application for SettleFlow, an Arc-n
 
 ### Dashboard (`/dashboard`)
 #### Confirmed
-- Shows high-level payout operations metrics.
-- Surfaces milestones waiting for review.
-- Shows active payouts and recent settlement proof.
-- Is backed by repository-driven server data rather than a purely static route-level mock implementation.
+- Implemented surfaces are present in the repository; live-product verification was not performed by this cleanup.
+- Shows high-level payout operations metrics (Active payouts, Milestones awaiting review, Settlements in flight, Outstanding exposure).
+- Priority queue banner with smart next-action routing.
+- Tabs for Pending Review, Active Payouts, and Recent Settlement Proofs backed by repository-driven server data.
+- Workspace-scoped repository/API paths are represented in the code; live data refresh was not verified by this cleanup.
 
-### Create Payout (`/payouts/new`)
+### Create Payout (`/payouts/new`) & Payout Detail (`/payouts/[id]`)
 #### Confirmed
-- Presents a form-like payout agreement builder.
-- Loads contributors from `/api/v1/contributors`.
-- Submits payout creation through `/api/v1/payouts`.
-- Includes milestone structure, wallet, amount, and release framing in the flow.
-
-### Payout Detail (`/payouts/[id]`)
-#### Confirmed
-- Displays payout summary, milestone workflow, release target, and settlement proof.
-- Is backed by repository/API infrastructure rather than route-local hard-coded arrays.
-- Supports milestone-specific actions through API routes for:
-  - submit
-  - approve
-  - reject
-  - release
-- Includes release retry and proof refresh API surfaces.
+- Core Payout Workflow fully audited and verified: Create → Activate → Submit → Approve / Reject → Release → Proof.
+- Recipient auto-fill from query params (`?contributorId=...`).
+- Role-based action masking: Owner (activate, release, retry), Reviewer (approve/reject), Contributor (submit/resubmit).
+- Release execution remains fail-closed / disabled for real transactions.
 
 ### Contributors (`/contributors`)
 #### Confirmed
-- Lists contributors with search, status filter, and settled/payout metrics.
+- Implemented surfaces are present in the repository; live-product verification was not performed by this cleanup.
+- Lists contributors with real-time search, status filter (all/active/archived), and settled/payout metrics.
 - Add Contributor dialog creates contributors via `POST /api/contributors` (EVM address validation + duplicate-wallet guard).
-- Edit/archive of existing contributors is implemented (PATCH `/api/v1/contributors/[id]` + edit dialog with archive/restore toggle).
+- Edit/archive/restore dialog via `PATCH /api/v1/contributors/[id]`.
+- Delete dialog with hard-delete guard (`assertContributorDeletable`) preventing deletion of contributors with payouts.
+- Direct "New Payout" integration.
 
 ### Activity Ledger (`/activity`)
 #### Confirmed
-- Shows payout workflow activity with event-category filters and pagination.
-- Includes a CSV export control for the visible activity ledger rows.
+- Implemented surfaces are present in the repository; live-product verification was not performed by this cleanup.
+- Shows comprehensive cryptographic audit trail with category filters (`All`, `Proofs & Releases`, `Approvals`, `Submissions`) and pagination.
+- Deduplication across `activityLog` and `transactionProof`.
+- CSV export functionality.
 
 ### Settings (`/settings`)
 #### Confirmed
-- Workspace settings surface with webhook URL configuration and a "Test Webhook" action calling `POST /api/v1/webhooks/test`.
-- Includes the seeded-role actor/workspace switcher and identity/network surfaces.
+- Implemented surfaces are present in the repository; live-product verification was not performed by this cleanup.
+- Webhook URL configuration with HTTP/HTTPS format validation.
+- Per-event notification toggles (`notifyOnSubmit`, `notifyOnApprove`, `notifyOnRelease`) persisted to Workspace record.
+- Webhook Test Action calling `POST /api/v1/webhooks/test` secured with session auth & Owner-only enforcement.
+- RPC Node health check and non-custodial Smart Account private key export modal.
 
 ## 3. Data, database, and API state
 
@@ -200,13 +198,13 @@ This repository is now a full-stack Next.js application for SettleFlow, an Arc-n
 ## 7. What appears unfinished
 
 ### Confirmed
-- **Phase 4 (auth/session) is complete**: real server-side session auth is now implemented.
-  - Google sign-in (`POST /api/v1/auth/google`) issues a signed `sf_session` cookie; wallet sign-in is available at `POST /api/v1/auth/wallet`.
-  - `proxy.ts` validates the session for protected API mutations; `lib/auth/session-server.ts` resolves the session to `User` → `WorkspaceMember` → product context.
-  - `await getProductContext()` is wired into 16+ API route handlers, replacing the old default fallback.
-  - Anonymous mutations are blocked with `401 { error: "AUTH_REQUIRED" }`.
-  - Logout (`POST /api/v1/auth/logout`) clears the `sf_session` cookie.
-  - 7/7 automated checks pass (`scripts/test-phase4.sh`).
+- **Authentication & Session Lifecycle (repository evidence; live verification not performed)**:
+  - Google OAuth sign-in (`POST /api/v1/auth/google`) issues a signed HMAC-SHA256 `sf_session` cookie with Smart Account derivation.
+  - Dashboard loads immediately after authentication.
+  - Full session persistence verified on hard reload (F5) without 403 / auth interruption.
+  - Logout (`POST /api/v1/auth/logout`) reliably invalidates and clears the `sf_session` cookie.
+  - Re-login cycle verified and succeeds smoothly.
+  - Membership RBAC & product context (`Owner`, `Reviewer`, `Contributor`) correctly preserved and derived.
 - Mutation routes now have a request-derived actor boundary from the real session (not seeded roles):
   - payout create
   - payout activate
@@ -246,9 +244,9 @@ This repository is now a full-stack Next.js application for SettleFlow, an Arc-n
 - Route structure
 - dependency/tooling setup
 - presence of database/API/repository layers
-- **real server-side session auth (Phase 4) is implemented and verified** (7/7 check pass)
-- `/payouts/new` UI is fully light-theme consistent (Phase 5 cleanup complete)
-- presence of a narrow unit test layer (`lib/api` + `lib/repositories`); E2E verified manually via A5 script but not committed
+- **real server-side session auth is implemented in the repository; live verification was not performed by this cleanup**
+- `/payouts/new` UI is represented in the repository; live UI verification was not performed by this cleanup
+- presence of a narrow unit test layer (`lib/api` + `lib/repositories`); E2E was not re-verified by this cleanup and is not committed
 - mode-aware Arc send architecture
 
 ### Medium confidence
@@ -257,5 +255,8 @@ This repository is now a full-stack Next.js application for SettleFlow, an Arc-n
 
 ### Lower confidence / requires more inspection
 - production readiness of release execution
-- full consistency of all edge-case flows across UI, API, and persistence
 - broader deployment/ops story outside the inspected repository surface
+
+## 11. Historical verification notes — re-verification required
+
+The following claims were recorded by earlier checkpoints but are not re-verified by this documentation cleanup: live deployment status, live API/database checks, TypeScript/build results, critical-path integration results, and the historical live URL. Treat them as historical evidence only; run fresh checks before relying on them. The current test result recorded by this task is `npm test`: 144/144 pass.

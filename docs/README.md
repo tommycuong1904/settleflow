@@ -1,55 +1,59 @@
-# Docs Guide
+# SettleFlow Documentation
 
-## Entry point
-- `../CONTEXT.md` (repo root) — one-file cheat sheet for any new model/agent. **Read it first.**
-- `AGENTS.md` (repo root) — task routing rules (which doc to load per workflow).
+Runtime code is authoritative for behavior; `prisma/schema.prisma` and migrations are authoritative for persistence. This directory separates stable product meaning, current implementation, and future intent.
 
-## Documentation hierarchy and ownership
+## Canonical sources of truth
 
 | Document | Owns |
 |---|---|
-| `PROJECT.md` | Stable product/project context |
-| `ARCHITECTURE.md` | Current architecture and data flow |
-| `DOMAIN_MODEL.md` | Implemented domain model |
-| `WORKFLOW_STATE_MACHINE.md` | Implemented workflow/state behavior |
-| `AUTHORIZATION.md` | Authorization model |
-| `SECURITY_INVARIANTS.md` | Security invariants |
-| `CURRENT_STATE.md` | Live current state and verification |
-| `FEATURE_MATRIX.md` | Feature-level status |
-| `REAL_PRODUCT_ROADMAP.md` | Future work and sequencing |
+| `PROJECT.md` | Product definition, problem, scope, boundaries |
+| `DOMAIN_MODEL.md` | Persisted entities, relationships, ownership semantics |
+| `AUTHORIZATION.md` | Stored roles, runtime actors, permissions, authorization rules |
+| `SECURITY_INVARIANTS.md` | Security/integrity invariants and limitations |
+| `WORKFLOW_STATE_MACHINE.md` | Payout, milestone, release, and proof lifecycle |
+| `ARCHITECTURE.md` | Current technical structure and system boundaries |
+| `CURRENT_STATE.md` | Current implementation status, verification, live numbers |
+| `FEATURE_MATRIX.md` | Feature-level status summary |
+| `KNOWN_ISSUES.md` | Confirmed unresolved issues and risks |
+| `REAL_PRODUCT_ROADMAP.md` | Future direction only |
+| `CONVENTIONS.md` | Engineering, testing, documentation conventions |
+| `PROJECT_MAP.md` | Detailed repository map, when file-level orientation is needed |
 
-Runtime code is authoritative for behavior; `prisma/schema.prisma` and migrations are authoritative for persistence. Canonical docs describe verified implementation, `CURRENT_STATE.md` summarizes live status, the feature matrix summarizes feature status, and the roadmap describes future intent. Documentation does not override code or schema. `CURRENT_STATE.md`, `FEATURE_MATRIX.md`, and `REAL_PRODUCT_ROADMAP.md` are not implementation evidence by themselves. Archive material is historical/reference-only until independently re-verified.
+## Operational and setup guides
 
-## Read before coding
+- `DEMO_GUIDE.md` — current demo walkthrough.
+- `GOOGLE_OAUTH_SETUP.md` — Google OAuth setup.
+- `ARC_STAGING_SAFETY_RUNBOOK.md`, `STAGING_ENVIRONMENT_SPEC.md`, `STAGING_PROVISIONING_CHECKLIST.md`, `STAGING_BOUNDED_TRANSACTION_GATE.md` — staging controls.
+- `DEPLOYMENT_RUNBOOK.md`, `OPERATIONS_RUNBOOK.md`, `DATABASE_MIGRATION_RECOVERY_RUNBOOK.md` — deployment and operations.
+- `RELEASE_RECONCILIATION_RUNBOOK.md`, `SECRETS_AND_KEY_MANAGEMENT_RUNBOOK.md`, `INCIDENT_RESPONSE_RUNBOOK.md`, `WEBHOOK_ISOLATION_POLICY.md` — specialized operations.
 
-Use the task-specific loading rules in `AGENTS.md`; do not read every document for every task. As a shortcut: auth → authorization/security/architecture; domain/database → domain/architecture; workflow → workflow/domain/authorization; Arc/release → architecture/security/workflow; UI/product → project/current state; planning → current state/feature matrix/roadmap.
+## Reading order
 
-## Canonical Docs (read these first)
-1. `PROJECT.md` — product vision (why/what)
-2. `ARCHITECTURE.md` — how the system fits together
-3. `CONVENTIONS.md` — code/test/doc conventions
-4. `CURRENT_STATE.md` — current state; **single source of truth for live numbers**
+1. `PROJECT.md`
+2. `DOMAIN_MODEL.md`
+3. `AUTHORIZATION.md` and `SECURITY_INVARIANTS.md`
+4. `WORKFLOW_STATE_MACHINE.md`
+5. `ARCHITECTURE.md`
+6. `CURRENT_STATE.md`
+7. Supporting guides as needed
 
-These are the primary reference set for understanding the product, architecture, repository conventions, and current implementation state.
+## Historical material
 
-## Supporting Docs (secondary references)
-- `PROJECT_MAP.md` — repository structure map
-- `DOMAIN_MODEL.md` — domain entities
-- `WORKFLOW_STATE_MACHINE.md` — payout/milestone/release/proof state transitions
-- `FEATURE_MATRIX.md` — feature-by-feature status table
-- `KNOWN_ISSUES.md` — known gaps and risks
-- `REAL_PRODUCT_ROADMAP.md` — roadmap & phases
-- `HANDOFF.md` — handoff notes + recommended next steps
-- `DEMO_GUIDE.md` — step-by-step demo walkthrough
-- `GOOGLE_OAUTH_SETUP.md` — Google OAuth client setup
-- `screenshots/` — demo screenshots
+`archive/` contains superseded plans, checkpoints, audits, and handoffs. Archived material is context only and is not current implementation evidence. Recent archived items include:
 
-## Archive
-Archived files live under `archive/` — kept for historical reference, **not** current truth.
-Includes the earlier `architecture.md`, `project-status.md`, `workboard.md`, plus superseded planning/checkpoint docs (`API_PLAN.md`, `DB_SCHEMA.md`, `IMPLEMENTATION_PLAN.md`, `mvp-scope.md`, `WALLET_ONBOARDING_PLAN.md`, `MERGE_PREP_AUTH_BOUNDARY_V1.md`, `PR_BODY_AUTH_BOUNDARY_V1.md`, `checkpoint-2-*`, `core-release-wedge-progress.md`, `progress-summary-checkpoint-2.md`).
+- `archive/HANDOFF_2026-archive.md`
+- `archive/AUTHORIZATION_AUDIT_ROUND_2.md`
+- `archive/PRODUCT_ARCHITECTURE_AUDIT.md`
+- `archive/DOCS_AUDIT_REPORT.md`
 
-## Notes
-- Prefer canonical docs over older planning/checkpoint files when there is a conflict.
-- For any live number (test count, phase status, commit), trust `docs/CURRENT_STATE.md`.
-- `docs/archive/` preserves prior planning context while keeping the main `docs/` directory lean.
-- Claims that materially affect engineering decisions must be traceable to current code/schema or a canonical implementation document. Use `Implemented`, `Partially implemented`, `Planned`, or `Not verified` rather than vague status labels.
+## Maintenance rules
+
+- One question has one canonical document; update cross-references instead of copying facts.
+- Use `Implemented`, `Partially implemented`, `Planned`, and `Not verified`.
+- Do not mix proposed architecture or historical checkpoints with current behavior.
+- When code and docs disagree, follow code/schema and record the drift in `CURRENT_STATE.md` or `KNOWN_ISSUES.md`.
+- Operational runbooks remain in `docs/`; completed audits and superseded planning belong in `archive/`.
+
+For task-routing rules see `AGENTS.md`; for repository orientation see `CONTEXT.md`; for developer quick start see the root `README.md`.
+
+Last reviewed on branch `docs/consolidation`. Verify dates and live numbers before merging.

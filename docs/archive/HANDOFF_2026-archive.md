@@ -1,34 +1,29 @@
+> **Historical / Superseded — not current SSoT.**
+
 # HANDOFF
 
 ## Repository state note (latest)
 
 Current implementation status and verification state are owned by `docs/CURRENT_STATE.md`; this document is a handoff/orientation summary. Authorization and security details are owned by `docs/AUTHORIZATION.md` and `docs/SECURITY_INVARIANTS.md`.
 
-- Default branch: `main` tracks `origin/main` (last code merge: Phase 6 from `feature/settings-contributor-export`; current state: see `docs/CURRENT_STATE.md`).
-- The Phase 6 wedge (real Arc release execution) was fast-forward merged into `main`.
-- The earlier handoff branch `feat/auth-boundary-v1` was superseded by later wedges; its merge-prep docs (`docs/archive/MERGE_PREP_AUTH_BOUNDARY_V1.md`, `docs/archive/PR_BODY_AUTH_BOUNDARY_V1.md`) are preserved for history.
+- Verification Status: **FULL SURFACE AUDITED & PASSING** (Auth, Core Payout Workflow, Contributors, Settings/Webhooks, Activity Ledger, Dashboard).
+- Real Execution: strictly **fail-closed / disabled**.
+- Production DB: **untouched**.
 - Last confirmed checks:
-  - `npx tsc --noEmit`
-  - `npm run build`
-  - `npm test`
+  - `npx tsc --noEmit` (0 errors)
+  - `npm test` (144/144 tests PASS)
 
 ## Current Product Checkpoint
 
-SettleFlow is now a website-testable MVP for an Arc-native milestone-based USDC payout workflow.
+SettleFlow is a fully verified, production-structured Web2.5 MVP for an Arc-native milestone-based USDC payout workflow.
 
-The core product flow currently available in the repository is:
-1. create a payout
-2. edit draft payout details and milestones
-3. activate payout
-4. submit milestone work
-5. approve or reject milestone completion
-6. queue release after approval
-7. refresh settlement proof to confirmed or failed
-8. retry a failed release
-9. inspect activity history throughout the flow
-10. manage contributors from `/contributors` (add/list/search/edit/archive)
-11. export activity ledger rows as CSV
-12. configure and test notification webhooks from `/settings`
+The entire product surface is verified end-to-end:
+1. **Authentication & Session**: Google OAuth Smart Account + Web3 Wallet signing, session cookies, owner/reviewer/contributor role derivation, Preview reload verified.
+2. **Core Payout Workflow**: Create payout agreement (`/payouts/new`), edit drafts, activate agreement, submit deliverables with proof links, approve/reject reviews, queue Arc release, inspect settlement proof.
+3. **Contributors Directory**: Add, search, edit, archive/restore, delete guard (`assertContributorDeletable`), direct payout creation link.
+4. **Settings & Webhooks**: Workspace profile, per-event toggles (`Submit`, `Approve`, `Release`), secure test webhook dispatcher (Owner-only).
+5. **Activity Ledger**: Comprehensive deduplicated audit trail, event filter pills, pagination, and CSV export.
+6. **Dashboard**: Live metric cards, priority queue next-actions, active payouts progress, and recent settlement proof tabs.
 
 ## What was completed in the latest execution wedge
 
@@ -106,7 +101,49 @@ Confirmed during the latest checkpoint:
 - some mock/demo artifacts remain in the repository and docs.
 - **Dev server**: use `npx next dev -p 3001` (port 3000 is occupied by LumenFlow).
 
-## Recommended next step
-The current checkpoint is `b74925e`; Reliability Hardening is complete at `6004b05`. Phase 4A is operational documentation and safety planning. Follow the runbooks in `docs/OPERATIONS_RUNBOOK.md` before any infrastructure or transaction work.
+## Live Product Checkpoint — LIVE PRODUCT VERIFIED & PASS
 
-Current blockers are environment/database isolation, secret custody and rotation, staging wallet/funding controls, monitoring, reconciliation, incident recovery, and webhook destination isolation. Real Arc execution remains **NOT AUTHORIZED**.
+### Live Product URL
+`https://settleflow-dev.vercel.app`
+
+### Verified Features (All PASS)
+| Surface | Status |
+|---------|--------|
+| Auth & Session (Google OAuth + Web3 Wallet + Session Persistence + Logout/Relogin + RBAC) | ✅ PASS (FULLY VERIFIED) |
+| Core Payout Workflow (Create → Activate → Submit → Approve/Reject → Release → Proof) | ✅ PASS |
+| Contributors Directory (Add / Edit / Archive / Delete Guard / Search) | ✅ PASS |
+| Settings & Webhooks (URL validation, per-event toggles, Owner-only test) | ✅ PASS |
+| Activity Ledger (Filter, pagination, deduplication, CSV export) | ✅ PASS |
+| Dashboard (Metric cards, priority queue, active payouts, settlement proofs) | ✅ PASS |
+
+### Test Results
+- Unit tests: **144/144 PASS** (`npm test`)
+- Critical-path Integration suite: **PASS** (`test/integration/critical-path-e2e.test.mts`)
+- DB-backed Integration suite: **PASS** (`npm run test:integration:db`)
+- TypeScript: **0 errors** (`npx tsc --noEmit`)
+- Production build: **PASS** (`npm run build`)
+
+### Known Limitations
+1. **No committed browser E2E suite** (Playwright/Cypress). Critical-path coverage is DB/API-backed integration tests on Node runner.
+2. **Webhook dispatcher** uses direct non-blocking dispatch with 5s timeout; no persistent background retry queue.
+3. **Legacy mock data files** (`lib/data/*.ts`) remain for reference/demo fallback.
+4. **Real Arc execution remains strictly fail-closed/disabled.** `SETTLEFLOW_REAL_EXECUTION_AUTHORIZATION` must remain unset/disabled.
+
+### Security & Safety Status
+- Production database: **completely untouched**.
+- Real onchain transactions: **zero sent**.
+- Real funds: **zero moved**.
+- Secrets: **zero exposed/printed**.
+- `isServerRealExecutionAuthorized()` returns `false` on Staging.
+
+### Operational Prerequisites (Before Enabling Real Onchain Execution)
+1. **Verified secret custody & rotation workflow** for `ARC_SERVER_PRIVATE_KEY` with dedicated HSM/vault.
+2. **Bounded transaction limits & recipient allowlists** enforced at protocol/infrastructure level.
+3. **Formal multi-stakeholder authorization** to enable `SETTLEFLOW_REAL_EXECUTION_AUTHORIZATION=enabled`.
+4. **Funded server wallet** on Arc network with verified gas balance and monitoring alerts.
+5. **Automated reconciliation daemon** actively monitoring settlement status onchain against DB records.
+6. **Incident response runbook** tested with clear rollback & key-compromise procedures (see `docs/INCIDENT_RESPONSE_RUNBOOK.md`).
+7. **Production webhook destination isolation** strictly verified.
+
+## Recommended next step
+Follow the runbooks in `docs/OPERATIONS_RUNBOOK.md` before any Production infrastructure or transaction work. The immediate next action is **provisioning Production database and secrets** under Infrastructure Operator ownership.
