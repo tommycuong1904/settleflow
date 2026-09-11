@@ -153,16 +153,16 @@ export function ToastContainer() {
       aria-label="Notifications"
       style={{
         position: "fixed",
-        left: "16px",
-        right: "16px",
+        left: "auto",
+        right: "24px",
         bottom: "calc(24px + env(safe-area-inset-bottom, 12px))",
         zIndex: 2147483647,
         display: "flex",
         flexDirection: "column-reverse",
-        alignItems: "center",
+        alignItems: "flex-end",
         gap: "10px",
-        width: "auto",
-        maxWidth: "none",
+        width: "min(380px, calc(100vw - 32px))",
+        maxWidth: "380px",
         pointerEvents: "none",
       }}
     >
