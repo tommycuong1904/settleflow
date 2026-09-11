@@ -14,7 +14,9 @@ const MUTATION_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
  * Routes that establish or tear down an authenticated session — they must be
  * reachable without an existing session so sign-in/logout keep working.
  */
-const OPEN_AUTH_PREFIXES = ["/api/v1/auth/"];
+const OPEN_AUTH_PREFIXES = [
+  "/api/v1/auth/",
+];
 
 /**
  * Mutation routes intentionally left public because they are used by anonymous
