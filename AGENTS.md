@@ -127,6 +127,13 @@ Do not include empty sections.
 - Separate bug fixes from refactoring.
 - Make the smallest reversible change.
 
+## Protected Google OAuth flow
+
+- Google sign-in uses the server-side Authorization Code callback flow: `/api/v1/auth/google/start` → Google → `/api/v1/auth/google/callback`.
+- Do not replace it with a popup, One Tap, token-client, mock, or demo flow.
+- Do not change Google client IDs, secrets, callback URI construction, OAuth scopes, consent settings, or related environment variables unless the user explicitly requests that exact change.
+- When investigating Google login failures, inspect the generated redirect URI, callback state/nonce cookies, and server logs before changing authentication code.
+
 ## Specialized Workflows
 
 Use only ONE primary workflow per task.
