@@ -108,6 +108,17 @@ model User {
   createdInvitations Invitation[]          @relation("CreatedInvitations")
 }
 
+model WalletAuthChallenge {
+  nonce     String   @id
+  address   String
+  domain    String
+  message   String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([expiresAt])
+}
+
 model Invitation {
   id              String           @id @default(uuid())
   workspaceId     String
