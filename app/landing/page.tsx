@@ -1,7 +1,16 @@
 'use client'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { ArrowRight, Check, ChevronRight, CircleCheck, CircleDot, FileCheck2, LockKeyhole, ShieldCheck, WalletCards } from 'lucide-react'
+import { useWallet } from '@/lib/context/wallet-context'
+
+function AuthEntryButton({ className = '' }: { className?: string }) {
+  const { isConnected, openAuthModal } = useWallet()
+  const router = useRouter()
+  return <button type="button" onClick={() => isConnected ? router.push('/dashboard') : openAuthModal()} className={className}>{isConnected ? 'Open dashboard' : 'Sign in / Connect wallet'}</button>
+}
+
 
 const milestones = [
   ['Create', 'Contributor payout created'],
@@ -56,9 +65,7 @@ export default function Page() {
             <Link href="/payouts/new" className="sf-button">
               Create a payout <ArrowRight size={17} />
             </Link>
-            <Link href="/dashboard" className="sf-button sf-button-ghost">
-              Open dashboard
-            </Link>
+            <AuthEntryButton className="sf-button sf-button-ghost" />
           </div>
           <div className="sf-hero-note">
             <span className="sf-note-check">
@@ -512,9 +519,7 @@ export default function Page() {
             <Link href="/payouts/new" className="sf-button">
               Create a payout <ArrowRight size={17} />
             </Link>
-            <Link href="/dashboard" className="sf-button sf-button-ghost">
-              Open dashboard
-            </Link>
+            <AuthEntryButton className="sf-button sf-button-ghost" />
           </div>
           <div className="sf-final-flow">
             <span>APPROVAL</span>

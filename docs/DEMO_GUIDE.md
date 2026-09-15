@@ -1,8 +1,8 @@
 # SettleFlow — Demo Guide
 
 > **Thời gian chạy thử:** ~5 phút  
-> **URL dev:** `http://localhost:3001`  
-> **Mạng:** Arc Testnet (Chain ID `5042002`, USDC native)
+> **URL dev:** `http://localhost:3000`
+> **Mạng:** Arc Testnet (Chain ID `5042002`, USDC native). Demo mặc định chạy ở mock mode; không gửi transaction thật.
 
 ---
 
@@ -32,10 +32,10 @@ Owner tạo Payout
 
 ## Bước 0 — Kết nối Ví & Thiết lập Arc Testnet
 
-1. Mở `http://localhost:3001/` → Bấm **"Get Started"** hoặc **"Connect Wallet"**
+1. Mở `http://localhost:3000/` → Bấm **"Get Started"** hoặc **"Connect Wallet"**
 2. Trong modal **Auth**, chọn **tab Web3** → Bấm **"Add / Switch Arc Testnet in MetaMask"**
 3. MetaMask sẽ prompt thêm mạng → **Chấp nhận**
-4. Bấm **"Connect MetaMask / Rabby"** để đăng nhập (hoặc chọn tab **Web2** để dùng Google)
+4. Bấm **"Connect MetaMask / Rabby"** để đăng nhập (hoặc chọn tab **Web2** để dùng Google). Chi tiết OAuth xem `GOOGLE_OAUTH_SETUP.md`.
 5. Xác nhận Network Badge ở header hiển thị **"Arc Testnet"**
 
 > **Lấy USDC Testnet:** Nếu số dư bằng 0, bấm badge USDC ở header → Bấm **"Request Testnet USDC from Faucet"**
@@ -97,18 +97,16 @@ Owner tạo Payout
 
 ---
 
-## Bước 4 — Release USDC on Arc Testnet (vai trò: Owner)
+## Bước 4 — Queue release in mock mode (vai trò: Owner)
 
 **URL:** `/payouts/[id]` — panel bên phải
 
 1. Chuyển Role Switcher sang **Owner**
 2. Panel bên phải hiển thị milestone đã được Approve và nút **"Release Milestone"**
 3. Kiểm tra số tiền: `500 USDC` → địa chỉ ví contributor
-4. Bấm **"Release Milestone"**:
-   - Nếu execution mode là **`circle_wallet`** (server EOA qua `ARC_SERVER_PRIVATE_KEY`): server tự ký và gửi USDC — không cần popup MetaMask.
-   - Nếu mode là **`browser_wallet`**: API trả về lỗi rõ ràng vì server không giữ ví — việc ký nằm ở phía browser/wallet adapter.
-5. Đợi xác nhận (~5-15 giây trên Arc Testnet)
-6. Trạng thái chuyển sang `released` — hệ thống gửi Discord notification kèm địa chỉ ví, source wallet và số tiền
+4. Bấm **"Release Milestone"** trong mock mode để kiểm tra queue/state/proof flow. Không có transaction on-chain nào được gửi.
+5. Kiểm tra trạng thái và activity record trong ứng dụng.
+6. Không bật real execution trong demo. `circle_wallet` là capability cấu hình riêng, còn `browser_wallet` phải fail-closed trên server; bất kỳ bounded staging transaction nào cũng cần `STAGING_BOUNDED_TRANSACTION_GATE.md` và separate operator approval.
 
 ---
 
@@ -156,12 +154,12 @@ Owner tạo Payout
 ## Luồng hoàn chỉnh trong 5 phút
 
 ```
-00:00  Mở localhost:3001 → Giải thích vấn đề & giải pháp (Landing Page)
+00:00  Mở localhost:3000 → Giải thích vấn đề & giải pháp (Landing Page)
 00:45  Kết nối ví MetaMask / Login Google → vào Dashboard
 01:15  Tạo payout Q3 bounty với 3 milestones (Owner)
 01:50  Submit Milestone 1 kèm GitHub PR link (Contributor)
 02:20  Reviewer Approve Milestone 1
-02:40  Owner Release 500 USDC on Arc Testnet → Ký MetaMask
+02:40  Owner queue release 500 USDC trong mock mode (không gửi transaction)
 03:10  Xem Settlement Proof + link Arcscan
 03:30  Discord nhận notification tự động
 04:00  Activity Feed hiển thị toàn bộ lịch sử
@@ -191,4 +189,4 @@ Owner tạo Payout
 
 ---
 
-*Tài liệu này phản ánh trạng thái hiện tại: Arc Testnet với USDC native, toàn bộ state machine được backed bởi Prisma/PostgreSQL, webhook notification tự động, và release execution chạy thật qua `circle_wallet` (server EOA) khi đã cấu hình `ARC_SERVER_PRIVATE_KEY`.*
+*Tài liệu này mô tả demo an toàn ở mock mode trên Arc Testnet context. Demo không gửi transaction thật. Với staging execution, xem `STAGING_BOUNDED_TRANSACTION_GATE.md` và `ARC_STAGING_SAFETY_RUNBOOK.md`; việc đó không được suy ra từ demo này.*

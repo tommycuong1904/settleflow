@@ -19,7 +19,7 @@ It is a full-stack Next.js app: create payout → define milestones → submit w
 ## Key commands
 | Command | Meaning |
 | --- | --- |
-| `npm run dev` | Dev server (served at `http://localhost:3001` in this workspace) |
+| `npm run dev` | Dev server (served at `http://localhost:3000`) |
 | `node --import tsx --test 'lib/**/*.test.mts'` | Full unit suite (current count: see `docs/CURRENT_STATE.md`) |
 | `npm run lint` | ESLint |
 | `npm run build` | Production build |

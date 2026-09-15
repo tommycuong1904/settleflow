@@ -1895,13 +1895,13 @@ h1 {
 
 @media (max-width: 767px) {
   .sf-toast-container {
-    left: 16px !important;
+    left: auto !important;
     right: 16px !important;
     bottom: calc(24px + env(safe-area-inset-bottom, 12px)) !important;
     transform: none !important;
-    width: auto !important;
-    max-width: none !important;
-    align-items: center !important;
+    width: max-content !important;
+    max-width: calc(100vw - 32px) !important;
+    align-items: flex-end !important;
   }
 
   .sf-toast-item {

@@ -95,7 +95,7 @@ npx prisma db seed
 npm run dev
 ```
 
-App runs at **[http://localhost:3001](http://localhost:3001)** in this workspace.
+App runs at **[http://localhost:3000](http://localhost:3000)**.
 
 ### 5. Connect Arc Testnet to MetaMask
 

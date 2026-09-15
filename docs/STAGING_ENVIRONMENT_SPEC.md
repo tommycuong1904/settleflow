@@ -54,7 +54,7 @@ Placeholder values shown. Real values must be generated and stored in the Vercel
 | `DATABASE_URL` | `<STAGING_POSTGRES_URL>` | Independent staging PostgreSQL. NOT `*_test` |
 | `SETTLEFLOW_AUTH_SECRET` | `<STAGING_ONLY_SECRET>` | Unique 64+ char hex. Not development, not production |
 | `ARC_SERVER_PRIVATE_KEY` | `<STAGING_TESTNET_PRIVATE_KEY>` | Dedicated Arc Testnet EOA. No real funds |
-| `SETTLEFLOW_REAL_EXECUTION_AUTHORIZATION` | `disabled` | MUST remain disabled until bounded transaction gate is satisfied |
+| `SETTLEFLOW_REAL_EXECUTION_AUTHORIZATION` | `disabled` | MUST remain disabled until the bounded transaction gate is satisfied and separate operator approval is given; any approved authorization value is managed out-of-band and must not be documented |
 | `NEXT_PUBLIC_ARC_EXECUTION_MODE` | `mock` | Mock mode until final safety gate approval |
 | `NEXT_PUBLIC_ARC_CHAIN_ID` | `5042002` | Arc Testnet |
 | `NEXT_PUBLIC_ARC_RPC_URL` | `<APPROVED_ARC_TESTNET_RPC>` | Approved Arc Testnet RPC endpoint |
@@ -67,7 +67,7 @@ Placeholder values shown. Real values must be generated and stored in the Vercel
 
 1. **No production secrets** — every variable must be staging-specific.
 2. **No NEXT_PUBLIC secrets** — `ARC_SERVER_PRIVATE_KEY`, `SETTLEFLOW_AUTH_SECRET`, `DATABASE_URL` are server-only and must never be exposed as `NEXT_PUBLIC_*`.
-3. **Real execution remains disabled** — `SETTLEFLOW_REAL_EXECUTION_AUTHORIZATION=disabled` and `NEXT_PUBLIC_ARC_EXECUTION_MODE=mock` until the bounded transaction gate is explicitly satisfied.
+3. **Real execution remains disabled** — keep `SETTLEFLOW_REAL_EXECUTION_AUTHORIZATION` disabled and `NEXT_PUBLIC_ARC_EXECUTION_MODE=mock` until the bounded transaction gate is explicitly satisfied and separate operator approval is given. Do not record any approved authorization value in documentation.
 4. **Webhook isolation** — staging webhook destination must be separate from production. Leave unset to disable webhooks entirely during initial staging.
 
 ---
@@ -86,20 +86,13 @@ Placeholder values shown. Real values must be generated and stored in the Vercel
 
 ## Migration readiness
 
-All 4 migrations are present in `prisma/migrations/`:
-
-| Migration | Purpose |
-|---|---|
-| `20260807140115_init` | Initial schema |
-| `20260827024523_add_workspace_webhook_settings` | Workspace webhook URL setting |
-| `20260828145326_add_contributor_created_by` | Contributor creator tracking |
-| `20260831000000_add_active_release_per_milestone` | One-active-release-per-milestone partial unique index |
-
-Local dev DB is behind by the latest migration (not applied). Staging deployment must run `prisma migrate deploy` to apply all pending migrations.
+Staging deployment must run `prisma migrate deploy` to apply the migrations present in `prisma/migrations/`. Verify the resulting state with `prisma migrate status`; do not rely on a static migration count in this document.
 
 ---
 
 ## Verification checklist (before staging is considered ready)
+
+Use `STAGING_PROVISIONING_CHECKLIST.md` as the operator checklist. Use `STAGING_BOUNDED_TRANSACTION_GATE.md` for any later bounded-transaction decision; this specification does not authorize execution.
 
 - [ ] Staging PostgreSQL instance created and reachable
 - [ ] All required env vars configured in Vercel Preview environment

@@ -18,7 +18,8 @@ This checklist covers everything needed before staging is considered ready. Real
 - [ ] **Vercel Preview deployment identified**
   - Existing Vercel project supports Preview deployments
   - Branch: `staging` (or dedicated branch) pinned for staging
-  - No local Vercel credentials available — operator must configure via Vercel dashboard
+  - Re-verify operator access before use
+  - Operator authorization is required before writing Preview environment variables
 - [ ] **Staging Google OAuth client configured**
   - Authorized origin: staging Vercel Preview URL
   - Authorized redirect URI: `https://<staging-url>/api/v1/auth/google`
@@ -74,7 +75,7 @@ This checklist covers everything needed before staging is considered ready. Real
   - Run against staging DATABASE_URL only
   - Never run against development or production
 - [ ] **Migration status verified**
-  - `prisma migrate status` confirms all 4 migrations applied
+  - `prisma migrate status` confirms all current migrations applied
 - [ ] **Release/TransactionProof/ActivityLog rows inspectable**
   - Read-only access to confirm records are persisted
 
