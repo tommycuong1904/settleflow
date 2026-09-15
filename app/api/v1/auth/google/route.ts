@@ -6,10 +6,6 @@ import {
   SESSION_COOKIE_NAME,
   SESSION_COOKIE_OPTIONS,
 } from "@/lib/auth/session";
-import {
-  GoogleUserInfoError,
-  GoogleUserInfoNetworkError,
-} from "@/lib/auth/google";
 import { verifyGoogleIdToken } from "@/lib/auth/google-server";
 import { db } from "@/lib/db/client";
 import { provisionGoogleUser } from "@/lib/auth/google-provisioning";
@@ -67,9 +63,6 @@ export async function POST(request: Request) {
       },
     });
   } catch (error) {
-    if (error instanceof GoogleUserInfoError) return NextResponse.json({ error: "Google credential rejected.", googleError: error.googleError, googleErrorDescription: error.googleErrorDescription }, { status: 401 });
-    if (error instanceof GoogleUserInfoNetworkError) return NextResponse.json({ error: "Google UserInfo service unavailable." }, { status: 502 });
-
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to process Google authentication." },
       { status: 500 },

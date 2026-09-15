@@ -10,31 +10,6 @@ export interface GoogleUserProfile {
   emailVerified?: boolean;
 }
 
-export interface GoogleIdTokenProfile extends GoogleUserProfile {
-  idToken: string;
-}
-
-export class GoogleUserInfoError extends Error {
-  readonly status: number;
-  readonly googleError: string | null;
-  readonly googleErrorDescription: string | null;
-
-  constructor(status: number, googleError: string | null, googleErrorDescription: string | null) {
-    super("Google UserInfo rejected the credential.");
-    this.name = "GoogleUserInfoError";
-    this.status = status;
-    this.googleError = googleError;
-    this.googleErrorDescription = googleErrorDescription;
-  }
-}
-
-export class GoogleUserInfoNetworkError extends Error {
-  constructor() {
-    super("Google UserInfo request failed before a response was received.");
-    this.name = "GoogleUserInfoNetworkError";
-  }
-}
-
 declare global {
   interface Window {
     google?: {
@@ -46,17 +21,9 @@ declare global {
             auto_select?: boolean;
             cancel_on_tap_outside?: boolean;
           }) => void;
+          disableAutoSelect: () => void;
           prompt: (notification?: (notification: { isNotDisplayed: () => boolean; isSkippedMoment: () => boolean }) => void) => void;
           renderButton: (parent: HTMLElement, options: Record<string, unknown>) => void;
-        };
-        oauth2: {
-          initTokenClient: (config: {
-            client_id: string;
-            scope: string;
-            callback: (tokenResponse: { access_token?: string; error?: string }) => void;
-          }) => {
-            requestAccessToken: () => void;
-          };
         };
       };
     };
@@ -125,77 +92,4 @@ export function decodeGoogleJwt(jwtToken: string): GoogleUserProfile | null {
     console.error("Error decoding Google JWT:", err);
     return null;
   }
-}
-
-/**
- * Fetches user profile from Google UserInfo endpoint with an OAuth access token
- */
-
-export async function fetchGoogleUserInfo(accessToken: string): Promise<GoogleUserProfile> {
-  let response: Response;
-  try {
-    response = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
-  } catch {
-    throw new GoogleUserInfoNetworkError();
-  }
-
-  if (!response.ok) {
-    let googleError: string | null = null;
-    let googleErrorDescription: string | null = null;
-    try {
-      const payload = (await response.json()) as { error?: unknown; error_description?: unknown };
-      googleError = typeof payload.error === "string" ? payload.error : null;
-      googleErrorDescription = typeof payload.error_description === "string" ? payload.error_description : null;
-    } catch {
-      // Keep unexpected upstream bodies private.
-    }
-    throw new GoogleUserInfoError(response.status, googleError, googleErrorDescription);
-  }
-
-  const data = (await response.json()) as {
-    sub: string;
-    email: string;
-    name?: string;
-    picture?: string;
-    email_verified?: boolean;
-  };
-
-  return {
-    sub: data.sub || data.email,
-    email: data.email,
-    name: data.name || data.email.split("@")[0],
-    picture: data.picture,
-    emailVerified: data.email_verified,
-  };
-}
-
-/**
- * Triggers Google OAuth 2.0 Popup authentication using GIS Token Client
- */
-export async function promptGoogleOAuth(clientId: string): Promise<GoogleIdTokenProfile> {
-  await loadGoogleGsiScript();
-
-  if (!window.google?.accounts?.id) {
-    throw new Error("Google Identity Services is not available.");
-  }
-
-  return new Promise((resolve, reject) => {
-    try {
-      window.google!.accounts.id.initialize({
-        client_id: clientId,
-        callback: (response) => {
-          const profile = decodeGoogleJwt(response.credential);
-          if (!profile) return reject(new Error("Invalid Google ID token."));
-          resolve({ ...profile, idToken: response.credential });
-        },
-      });
-      window.google!.accounts.id.prompt();
-    } catch (err) {
-      reject(err);
-    }
-  });
 }

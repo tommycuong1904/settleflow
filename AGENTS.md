@@ -129,10 +129,11 @@ Do not include empty sections.
 
 ## Protected Google OAuth flow
 
-- Google sign-in uses the server-side Authorization Code callback flow: `/api/v1/auth/google/start` → Google → `/api/v1/auth/google/callback`.
-- Do not replace it with a popup, One Tap, token-client, mock, or demo flow.
-- Do not change Google client IDs, secrets, callback URI construction, OAuth scopes, consent settings, or related environment variables unless the user explicitly requests that exact change.
-- When investigating Google login failures, inspect the generated redirect URI, callback state/nonce cookies, and server logs before changing authentication code.
+- The verified Web2 sign-in design is Google Identity Services (GIS) button popup → `POST /api/v1/auth/google`, with the server-side Authorization Code callback (`/api/v1/auth/google/start` → Google → `/api/v1/auth/google/callback`) retained only as an explicit user-selected fallback.
+- Do not replace, remove, or combine these paths; do not add One Tap, automatic sign-in, token-client, mock, or demo authentication. Do not alter Google client IDs, secrets, callback URI construction, OAuth scopes, consent settings, or related environment variables unless the user explicitly requests that exact change.
+- The popup credential is display-only in the client and must continue to be verified server-side. Google sign-in may provision a verified user but must never grant workspace membership; invitations remain the membership-grant path.
+- Explicit SettleFlow logout must retain `google.accounts.id.disableAutoSelect()` after the server logout succeeds. It prevents GIS from immediately re-selecting the just-signed-out account and does not sign the user out of Google.
+- When investigating Google login failures, inspect the generated redirect URI, callback state/nonce cookies, GIS console messages, and server logs before changing authentication code.
 
 ## Specialized Workflows
 

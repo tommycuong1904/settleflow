@@ -31,7 +31,6 @@ export interface WalletContextValue {
   closeAuthModal: () => void;
   refreshBalance: () => Promise<void>;
   connectWeb3: (preferredWallet?: string) => Promise<void>;
-  connectWeb2: (identifier: string, provider?: "google" | "email") => Promise<void>;
   connectGoogle: (profile: { email: string; name?: string; picture?: string; sub?: string; idToken: string }) => Promise<void>;
   getPrivateKey: () => string | null;
   disconnect: () => Promise<void>;
@@ -299,52 +298,6 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     [saveSession],
   );
 
-  const connectWeb2 = useCallback(
-    async (identifier: string, provider: "google" | "email" = "google") => {
-      setIsConnecting(true);
-      try {
-        await new Promise((resolve) => setTimeout(resolve, 500));
-
-        const userEmail = provider === "google" ? "user.google@settleflow.io" : identifier;
-        const smartAccount = deriveSmartAccountAddress(userEmail);
-        const name = userEmail.split("@")[0];
-
-        await syncServerSession("/api/v1/auth/google", {
-          email: userEmail,
-          sub: userEmail,
-          name,
-        });
-
-        setIsConnected(true);
-        setAddress(smartAccount);
-        setEmail(userEmail);
-        setUserName(name);
-        setUserAvatar(null);
-        setAuthType(provider === "google" ? "web2_google" : "web2_email");
-        setWalletName("Smart Account");
-        setNetwork("Arc Testnet");
-        setUsdcBalance("500.00");
-
-        saveSession({
-          isConnected: true,
-          address: smartAccount,
-          email: userEmail,
-          userName: name,
-          userAvatar: null,
-          authType: provider === "google" ? "web2_google" : "web2_email",
-          walletName: "Smart Account",
-          network: "Arc Testnet",
-          usdcBalance: "500.00",
-        });
-
-        setIsAuthModalOpen(false);
-      } finally {
-        setIsConnecting(false);
-      }
-    },
-    [saveSession],
-  );
-
   const getPrivateKey = useCallback(() => {
     if (!isConnected || (authType !== "web2_google" && authType !== "web2_email")) {
       return null;
@@ -355,6 +308,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
   const disconnect = useCallback(async () => {
     await syncServerSession("/api/v1/auth/logout", {});
+    // Keep Google Identity Services from immediately re-selecting the just-signed-out account.
+    window.google?.accounts?.id.disableAutoSelect();
     setIsConnected(false);
     setAddress(null);
     setEmail(null);
@@ -384,7 +339,6 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         closeAuthModal,
         refreshBalance,
         connectWeb3,
-        connectWeb2,
         connectGoogle,
         getPrivateKey,
         disconnect,

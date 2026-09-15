@@ -19,6 +19,10 @@ Google sign-in may create or link a verified `User`, but it never grants a
 workspace role by itself. A new user gains workspace access only by accepting
 a valid invitation for the same verified account.
 
+On explicit SettleFlow logout, the client calls GIS `disableAutoSelect()` so
+Google does not immediately re-select the just-signed-out account. This does
+not sign the user out of Google itself.
+
 ## Quick reference
 
 | Item | Value |
