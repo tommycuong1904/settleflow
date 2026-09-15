@@ -1,8 +1,10 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect } from "react";
 
-type Theme = "dark" | "light";
+// Dark mode is intentionally deferred while the product UI is stabilized.
+// Retain this provider so the feature can be restored deliberately later.
+type Theme = "light";
 
 type ThemeContextType = {
   theme: Theme;
@@ -13,35 +15,21 @@ type ThemeContextType = {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("light");
-  const [mounted, setMounted] = useState(false);
-
   useEffect(() => {
-    const savedTheme = localStorage.getItem("sf_theme") as Theme | null;
-    if (savedTheme === "light" || savedTheme === "dark") {
-      setThemeState(savedTheme);
-      document.documentElement.setAttribute("data-theme", savedTheme);
-    } else {
-      // Default to light mode
-      setThemeState("light");
-      document.documentElement.setAttribute("data-theme", "light");
-    }
-    setMounted(true);
+    localStorage.removeItem("sf_theme");
+    document.documentElement.setAttribute("data-theme", "light");
   }, []);
 
-  const setTheme = (newTheme: Theme) => {
-    setThemeState(newTheme);
-    localStorage.setItem("sf_theme", newTheme);
-    document.documentElement.setAttribute("data-theme", newTheme);
+  const setTheme = () => {
+    document.documentElement.setAttribute("data-theme", "light");
   };
 
   const toggleTheme = () => {
-    const nextTheme = theme === "dark" ? "light" : "dark";
-    setTheme(nextTheme);
+    setTheme();
   };
 
   return (
-    <ThemeContext.Provider value={{ theme: mounted ? theme : "light", setTheme, toggleTheme }}>
+    <ThemeContext.Provider value={{ theme: "light", setTheme, toggleTheme }}>
       {children}
     </ThemeContext.Provider>
   );

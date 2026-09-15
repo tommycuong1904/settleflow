@@ -3,13 +3,12 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, ArrowRightLeft, Users, Activity, Settings, X, Sun, Moon, Droplets, ExternalLink, Crown, Search, Code2, Check } from "lucide-react";
+import { LayoutDashboard, ArrowRightLeft, Users, Activity, Settings, X, Droplets, ExternalLink, Crown, Search, Code2, Check } from "lucide-react";
 import {
   setProductContextCookie,
   useResolvedProductContext,
 } from "@/lib/runtime/product-context-client";
 import { PRODUCT_CONTEXT_COOKIE_NAMES, type ProductActor } from "@/lib/runtime/product-context";
-import { useTheme } from "@/lib/context/theme-context";
 import { showGlobalToast } from "@/lib/context/toast-context";
 import { hasRole } from "@/lib/runtime/role-utils";
 
@@ -45,7 +44,6 @@ export function AppSidebar() {
   const router = useRouter();
   const pathname = usePathname();
   const productContext = useResolvedProductContext();
-  const { theme, toggleTheme } = useTheme();
   const actor = productContext.actor;
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
@@ -139,7 +137,7 @@ export function AppSidebar() {
         </ul>
       </nav>
 
-      {/* Mobile Secondary Utilities (Role Switcher, Theme, Faucet) */}
+      {/* Mobile Secondary Utilities (Role Switcher, Faucet) */}
       <div className="md:hidden px-4 py-3 border-t border-[var(--border-soft)] space-y-3 mt-auto">
         {/* Role Switcher on Mobile */}
         <div>
@@ -172,19 +170,6 @@ export function AppSidebar() {
 
         <div>
           <p className="sf-sidebar-section-label text-[10px] mb-2">PREFERENCES & TOOLS</p>
-
-        {/* Theme Toggle */}
-        <button
-          type="button"
-          onClick={toggleTheme}
-          className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs text-[var(--text-muted)] hover:text-[var(--foreground)] hover:bg-[var(--surface-muted)] transition-colors"
-        >
-          <span className="flex items-center gap-2">
-            {theme === "dark" ? <Sun size={15} /> : <Moon size={15} />}
-            <span>{theme === "dark" ? "Light Mode" : "Dark Mode"}</span>
-          </span>
-          <span className="text-[10px] uppercase font-mono tracking-wider opacity-60">{theme}</span>
-        </button>
 
         {/* Circle Faucet */}
         <a

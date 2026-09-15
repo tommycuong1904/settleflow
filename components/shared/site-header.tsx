@@ -4,11 +4,9 @@ import Link from "next/link";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/shared/button";
-import { ArrowRight, Menu, X, Sun, Moon } from "lucide-react";
-import { useTheme } from "@/lib/context/theme-context";
+import { ArrowRight, Menu, X } from "lucide-react";
 
 export function SiteHeader() {
-  const { theme, toggleTheme } = useTheme();
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const isHome = pathname === "/";
@@ -59,20 +57,8 @@ export function SiteHeader() {
           ))}
         </nav>
 
-        {/* Right: Actions (Theme Toggle & CTA) */}
+        {/* Right: CTA */}
         <div className="hidden md:flex items-center gap-3 z-10">
-          <button
-            onClick={toggleTheme}
-            className="inline-flex items-center justify-center p-2 rounded-full text-[var(--text-muted)] hover:text-[var(--foreground)] bg-[var(--surface-muted)] hover:bg-[var(--surface-strong)] transition-all border border-[var(--border-soft)]"
-            title={`Switch to ${theme === "dark" ? "Light Mode" : "Dark Mode"}`}
-            aria-label="Toggle theme"
-          >
-            {theme === "dark" ? (
-              <Sun size={15} className="text-amber-400" />
-            ) : (
-              <Moon size={15} className="text-slate-600" />
-            )}
-          </button>
           {isHome ? (
             <Button href="/dashboard" size="sm" variant="primary">
               Launch App <ArrowRight size={14} />
@@ -87,18 +73,6 @@ export function SiteHeader() {
         {/* Mobile Hamburger Menu Toggle */}
         <div className="flex md:hidden items-center gap-2 z-10">
           <button
-            onClick={toggleTheme}
-            className="inline-flex items-center justify-center p-1.5 rounded-full text-[var(--text-muted)] hover:text-[var(--foreground)] bg-[var(--surface-muted)] transition-all border border-[var(--border-soft)]"
-            title={`Switch to ${theme === "dark" ? "Light Mode" : "Dark Mode"}`}
-            aria-label="Toggle theme"
-          >
-            {theme === "dark" ? (
-              <Sun size={14} className="text-amber-400" />
-            ) : (
-              <Moon size={14} className="text-slate-600" />
-            )}
-          </button>
-          <button
             className="sf-menu"
             onClick={() => setOpen(!open)}
             aria-label={open ? "Close menu" : "Open menu"}
@@ -111,4 +85,3 @@ export function SiteHeader() {
     </header>
   );
 }
-

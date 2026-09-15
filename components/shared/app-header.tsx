@@ -9,13 +9,11 @@ import { ExportKeyModal } from "@/components/shared/export-key-modal";
 import { useWallet } from "@/lib/context/wallet-context";
 import { addArcNetworkToWallet } from "@/lib/arc/onchain";
 import { useToast } from "@/lib/context/toast-context";
-import { ExternalLink, LogOut, Wallet, User, ChevronDown, RefreshCw, Droplets, KeyRound, Copy, Sun, Moon, Menu } from "lucide-react";
-import { useTheme } from "@/lib/context/theme-context";
+import { ExternalLink, LogOut, Wallet, User, ChevronDown, RefreshCw, Droplets, KeyRound, Copy, Menu } from "lucide-react";
 
 export function AppHeader() {
   const router = useRouter();
   const pathname = usePathname();
-  const { theme, toggleTheme } = useTheme();
   const {
     isConnected,
     isConnecting,
@@ -99,20 +97,6 @@ export function AppHeader() {
         <div className="hidden md:block">
           <RoleSwitcher />
         </div>
-
-        {/* Light / Dark Mode Toggle on Desktop */}
-        <button
-          onClick={toggleTheme}
-          className="hidden md:inline-flex items-center justify-center p-2 rounded-full text-[var(--text-muted)] hover:text-[var(--foreground)] bg-[var(--surface-muted)] hover:bg-[var(--surface-strong)] transition-all border border-[var(--border-soft)]"
-          title={`Switch to ${theme === "dark" ? "Light Mode" : "Dark Mode"}`}
-          aria-label="Toggle theme"
-        >
-          {theme === "dark" ? (
-            <Sun size={15} className="text-[var(--foreground)]" />
-          ) : (
-            <Moon size={15} className="text-[var(--foreground)]" />
-          )}
-        </button>
 
         {/* Get test USDC on Desktop */}
         <a
