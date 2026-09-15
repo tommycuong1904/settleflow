@@ -131,7 +131,6 @@ This repository is now a full-stack Next.js application for SettleFlow, an Arc-n
   - release proof refresh
   - payout activity (`/api/v1/payouts/[id]/activity`)
   - webhook test (`/api/v1/webhooks/test`)
-  - feedback (`/api/v1/feedback`)
   - google auth smart-account derivation (`/api/v1/auth/google`)
 - Legacy mock data files still exist in `lib/data/`, but no runtime imports were found in application code.
 

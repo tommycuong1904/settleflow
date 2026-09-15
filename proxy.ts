@@ -18,12 +18,6 @@ const OPEN_AUTH_PREFIXES = [
   "/api/v1/auth/",
 ];
 
-/**
- * Mutation routes intentionally left public because they are used by anonymous
- * guests (e.g. feedback). Everything else under /api is gated on a session.
- */
-const PUBLIC_MUTATION_PREFIXES = ["/api/feedback", "/api/v1/feedback"];
-
 function shouldHandle(pathname: string) {
   if (pathname.startsWith("/_next") || pathname.startsWith("/favicon") || pathname.startsWith("/public")) {
     return false;
@@ -53,10 +47,6 @@ function isOpenAuthPath(pathname: string) {
   return OPEN_AUTH_PREFIXES.some((prefix) => pathname.startsWith(prefix));
 }
 
-function isPublicMutationPath(pathname: string) {
-  return PUBLIC_MUTATION_PREFIXES.some((prefix) => pathname.startsWith(prefix));
-}
-
 function unauthorizedResponse() {
   return NextResponse.json(
     {
@@ -83,8 +73,7 @@ export async function proxy(request: NextRequest) {
   if (
     MUTATION_METHODS.has(request.method) &&
     request.nextUrl.pathname.startsWith("/api/") &&
-    !isOpenAuthPath(request.nextUrl.pathname) &&
-    !isPublicMutationPath(request.nextUrl.pathname)
+    !isOpenAuthPath(request.nextUrl.pathname)
   ) {
     const sessionToken = request.cookies.get(SESSION_COOKIE_NAME)?.value;
     const session = sessionToken ? await verifySessionToken(sessionToken) : null;

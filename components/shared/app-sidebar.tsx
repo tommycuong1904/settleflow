@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, ArrowRightLeft, Users, Activity, Settings, X, Sun, Moon, Droplets, MessageSquareHeart, ExternalLink, Crown, Search, Code2, Check } from "lucide-react";
+import { LayoutDashboard, ArrowRightLeft, Users, Activity, Settings, X, Sun, Moon, Droplets, ExternalLink, Crown, Search, Code2, Check } from "lucide-react";
 import {
   setProductContextCookie,
   useResolvedProductContext,
@@ -139,7 +139,7 @@ export function AppSidebar() {
         </ul>
       </nav>
 
-      {/* Mobile Secondary Utilities (Role Switcher, Theme, Faucet, Feedback) */}
+      {/* Mobile Secondary Utilities (Role Switcher, Theme, Faucet) */}
       <div className="md:hidden px-4 py-3 border-t border-[var(--border-soft)] space-y-3 mt-auto">
         {/* Role Switcher on Mobile */}
         <div>
@@ -200,20 +200,6 @@ export function AppSidebar() {
           <ExternalLink size={12} className="opacity-60" />
         </a>
 
-        {/* Feedback Trigger */}
-        <button
-          type="button"
-          onClick={() => {
-            setIsMobileOpen(false);
-            window.dispatchEvent(new CustomEvent("open-feedback-modal"));
-          }}
-          className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs text-[var(--text-muted)] hover:text-[var(--foreground)] hover:bg-[var(--surface-muted)] transition-colors"
-        >
-          <span className="flex items-center gap-2">
-            <MessageSquareHeart size={15} />
-            <span>Send Feedback</span>
-          </span>
-        </button>
         </div>
       </div>
 

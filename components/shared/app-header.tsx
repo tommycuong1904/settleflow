@@ -5,11 +5,10 @@ import { Button } from "@/components/shared/button";
 import { RoleSwitcher } from "@/components/shared/role-switcher";
 import { FaucetModal } from "@/components/shared/faucet-modal";
 import { ExportKeyModal } from "@/components/shared/export-key-modal";
-import { FeedbackModal } from "@/components/shared/feedback-modal";
 import { useWallet } from "@/lib/context/wallet-context";
 import { addArcNetworkToWallet } from "@/lib/arc/onchain";
 import { useToast } from "@/lib/context/toast-context";
-import { ExternalLink, LogOut, Wallet, User, ChevronDown, RefreshCw, Droplets, KeyRound, Copy, MessageSquareHeart, Sun, Moon, Menu } from "lucide-react";
+import { ExternalLink, LogOut, Wallet, User, ChevronDown, RefreshCw, Droplets, KeyRound, Copy, Sun, Moon, Menu } from "lucide-react";
 import { useTheme } from "@/lib/context/theme-context";
 
 export function AppHeader() {
@@ -35,13 +34,6 @@ export function AppHeader() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isFaucetOpen, setIsFaucetOpen] = useState(false);
   const [isExportKeyOpen, setIsExportKeyOpen] = useState(false);
-  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
-
-  React.useEffect(() => {
-    const handleOpenFeedback = () => setIsFeedbackOpen(true);
-    window.addEventListener("open-feedback-modal", handleOpenFeedback);
-    return () => window.removeEventListener("open-feedback-modal", handleOpenFeedback);
-  }, []);
 
   const handleAddArcNetwork = async () => {
     try {
@@ -124,15 +116,6 @@ export function AppHeader() {
           <Droplets size={13} className="text-[var(--foreground)]" /> Get test USDC
           <ExternalLink size={11} className="opacity-60 ml-0.5" />
         </a>
-
-        {/* Feedback Button on Desktop */}
-        <button
-          onClick={() => setIsFeedbackOpen(true)}
-          className="hidden lg:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-[var(--text-muted)] hover:text-[var(--foreground)] bg-[var(--surface-muted)] hover:bg-[var(--surface-strong)] transition-all border border-[var(--border-soft)]"
-          title="Send feedback or report an issue"
-        >
-          <MessageSquareHeart size={13} className="opacity-70" /> Feedback
-        </button>
 
         {/* Network indicator on Desktop */}
         <button
@@ -302,11 +285,6 @@ export function AppHeader() {
         privateKey={getPrivateKey()}
       />
 
-      {/* User Feedback Modal */}
-      <FeedbackModal
-        isOpen={isFeedbackOpen}
-        onClose={() => setIsFeedbackOpen(false)}
-      />
     </header>
   );
 }
