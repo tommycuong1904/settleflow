@@ -4,6 +4,27 @@
 
 Vercel invokes `prisma migrate deploy && prisma generate && npm run build`. Migration runs against `DATABASE_URL`, then Prisma Client is generated, then Next.js builds. No backup system is established by this repository.
 
+## Environment Configuration Matrix (Preview & Staging)
+
+### Required Core Variables
+- `DATABASE_URL`: PostgreSQL connection string. Must point to an independently provisioned Preview/Staging database instance.
+- `SETTLEFLOW_AUTH_SECRET`: High-entropy secret string (min 32 bytes) used for signing and verifying HMAC-SHA256 session cookies (`sf_session`). Fails closed in production if missing.
+
+### Optional Arc Protocol Variables (Safe Defaults Built-in)
+- `NEXT_PUBLIC_ARC_EXECUTION_MODE`: `mock` | `demo` | `real` (default: `demo`). *Must remain `demo` or `mock` for staging verification.*
+- `NEXT_PUBLIC_ARC_CHAIN_ID`: Arc Testnet Chain ID (default: `5042002`).
+- `NEXT_PUBLIC_ARC_RPC_URL`: Arc Testnet RPC endpoint (default: `https://rpc.testnet.arc.io`).
+- `NEXT_PUBLIC_ARC_EXPLORER_URL`: Block explorer URL (default: `https://testnet.arcscan.app`).
+- `NEXT_PUBLIC_USDC_ADDRESS`: Native/Bridged USDC contract address on Arc Testnet (default: `0x3600000000000000000000000000000000000000`).
+
+### Safety & Execution Authorization Gates
+- `SETTLEFLOW_REAL_EXECUTION_AUTHORIZATION`: Must remain `disabled` or omitted on Staging. Real onchain fund movement is strictly locked unless explicitly authorized.
+- `ARC_SERVER_PRIVATE_KEY`: Omitted by default. Never configure with real/mainnet private keys.
+
+### Authentication & Integration (Optional)
+- `NEXT_PUBLIC_GOOGLE_CLIENT_ID`: Google OAuth Web Client ID for Google Smart Account login rail.
+- `SETTLEFLOW_WEBHOOK_URL`: Optional global fallback webhook endpoint for workspace event notifications.
+
 ## Environment separation
 
 Each Vercel environment MUST use an independently provisioned database and environment-scoped secrets. Never assume a variable name proves environment identity. Verify database host, database name, and application environment before deployment.

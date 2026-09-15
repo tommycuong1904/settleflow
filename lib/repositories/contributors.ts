@@ -85,15 +85,17 @@ function isValidEvmAddress(address: string): boolean {
   return /^0x[a-fA-F0-9]{40}$/.test(address.trim());
 }
 
-export async function listContributors(input?: {
-  workspaceId?: string;
+export async function listContributors(input: {
+  workspaceId: string;
+  linkedUserId?: string;
   status?: "active" | "archived";
   search?: string;
 }): Promise<ContributorListItem[]> {
   const contributors = await db.contributor.findMany({
     where: {
-      workspaceId: input?.workspaceId,
-      status: input?.status,
+      workspaceId: input.workspaceId,
+      ...(input.linkedUserId ? { linkedUserId: input.linkedUserId } : {}),
+      status: input.status,
       ...(input?.search
         ? {
             OR: [
@@ -173,17 +175,13 @@ export async function createContributor(
 export async function updateContributor(
   contributorId: string,
   input: UpdateContributorInput,
-  workspaceId?: string,
+  workspaceId: string,
 ): Promise<ContributorListItem> {
-  const existing = await db.contributor.findUnique({
-    where: { id: contributorId },
+  const existing = await db.contributor.findFirst({
+    where: { id: contributorId, workspaceId },
     select: { id: true, workspaceId: true },
   });
   if (!existing) throw new Error("CONTRIBUTOR_NOT_FOUND");
-  if (workspaceId && existing.workspaceId !== workspaceId) {
-    throw new Error("CONTRIBUTOR_WORKSPACE_MISMATCH");
-  }
-
   const data: Prisma.ContributorUpdateInput = {};
 
   if (input.name !== undefined) {
@@ -256,9 +254,10 @@ export function assertContributorDeletable(payoutCount: number): string | null {
  */
 export async function getContributorOwnership(
   contributorId: string,
+  workspaceId: string,
 ): Promise<ContributorOwnership | null> {
-  return db.contributor.findUnique({
-    where: { id: contributorId },
+  return db.contributor.findFirst({
+    where: { id: contributorId, workspaceId },
     select: {
       id: true,
       workspaceId: true,
@@ -273,19 +272,15 @@ export async function getContributorOwnership(
  */
 export async function deleteContributor(
   contributorId: string,
-  workspaceId?: string,
+  workspaceId: string,
 ): Promise<{ id: string }> {
-  const existing = await db.contributor.findUnique({
-    where: { id: contributorId },
+  const existing = await db.contributor.findFirst({
+    where: { id: contributorId, workspaceId },
     select: { id: true, workspaceId: true },
   });
   if (!existing) throw new Error("CONTRIBUTOR_NOT_FOUND");
-  if (workspaceId && existing.workspaceId !== workspaceId) {
-    throw new Error("CONTRIBUTOR_WORKSPACE_MISMATCH");
-  }
-
   const payoutCount = await db.payout.count({
-    where: { contributorId },
+    where: { contributorId, workspaceId },
   });
   const deleteGuard = assertContributorDeletable(payoutCount);
   if (deleteGuard) throw new Error(deleteGuard);

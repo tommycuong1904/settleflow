@@ -62,6 +62,24 @@ export async function getSessionFromCookieStore(
 }
 
 /**
+ * Resolves the persisted account named by a verified session and checks the
+ * login identifier that authenticated it. Route handlers that mutate account
+ * membership use this rather than accepting an arbitrary matching email.
+ */
+export async function getVerifiedSessionUser(session: SessionPayload) {
+  const user = await db.user.findUnique({ where: { id: session.userId } });
+  if (!user) return null;
+
+  if (session.authType === "web3_wallet") {
+    const address = readNonEmpty(session.address)?.toLowerCase();
+    return address && user.walletAddress?.toLowerCase() === address ? user : null;
+  }
+
+  const email = readNonEmpty(session.email)?.toLowerCase();
+  return email && user.email?.toLowerCase() === email ? user : null;
+}
+
+/**
  * Looks up the real `User` + first `WorkspaceMember` for a verified session.
  * Returns null when the user has no stored membership (e.g. a freshly signed-up
  * Google account that has not been invited to any workspace).
@@ -104,7 +122,6 @@ async function resolveSessionMemberships(
     orderBy: { createdAt: "asc" },
     select: { workspaceId: true, role: true },
   });
-  if (memberships.length === 0) return null;
 
   return {
     user: {
@@ -135,25 +152,58 @@ export async function resolveSessionContext(
   };
 }
 
+export type ServerPageContextResult =
+  | { kind: "auth-required" }
+  | { kind: "auth-context-required" }
+  | { kind: "authenticated"; productContext: ProductContext; user: SessionUserInfo };
+
+type ResolvedSessionContext = { productContext: ProductContext; user: SessionUserInfo };
+
+async function resolveSessionContextForWorkspaceTyped(
+  session: SessionPayload,
+  requestedWorkspaceId?: string,
+): Promise<Exclude<ServerPageContextResult, { kind: "auth-required" }>> {
+  const resolved = await resolveSessionMemberships(session);
+  if (!resolved) return { kind: "auth-context-required" };
+
+  const workspaceId = requestedWorkspaceId?.trim();
+  const workspaceMemberships = workspaceId
+    ? resolved.memberships.filter((item) => item.workspaceId === workspaceId)
+    : resolved.memberships.length === 1
+      ? resolved.memberships
+      : [];
+  // The database permits exactly one membership per workspace/user. Treat a
+  // corrupted or pre-migration duplicate as missing context, never as a role
+  // selection decision.
+  if (workspaceMemberships.length !== 1) return { kind: "auth-context-required" };
+  return {
+    kind: "authenticated",
+    productContext: buildProductContextFromMembership(resolved.user, workspaceMemberships[0]),
+    user: resolved.user,
+  };
+}
+
+/** Typed server-component boundary; expected auth states do not cross an SSR error boundary. */
+export async function resolveProductContextForServerPage(
+  cookieStore: CookieStoreLike,
+  overrides: ProductContextInput = {},
+): Promise<ServerPageContextResult> {
+  const session = await getSessionFromCookieStore(cookieStore);
+  if (!session) return { kind: "auth-required" };
+  return resolveSessionContextForWorkspaceTyped(
+    session,
+    readNonEmpty(overrides.workspaceId) ??
+      readNonEmpty(cookieStore.get(PRODUCT_CONTEXT_COOKIE_NAMES.workspaceId)?.value),
+  );
+}
+
 async function resolveSessionContextForWorkspace(
   session: SessionPayload,
   requestedWorkspaceId?: string,
-): Promise<{ productContext: ProductContext; user: SessionUserInfo } | null> {
-  const resolved = await resolveSessionMemberships(session);
-  if (!resolved) return null;
-
-  const workspaceId = requestedWorkspaceId?.trim();
-  const membership = workspaceId
-    ? resolved.memberships.find((item) => item.workspaceId === workspaceId)
-    : resolved.memberships.length === 1
-      ? resolved.memberships[0]
-      : null;
-  if (!membership) return null;
-
-  return {
-    productContext: buildProductContextFromMembership(resolved.user, membership),
-    user: resolved.user,
-  };
+): Promise<ResolvedSessionContext | null> {
+  const result = await resolveSessionContextForWorkspaceTyped(session, requestedWorkspaceId);
+  if (result.kind === "auth-context-required") return null;
+  return result;
 }
 /**
  * Resolves the product context for an API request, preferring the verified
@@ -190,7 +240,10 @@ export async function resolveProductContextFromCookiesWithSession(
 ): Promise<ProductContext> {
   const session = await getSessionFromCookieStore(cookieStore);
   if (session) {
-    const sessionContext = await resolveSessionContextForWorkspace(session, readNonEmpty(overrides.workspaceId));
+    const requestedWorkspaceId =
+      readNonEmpty(overrides.workspaceId) ??
+      readNonEmpty(cookieStore.get(PRODUCT_CONTEXT_COOKIE_NAMES.workspaceId)?.value);
+    const sessionContext = await resolveSessionContextForWorkspace(session, requestedWorkspaceId);
     if (sessionContext) {
       return sessionContext.productContext;
     }
@@ -212,7 +265,8 @@ export async function resolveWorkspaceIdFromRequestWithSession(
   if (session) {
     const requestedWorkspaceId =
       readNonEmpty(searchParams.get("workspaceId")) ??
-      readNonEmpty(request.headers.get(PRODUCT_CONTEXT_HEADER_NAMES.workspaceId));
+      readNonEmpty(request.headers.get(PRODUCT_CONTEXT_HEADER_NAMES.workspaceId)) ??
+      readWorkspaceCookie(request);
     const sessionContext = await resolveSessionContextForWorkspace(session, requestedWorkspaceId);
     if (sessionContext) {
       return sessionContext.productContext.workspaceId;

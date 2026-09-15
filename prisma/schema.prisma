@@ -7,6 +7,13 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum InvitationStatus {
+  pending
+  accepted
+  expired
+  revoked
+}
+
 enum WorkspaceMemberRole {
   owner
   ops
@@ -77,12 +84,14 @@ model Workspace {
   contributors Contributor[]
   payouts      Payout[]
   activityLogs ActivityLog[]
+  invitations  Invitation[]
 }
 
 model User {
   id            String   @id @default(uuid())
   displayName   String
   email         String?  @unique
+  googleSub     String?  @unique
   avatarUrl     String?
   walletAddress String?
   createdAt     DateTime @default(now())
@@ -96,6 +105,26 @@ model User {
   releases           Release[]
   activityLogs       ActivityLog[]
   linkedContributors Contributor[]         @relation("LinkedContributor")
+  createdInvitations Invitation[]          @relation("CreatedInvitations")
+}
+
+model Invitation {
+  id              String           @id @default(uuid())
+  workspaceId     String
+  email           String?
+  role            WorkspaceMemberRole
+  token           String           @unique
+  status          InvitationStatus @default(pending)
+  expiresAt       DateTime
+  createdByUserId String
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdBy User      @relation("CreatedInvitations", fields: [createdByUserId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, status])
+  @@index([token])
 }
 
 model WorkspaceMember {
@@ -108,7 +137,7 @@ model WorkspaceMember {
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([workspaceId, userId, role])
+  @@unique([workspaceId, userId])
   @@index([userId])
 }
 

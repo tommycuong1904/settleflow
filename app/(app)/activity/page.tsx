@@ -4,14 +4,23 @@ import { WalletGate } from "@/components/dashboard/wallet-gate";
 import { SectionCard } from "@/components/shared/section-card";
 import { ActivityLedgerClient } from "@/components/activity/activity-ledger-client";
 import { getWorkspaceActivity } from "@/lib/repositories/payout-activity";
-import { resolveProductContextFromCookiesWithSession } from "@/lib/auth/session-server";
+import { resolveProductContextForServerPage } from "@/lib/auth/session-server";
+import { ServerAuthContextState } from "@/components/shared/server-auth-context-state";
+import { redirect } from "next/navigation";
 
 export default async function ActivityPage() {
   const cookieStore = await cookies();
-  const productContext = await resolveProductContextFromCookiesWithSession(cookieStore);
+  const contextResult = await resolveProductContextForServerPage(cookieStore);
+  if (contextResult.kind === "auth-required") redirect("/auth-required?next=/activity");
+  if (contextResult.kind !== "authenticated") return <ServerAuthContextState kind={contextResult.kind} />;
+  const productContext = contextResult.productContext;
   const workspaceId = productContext.workspaceId;
 
-  const activities = await getWorkspaceActivity(workspaceId);
+  const activities = await getWorkspaceActivity(
+    workspaceId,
+    productContext.actor,
+    productContext.actor === "contributor" ? productContext.activeUserId : undefined,
+  );
 
   const proofEvents = activities.filter(
     (a) =>
@@ -76,7 +85,7 @@ export default async function ActivityPage() {
 
       {/* Main Ledger Section with Interactive Filtering & Export */}
       <SectionCard title="Ledger Timeline">
-        <ActivityLedgerClient initialActivities={activities} />
+        <ActivityLedgerClient initialActivities={activities as unknown as import("@/lib/models/activity-item").ActivityItem[]} />
       </SectionCard>
     </div>
   );

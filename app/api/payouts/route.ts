@@ -26,8 +26,8 @@ export async function GET(request: Request) {
   try {
     productContext = await resolveProductContextFromRequestWithSession(request);
   } catch (error) {
-    if (error instanceof Error && error.message === "AUTH_CONTEXT_REQUIRED") {
-      return apiError("AUTH_CONTEXT_REQUIRED", { status: 403 });
+    if (error instanceof Error && (error.message === "AUTH_CONTEXT_REQUIRED" || error.message === "AUTH_ROLE_AMBIGUOUS")) {
+      return apiError(error.message, { status: 403 });
     }
     return apiError("PAYOUT_LIST_LOAD_FAILED", { message: "Unable to load payouts.", status: 500 });
   }
@@ -35,11 +35,14 @@ export async function GET(request: Request) {
   // Contributors can only see payouts where they are the linked user
   const linkedUserId =
     productContext.actor === "contributor" ? productContext.activeUserId : undefined;
-
+  if (productContext.actor === "ops") {
+    return apiError("FORBIDDEN_PAYOUT_LIST", { status: 403 });
+  }
   const payouts = await listPayouts({
     workspaceId: productContext.workspaceId,
     contributorId: searchParams.get("contributorId") ?? undefined,
     linkedUserId,
+
     status: parseEnumQueryValue(status, payoutStatuses),
   });
 

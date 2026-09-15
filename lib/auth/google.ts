@@ -10,6 +10,31 @@ export interface GoogleUserProfile {
   emailVerified?: boolean;
 }
 
+export interface GoogleIdTokenProfile extends GoogleUserProfile {
+  idToken: string;
+}
+
+export class GoogleUserInfoError extends Error {
+  readonly status: number;
+  readonly googleError: string | null;
+  readonly googleErrorDescription: string | null;
+
+  constructor(status: number, googleError: string | null, googleErrorDescription: string | null) {
+    super("Google UserInfo rejected the credential.");
+    this.name = "GoogleUserInfoError";
+    this.status = status;
+    this.googleError = googleError;
+    this.googleErrorDescription = googleErrorDescription;
+  }
+}
+
+export class GoogleUserInfoNetworkError extends Error {
+  constructor() {
+    super("Google UserInfo request failed before a response was received.");
+    this.name = "GoogleUserInfoNetworkError";
+  }
+}
+
 declare global {
   interface Window {
     google?: {
@@ -105,15 +130,30 @@ export function decodeGoogleJwt(jwtToken: string): GoogleUserProfile | null {
 /**
  * Fetches user profile from Google UserInfo endpoint with an OAuth access token
  */
+
 export async function fetchGoogleUserInfo(accessToken: string): Promise<GoogleUserProfile> {
-  const response = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
-  });
+  let response: Response;
+  try {
+    response = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+  } catch {
+    throw new GoogleUserInfoNetworkError();
+  }
 
   if (!response.ok) {
-    throw new Error("Failed to retrieve Google user profile.");
+    let googleError: string | null = null;
+    let googleErrorDescription: string | null = null;
+    try {
+      const payload = (await response.json()) as { error?: unknown; error_description?: unknown };
+      googleError = typeof payload.error === "string" ? payload.error : null;
+      googleErrorDescription = typeof payload.error_description === "string" ? payload.error_description : null;
+    } catch {
+      // Keep unexpected upstream bodies private.
+    }
+    throw new GoogleUserInfoError(response.status, googleError, googleErrorDescription);
   }
 
   const data = (await response.json()) as {
@@ -136,35 +176,24 @@ export async function fetchGoogleUserInfo(accessToken: string): Promise<GoogleUs
 /**
  * Triggers Google OAuth 2.0 Popup authentication using GIS Token Client
  */
-export async function promptGoogleOAuth(clientId: string): Promise<GoogleUserProfile> {
+export async function promptGoogleOAuth(clientId: string): Promise<GoogleIdTokenProfile> {
   await loadGoogleGsiScript();
 
-  if (!window.google?.accounts?.oauth2) {
+  if (!window.google?.accounts?.id) {
     throw new Error("Google Identity Services is not available.");
   }
 
   return new Promise((resolve, reject) => {
     try {
-      const client = window.google!.accounts.oauth2.initTokenClient({
+      window.google!.accounts.id.initialize({
         client_id: clientId,
-        scope: "openid email profile",
-        callback: async (tokenResponse) => {
-          if (tokenResponse.error) {
-            return reject(new Error(tokenResponse.error));
-          }
-          if (!tokenResponse.access_token) {
-            return reject(new Error("No access token received from Google."));
-          }
-          try {
-            const profile = await fetchGoogleUserInfo(tokenResponse.access_token);
-            resolve(profile);
-          } catch (err) {
-            reject(err);
-          }
+        callback: (response) => {
+          const profile = decodeGoogleJwt(response.credential);
+          if (!profile) return reject(new Error("Invalid Google ID token."));
+          resolve({ ...profile, idToken: response.credential });
         },
       });
-
-      client.requestAccessToken();
+      window.google!.accounts.id.prompt();
     } catch (err) {
       reject(err);
     }

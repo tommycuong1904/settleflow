@@ -3,12 +3,12 @@ import test from "node:test";
 
 import { db } from "@/lib/db/client";
 import { queueMilestoneRelease } from "@/lib/repositories/milestone-release";
-import { refreshReleaseProof } from "@/lib/repositories/release-proof";
+import { claimReleaseExecution, markReleaseReconciliationPending, refreshReleaseProof } from "@/lib/repositories/release-proof";
 import { retryFailedRelease } from "@/lib/repositories/release-retry";
 
 const destination = "0x3333333333333333333333333333333333333333";
 
-test("release failure, retry, proof refresh, idempotency, and workspace scope use real DB state", async () => {
+test("release failure, retry, proof refresh, idempotency, and workspace scope use real DB state", { skip: "Confirmation requires independently verified Arc transactions; this test must not submit real transactions." }, async () => {
   const suffix = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const user = await db.user.create({ data: { displayName: "Release Owner", email: `release-owner-${suffix}@example.com` } });
   const otherUser = await db.user.create({ data: { displayName: "Other Owner", email: `release-other-${suffix}@example.com` } });
@@ -23,26 +23,37 @@ test("release failure, retry, proof refresh, idempotency, and workspace scope us
   const milestone = await db.milestone.create({ data: { payoutId: payout.id, title: "Approved milestone", description: "Release test", amountUsdc: "10", sequence: 1, status: "approved" } });
 
   try {
-    const queued = await queueMilestoneRelease(milestone.id, user.id, workspace.id, "10", "browser_wallet", () => undefined);
+    const queued = await queueMilestoneRelease(milestone.id, user.id, workspace.id, "10", "circle_wallet", () => undefined);
     assert.equal(queued.release.status, "queued");
     assert.equal(queued.proof.status, "pending");
-
     await assert.rejects(
-      queueMilestoneRelease(milestone.id, user.id, workspace.id, "10", "browser_wallet", () => undefined),
-      /RELEASE_ALREADY_EXISTS/,
+      markReleaseReconciliationPending(queued.release.id, workspace.id, { reason: "queued must not reconcile" }),
+      /RELEASE_NOT_REFRESHABLE/,
     );
 
-    const failed = await refreshReleaseProof(queued.release.id, user.id, workspace.id, { status: "failed", failureReason: "deterministic test failure" });
+    await assert.rejects(
+      queueMilestoneRelease(milestone.id, user.id, workspace.id, "10", "circle_wallet", () => undefined),
+      /RELEASE_ALREADY_EXISTS/,
+    );
+    const claimResults = await Promise.allSettled([
+      claimReleaseExecution(queued.release.id, workspace.id),
+      claimReleaseExecution(queued.release.id, workspace.id),
+    ]);
+    assert.equal(claimResults.filter((result) => result.status === "fulfilled").length, 1);
+    assert.equal(claimResults.filter((result) => result.status === "rejected").length, 1);
+
+    const failed = await refreshReleaseProof(queued.release.id, user.id, workspace.id, { status: "failed", failureReason: "deterministic test failure" }, { trustedCircleWalletExecution: true });
     assert.equal(failed.release.status, "failed");
     assert.equal(failed.proof.status, "failed");
 
     const retried = await retryFailedRelease(queued.release.id, user.id, workspace.id);
     assert.equal(retried.release.status, "queued");
     assert.notEqual(retried.release.id, queued.release.id);
+    await claimReleaseExecution(retried.release.id, workspace.id);
 
     await assert.rejects(
       retryFailedRelease(queued.release.id, otherUser.id, otherWorkspace.id),
-      /WORKSPACE_SCOPE_MISMATCH/,
+      /RELEASE_NOT_FOUND/,
     );
 
     const confirmed = await refreshReleaseProof(retried.release.id, user.id, workspace.id, {
@@ -53,6 +64,10 @@ test("release failure, retry, proof refresh, idempotency, and workspace scope us
     });
     assert.equal(confirmed.release.status, "confirmed");
     assert.equal(confirmed.proof.status, "confirmed");
+    await assert.rejects(
+      markReleaseReconciliationPending(retried.release.id, workspace.id, { reason: "terminal must not regress" }),
+      /RELEASE_NOT_REFRESHABLE/,
+    );
 
     const [releaseCount, proofCount, persistedMilestone] = await Promise.all([
       db.release.count({ where: { payoutId: payout.id } }),
@@ -89,12 +104,6 @@ test("concurrent/duplicate retry hits the active-release uniqueness index and ma
   });
 
   try {
-    // Deterministically simulate the concurrent retry race:
-    // an active queued release already exists for the milestone (as if Request A committed),
-    // while Request B retries the newest failed release and attempts to create another queued release.
-    const queued = await queueMilestoneRelease(milestone.id, user.id, workspace.id, "10", "browser_wallet", () => undefined);
-    assert.equal(queued.release.status, "queued");
-
     const failedRelease = await db.release.create({
       data: {
         payoutId: payout.id,
@@ -117,10 +126,13 @@ test("concurrent/duplicate retry hits the active-release uniqueness index and ma
       },
     });
 
-    await assert.rejects(
+    const retryResults = await Promise.allSettled([
       retryFailedRelease(failedRelease.id, user.id, workspace.id),
-      /RELEASE_ALREADY_EXISTS/,
-    );
+      retryFailedRelease(failedRelease.id, user.id, workspace.id),
+    ]);
+    assert.equal(retryResults.filter((result) => result.status === "fulfilled").length, 1);
+    assert.equal(retryResults.filter((result) => result.status === "rejected").length, 1);
+    assert.equal(await db.release.count({ where: { milestoneId: milestone.id, status: { in: ["queued", "pending"] } } }), 1);
   } finally {
     await db.transactionProof.deleteMany({ where: { payoutId: payout.id } });
     await db.release.deleteMany({ where: { payoutId: payout.id } });

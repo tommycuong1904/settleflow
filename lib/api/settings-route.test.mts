@@ -4,7 +4,7 @@ import { createSessionToken } from "@/lib/auth/session";
 import { db } from "@/lib/db/client";
 import { GET as getSettings } from "@/app/api/v1/settings/route";
 
-const token = () => createSessionToken({ userId: "session", email: "settings@example.com", name: "Settings", address: null, authType: "web2_google" });
+const token = () => createSessionToken({ userId: "settings-user", email: "settings@example.com", name: "Settings", address: null, authType: "web2_google" });
 const request = async () => new Request("https://settleflow.local/api/v1/settings", { headers: { cookie: `sf_session=${await token()}` } });
 
 test("settings GET maps missing membership context to 403", async () => {

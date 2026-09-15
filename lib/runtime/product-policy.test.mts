@@ -5,8 +5,20 @@ import { resolveProductContext } from "./product-context-server";
 import {
   assertCanActivatePayout,
   assertCanApproveMilestone,
+  assertCanCreatePayout,
+  assertCanReleaseMilestone,
   assertCanSubmitMilestone,
 } from "./product-policy";
+
+function contextFor(actor: "owner" | "ops" | "reviewer" | "contributor") {
+  return resolveProductContext({
+    actor,
+    ownerUserId: "user-1",
+    reviewerUserId: "user-1",
+    contributorUserId: "user-1",
+    workspaceId: "workspace-1",
+  });
+}
 
 test("resolveProductContext falls back to defaults and computes active user", () => {
   const context = resolveProductContext({
@@ -65,4 +77,22 @@ test("contributor policy passes when actor and active user align", () => {
   });
 
   assert.equal(violation, null);
+});
+
+test("each membership role retains its current policy boundary", () => {
+  assert.equal(assertCanCreatePayout({ productContext: contextFor("owner"), actorUserId: "user-1" }), null);
+  assert.equal(assertCanApproveMilestone({ productContext: contextFor("owner"), actorUserId: "user-1" }), null);
+  assert.equal(assertCanReleaseMilestone({ productContext: contextFor("owner"), actorUserId: "user-1" }), null);
+
+  assert.equal(assertCanCreatePayout({ productContext: contextFor("ops"), actorUserId: "user-1" })?.code, "FORBIDDEN_PAYOUT_CREATE_ACTOR");
+  assert.equal(assertCanApproveMilestone({ productContext: contextFor("ops"), actorUserId: "user-1" })?.code, "FORBIDDEN_MILESTONE_APPROVE_ACTOR");
+  assert.equal(assertCanReleaseMilestone({ productContext: contextFor("ops"), actorUserId: "user-1" })?.code, "FORBIDDEN_MILESTONE_RELEASE_ACTOR");
+
+  assert.equal(assertCanCreatePayout({ productContext: contextFor("reviewer"), actorUserId: "user-1" })?.code, "FORBIDDEN_PAYOUT_CREATE_ACTOR");
+  assert.equal(assertCanApproveMilestone({ productContext: contextFor("reviewer"), actorUserId: "user-1" }), null);
+  assert.equal(assertCanReleaseMilestone({ productContext: contextFor("reviewer"), actorUserId: "user-1" })?.code, "FORBIDDEN_MILESTONE_RELEASE_ACTOR");
+
+  assert.equal(assertCanCreatePayout({ productContext: contextFor("contributor"), actorUserId: "user-1" })?.code, "FORBIDDEN_PAYOUT_CREATE_ACTOR");
+  assert.equal(assertCanApproveMilestone({ productContext: contextFor("contributor"), actorUserId: "user-1" })?.code, "FORBIDDEN_MILESTONE_APPROVE_ACTOR");
+  assert.equal(assertCanSubmitMilestone({ productContext: contextFor("contributor"), actorUserId: "user-1" }), null);
 });

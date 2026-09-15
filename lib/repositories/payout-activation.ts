@@ -13,7 +13,9 @@ type ActivationSnapshot = {
 export function derivePayoutActivationInvariantError(
   payout: ActivationSnapshot,
 ): "PAYOUT_INCOMPLETE" | "MILESTONE_TOTAL_MISMATCH" | null {
-  if (!payout.targetWalletAddress || payout.milestones.length === 0) {
+  if (!payout.targetWalletAddress || payout.milestones.length === 0 ||
+      !payout.totalAmountUsdc.isFinite() || !payout.totalAmountUsdc.gt(0) ||
+      payout.milestones.some((milestone) => !milestone.amountUsdc.isFinite() || !milestone.amountUsdc.gt(0) || milestone.amountUsdc.decimalPlaces() > 6)) {
     return "PAYOUT_INCOMPLETE";
   }
 
@@ -31,8 +33,9 @@ export function derivePayoutActivationInvariantError(
 
 export async function activatePayout(id: string, workspaceId: string, ownerUserId: string) {
   return db.$transaction(async (tx: Prisma.TransactionClient) => {
-    const payout = await tx.payout.findUnique({
-      where: { id },
+    await tx.$queryRaw`SELECT id FROM "Payout" WHERE id = ${id} AND "workspaceId" = ${workspaceId} FOR UPDATE`;
+    const payout = await tx.payout.findFirst({
+      where: { id, workspaceId },
       select: { id: true, status: true, totalAmountUsdc: true, targetWalletAddress: true,
         workspaceId: true,
         milestones: { select: { amountUsdc: true, title: true, description: true } } },
@@ -46,10 +49,12 @@ export async function activatePayout(id: string, workspaceId: string, ownerUserI
     });
     if (!user) throw new Error("USER_NOT_FOUND");
 
-    const canActivate = await hasWorkspaceRole(tx, workspaceId, ownerUserId, ["owner", "ops"]);
+    const canActivate = await hasWorkspaceRole(tx, workspaceId, ownerUserId, ["owner"]);
     if (!canActivate) throw new Error("USER_NOT_ALLOWED_TO_ACTIVATE_PAYOUT");
 
     if (payout.status !== "draft") throw new Error("PAYOUT_NOT_DRAFT");
+
+    if (payout.targetWalletAddress && !/^0x[a-fA-F0-9]{40}$/.test(payout.targetWalletAddress.trim())) throw new Error("PAYOUT_INCOMPLETE");
 
     const invariantError = derivePayoutActivationInvariantError({
       targetWalletAddress: payout.targetWalletAddress,

@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useWallet } from "@/lib/context/wallet-context";
-import { promptGoogleOAuth, loadGoogleGsiScript, type GoogleUserProfile } from "@/lib/auth/google";
 import { useToast } from "@/lib/context/toast-context";
 import { useScrollLock } from "@/lib/hooks/use-scroll-lock";
 import {
@@ -22,13 +22,22 @@ export function AuthModal() {
     isAuthModalOpen,
     closeAuthModal,
     connectWeb3,
-    connectWeb2,
     connectGoogle,
     isConnecting,
+    isConnected,
   } = useWallet();
   const { toast } = useToast();
+  const router = useRouter();
 
-  const [emailInput, setEmailInput] = useState("");
+
+  const refreshCurrentPage = () => {
+    closeAuthModal();
+    const next = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("next") : null;
+    const destination = next && next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard";
+    if (next) router.replace(destination);
+    else router.refresh();
+  };
+
   const [activeTab, setActiveTab] = useState<"quick" | "web3">("quick");
   const [googleLoading, setGoogleLoading] = useState(false);
   const [showConfigPrompt, setShowConfigPrompt] = useState(false);
@@ -36,7 +45,6 @@ export function AuthModal() {
 
   useEffect(() => {
     if (isAuthModalOpen) {
-      void loadGoogleGsiScript().catch(() => {});
       const storedClientId = typeof window !== "undefined" ? localStorage.getItem("settleflow_google_client_id") || "" : "";
       if (storedClientId) {
         setCustomClientId(storedClientId);
@@ -48,34 +56,15 @@ export function AuthModal() {
 
   if (!isAuthModalOpen) return null;
 
-  const handleEmailSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!emailInput.trim()) return;
-    connectWeb2(emailInput.trim(), "email");
-  };
-
   const getEffectiveClientId = () => {
     return process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || customClientId || "";
   };
 
   const handleGoogleSignIn = async () => {
-    const clientId = getEffectiveClientId();
-
-    if (!clientId) {
-      setShowConfigPrompt(true);
-      return;
-    }
-
     setGoogleLoading(true);
     try {
-      const profile: GoogleUserProfile = await promptGoogleOAuth(clientId);
-      await connectGoogle(profile);
-      toast({
-        variant: "success",
-        title: "Signed in with Google",
-        description: `Welcome ${profile.name || profile.email}! Smart Account active.`,
-      });
-      closeAuthModal();
+      const next = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("next") : null;
+      window.location.assign(`/api/v1/auth/google/start?next=${encodeURIComponent(next || "/dashboard")}`);
     } catch (err: unknown) {
       console.error("Google Auth error:", err);
       const errorMessage = err instanceof Error ? err.message : "Google authentication was cancelled or failed.";
@@ -108,23 +97,7 @@ export function AuthModal() {
   };
 
   const handleDemoGoogleSignIn = async () => {
-    setGoogleLoading(true);
-    try {
-      await connectGoogle({
-        email: "alex.turner@gmail.com",
-        name: "Alex Turner",
-        sub: "google-oauth2-1082938475928374",
-        picture: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80",
-      });
-      toast({
-        variant: "success",
-        title: "Demo Google Account Connected",
-        description: "Logged in as alex.turner@gmail.com with Arc Smart Account.",
-      });
-      closeAuthModal();
-    } finally {
-      setGoogleLoading(false);
-    }
+    toast({ variant: "error", title: "Google Sign-In", description: "Demo Google sign-in is unavailable; use a real Google account." });
   };
 
   return (
@@ -255,45 +228,9 @@ export function AuthModal() {
                   )}
                 </button>
 
-                <div className="relative flex items-center justify-center my-4">
-                  <div className="w-full border-t border-[var(--border-soft)]" />
-                  <span className="bg-[var(--surface)] px-3 text-[11px] font-medium text-[var(--text-muted)] uppercase tracking-wider">
-                    Or with email
-                  </span>
-                </div>
-
-                {/* Email Form */}
-                <form onSubmit={handleEmailSubmit} className="space-y-3">
-                  <div className="relative">
-                    <Mail
-                      size={16}
-                      className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]"
-                    />
-                    <input
-                      type="email"
-                      required
-                      value={emailInput}
-                      onChange={(e) => setEmailInput(e.target.value)}
-                      placeholder="Enter your email address"
-                      className="w-full rounded-full border border-[var(--border-soft)] bg-[var(--surface-muted)] py-2.5 pl-10 pr-4 text-sm text-[var(--foreground)] placeholder-[var(--text-muted)] focus:border-[var(--foreground)] focus:outline-none focus:ring-1 focus:ring-[var(--foreground)] transition-all"
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    disabled={isConnecting || googleLoading || !emailInput.trim()}
-                    className="w-full flex items-center justify-center gap-2 rounded-full bg-[var(--foreground)] hover:opacity-90 py-2.5 px-4 text-sm font-normal text-[var(--background)] transition-all disabled:opacity-50"
-                  >
-                    {isConnecting ? (
-                      <>
-                        <Loader2 size={16} className="animate-spin" /> Creating session...
-                      </>
-                    ) : (
-                      <>
-                        Continue with Email <ArrowRight size={16} />
-                      </>
-                    )}
-                  </button>
-                </form>
+                <p className="text-center text-xs leading-relaxed text-[var(--text-muted)]">
+                  Sign in with Google or a provisioned wallet. Email-only sign-in is unavailable.
+                </p>
               </>
             )}
           </div>
@@ -310,7 +247,10 @@ export function AuthModal() {
             ].map((w) => (
               <button
                 key={w.id}
-                onClick={() => connectWeb3(w.id)}
+                onClick={async () => {
+                  await connectWeb3(w.id);
+                  refreshCurrentPage();
+                }}
                 disabled={isConnecting}
                 className="w-full flex items-center justify-between rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-3.5 hover:border-[var(--border-strong)] hover:bg-[var(--surface-strong)] transition-all group disabled:opacity-50 text-left"
               >

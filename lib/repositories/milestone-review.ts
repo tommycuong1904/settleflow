@@ -43,8 +43,9 @@ export async function reviewMilestone(
   },
 ) {
   const result = await db.$transaction(async (tx: Prisma.TransactionClient) => {
-    const milestone = await tx.milestone.findUnique({
-      where: { id: milestoneId },
+    await tx.$queryRaw`SELECT id FROM "Milestone" WHERE id = ${milestoneId} FOR UPDATE`;
+    const milestone = await tx.milestone.findFirst({
+      where: { id: milestoneId, payout: { workspaceId } },
       select: {
         id: true,
         title: true,
@@ -69,7 +70,7 @@ export async function reviewMilestone(
       tx,
       milestone.payout.workspaceId,
       reviewerUserId,
-      ["owner", "ops", "reviewer"],
+      ["owner", "reviewer"],
     );
     if (!hasReviewerRole) throw new Error("USER_NOT_ALLOWED_TO_REVIEW");
 

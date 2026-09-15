@@ -36,19 +36,21 @@ function toListItem(payout: PayoutRecord): PayoutListItem {
   };
 }
 
-export async function listPayouts(input?: {
-  workspaceId?: string;
+export async function listPayouts(input: {
+  workspaceId: string;
   contributorId?: string;
   linkedUserId?: string;
+  createdByUserId?: string;
   status?: PayoutListItem["status"];
 }): Promise<PayoutListItem[]> {
   const payouts = await db.payout.findMany({
     where: {
-      ...(input?.workspaceId ? { workspaceId: input.workspaceId } : {}),
+      workspaceId: input.workspaceId,
       ...(input?.contributorId ? { contributorId: input.contributorId } : {}),
       ...(input?.linkedUserId
         ? { contributor: { linkedUserId: input.linkedUserId } }
         : {}),
+      ...(input?.createdByUserId ? { createdByUserId: input.createdByUserId } : {}),
       ...(input?.status ? { status: input.status } : {}),
     },
     orderBy: { createdAt: "desc" },
@@ -68,10 +70,16 @@ export async function listPayouts(input?: {
 
 export async function getPayoutById(
   id: string,
-  workspaceId?: string,
+  workspaceId: string,
+  scope?: { linkedUserId?: string; createdByUserId?: string },
 ): Promise<PayoutListItem | null> {
   const payout = await db.payout.findFirst({
-    where: { id, workspaceId },
+    where: {
+      id,
+      workspaceId,
+      ...(scope?.linkedUserId ? { contributor: { linkedUserId: scope.linkedUserId } } : {}),
+      ...(scope?.createdByUserId ? { createdByUserId: scope.createdByUserId } : {}),
+    },
     select: {
       id: true,
       title: true,
@@ -84,6 +92,46 @@ export async function getPayoutById(
   });
 
   return payout ? toListItem(payout) : null;
+}
+
+export type PayoutViewRole = "owner" | "reviewer" | "contributor" | "ops";
+
+type ReviewerPayoutDetail = {
+  payout: Pick<PayoutDetailData["payout"], "id" | "title" | "contributorId" | "status" | "createdAt">;
+  milestones: Array<Pick<PayoutDetailData["milestones"][number], "id" | "payoutId" | "title" | "description" | "amount" | "status" | "submittedAt" | "approvedAt" | "releasedAt">>;
+};
+
+type OpsPayoutDetail = {
+  payout: Pick<PayoutDetailData["payout"], "id" | "title" | "status" | "createdAt">;
+  milestones: Array<Pick<PayoutDetailData["milestones"][number], "id" | "payoutId" | "title" | "status" | "submittedAt" | "approvedAt" | "releasedAt">>;
+};
+
+export type ProjectedPayoutDetail =
+  | PayoutDetailData
+  | ReviewerPayoutDetail
+  | OpsPayoutDetail;
+
+export function projectPayoutDetail(detail: PayoutDetailData, role: PayoutViewRole): ProjectedPayoutDetail {
+  if (role === "owner" || role === "contributor") return detail;
+  if (role === "reviewer") {
+    return {
+      payout: {
+        id: detail.payout.id,
+        title: detail.payout.title,
+        status: detail.payout.status,
+        createdAt: detail.payout.createdAt,
+      },
+      milestones: detail.milestones.map(({ id, payoutId, title, description, amount, status, submittedAt, approvedAt, releasedAt }) => ({
+        id, payoutId, title, description, amount, status, submittedAt, approvedAt, releasedAt,
+      })),
+    };
+  }
+  return {
+    payout: { id: detail.payout.id, title: detail.payout.title, status: detail.payout.status, createdAt: detail.payout.createdAt },
+    milestones: detail.milestones.map(({ id, payoutId, title, status, submittedAt, approvedAt, releasedAt }) => ({
+      id, payoutId, title, status, submittedAt, approvedAt, releasedAt,
+    })),
+  };
 }
 
 // ---------- Full payout detail read model ----------
@@ -140,9 +188,18 @@ export type PayoutDetailData = {
  * Fetch payout detail with milestones, contributor, and latest proof.
  * Returns null if payout not found.
  */
-export async function getPayoutDetail(id: string, workspaceId?: string): Promise<PayoutDetailData | null> {
-  const payout = await db.payout.findUnique({
-    where: { id },
+export async function getPayoutDetail(
+  id: string,
+  workspaceId: string,
+  scope?: { linkedUserId?: string; createdByUserId?: string },
+): Promise<PayoutDetailData | null> {
+  const payout = await db.payout.findFirst({
+    where: {
+      id,
+      workspaceId,
+      ...(scope?.linkedUserId ? { contributor: { linkedUserId: scope.linkedUserId } } : {}),
+      ...(scope?.createdByUserId ? { createdByUserId: scope.createdByUserId } : {}),
+    },
     select: {
       id: true,
       workspaceId: true,
@@ -197,9 +254,8 @@ export async function getPayoutDetail(id: string, workspaceId?: string): Promise
   });
 
   if (!payout) return null;
-  if (workspaceId && payout.workspaceId !== workspaceId) throw new Error("WORKSPACE_SCOPE_MISMATCH");
 
-  return {
+  const detail: PayoutDetailData = {
     payout: {
       id: payout.id,
       title: payout.title,
@@ -253,4 +309,6 @@ export async function getPayoutDetail(id: string, workspaceId?: string): Promise
         }
       : undefined,
   };
+
+  return detail;
 }

@@ -6,8 +6,41 @@ import { db } from "@/lib/db/client";
 import { POST as releaseRoute } from "@/app/api/v1/milestones/[id]/release/route";
 import { POST as retryRoute } from "@/app/api/v1/releases/[id]/retry/route";
 import { POST as proofRefreshRoute } from "@/app/api/v1/releases/[id]/proof/refresh/route";
+import { POST as claimRoute } from "@/app/api/v1/releases/[id]/claim/route";
 
 const wallet = "0x4444444444444444444444444444444444444444";
+
+test("unapproved milestone release is rejected without creating release or proof", async () => {
+  const suffix = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const email = `invalid-state-owner-${suffix}@example.com`;
+  const user = await db.user.create({ data: { displayName: "Invalid State Owner", email } });
+  const workspace = await db.workspace.create({ data: { name: "Invalid State Workspace", slug: `invalid-state-${suffix}` } });
+  await db.workspaceMember.create({ data: { workspaceId: workspace.id, userId: user.id, role: "owner" } });
+  const contributor = await db.contributor.create({ data: { workspaceId: workspace.id, createdByUserId: user.id, name: "Invalid State Contributor", walletAddress: wallet } });
+  const payout = await db.payout.create({ data: { workspaceId: workspace.id, contributorId: contributor.id, createdByUserId: user.id, title: "Invalid State Payout", totalAmountUsdc: "5", status: "active", targetWalletAddress: wallet } });
+  const milestone = await db.milestone.create({ data: { payoutId: payout.id, title: "Unapproved Milestone", description: "Invalid state test", amountUsdc: "5", sequence: 1, status: "submitted" } });
+  const token = await createSessionToken({ userId: user.id, email, name: "Invalid State Owner", address: null, authType: "web2_google" });
+
+  try {
+    const response = await releaseRoute(new Request(`https://settleflow.local/api/v1/milestones/${milestone.id}/release?workspaceId=${workspace.id}`, {
+      method: "POST",
+      headers: { cookie: `sf_session=${token}` },
+      body: JSON.stringify({ amountUsdc: "5", executionMode: "browser_wallet", ownerUserId: "ignored", workspaceId: workspace.id }),
+    }), { params: Promise.resolve({ id: milestone.id }) });
+    assert.equal(response.status, 409);
+    assert.equal((await response.json()).code, "MILESTONE_NOT_APPROVED");
+    assert.equal(await db.release.count({ where: { milestoneId: milestone.id } }), 0);
+    assert.equal(await db.transactionProof.count({ where: { milestoneId: milestone.id } }), 0);
+    assert.equal((await db.milestone.findUnique({ where: { id: milestone.id }, select: { status: true } }))?.status, "submitted");
+  } finally {
+    await db.milestone.delete({ where: { id: milestone.id } });
+    await db.payout.delete({ where: { id: payout.id } });
+    await db.contributor.delete({ where: { id: contributor.id } });
+    await db.workspaceMember.deleteMany({ where: { workspaceId: workspace.id } });
+    await db.workspace.delete({ where: { id: workspace.id } });
+    await db.user.delete({ where: { id: user.id } });
+  }
+});
 
 test("release, retry, proof refresh, tampering, and workspace boundaries hold through real routes", async () => {
   const suffix = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -19,7 +52,7 @@ test("release, retry, proof refresh, tampering, and workspace boundaries hold th
   const contributor = await db.contributor.create({ data: { workspaceId: workspace.id, createdByUserId: user.id, name: "Route Contributor", walletAddress: wallet } });
   const payout = await db.payout.create({ data: { workspaceId: workspace.id, contributorId: contributor.id, createdByUserId: user.id, title: "Route Payout", totalAmountUsdc: "5", status: "active", targetWalletAddress: wallet } });
   const milestone = await db.milestone.create({ data: { payoutId: payout.id, title: "Route Milestone", description: "Route test", amountUsdc: "5", sequence: 1, status: "approved" } });
-  const token = await createSessionToken({ userId: "forged-id", email, name: "Route Owner", address: null, authType: "web2_google" });
+  const token = await createSessionToken({ userId: user.id, email, name: "Route Owner", address: null, authType: "web2_google" });
   const headers = { cookie: `sf_session=${token}` };
   const params = (id: string) => ({ params: Promise.resolve({ id }) });
 
@@ -30,6 +63,15 @@ test("release, retry, proof refresh, tampering, and workspace boundaries hold th
     assert.equal(queued.status, 201);
     const queuedBody = await queued.json();
     assert.equal(queuedBody.release.status, "queued");
+
+    const claim = await claimRoute(new Request(`https://settleflow.local/api/v1/releases/${queuedBody.release.id}/claim`, {
+      method: "POST", headers, body: JSON.stringify({ sourceWalletAddress: wallet }),
+    }), params(queuedBody.release.id));
+    assert.equal(claim.status, 200);
+    const duplicateClaim = await claimRoute(new Request(`https://settleflow.local/api/v1/releases/${queuedBody.release.id}/claim`, {
+      method: "POST", headers, body: JSON.stringify({ sourceWalletAddress: wallet }),
+    }), params(queuedBody.release.id));
+    assert.equal(duplicateClaim.status, 409);
 
     await assert.rejects(
       proofRefreshRoute(new Request(`https://settleflow.local/api/v1/releases/${queuedBody.release.id}/proof/refresh?workspaceId=${otherWorkspace.id}`, {
@@ -52,6 +94,10 @@ test("release, retry, proof refresh, tampering, and workspace boundaries hold th
     assert.equal(retried.status, 201);
     const retryBody = await retried.json();
     assert.notEqual(retryBody.release.id, queuedBody.release.id);
+    const retryClaim = await claimRoute(new Request(`https://settleflow.local/api/v1/releases/${retryBody.release.id}/claim`, {
+      method: "POST", headers, body: JSON.stringify({ sourceWalletAddress: wallet }),
+    }), params(retryBody.release.id));
+    assert.equal(retryClaim.status, 200);
 
     const duplicateRetry = await retryRoute(new Request(`https://settleflow.local/api/v1/releases/${queuedBody.release.id}/retry`, { method: "POST", headers }), params(queuedBody.release.id));
     assert.equal(duplicateRetry.status, 409);
@@ -59,11 +105,12 @@ test("release, retry, proof refresh, tampering, and workspace boundaries hold th
     const confirmed = await proofRefreshRoute(new Request(`https://settleflow.local/api/v1/releases/${retryBody.release.id}/proof/refresh`, {
       method: "POST", headers, body: JSON.stringify({ status: "confirmed", txHash: `0x${"cd".repeat(32)}`, network: "arc-testnet", explorerUrl: "https://example.invalid/tx/route" }),
     }), params(retryBody.release.id));
-    assert.equal(confirmed.status, 200);
-    assert.equal((await confirmed.json()).release.status, "confirmed");
+    const confirmedBody = await confirmed.json();
+    assert.equal(confirmed.status, 409);
+    assert.equal(confirmedBody.code, "TX_SNAPSHOT_MISMATCH");
 
     assert.equal(await db.release.count({ where: { payoutId: payout.id } }), 2);
-    assert.equal(await db.milestone.findUnique({ where: { id: milestone.id }, select: { status: true } }).then((row) => row?.status), "released");
+    assert.equal(await db.milestone.findUnique({ where: { id: milestone.id }, select: { status: true } }).then((row) => row?.status), "approved");
   } finally {
     await db.transactionProof.deleteMany({ where: { payoutId: payout.id } });
     await db.release.deleteMany({ where: { payoutId: payout.id } });

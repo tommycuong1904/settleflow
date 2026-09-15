@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db/client";
 import { recordActivity } from "@/lib/repositories/activity-log";
+import { isValidEvmAddress, isValidUsdcAmount } from "@/lib/api/payout-payload";
 
 export type UpdatePayoutDraftInput = {
   title?: string;
@@ -40,11 +41,16 @@ export async function updatePayoutDraft(
   id: string,
   workspaceId: string,
   input: UpdatePayoutDraftInput,
-  actorUserId?: string,
+  actorUserId: string,
 ) {
+  if ((input.targetWalletAddress !== undefined && !isValidEvmAddress(input.targetWalletAddress)) ||
+      (input.totalAmountUsdc !== undefined && !isValidUsdcAmount(input.totalAmountUsdc)) ||
+      (input.milestones !== undefined && input.milestones.some((milestone) => !isValidUsdcAmount(milestone.amountUsdc)))) {
+    throw new Error("INVALID_PAYOUT_UPDATE_PAYLOAD");
+  }
   return db.$transaction(async (tx: Prisma.TransactionClient) => {
-    const current = await tx.payout.findUnique({
-      where: { id },
+    const current = await tx.payout.findFirst({
+      where: { id, workspaceId },
       select: { status: true, contributorId: true, workspaceId: true },
     });
     if (!current) throw new Error("PAYOUT_NOT_FOUND");
@@ -58,6 +64,12 @@ export async function updatePayoutDraft(
       });
       if (!contributor) throw new Error("CONTRIBUTOR_NOT_FOUND");
     }
+
+    const draftUpdate = await tx.payout.updateMany({
+      where: { id, workspaceId, status: "draft" },
+      data: { updatedAt: new Date() },
+    });
+    if (draftUpdate.count !== 1) throw new Error("PAYOUT_NOT_DRAFT");
 
     const updated = await tx.payout.update({
       where: { id },
@@ -95,7 +107,7 @@ export async function updatePayoutDraft(
       },
     });
 
-    if (actorUserId) {
+    {
       await recordActivity(tx, {
         workspaceId,
         actorUserId,

@@ -3,6 +3,50 @@
  * Sends real-time formatted event webhooks to Discord, Slack, Telegram, or custom endpoints.
  */
 import { getWorkspaceSettings } from "@/lib/repositories/workspace-settings";
+import { lookup } from "node:dns/promises";
+import { isIP } from "node:net";
+
+export const INVALID_WEBHOOK_DESTINATION = "Webhook destination is not allowed.";
+const WEBHOOK_FAILURE = "Webhook dispatch failed.";
+
+function isBlockedAddress(address: string): boolean {
+  const normalized = address.toLowerCase();
+  const mapped = normalized.startsWith("::ffff:") ? normalized.slice(7) : normalized;
+  const version = isIP(mapped);
+  if (version === 4) {
+    const octets = mapped.split(".").map(Number);
+    const [a, b] = octets;
+    return a === 0 || a === 10 || a === 127 || (a === 169 && b === 254) ||
+      (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) ||
+      a >= 224;
+  }
+  if (version === 6) {
+    return normalized === "::" || normalized === "::1" || normalized.startsWith("fe80:") ||
+      normalized.startsWith("fc") || normalized.startsWith("fd") || normalized.startsWith("ff") ||
+      (normalized.startsWith("::ffff:") && isBlockedAddress(mapped));
+  }
+  return false;
+}
+
+export async function validateWebhookDestination(rawUrl: string, dnsLookup: typeof lookup = lookup): Promise<URL> {
+  let url: URL;
+  try { url = new URL(rawUrl.trim()); } catch { throw new Error(INVALID_WEBHOOK_DESTINATION); }
+  if (url.protocol !== "http:" && url.protocol !== "https:" || url.username || url.password) {
+    throw new Error(INVALID_WEBHOOK_DESTINATION);
+  }
+  const host = url.hostname.replace(/^\\[|\\]$/g, "");
+  if (isBlockedAddress(host)) throw new Error(INVALID_WEBHOOK_DESTINATION);
+  try {
+    const addresses = await dnsLookup(host, { all: true, verbatim: true });
+    if (!addresses.length || addresses.some(({ address }) => isBlockedAddress(address))) {
+      throw new Error(INVALID_WEBHOOK_DESTINATION);
+    }
+  } catch (error) {
+    if (error instanceof Error && error.message === INVALID_WEBHOOK_DESTINATION) throw error;
+    throw new Error(INVALID_WEBHOOK_DESTINATION);
+  }
+  return url;
+}
 
 export type WebhookEventType =
   | "milestone_submitted"
@@ -150,6 +194,7 @@ export async function dispatchWebhookNotification(
   payload: WebhookPayload,
   customWebhookUrl?: string,
   fetchImpl: typeof globalThis.fetch = globalThis.fetch,
+  dnsLookup: typeof lookup = lookup,
 ): Promise<{ success: boolean; error?: string }> {
   const webhookUrl =
     customWebhookUrl ||
@@ -161,6 +206,7 @@ export async function dispatchWebhookNotification(
   }
 
   try {
+    const destination = await validateWebhookDestination(webhookUrl, dnsLookup);
     const isDiscord = webhookUrl.includes("discord.com");
     const body = isDiscord
       ? buildDiscordEmbed(payload)
@@ -171,24 +217,29 @@ export async function dispatchWebhookNotification(
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-    const response = await fetchImpl(webhookUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      signal: controller.signal,
-      body: JSON.stringify(body),
-    });
-
-    clearTimeout(timeoutId);
+    let response: Response;
+    try {
+      response = await fetchImpl(destination, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
+        redirect: "error",
+        body: JSON.stringify(body),
+      });
+    } finally {
+      clearTimeout(timeoutId);
+    }
 
     if (!response.ok) {
-      return { success: false, error: `Webhook responded with status ${response.status}` };
+      return { success: false, error: WEBHOOK_FAILURE };
     }
 
     return { success: true };
-  } catch (err) {
-    const errorMsg = err instanceof Error ? err.message : "Webhook dispatch failed.";
-    return { success: false, error: errorMsg };
+  } catch (error) {
+    if (error instanceof Error && error.message === INVALID_WEBHOOK_DESTINATION) {
+      return { success: false, error: INVALID_WEBHOOK_DESTINATION };
+    }
+    return { success: false, error: WEBHOOK_FAILURE };
   }
 }
 

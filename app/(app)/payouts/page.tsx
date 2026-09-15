@@ -6,17 +6,26 @@ import { WalletGate } from "@/components/dashboard/wallet-gate";
 import { PayoutListClient } from "@/components/payouts/payout-list-client";
 import { listPayouts } from "@/lib/repositories/payouts";
 import { listContributors } from "@/lib/repositories/contributors";
-import { resolveProductContextFromCookiesWithSession } from "@/lib/auth/session-server";
+import { resolveProductContextForServerPage } from "@/lib/auth/session-server";
+import { ServerAuthContextState } from "@/components/shared/server-auth-context-state";
+import { redirect } from "next/navigation";
 import { formatUsdc } from "@/lib/utils/format";
 import { Plus } from "lucide-react";
 
 export default async function PayoutsPage() {
   const cookieStore = await cookies();
-  const productContext = await resolveProductContextFromCookiesWithSession(cookieStore);
+  const contextResult = await resolveProductContextForServerPage(cookieStore);
+  if (contextResult.kind === "auth-required") redirect("/auth-required?next=/payouts");
+  if (contextResult.kind !== "authenticated") return <ServerAuthContextState kind={contextResult.kind} />;
+  const productContext = contextResult.productContext;
+  if (productContext.actor === "reviewer" || productContext.actor === "ops") throw new Error("FORBIDDEN_PAYOUT_LIST");
   const workspaceId = productContext.workspaceId;
 
   const [payouts, contributors] = await Promise.all([
-    listPayouts({ workspaceId }),
+    listPayouts({
+      workspaceId,
+      linkedUserId: productContext.actor === "contributor" ? productContext.activeUserId : undefined,
+    }),
     listContributors({ workspaceId }),
   ]);
 

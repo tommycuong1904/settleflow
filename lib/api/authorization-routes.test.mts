@@ -15,7 +15,7 @@ const cookie = (token: string) => ({ cookie: `sf_session=${token}` });
 
 async function ownerToken() {
   return createSessionToken({
-    userId: "session-user",
+    userId: "user-1",
     email: "owner@example.com",
     name: "Owner",
     address: null,
@@ -88,6 +88,20 @@ test("GET /api/v1/payouts rejects an authenticated session without a User", asyn
   }
 });
 
+test("GET /api/v1/payouts does not fall back to email when session userId is wrong", async () => {
+  const originalUser = db.user.findFirst;
+  db.user.findFirst = (async () => null) as typeof db.user.findFirst;
+  try {
+    const response = await getPayouts(new Request("https://settleflow.local/api/v1/payouts", {
+      headers: cookie(await createSessionToken({ userId: "forged-id", email: "owner@example.com", name: "Owner", address: null, authType: "web2_google" })),
+    }));
+    assert.equal(response.status, 403);
+    assert.equal((await response.json()).code, "AUTH_CONTEXT_REQUIRED");
+  } finally {
+    db.user.findFirst = originalUser;
+  }
+});
+
 test("GET /api/v1/payouts rejects an authenticated User without membership", async () => {
   const originalUser = db.user.findFirst;
   const originalMemberships = db.workspaceMember.findMany;
@@ -145,7 +159,7 @@ test("GET /api/v1/payouts rejects multiple memberships without a selector", asyn
 test("GET /api/v1/payouts rejects a workspace selector outside memberships", async () => {
   const originalUser = db.user.findFirst;
   const originalMemberships = db.workspaceMember.findMany;
-  db.user.findFirst = (async () => ({ id: "user-a", displayName: "User A" })) as typeof db.user.findFirst;
+    db.user.findFirst = (async () => ({ id: "user-a", displayName: "User A" })) as typeof db.user.findFirst;
   db.workspaceMember.findMany = (async () => [{ workspaceId: "workspace-a", role: "owner" }]) as typeof db.workspaceMember.findMany;
   try {
     const response = await getPayouts(new Request("https://settleflow.local/api/v1/payouts?workspaceId=workspace-b", {
@@ -163,7 +177,7 @@ test("GET /api/v1/payouts selects the requested membership in a multi-workspace 
   const originalUser = db.user.findFirst;
   const originalMemberships = db.workspaceMember.findMany;
   const originalPayouts = db.payout.findMany;
-  db.user.findFirst = (async () => ({ id: "user-a", displayName: "User A" })) as typeof db.user.findFirst;
+    db.user.findFirst = (async () => ({ id: "user-a", displayName: "User A" })) as typeof db.user.findFirst;
   db.workspaceMember.findMany = (async () => [
     { workspaceId: "workspace-a", role: "reviewer" },
     { workspaceId: "workspace-b", role: "owner" },
@@ -189,33 +203,28 @@ test("GET /api/v1/payouts selects the requested membership in a multi-workspace 
 test("GET /api/v1/payouts/[id] hides a payout belonging to another workspace", async () => {
   const originalUser = db.user.findFirst;
   const originalMemberships = db.workspaceMember.findMany;
-  const originalPayout = db.payout.findUnique;
+  const originalPayout = db.payout.findFirst;
   db.user.findFirst = (async () => ({ id: "user-a", displayName: "User A" })) as typeof db.user.findFirst;
   db.workspaceMember.findMany = (async () => [{ workspaceId: "workspace-a", role: "owner" }]) as typeof db.workspaceMember.findMany;
-  db.payout.findUnique = (async () => ({
-    id: "payout-b", workspaceId: "workspace-b", title: "Workspace B payout", description: null,
-    contributorId: "contrib-b", createdByUserId: "user-b", totalAmountUsdc: { toString: () => "10" },
-    currency: "USDC", status: "draft", createdAt: new Date(), createdBy: null, contributor: null,
-    milestones: [], transactionProofs: [],
-  })) as unknown as typeof db.payout.findUnique;
+  db.payout.findFirst = (async () => null) as typeof db.payout.findFirst;
   try {
     const response = await getPayoutDetail(new Request("https://settleflow.local/api/v1/payouts/payout-b", {
       headers: cookie(await ownerToken()),
     }), { params: Promise.resolve({ id: "payout-b" }) });
-    assert.equal(response.status, 409);
+    assert.equal(response.status, 404);
   } finally {
     db.user.findFirst = originalUser;
     db.workspaceMember.findMany = originalMemberships;
-    db.payout.findUnique = originalPayout;
+    db.payout.findFirst = originalPayout;
   }
 });
 
-test("PUT /api/v1/settings enforces membership roles including ops owner mapping", async () => {
+test("PUT /api/v1/settings enforces owner-only membership authorization", async () => {
   const originalUser = db.user.findFirst;
   const originalMemberships = db.workspaceMember.findMany;
   const originalWorkspaceUpdate = db.workspace.update;
   const run = async (role: string) => {
-    db.user.findFirst = (async () => ({ id: "user-a", displayName: "User A" })) as typeof db.user.findFirst;
+      db.user.findFirst = (async () => ({ id: "user-a", displayName: "User A" })) as typeof db.user.findFirst;
     db.workspaceMember.findMany = (async () => [{ workspaceId: "workspace-a", role }]) as typeof db.workspaceMember.findMany;
     db.workspace.update = (async () => ({ id: "workspace-a", webhookUrl: null, notifyOnSubmit: true, notifyOnApprove: true, notifyOnRelease: true })) as unknown as typeof db.workspace.update;
     return updateSettings(new Request("https://settleflow.local/api/v1/settings", {
@@ -225,7 +234,7 @@ test("PUT /api/v1/settings enforces membership roles including ops owner mapping
   };
   try {
     assert.equal((await run("owner")).status, 200);
-    assert.equal((await run("ops")).status, 200);
+    assert.equal((await run("ops")).status, 403);
     assert.equal((await run("reviewer")).status, 403);
     assert.equal((await run("contributor")).status, 403);
   } finally {

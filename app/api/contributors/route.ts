@@ -27,8 +27,10 @@ export async function GET(request: Request) {
     });
   }
 
+  const productContext = await resolveProductContextFromRequestWithSession(request);
   const contributors = await listContributors({
-    workspaceId: await resolveWorkspaceIdFromRequestWithSession(request),
+    workspaceId: productContext.workspaceId,
+    linkedUserId: productContext.actor === "contributor" ? productContext.activeUserId : undefined,
     status: parseEnumQueryValue(status, contributorStatuses),
     search: searchParams.get("search") ?? undefined,
   });

@@ -4,15 +4,17 @@ import { SESSION_COOKIE_NAME } from "@/lib/auth/session";
 
 /**
  * Maps a stored WorkspaceMemberRole to a ProductActor.
- * - "owner" / "ops" → "owner" (both have owner-level access)
+ * - "owner" → "owner"
+ * - "ops" → "ops"
  * - "reviewer" → "reviewer"
  * - "contributor" → "contributor"
  */
 export function mapMembershipRoleToActor(role: string): ProductActor {
-  if (role === "owner" || role === "ops") return "owner";
+  if (role === "owner") return "owner";
+  if (role === "ops") return "ops";
   if (role === "reviewer") return "reviewer";
   if (role === "contributor") return "contributor";
-  return "owner";
+  throw new Error("UNKNOWN_WORKSPACE_ROLE");
 }
 
 export type SessionUserInfo = {

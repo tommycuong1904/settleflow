@@ -49,9 +49,50 @@ export function normalizeReleaseRecord(release: ReleaseRecord) {
   };
 }
 
-export async function getReleaseById(id: string, workspaceId?: string) {
-  const release = await db.release.findUnique({
-    where: { id },
+export type ReleaseViewRole = "owner" | "reviewer" | "contributor" | "ops";
+
+type RestrictedReleaseDetail = {
+  id: string;
+  payoutId: string;
+  milestoneId: string | null;
+  status: string;
+  requestedAt: string | null;
+  executedAt: string | null;
+  failedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ProjectedReleaseDetail = ReturnType<typeof normalizeReleaseRecord> | RestrictedReleaseDetail;
+
+export function projectReleaseDetail(release: ReleaseRecord, role: ReleaseViewRole): ProjectedReleaseDetail {
+  if (role === "reviewer" || role === "ops") {
+    return {
+      id: release.id,
+      payoutId: release.payoutId,
+      milestoneId: release.milestoneId,
+      status: release.status,
+      requestedAt: release.requestedAt?.toISOString() ?? null,
+      executedAt: release.executedAt?.toISOString() ?? null,
+      failedAt: release.failedAt?.toISOString() ?? null,
+      createdAt: release.createdAt.toISOString(),
+      updatedAt: release.updatedAt.toISOString(),
+    };
+  }
+  return normalizeReleaseRecord(release);
+}
+
+export async function getReleaseById(
+  id: string,
+  workspaceId: string,
+  linkedUserId: string | undefined,
+  role: ReleaseViewRole,
+): Promise<ProjectedReleaseDetail | null> {
+  const release = await db.release.findFirst({
+    where: {
+      id,
+      payout: { workspaceId, ...(linkedUserId ? { contributor: { linkedUserId } } : {}) },
+    },
     select: {
       id: true,
       payoutId: true,
@@ -89,5 +130,5 @@ export async function getReleaseById(id: string, workspaceId?: string) {
 
   if (!release) return null;
   if (workspaceId && release.payout.workspaceId !== workspaceId) return null;
-  return normalizeReleaseRecord(release);
+  return projectReleaseDetail(release, role);
 }

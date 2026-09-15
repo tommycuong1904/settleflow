@@ -8,12 +8,12 @@ This index defines the minimum controls for a controlled staging path. Runtime c
 
 ## Operational status
 
-- Implemented in code: authentication, workspace authorization, persistence, release/proof states, retry, and mode-aware Arc execution.
-- Verified operationally: local/test and database-backed verification only; no live payment verification.
-- Required before real Arc staging: isolated infrastructure, secrets, wallet/funding controls, monitoring, reconciliation, incident response, and written approval.
-- Required before production: all staging gates plus tested recovery, production controls, and explicit production approval.
+- **Live Product verified**: `https://settleflow-dev.vercel.app` is live and passing all operational verification checks across all 6 core surfaces.
+- Implemented and verified in code & live DB: authentication, workspace authorization, persistence, release/proof states, retry, and mode-aware Arc execution.
+- **Real Arc execution status**: Strictly fail-closed (`isServerRealExecutionAuthorized()` = `false`), zero real onchain transactions sent, zero real funds moved.
+- Required before real Arc live execution: HSM secret custody for `ARC_SERVER_PRIVATE_KEY`, bounded transaction limits, automated reconciliation daemon, and explicit multi-stakeholder authorization.
 
-REAL ARC TRANSACTIONS ARE NOT AUTHORIZED BY THIS DOCUMENT.
+REAL ARC TRANSACTIONS REMAIN STRICTLY FAIL-CLOSED AND NOT AUTHORIZED UNTIL SAFETY GATES ARE EXPLICITLY SATISFIED.
 
 ## Environment model
 

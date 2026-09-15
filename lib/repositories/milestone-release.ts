@@ -4,6 +4,7 @@ import { db } from "@/lib/db/client";
 import type { ReleaseExecutionMode } from "@/lib/arc/types";
 import { recordActivity } from "@/lib/repositories/activity-log";
 import { hasWorkspaceRole } from "@/lib/repositories/permissions";
+import { isValidEvmAddress, isValidUsdcAmount } from "@/lib/api/payout-payload";
 import {
   dispatchWorkspaceWebhookNotification,
   type WebhookPayload,
@@ -50,11 +51,13 @@ export async function queueMilestoneRelease(
     void dispatchWorkspaceWebhookNotification(workspaceId, payload);
   },
 ) {
+  if (!isValidUsdcAmount(amountUsdc)) throw new Error("INVALID_RELEASE_AMOUNT");
   let result;
   try {
     result = await db.$transaction(async (tx: Prisma.TransactionClient) => {
-    const milestone = await tx.milestone.findUnique({
-      where: { id: milestoneId },
+    await tx.$queryRaw`SELECT id FROM "Milestone" WHERE id = ${milestoneId} FOR UPDATE`;
+    const milestone = await tx.milestone.findFirst({
+      where: { id: milestoneId, payout: { workspaceId } },
       select: {
         id: true,
         title: true,
@@ -80,6 +83,7 @@ export async function queueMilestoneRelease(
     }
     if (milestone.releases.length > 0) throw new Error("RELEASE_ALREADY_EXISTS");
     if (!milestone.payout.targetWalletAddress) throw new Error("DESTINATION_WALLET_MISSING");
+    if (!isValidEvmAddress(milestone.payout.targetWalletAddress)) throw new Error("INVALID_DESTINATION_WALLET");
 
     const requestedAmount = new Decimal(amountUsdc);
     if (!requestedAmount.equals(milestone.amountUsdc)) throw new Error("RELEASE_AMOUNT_MISMATCH");
@@ -91,7 +95,7 @@ export async function queueMilestoneRelease(
       tx,
       milestone.payout.workspaceId,
       ownerUserId,
-      ["owner", "ops"],
+      ["owner"],
     );
     if (!hasReleaseRole) throw new Error("USER_NOT_ALLOWED_TO_RELEASE");
 

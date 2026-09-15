@@ -20,7 +20,7 @@ This document describes the domain concepts and relationships that are currently
 
 ### WorkspaceMember and role
 
-`WorkspaceMember` links a `User` to a `Workspace` and stores one `WorkspaceMemberRole`: `owner`, `ops`, `reviewer`, or `contributor`. The runtime actor is a separate type: `owner`, `reviewer`, or `contributor`. `lib/auth/session-mapping.ts` explicitly maps `ops` to `owner`; database roles and runtime actors must not be treated as interchangeable. Detailed policy is in `docs/AUTHORIZATION.md`.
+`WorkspaceMember` links a `User` to a `Workspace` and stores one `WorkspaceMemberRole`: `owner`, `ops`, `reviewer`, or `contributor`. A database uniqueness constraint allows only one membership row for each `(workspaceId, userId)`. The runtime actor has the corresponding values: `owner`, `ops`, `reviewer`, and `contributor`. Database roles and runtime actors must not be treated as interchangeable. Detailed policy is in `docs/AUTHORIZATION.md`.
 
 ## Participants and payout agreement
 

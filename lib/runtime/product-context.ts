@@ -1,4 +1,4 @@
-export type ProductActor = "owner" | "reviewer" | "contributor";
+export type ProductActor = "owner" | "ops" | "reviewer" | "contributor";
 
 export const PRODUCT_CONTEXT_HEADER_NAMES = {
   workspaceId: "x-settleflow-workspace-id",
@@ -30,6 +30,7 @@ export type ProductContextInput = {
   ownerUserId?: string | null;
   reviewerUserId?: string | null;
   contributorUserId?: string | null;
+  // Client context values are presentation-only; server session resolution must override them.
   actor?: string | null;
 };
 
@@ -43,7 +44,7 @@ export function readNonEmpty(value: string | null | undefined) {
 
 export function resolveActor(value: string | null | undefined): ProductActor | undefined {
   const normalized = readNonEmpty(value);
-  if (normalized === "owner" || normalized === "reviewer" || normalized === "contributor") {
+  if (normalized === "owner" || normalized === "ops" || normalized === "reviewer" || normalized === "contributor") {
     return normalized;
   }
   return undefined;
@@ -60,6 +61,8 @@ export function getActiveUserId(context: {
       return context.reviewerUserId;
     case "contributor":
       return context.contributorUserId;
+    case "ops":
+      return context.ownerUserId;
     case "owner":
     default:
       return context.ownerUserId;

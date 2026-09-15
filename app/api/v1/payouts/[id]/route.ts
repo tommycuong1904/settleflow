@@ -6,8 +6,9 @@ import {
   hasOnlyAllowedPayoutUpdateFields,
   hasValidMilestoneShape,
   isNonEmptyString,
+  isValidEvmAddress,
 } from "@/lib/api/payout-payload";
-import { getPayoutDetail } from "@/lib/repositories/payouts";
+import { getPayoutDetail, projectPayoutDetail } from "@/lib/repositories/payouts";
 import { updatePayoutDraft } from "@/lib/repositories/payout-editing";
 import { assertCanEditPayoutDraft, assertCanViewPayout } from "@/lib/runtime/product-policy";
 import { getSessionFromRequest, resolveProductContextFromRequestWithSession } from "@/lib/auth/session-server";
@@ -20,31 +21,35 @@ export async function GET(
     return apiError("AUTH_REQUIRED", { message: "Sign in is required.", status: 401 });
   }
   const { id } = await params;
-  const productContext = await resolveProductContextFromRequestWithSession(request);
 
   try {
-    const detail = await getPayoutDetail(id, productContext.workspaceId);
+    const productContext = await resolveProductContextFromRequestWithSession(request);
+    const scope = productContext.actor === "contributor"
+        ? { linkedUserId: productContext.activeUserId }
+        : undefined;
+    const detail = await getPayoutDetail(id, productContext.workspaceId, scope);
     if (!detail) return apiError("PAYOUT_NOT_FOUND", { message: "Payout not found.", status: 404 });
 
     const viewViolation = assertCanViewPayout({
       productContext,
       linkedContributorUserId: detail.contributor?.linkedUserId ?? null,
-      recipientAddress: detail.contributor?.walletAddress,
     });
 
     if (viewViolation) {
       return apiError(viewViolation.code, { message: viewViolation.message, status: 403 });
     }
 
-    return NextResponse.json({ data: detail });
+    return NextResponse.json({ data: projectPayoutDetail(detail, productContext.actor) });
   } catch (error) {
     const code = error instanceof Error ? error.message : "UNABLE_TO_LOAD_PAYOUT";
     return apiErrorFromCode(
       code,
       {
+        AUTH_CONTEXT_REQUIRED: 403,
         WORKSPACE_SCOPE_MISMATCH: 409,
       },
       {
+        AUTH_CONTEXT_REQUIRED: "Workspace context is required.",
         WORKSPACE_SCOPE_MISMATCH: "workspace context does not match the payout workspace.",
       },
       { message: "Unable to load payout.", status: 500 },
@@ -71,6 +76,9 @@ export async function PATCH(
     }
     if (body.milestones !== undefined && (!Array.isArray(body.milestones) || body.milestones.length === 0)) {
       return apiError("EMPTY_PAYOUT_MILESTONES", { message: "At least one milestone is required.", status: 400 });
+    }
+    if (body.targetWalletAddress !== undefined && !isValidEvmAddress(body.targetWalletAddress)) {
+      return apiError("INVALID_PAYOUT_UPDATE_PAYLOAD", { message: "targetWalletAddress must be a valid EVM address.", status: 400 });
     }
 
     if (Array.isArray(body.milestones)) {

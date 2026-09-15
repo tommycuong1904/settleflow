@@ -12,6 +12,7 @@ import { privateKeyToAccount } from "viem/accounts";
 
 import { ARC_CONFIG } from "@/lib/arc/config";
 import { arcChain } from "@/lib/arc/onchain";
+import { isValidEvmAddress, isValidUsdcAmount } from "@/lib/api/payout-payload";
 import type {
   ArcSendRequest,
   ArcSendResult,
@@ -42,8 +43,8 @@ export type ReleaseExecutorDeps = {
   circleWallet?: CircleWalletExecutorDeps;
 };
 
-function failedResult(errorMessage: string): ArcSendResult {
-  return { status: "failed", network: "Arc Testnet", errorMessage };
+function failedResult(errorMessage: string, sourceWalletAddress?: string, txHash?: Hex): ArcSendResult {
+  return { status: "failed", network: "Arc Testnet", errorMessage, sourceWalletAddress, txHash };
 }
 
 function isNativeUsdc(tokenAddress: string): boolean {
@@ -85,6 +86,9 @@ async function executeCircleWallet(
   request: ArcSendRequest,
   deps?: CircleWalletExecutorDeps,
 ): Promise<ArcSendResult> {
+  if (!isValidUsdcAmount(request.amount) || !isValidEvmAddress(request.recipient)) {
+    return failedResult("Invalid release amount or recipient address.");
+  }
   const privateKey = process.env.ARC_SERVER_PRIVATE_KEY;
   if (!privateKey) {
     return failedResult(
@@ -95,6 +99,10 @@ async function executeCircleWallet(
   let resolvedDeps: CircleWalletExecutorDeps;
   try {
     resolvedDeps = deps ?? buildCircleWalletDeps(privateKey);
+    const serverExecutorAddress = privateKeyToAccount(privateKey as Hex).address;
+    if (resolvedDeps.sourceAddress.toLowerCase() !== serverExecutorAddress.toLowerCase()) {
+      return failedResult("Circle Wallet executor source does not match ARC_SERVER_PRIVATE_KEY.");
+    }
   } catch (error) {
     return failedResult(
       `Invalid ARC_SERVER_PRIVATE_KEY: ${error instanceof Error ? error.message : "unable to derive the server account"}.`,
@@ -133,7 +141,7 @@ async function executeCircleWallet(
       };
     }
     if (receipt.status !== "success") {
-      return failedResult("Arc transfer reverted on-chain.");
+      return failedResult("Arc transfer reverted on-chain.", resolvedDeps.sourceAddress, txHash);
     }
 
     return {

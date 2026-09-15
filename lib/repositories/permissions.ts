@@ -7,13 +7,8 @@ export async function hasWorkspaceRole(
   roles: Array<"owner" | "ops" | "reviewer" | "contributor">,
 ) {
   const membership = await tx.workspaceMember.findFirst({
-    where: {
-      workspaceId,
-      userId,
-      role: { in: roles },
-    },
-    select: { id: true },
+    where: { workspaceId, userId },
+    select: { role: true },
   });
-
-  return Boolean(membership);
+  return roles.includes(membership?.role as (typeof roles)[number]);
 }

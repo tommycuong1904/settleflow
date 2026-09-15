@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db/client";
 import { recordActivity } from "@/lib/repositories/activity-log";
 import { hasWorkspaceRole } from "@/lib/repositories/permissions";
+import { isValidEvmAddress, isValidUsdcAmount } from "@/lib/api/payout-payload";
 
 export type CreatePayoutMilestoneInput = {
   title: string;
@@ -34,6 +35,9 @@ export function deriveCreatePayoutMilestonePayloads(
 }
 
 export async function createPayout(input: CreatePayoutInput) {
+  if (!isValidUsdcAmount(input.totalAmountUsdc) || !isValidEvmAddress(input.targetWalletAddress) || input.milestones.some((milestone) => !isValidUsdcAmount(milestone.amountUsdc))) {
+    throw new Error("INVALID_PAYOUT_PAYLOAD");
+  }
   return db.$transaction(async (tx: Prisma.TransactionClient) => {
     const creator = await tx.user.findUnique({
       where: { id: input.createdByUserId },
@@ -41,7 +45,7 @@ export async function createPayout(input: CreatePayoutInput) {
     });
     if (!creator) throw new Error("USER_NOT_FOUND");
 
-    const canCreate = await hasWorkspaceRole(tx, input.workspaceId, input.createdByUserId, ["owner", "ops"]);
+    const canCreate = await hasWorkspaceRole(tx, input.workspaceId, input.createdByUserId, ["owner"]);
     if (!canCreate) throw new Error("USER_NOT_ALLOWED_TO_CREATE_PAYOUT");
 
     const contributor = await tx.contributor.findFirst({

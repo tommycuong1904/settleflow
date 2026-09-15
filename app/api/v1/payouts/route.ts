@@ -4,6 +4,8 @@ import {
   hasContiguousMilestoneSequences,
   hasValidMilestoneShape,
   isNonEmptyString,
+  isValidEvmAddress,
+  isValidUsdcAmount,
   sumMilestoneAmounts,
 } from "@/lib/api/payout-payload";
 import { createPayout } from "@/lib/repositories/payout-creation";
@@ -20,6 +22,9 @@ export async function POST(request: Request) {
 
     if (required.some((value) => !isNonEmptyString(value)) || milestones.length === 0) {
       return apiError("INVALID_PAYOUT_PAYLOAD", { message: "Invalid payout payload.", status: 400 });
+    }
+    if (!isValidUsdcAmount(body.totalAmountUsdc) || !isValidEvmAddress(body.targetWalletAddress)) {
+      return apiError("INVALID_PAYOUT_PAYLOAD", { message: "Invalid payout amount or target wallet.", status: 400 });
     }
 
     if (body.currency && body.currency !== "USDC") {
@@ -74,6 +79,7 @@ export async function POST(request: Request) {
         USER_NOT_ALLOWED_TO_CREATE_PAYOUT: 403,
         CONTRIBUTOR_NOT_FOUND: 404,
         INVALID_MILESTONE_SEQUENCE: 400,
+        INVALID_PAYOUT_PAYLOAD: 400,
         PAYOUT_TOTAL_MISMATCH: 400,
       },
       {

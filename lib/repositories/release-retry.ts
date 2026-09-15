@@ -39,8 +39,16 @@ export function deriveRetryReleasePayload(input: {
 export async function retryFailedRelease(releaseId: string, ownerUserId: string, workspaceId: string) {
   try {
     return await db.$transaction(async (tx: Prisma.TransactionClient) => {
-      const previous = await tx.release.findUnique({
-        where: { id: releaseId },
+      const previousBeforeLock = await tx.release.findFirst({
+        where: { id: releaseId, payout: { workspaceId } },
+        select: { milestoneId: true },
+      });
+      if (!previousBeforeLock) throw new Error("RELEASE_NOT_FOUND");
+      if (previousBeforeLock.milestoneId) {
+        await tx.$queryRaw`SELECT id FROM "Milestone" WHERE id = ${previousBeforeLock.milestoneId} FOR UPDATE`;
+      }
+      const previous = await tx.release.findFirst({
+        where: { id: releaseId, payout: { workspaceId } },
         select: {
           id: true,
           payoutId: true,
@@ -59,7 +67,7 @@ export async function retryFailedRelease(releaseId: string, ownerUserId: string,
           proofs: {
             orderBy: { createdAt: "desc" },
             take: 1,
-            select: { id: true, status: true },
+            select: { id: true, status: true, failureReason: true },
           },
         },
       });
@@ -70,8 +78,15 @@ export async function retryFailedRelease(releaseId: string, ownerUserId: string,
       if (previous.milestone?.status !== "approved") throw new Error("MILESTONE_NOT_APPROVED_FOR_RETRY");
       if (!previous.destinationWalletAddress) throw new Error("DESTINATION_WALLET_MISSING");
 
+      // The retry invariant is scoped to the same payout and milestone. In
+      // particular, milestoneId=null must not collide with unrelated
+      // payout-level releases in the workspace.
       const latestForMilestone = await tx.release.findFirst({
-        where: { milestoneId: previous.milestoneId },
+        where: {
+          payoutId: previous.payoutId,
+          milestoneId: previous.milestoneId,
+          payout: { workspaceId },
+        },
         orderBy: { createdAt: "desc" },
         select: { id: true },
       });
@@ -82,13 +97,12 @@ export async function retryFailedRelease(releaseId: string, ownerUserId: string,
       const latestProof = previous.proofs[0];
       if (!latestProof) throw new Error("PROOF_NOT_FOUND");
       if (latestProof.status !== "failed") throw new Error("RETRY_REQUIRES_FAILED_PROOF");
+      if (previous.executionMode === "circle_wallet" && !latestProof.failureReason?.startsWith("CIRCLE_WALLET_TRUSTED_FAILURE:")) {
+        throw new Error("CIRCLE_WALLET_RETRY_REQUIRES_TRUSTED_FAILURE");
+      }
 
-      const user = await tx.user.findUnique({
-        where: { id: ownerUserId },
-        select: { id: true },
-      });
-      if (!user) throw new Error("USER_NOT_FOUND");
-
+      // Role authorization below validates the authenticated principal's
+      // membership; no caller-controlled User lookup is used as identity.
       const canRetryRelease = await hasWorkspaceRole(
         tx,
         previous.payout.workspaceId,
@@ -104,7 +118,7 @@ export async function retryFailedRelease(releaseId: string, ownerUserId: string,
           triggeredByUserId: ownerUserId,
           amountUsdc: previous.amountUsdc,
           executionMode: previous.executionMode,
-          sourceWalletAddress: previous.sourceWalletAddress,
+          sourceWalletAddress: previous.executionMode === "circle_wallet" ? null : previous.sourceWalletAddress,
           destinationWalletAddress: previous.destinationWalletAddress,
         }),
         select: {

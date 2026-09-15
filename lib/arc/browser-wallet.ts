@@ -109,6 +109,7 @@ export async function connectBrowserWallet() {
     adapter,
     connectedAddress,
     walletName: selectedWallet.info.name,
+    provider: selectedWallet.provider,
   };
 }
 

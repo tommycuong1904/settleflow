@@ -4,18 +4,19 @@ import { hasRole, isRole } from '@/lib/runtime/role-utils';
 
 // Helper to run tests
 function testHasRole() {
-  // Owner has all roles
+  // Exact-role policy: roles do not imply hierarchy.
   assert.equal(hasRole('owner', 'owner'), true, 'owner should have owner');
-  assert.equal(hasRole('owner', 'reviewer'), true, 'owner should have reviewer');
-  assert.equal(hasRole('owner', 'contributor'), true, 'owner should have contributor');
-  // Reviewer hierarchy
+  assert.equal(hasRole('owner', 'reviewer'), false, 'owner should not have reviewer');
+  assert.equal(hasRole('owner', 'contributor'), false, 'owner should not have contributor');
   assert.equal(hasRole('reviewer', 'owner'), false, 'reviewer should not have owner');
   assert.equal(hasRole('reviewer', 'reviewer'), true, 'reviewer should have reviewer');
-  assert.equal(hasRole('reviewer', 'contributor'), true, 'reviewer should have contributor');
+  assert.equal(hasRole('reviewer', 'contributor'), false, 'reviewer should not have contributor');
   // Contributor only itself
   assert.equal(hasRole('contributor', 'owner'), false, 'contributor should not have owner');
   assert.equal(hasRole('contributor', 'reviewer'), false, 'contributor should not have reviewer');
   assert.equal(hasRole('contributor', 'contributor'), true, 'contributor should have contributor');
+  assert.equal(hasRole('ops', 'ops'), true, 'ops should have ops');
+  assert.equal(hasRole('ops', 'owner'), false, 'ops should not have owner');
 }
 
 function testIsRole() {

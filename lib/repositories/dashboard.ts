@@ -1,7 +1,9 @@
 import { db } from "@/lib/db/client";
 
-export async function getDashboardSummary(workspaceId?: string) {
-  const payoutWhere = { workspaceId };
+export async function getDashboardSummary(workspaceId: string, linkedUserId?: string, role: "owner" | "contributor" = "owner") {
+  if (!workspaceId.trim()) throw new Error("AUTH_CONTEXT_REQUIRED");
+  if (role !== "owner" && !linkedUserId) throw new Error("FORBIDDEN_DASHBOARD_SUMMARY");
+  const payoutWhere = { workspaceId, ...(linkedUserId ? { contributor: { linkedUserId } } : {}) };
   const [activePayouts, pendingReviewMilestones, confirmedSettlements, outstanding] =
     await Promise.all([
       db.payout.count({ where: { ...payoutWhere, status: "active" } }),
@@ -157,10 +159,16 @@ function mapProof(row: {
  * If workspaceId is provided, filters to that workspace only.
  * Otherwise returns all available data for the current unscoped runtime.
  */
-export async function getDashboardData(
-  workspaceId?: string,
-): Promise<DashboardData> {
-  const payoutWhere = { workspaceId };
+export async function getDashboardData(input: {
+  workspaceId: string;
+  role?: "owner" | "ops" | "reviewer" | "contributor";
+  userId?: string;
+}): Promise<DashboardData> {
+  if (input.role === "reviewer" || input.role === "ops") throw new Error("FORBIDDEN_DASHBOARD_SUMMARY");
+  const contributorScope = input.role === "contributor" && input.userId
+    ? { contributor: { linkedUserId: input.userId } }
+    : {};
+  const payoutWhere = { workspaceId: input.workspaceId, ...contributorScope };
 
   const [payoutRows, milestoneRows, contributorRows, proofRows] =
     await Promise.all([
@@ -193,7 +201,7 @@ export async function getDashboardData(
         },
       }),
       db.contributor.findMany({
-        where: { ...(workspaceId ? { workspaceId } : {}) },
+        where: { workspaceId: input.workspaceId, ...(input.role === "contributor" && input.userId ? { linkedUserId: input.userId } : {}) },
         orderBy: { name: "asc" },
         select: {
           id: true,

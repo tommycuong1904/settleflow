@@ -23,8 +23,8 @@ test("maps owner membership role to the owner actor", () => {
   assert.equal(mapMembershipRoleToActor("owner"), "owner");
 });
 
-test("maps ops membership role to the owner actor", () => {
-  assert.equal(mapMembershipRoleToActor("ops"), "owner");
+test("maps ops membership role to the ops actor", () => {
+  assert.equal(mapMembershipRoleToActor("ops"), "ops");
 });
 
 test("maps reviewer membership role to the reviewer actor", () => {
@@ -35,8 +35,8 @@ test("maps contributor membership role to the contributor actor", () => {
   assert.equal(mapMembershipRoleToActor("contributor"), "contributor");
 });
 
-test("falls back to owner for an unknown membership role", () => {
-  assert.equal(mapMembershipRoleToActor("admin"), "owner");
+test("rejects an unknown membership role instead of granting owner access", () => {
+  assert.throws(() => mapMembershipRoleToActor("admin"), /UNKNOWN_WORKSPACE_ROLE/);
 });
 
 // ── buildProductContextFromMembership ───────────────────────────────────────

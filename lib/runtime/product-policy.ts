@@ -55,14 +55,10 @@ export function assertCanManageContributor({
   actorUserId,
   createdByUserId,
 }: ContributorManagePolicyInput) {
-  // The wallet that created this contributor has full rights over it.
-  if (createdByUserId && productContext.activeUserId && createdByUserId === productContext.activeUserId) {
-    return null;
-  }
-
-  // Otherwise, owners (and ops, via role mapping) can manage any contributor.
+  // Contributor management is workspace-owner-only. Creator ownership is not
+  // an authorization role and must never grant management rights.
   return (
-    assertActor(productContext, "owner", "FORBIDDEN_CONTRIBUTOR_MANAGE_ACTOR", "Only the creator of this contributor or an owner can manage it in this flow.") ??
+    assertActor(productContext, "owner", "FORBIDDEN_CONTRIBUTOR_MANAGE_ACTOR", "Only owners can manage contributors in this workspace.") ??
     assertActorUserAlignment(productContext, actorUserId, "FORBIDDEN_CONTRIBUTOR_MANAGE_CONTEXT", "Manage contributor context does not match the active owner.")
   );
 }
@@ -89,16 +85,28 @@ export function assertCanSubmitMilestone({ productContext, actorUserId }: Policy
 }
 
 export function assertCanApproveMilestone({ productContext, actorUserId }: PolicyInput) {
-  return (
-    assertActor(productContext, "reviewer", "FORBIDDEN_MILESTONE_APPROVE_ACTOR", "Only reviewers can approve milestones in this flow.") ??
-    assertActorUserAlignment(productContext, actorUserId, "FORBIDDEN_MILESTONE_APPROVE_CONTEXT", "Approve milestone context does not match the active reviewer.")
+  const actorViolation =
+    productContext.actor === "owner" || productContext.actor === "reviewer"
+      ? null
+      : forbid("FORBIDDEN_MILESTONE_APPROVE_ACTOR", "Only owners or reviewers can approve milestones in this flow.");
+  return actorViolation ?? assertActorUserAlignment(
+    productContext,
+    actorUserId,
+    "FORBIDDEN_MILESTONE_APPROVE_CONTEXT",
+    "Approve milestone context does not match the active reviewer.",
   );
 }
 
 export function assertCanRejectMilestone({ productContext, actorUserId }: PolicyInput) {
-  return (
-    assertActor(productContext, "reviewer", "FORBIDDEN_MILESTONE_REJECT_ACTOR", "Only reviewers can reject milestones in this flow.") ??
-    assertActorUserAlignment(productContext, actorUserId, "FORBIDDEN_MILESTONE_REJECT_CONTEXT", "Reject milestone context does not match the active reviewer.")
+  const actorViolation =
+    productContext.actor === "owner" || productContext.actor === "reviewer"
+      ? null
+      : forbid("FORBIDDEN_MILESTONE_REJECT_ACTOR", "Only owners or reviewers can reject milestones in this flow.");
+  return actorViolation ?? assertActorUserAlignment(
+    productContext,
+    actorUserId,
+    "FORBIDDEN_MILESTONE_REJECT_CONTEXT",
+    "Reject milestone context does not match the active reviewer.",
   );
 }
 
@@ -126,15 +134,11 @@ export function assertCanRetryRelease({ productContext, actorUserId }: PolicyInp
 export type PayoutViewPolicyInput = {
   productContext: ProductContext;
   linkedContributorUserId?: string | null;
-  recipientAddress?: string | null;
-  contributorEmail?: string | null;
 };
 
 export function assertCanViewPayout({
   productContext,
   linkedContributorUserId,
-  recipientAddress,
-  contributorEmail,
 }: PayoutViewPolicyInput): ProductPolicyViolation | null {
   // Owner and Reviewer can view all payouts in the workspace
   if (productContext.actor === "owner" || productContext.actor === "reviewer") {
@@ -145,12 +149,12 @@ export function assertCanViewPayout({
   if (productContext.actor === "contributor") {
     const activeUserId = productContext.activeUserId?.toLowerCase();
 
-    // Match against linkedUserId (the user account linked to the contributor profile)
-    const matchesLinkedUser = Boolean(linkedContributorUserId && activeUserId && linkedContributorUserId.toLowerCase() === activeUserId);
-    const matchesAddress = Boolean(recipientAddress && activeUserId && recipientAddress.toLowerCase() === activeUserId);
-    const matchesEmail = Boolean(contributorEmail && activeUserId && contributorEmail.toLowerCase() === activeUserId);
+    // Ownership is established only by the persisted linked user identity.
+    const matchesLinkedUser = Boolean(
+      linkedContributorUserId && activeUserId && linkedContributorUserId === activeUserId,
+    );
 
-    if (matchesLinkedUser || matchesAddress || matchesEmail) {
+    if (matchesLinkedUser) {
       return null;
     }
 

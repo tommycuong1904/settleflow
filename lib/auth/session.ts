@@ -122,6 +122,7 @@ export async function verifySessionToken(
       exp: number;
     };
 
+    if (typeof parsed.userId !== "string" || parsed.userId.trim().length === 0) return null;
     if (parsed.exp < Math.floor(Date.now() / 1000)) return null;
 
     return {

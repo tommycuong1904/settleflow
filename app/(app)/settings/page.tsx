@@ -26,6 +26,7 @@ import {
   Sliders,
   Sparkles,
   KeyRound,
+  UserPlus,
 } from "lucide-react";
 import { shortenAddress } from "@/lib/utils/format";
 
@@ -39,6 +40,11 @@ export default function SettingsPage() {
   const { toast } = useToast();
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
+  const handleDisconnect = async () => {
+    await disconnect();
+    router.refresh();
+  };
+
   const [workspaceName, setWorkspaceName] = useState("SettleFlow Core DAO");
   const [supportEmail, setSupportEmail] = useState("ops@settleflow.io");
   const [webhookUrl, setWebhookUrl] = useState("");
@@ -49,6 +55,35 @@ export default function SettingsPage() {
   const [latencyMs, setLatencyMs] = useState<number | null>(null);
   const [webhookBusy, setWebhookBusy] = useState(false);
   const [isSavingSettings, setIsSavingSettings] = useState(false);
+
+  const [inviteRole, setInviteRole] = useState<"contributor" | "ops" | "reviewer" | "owner">("contributor");
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [generatedInviteUrl, setGeneratedInviteUrl] = useState<string | null>(null);
+  const [isGeneratingInvite, setIsGeneratingInvite] = useState(false);
+  const [copiedInvite, setCopiedInvite] = useState(false);
+
+  const handleCreateInvite = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsGeneratingInvite(true);
+    try {
+      const res = await fetch("/api/v1/invitations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: inviteRole, email: inviteEmail.trim() || undefined }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || "Failed to create invitation link.");
+      }
+      const data = await res.json();
+      setGeneratedInviteUrl(data.inviteUrl);
+      toast({ title: "Invitation link generated successfully!", variant: "success" });
+    } catch (err: unknown) {
+      toast({ title: err instanceof Error ? err.message : "Failed to create invitation", variant: "error" });
+    } finally {
+      setIsGeneratingInvite(false);
+    }
+  };
 
   useEffect(() => {
     if (!isOwner) {
@@ -270,6 +305,96 @@ export default function SettingsPage() {
           </div>
         </div>
 
+        {/* Section 1B: Team Invitations & Access Control */}
+        <div className="rounded-xl border border-[var(--border-soft)] p-6 sm:p-8 space-y-6 bg-[var(--surface-muted)]/30">
+          <div className="flex items-center gap-3 pb-4 border-b border-[var(--border-soft)]">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--surface-muted)] border border-[var(--border-soft)] text-[var(--text-muted)]">
+              <UserPlus size={20} />
+            </div>
+            <div>
+              <h2 className="text-base font-semibold text-[var(--foreground)]">Team Invitations & Access Links</h2>
+              <p className="text-xs text-[var(--text-muted)]">Generate explicit invite tokens for Contributor, Ops, Reviewer, or Owner roles</p>
+            </div>
+          </div>
+
+          <div className="space-y-4 text-xs">
+            <div className="grid gap-4 md:grid-cols-3 items-end">
+              <div className="space-y-2 md:col-span-1">
+                <label className="block font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+                  Invite Role
+                </label>
+                <select
+                  value={inviteRole}
+                  onChange={(e) => setInviteRole(e.target.value as any)}
+                  className="w-full rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] py-2.5 px-3.5 text-xs text-[var(--foreground)] focus:border-[var(--foreground)] focus:outline-none"
+                >
+                  <option value="contributor">Contributor (Builder / Freelancer)</option>
+                  <option value="ops">Ops Lead (Payout Operator)</option>
+                  <option value="reviewer">Reviewer (Milestone Approver)</option>
+                  <option value="owner">Owner (Full Admin Access)</option>
+                </select>
+              </div>
+
+              <div className="space-y-2 md:col-span-1">
+                <label className="block font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+                  Target Email (Optional)
+                </label>
+                <input
+                  type="email"
+                  placeholder="e.g. contributor@gmail.com"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  className="w-full rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] py-2.5 px-3.5 text-xs text-[var(--foreground)] placeholder-[var(--text-muted)] focus:border-[var(--foreground)] focus:outline-none"
+                />
+              </div>
+
+              <div className="md:col-span-1">
+                <Button
+                  type="button"
+                  variant="primary"
+                  size="md"
+                  onClick={handleCreateInvite}
+                  disabled={isGeneratingInvite}
+                  className="w-full flex items-center justify-center gap-2"
+                >
+                  <UserPlus size={14} />
+                  {isGeneratingInvite ? "Generating..." : "Generate Invite Link"}
+                </Button>
+              </div>
+            </div>
+
+            {generatedInviteUrl && (
+              <div className="mt-4 p-4 rounded-xl bg-[var(--surface-strong)] border border-[var(--border-soft)] space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-[var(--foreground)]">Invitation Link Ready:</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(generatedInviteUrl);
+                      setCopiedInvite(true);
+                      setTimeout(() => setCopiedInvite(false), 2000);
+                      toast({ title: "Link copied to clipboard!", variant: "success" });
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1 text-xs rounded-lg bg-[var(--surface-muted)] hover:bg-[var(--border-soft)] text-[var(--foreground)] font-medium transition-all"
+                  >
+                    {copiedInvite ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
+                    {copiedInvite ? "Copied!" : "Copy Link"}
+                  </button>
+                </div>
+                <input
+                  type="text"
+                  readOnly
+                  value={generatedInviteUrl}
+                  className="w-full rounded-lg border border-[var(--border-soft)] bg-[var(--surface-muted)] py-2 px-3 text-xs font-mono text-[var(--foreground)] select-all"
+                />
+                <p className="text-[11px] text-[var(--text-muted)]">
+                  Share this link with your team member. Upon opening, they will accept the invite and join this workspace with role <strong className="uppercase text-[var(--foreground)]">{inviteRole}</strong>.
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Section 2: Arc Blockchain & Protocol Configuration */}
         <div className="rounded-xl border border-[var(--border-soft)] p-6 sm:p-8 space-y-6">
           <div className="flex items-center justify-between gap-4 pb-4 border-b border-[var(--border-soft)]">
@@ -448,7 +573,7 @@ export default function SettingsPage() {
                 type="button"
                 variant="danger"
                 size="sm"
-                onClick={disconnect}
+                onClick={handleDisconnect}
               >
                 Disconnect Session
               </Button>

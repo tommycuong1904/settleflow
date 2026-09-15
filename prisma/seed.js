@@ -27,15 +27,20 @@ async function main() {
 
   // --- Users ---
   const users = [
-    [OWNER_ID, "Demo Owner", "owner@settleflow.local"],
-    [REVIEWER_ID, "Demo Reviewer", "reviewer@settleflow.local"],
-    [CONTRIB_USER_ID, "Nora Kim (linked)", "nora@settleflow.local"],
+    [OWNER_ID, "Alex Chen (Owner)", "owner@settleflow.xyz"],
+    [REVIEWER_ID, "Sarah QA (Reviewer)", "reviewer@settleflow.xyz"],
+    [CONTRIB_USER_ID, "David Builder (Contributor)", "contributor@settleflow.xyz"],
+    ["user-owner-local", "Demo Owner", "owner@settleflow.local"],
+    ["user-reviewer-local", "Demo Reviewer", "reviewer@settleflow.local"],
+    ["user-contrib-local", "Nora Kim (linked)", "nora@settleflow.local"],
+    ["user-owner-tommycuong", "Tommy Cuong", "tommycuong1904@gmail.com"],
+    ["user-google-owner", "Alex Turner", "alex.turner@gmail.com"],
   ];
 
   for (const [id, displayName, email] of users) {
     await db.user.upsert({
       where: { id },
-      update: { displayName },
+      update: { displayName, email },
       create: { id, displayName, email },
     });
   }
@@ -45,11 +50,16 @@ async function main() {
     [OWNER_ID, "owner"],
     [REVIEWER_ID, "reviewer"],
     [CONTRIB_USER_ID, "contributor"],
+    ["user-owner-local", "owner"],
+    ["user-reviewer-local", "reviewer"],
+    ["user-contrib-local", "contributor"],
+    ["user-owner-tommycuong", "owner"],
+    ["user-google-owner", "owner"],
   ];
 
   for (const [userId, role] of members) {
     await db.workspaceMember.upsert({
-      where: { workspaceId_userId_role: { workspaceId: WS_ID, userId, role } },
+      where: { workspaceId_userId: { workspaceId: WS_ID, userId } },
       update: {},
       create: { workspaceId: WS_ID, userId, role },
     });

@@ -32,9 +32,9 @@ export interface WalletContextValue {
   refreshBalance: () => Promise<void>;
   connectWeb3: (preferredWallet?: string) => Promise<void>;
   connectWeb2: (identifier: string, provider?: "google" | "email") => Promise<void>;
-  connectGoogle: (profile: { email: string; name?: string; picture?: string; sub?: string }) => Promise<void>;
+  connectGoogle: (profile: { email: string; name?: string; picture?: string; sub?: string; idToken: string }) => Promise<void>;
   getPrivateKey: () => string | null;
-  disconnect: () => void;
+  disconnect: () => Promise<void>;
 }
 
 const WalletContext = createContext<WalletContextValue | undefined>(undefined);
@@ -48,13 +48,18 @@ const STORAGE_KEY = "settleflow_auth_session";
  */
 async function syncServerSession(path: string, body: Record<string, unknown>) {
   try {
-    await fetch(path, {
+    const response = await fetch(path, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
+    if (!response.ok) {
+      const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+      throw new Error(payload?.error || `Session sync failed (${response.status}).`);
+    }
   } catch (err) {
     console.warn(`Session sync to ${path} failed:`, err);
+    throw err;
   }
 }
 
@@ -84,7 +89,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const [isRefreshingBalance, setIsRefreshingBalance] = useState<boolean>(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
 
-  // Restore session on initial load
+  // Restore the UI cache, then reconcile it with the HttpOnly server session.
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -105,6 +110,55 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     } catch {
       // Ignore storage read errors
     }
+
+    void fetch("/api/v1/auth/me", { cache: "no-store" })
+      .then(async (response) => {
+        if (!response.ok) return null;
+        return (await response.json()) as { session?: { address?: string | null; email?: string; name?: string | null; authType?: AuthType } };
+      })
+      .then((payload) => {
+        const session = payload?.session;
+        if (!session) {
+          try {
+            localStorage.removeItem(STORAGE_KEY);
+          } catch {
+            // Ignore storage write errors.
+          }
+          setIsConnected(false);
+          setAddress(null);
+          setEmail(null);
+          setUserName(null);
+          setUserAvatar(null);
+          setAuthType(null);
+          setWalletName(null);
+          return;
+        }
+        if (!session.email || session.authType !== "web2_google") return;
+        const next = {
+          isConnected: true,
+          address: session.address || null,
+          email: session.email,
+          userName: session.name || session.email.split("@")[0],
+          userAvatar: null,
+          authType: "web2_google" as const,
+          walletName: "Google Smart Account",
+          network: "Arc Testnet",
+          usdcBalance: "1,250.00",
+        };
+        setIsConnected(true);
+        setAddress(next.address);
+        setEmail(next.email);
+        setUserName(next.userName);
+        setUserAvatar(null);
+        setAuthType(next.authType);
+        setWalletName(next.walletName);
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+        } catch {
+          // Ignore storage write errors
+        }
+      })
+      .catch(() => undefined);
   }, []);
 
   // Save session when state changes
@@ -157,13 +211,14 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       setIsConnecting(true);
       try {
         const result = await connectBrowserWallet();
-        const connectedAddr = result.connectedAddress || "0x71C...49A2";
-        const wName = result.walletName || preferredWallet || "MetaMask";
-
-        await syncServerSession("/api/v1/auth/wallet", {
-          address: connectedAddr,
-          walletName: wName,
-        });
+        if (!result.connectedAddress || !result.provider) throw new Error("No browser wallet account available.");
+        const connectedAddr = result.connectedAddress;
+        const wName = result.walletName || preferredWallet || "Web3 Wallet";
+        const nonceResponse = await fetch("/api/v1/auth/wallet/nonce", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ address: connectedAddr }) });
+        if (!nonceResponse.ok) throw new Error("Unable to request wallet sign-in challenge.");
+        const challenge = (await nonceResponse.json()) as { nonce: string; message: string };
+        const signature = await (result.provider as unknown as { request: (args: { method: string; params: [string, string] }) => Promise<unknown> }).request({ method: "personal_sign", params: [challenge.message, connectedAddr] }) as string;
+        await syncServerSession("/api/v1/auth/wallet", { address: connectedAddr, walletName: wName, nonce: challenge.nonce, message: challenge.message, signature });
 
         setIsConnected(true);
         setAddress(connectedAddr);
@@ -190,38 +245,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         setIsAuthModalOpen(false);
       } catch (err) {
         console.error("Web3 connection error:", err);
-        // Fallback for mock/demo testing if no wallet extension is available
-        const mockAddr = "0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7";
-        const wName = preferredWallet || "Web3 Wallet";
-
-        await syncServerSession("/api/v1/auth/wallet", {
-          address: mockAddr,
-          walletName: wName,
-        });
-
-        setIsConnected(true);
-        setAddress(mockAddr);
-        setEmail(null);
-        setUserName(null);
-        setUserAvatar(null);
-        setAuthType("web3_wallet");
-        setWalletName(wName);
-        setNetwork("Arc Testnet");
-        setUsdcBalance("1,000.00");
-
-        saveSession({
-          isConnected: true,
-          address: mockAddr,
-          email: null,
-          userName: null,
-          userAvatar: null,
-          authType: "web3_wallet",
-          walletName: wName,
-          network: "Arc Testnet",
-          usdcBalance: "1,000.00",
-        });
-
-        setIsAuthModalOpen(false);
+        throw err;
       } finally {
         setIsConnecting(false);
       }
@@ -230,7 +254,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   );
 
   const connectGoogle = useCallback(
-    async (profile: { email: string; name?: string; picture?: string; sub?: string }) => {
+    async (profile: { email: string; name?: string; picture?: string; sub?: string; idToken: string }) => {
       setIsConnecting(true);
       try {
         const smartAccount = deriveSmartAccountAddress(profile.sub || profile.email);
@@ -242,6 +266,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
           sub: profile.sub,
           name: profile.name,
           picture: profile.picture,
+          idToken: profile.idToken,
         });
 
         setIsConnected(true);
@@ -328,8 +353,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     return deriveDeterministicPrivateKey(email);
   }, [isConnected, authType, email]);
 
-  const disconnect = useCallback(() => {
-    void syncServerSession("/api/v1/auth/logout", {});
+  const disconnect = useCallback(async () => {
+    await syncServerSession("/api/v1/auth/logout", {});
     setIsConnected(false);
     setAddress(null);
     setEmail(null);
@@ -377,4 +402,3 @@ export function useWallet() {
   }
   return context;
 }
-

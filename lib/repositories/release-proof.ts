@@ -13,6 +13,51 @@ export type RefreshProofInput = {
   failureReason?: string;
 };
 
+export async function recordReleaseSourceWallet(releaseId: string, workspaceId: string, sourceWalletAddress: string) {
+  const existing = await db.release.findFirst({
+    where: { id: releaseId, payout: { workspaceId }, status: "pending" },
+    select: { sourceWalletAddress: true },
+  });
+  if (!existing) throw new Error("RELEASE_NOT_FOUND");
+  if (existing.sourceWalletAddress) {
+    if (existing.sourceWalletAddress.toLowerCase() !== sourceWalletAddress.toLowerCase()) throw new Error("SOURCE_WALLET_MISMATCH");
+    return;
+  }
+  const result = await db.release.updateMany({
+    where: { id: releaseId, payout: { workspaceId }, status: "pending", sourceWalletAddress: null },
+    data: { sourceWalletAddress },
+  });
+  if (result.count !== 1) throw new Error("SOURCE_WALLET_MISMATCH");
+}
+
+export async function recordReleaseTransactionHash(releaseId: string, workspaceId: string, txHash: string) {
+  const result = await db.release.updateMany({
+    where: { id: releaseId, payout: { workspaceId }, status: "pending", txHash: null },
+    data: { txHash },
+  });
+  if (result.count !== 1) {
+    const current = await db.release.findFirst({ where: { id: releaseId, payout: { workspaceId } }, select: { txHash: true } });
+    if (current?.txHash === txHash) return;
+    throw new Error("RELEASE_TX_HASH_MISMATCH");
+  }
+}
+
+export async function claimReleaseExecution(releaseId: string, workspaceId: string) {
+  return db.$transaction(async (tx) => {
+    const release = await tx.release.findFirst({ where: { id: releaseId, payout: { workspaceId }, status: "queued" }, select: { executionMode: true } });
+    const result = await tx.release.updateMany({
+      where: { id: releaseId, status: "queued", payout: { workspaceId } },
+      data: { status: "pending" },
+    });
+    if (result.count !== 1) {
+      const exists = await tx.release.findFirst({ where: { id: releaseId, payout: { workspaceId } }, select: { id: true } });
+      if (!exists) throw new Error("RELEASE_NOT_FOUND");
+      throw new Error("RELEASE_ALREADY_CLAIMED");
+    }
+    return tx.release.findUniqueOrThrow({ where: { id: releaseId }, select: { id: true, status: true, milestoneId: true, payoutId: true } });
+  });
+}
+
 type ProofRefreshUpdate = {
   status: "confirmed" | "failed";
   txHash: string | null;
@@ -67,15 +112,21 @@ export async function refreshReleaseProof(
   refreshedByUserId: string,
   workspaceId: string,
   input: RefreshProofInput,
+  options: { trustedCircleWalletExecution?: boolean } = {},
 ) {
   return db.$transaction(async (tx: Prisma.TransactionClient) => {
-    const release = await tx.release.findUnique({
-      where: { id: releaseId },
+    let release = await tx.release.findFirst({
+      where: { id: releaseId, payout: { workspaceId } },
       select: {
         id: true,
         payoutId: true,
         milestoneId: true,
         status: true,
+        amountUsdc: true,
+        destinationWalletAddress: true,
+        sourceWalletAddress: true,
+        txHash: true,
+        executionMode: true,
         milestone: { select: { status: true } },
         payout: { select: { workspaceId: true } },
         proofs: {
@@ -101,13 +152,31 @@ export async function refreshReleaseProof(
     );
     if (!canRefresh) throw new Error("FORBIDDEN_PROOF_REFRESH");
 
-    if (release.status === "confirmed" || release.status === "cancelled") {
+    if (!release.milestoneId) throw new Error("MILESTONE_NOT_FOUND");
+    await tx.$queryRaw`SELECT id FROM "Milestone" WHERE id = ${release.milestoneId} AND "payoutId" = ${release.payoutId} FOR UPDATE`;
+    await tx.$queryRaw`SELECT id FROM "Payout" WHERE id = ${release.payoutId} AND "workspaceId" = ${workspaceId} FOR UPDATE`;
+
+    release = await tx.release.findFirst({
+      where: { id: releaseId, payout: { workspaceId } },
+      select: {
+        id: true, payoutId: true, milestoneId: true, status: true,
+        amountUsdc: true, destinationWalletAddress: true, sourceWalletAddress: true, txHash: true,
+        executionMode: true, milestone: { select: { status: true } },
+        payout: { select: { workspaceId: true } },
+        proofs: { orderBy: { createdAt: "desc" }, take: 1,
+          select: { id: true, payoutId: true, milestoneId: true, status: true } },
+      },
+    });
+    if (!release) throw new Error("RELEASE_NOT_FOUND");
+    if (release.payout.workspaceId !== workspaceId) throw new Error("WORKSPACE_SCOPE_MISMATCH");
+
+    if (release.status !== "pending") {
       throw new Error("RELEASE_NOT_REFRESHABLE");
     }
 
     const latestForMilestone = release.milestoneId
       ? await tx.release.findFirst({
-          where: { milestoneId: release.milestoneId },
+          where: { milestoneId: release.milestoneId, payout: { workspaceId } },
           orderBy: { createdAt: "desc" },
           select: { id: true },
         })
@@ -123,17 +192,50 @@ export async function refreshReleaseProof(
       throw new Error("MILESTONE_NOT_APPROVED_FOR_CONFIRMATION");
     }
     if (input.status === "confirmed" && !input.txHash) throw new Error("TX_HASH_REQUIRED");
+    if (release.executionMode === "circle_wallet" && input.status === "confirmed" && input.txHash !== release.txHash) {
+      throw new Error("RELEASE_TX_HASH_MISMATCH");
+    }
     if (input.status === "failed" && !input.failureReason) throw new Error("FAILURE_REASON_REQUIRED");
+    if (release.executionMode === "circle_wallet" && input.status === "failed" && !options.trustedCircleWalletExecution) {
+      throw new Error("CIRCLE_WALLET_FAILURE_REQUIRES_TRUSTED_EXECUTOR");
+    }
+    let verifiedBrowserSourceWallet: string | null = null;
+    if (input.status === "confirmed" && ["browser_wallet", "circle_wallet"].includes(release.executionMode)) {
+      if (release.executionMode === "circle_wallet" && !release.sourceWalletAddress) throw new Error("SOURCE_WALLET_REQUIRED");
+      const { verifyReleaseTransaction } = await import("@/lib/arc/verify-release-transaction");
+      try {
+        const verified = await verifyReleaseTransaction({ release, txHash: input.txHash! });
+        if (release.executionMode === "browser_wallet") verifiedBrowserSourceWallet = verified.sourceWalletAddress;
+      } catch {
+        throw new Error("TX_SNAPSHOT_MISMATCH");
+      }
+    }
+
+    if (verifiedBrowserSourceWallet) {
+      const bound = await tx.release.updateMany({
+        where: { id: release.id, status: "pending", sourceWalletAddress: null, txHash: null },
+        data: { sourceWalletAddress: verifiedBrowserSourceWallet, txHash: input.txHash },
+      });
+      if (bound.count !== 1) throw new Error("RELEASE_TX_HASH_MISMATCH");
+    }
 
     const now = new Date();
-    const updatedProof = await tx.transactionProof.update({
-      where: { id: proof.id },
+    const updatedProofResult = await tx.transactionProof.updateMany({
+      where: { id: proof.id, status: "pending" },
       data: deriveProofRefreshUpdate(input, now),
+    });
+    if (updatedProofResult.count !== 1) throw new Error("PROOF_NOT_PENDING");
+    const updatedProof = await tx.transactionProof.findUniqueOrThrow({
+      where: { id: proof.id },
       select: { id: true, status: true, txHash: true, network: true, explorerUrl: true, blockNumber: true, failureReason: true },
     });
-    const updatedRelease = await tx.release.update({
-      where: { id: release.id },
+    const updatedReleaseResult = await tx.release.updateMany({
+      where: { id: release.id, status: "pending" },
       data: deriveReleaseRefreshUpdate(input, now),
+    });
+    if (updatedReleaseResult.count !== 1) throw new Error("RELEASE_NOT_REFRESHABLE");
+    const updatedRelease = await tx.release.findUniqueOrThrow({
+      where: { id: release.id },
       select: { id: true, status: true, milestoneId: true, payoutId: true, executedAt: true, failedAt: true, failureReason: true },
     });
 
@@ -141,13 +243,14 @@ export async function refreshReleaseProof(
       const milestoneId = proof.milestoneId ?? release.milestoneId;
       if (!milestoneId) throw new Error("MILESTONE_NOT_FOUND");
 
-      await tx.milestone.update({
-        where: { id: milestoneId },
+      const milestoneResult = await tx.milestone.updateMany({
+        where: { id: milestoneId, status: "approved" },
         data: {
           status: "released",
           releasedAt: now,
         },
       });
+      if (milestoneResult.count !== 1) throw new Error("MILESTONE_NOT_APPROVED_FOR_CONFIRMATION");
     }
 
     await recordActivity(tx, {
@@ -183,7 +286,7 @@ export async function refreshReleaseProof(
       },
     });
 
-    const payout = await recalculatePayoutStatus(tx, release.payoutId);
+    const payout = await recalculatePayoutStatus(tx, release.payoutId, workspaceId, true);
 
     return {
       release: updatedRelease,
@@ -200,16 +303,35 @@ export async function markReleaseReconciliationPending(
   input: { txHash?: string; network?: string; explorerUrl?: string; reason: string },
 ) {
   return db.$transaction(async (tx) => {
-    const release = await tx.release.findUnique({
-      where: { id: releaseId },
+    const release = await tx.release.findFirst({
+      where: { id: releaseId, payout: { workspaceId } },
       select: { id: true, payout: { select: { workspaceId: true } }, proofs: { orderBy: { createdAt: "desc" }, take: 1, select: { id: true } } },
     });
     if (!release) throw new Error("RELEASE_NOT_FOUND");
     if (release.payout.workspaceId !== workspaceId) throw new Error("WORKSPACE_SCOPE_MISMATCH");
     const proof = release.proofs[0];
     if (!proof) throw new Error("PROOF_NOT_FOUND");
-    await tx.release.update({ where: { id: release.id }, data: { status: "pending", failureReason: input.reason } });
-    await tx.transactionProof.update({ where: { id: proof.id }, data: { status: "pending", txHash: input.txHash, network: input.network, explorerUrl: input.explorerUrl, failureReason: input.reason } });
+    const current = await tx.release.findUniqueOrThrow({ where: { id: release.id }, select: { status: true } });
+    if (current.status !== "pending") throw new Error("RELEASE_NOT_REFRESHABLE");
+    const proofState = await tx.transactionProof.findUniqueOrThrow({ where: { id: proof.id }, select: { status: true } });
+    if (proofState.status !== "pending") throw new Error("PROOF_NOT_PENDING");
+    const updatedRelease = await tx.release.updateMany({
+      where: { id: release.id, status: "pending" },
+      data: { failureReason: input.reason },
+    });
+    if (updatedRelease.count !== 1) throw new Error("RELEASE_NOT_REFRESHABLE");
+
+    const updatedProof = await tx.transactionProof.updateMany({
+      where: { id: proof.id, status: "pending" },
+      data: {
+        txHash: input.txHash,
+        network: input.network,
+        explorerUrl: input.explorerUrl,
+        failureReason: input.reason,
+      },
+    });
+    if (updatedProof.count !== 1) throw new Error("PROOF_NOT_PENDING");
+
     return { releaseId: release.id, proofId: proof.id, status: "pending" as const };
   });
 }

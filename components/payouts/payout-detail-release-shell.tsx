@@ -162,6 +162,14 @@ export function PayoutDetailReleaseShell({
       }
 
       if (ARC_CONFIG.executionMode === "real" && data.release?.id) {
+        const claimResponse = await fetch(`/api/v1/releases/${data.release.id}/claim`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...productContextHeaders },
+          body: JSON.stringify({}),
+        });
+        if (!claimResponse.ok) {
+          throw new Error("Release execution was already claimed or is no longer executable.");
+        }
         const walletResult = await sendUsdcWithBrowserWallet({
           recipient: recipientAddress ?? "",
           amount: String(nextReleasableMilestone.amount),

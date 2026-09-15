@@ -31,6 +31,10 @@ function shouldHandle(pathname: string) {
 
   return (
     pathname === "/dashboard" ||
+    pathname === "/activity" ||
+    pathname === "/contributors" ||
+    pathname === "/settings" ||
+    pathname === "/payouts" ||
     pathname === "/payouts/new" ||
     pathname.startsWith("/payouts/") ||
     pathname.startsWith("/api/")
@@ -68,6 +72,13 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
+  if (request.method === "GET" && !request.nextUrl.pathname.startsWith("/api/") && request.nextUrl.pathname !== "/dashboard") {
+    const token = request.cookies.get(SESSION_COOKIE_NAME)?.value;
+    if (!token || !(await verifySessionToken(token))) {
+      return NextResponse.rewrite(new URL("/auth-required", request.url));
+    }
+  }
+
   // ---- Session gate for mutation routes ----
   if (
     MUTATION_METHODS.has(request.method) &&
@@ -92,26 +103,10 @@ export async function proxy(request: NextRequest) {
       cookies.get(PRODUCT_CONTEXT_COOKIE_NAMES.workspaceId)?.value,
       searchParams.get("workspaceId"),
     ),
-    ownerUserId: firstDefined(
-      request.headers.get(PRODUCT_CONTEXT_HEADER_NAMES.ownerUserId),
-      cookies.get(PRODUCT_CONTEXT_COOKIE_NAMES.ownerUserId)?.value,
-      searchParams.get("ownerUserId"),
-    ),
-    reviewerUserId: firstDefined(
-      request.headers.get(PRODUCT_CONTEXT_HEADER_NAMES.reviewerUserId),
-      cookies.get(PRODUCT_CONTEXT_COOKIE_NAMES.reviewerUserId)?.value,
-      searchParams.get("reviewerUserId"),
-    ),
-    contributorUserId: firstDefined(
-      request.headers.get(PRODUCT_CONTEXT_HEADER_NAMES.contributorUserId),
-      cookies.get(PRODUCT_CONTEXT_COOKIE_NAMES.contributorUserId)?.value,
-      searchParams.get("contributorUserId"),
-    ),
-    actor: firstDefined(
-      request.headers.get(PRODUCT_CONTEXT_HEADER_NAMES.actor),
-      cookies.get(PRODUCT_CONTEXT_COOKIE_NAMES.actor)?.value,
-      searchParams.get("actor"),
-    ),
+    ownerUserId: undefined,
+    reviewerUserId: undefined,
+    contributorUserId: undefined,
+    actor: undefined,
   };
 
   if (contextValues.workspaceId) {

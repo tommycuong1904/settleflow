@@ -1,10 +1,11 @@
 import { cookies } from "next/headers";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 import { PayoutDetailClient } from "@/components/payouts/payout-detail-client";
 import { getPayoutActivity } from "@/lib/repositories/payout-activity";
-import { getPayoutDetail } from "@/lib/repositories/payouts";
-import { resolveProductContextFromCookiesWithSession } from "@/lib/auth/session-server";
+import { getPayoutDetail, projectPayoutDetail } from "@/lib/repositories/payouts";
+import { resolveProductContextForServerPage } from "@/lib/auth/session-server";
+import { ServerAuthContextState } from "@/components/shared/server-auth-context-state";
 
 type PayoutDetailPageProps = {
   params: Promise<{ id: string }>;
@@ -18,10 +19,7 @@ export default async function PayoutDetailPage({
   const { id } = await params;
   const resolvedSearchParams = (await searchParams) ?? {};
   const cookieStore = await cookies();
-  const productContext = await resolveProductContextFromCookiesWithSession(cookieStore, {
-    actor: Array.isArray(resolvedSearchParams.actor)
-      ? resolvedSearchParams.actor[0]
-      : resolvedSearchParams.actor,
+  const contextResult = await resolveProductContextForServerPage(cookieStore, {
     workspaceId: Array.isArray(resolvedSearchParams.workspaceId)
       ? resolvedSearchParams.workspaceId[0]
       : resolvedSearchParams.workspaceId,
@@ -35,14 +33,38 @@ export default async function PayoutDetailPage({
       ? resolvedSearchParams.contributorUserId[0]
       : resolvedSearchParams.contributorUserId,
   });
+  if (contextResult.kind === "auth-required") redirect(`/auth-required?next=${encodeURIComponent(`/payouts/${id}`)}`);
+  if (contextResult.kind !== "authenticated") return <ServerAuthContextState kind={contextResult.kind} />;
+  const productContext = contextResult.productContext;
 
-  const detail = await getPayoutDetail(id, productContext.workspaceId);
+  if (productContext.actor === "ops") {
+    return <ServerAuthContextState kind="authenticated-forbidden" />;
+  }
+
+  const scope = productContext.actor === "contributor"
+    ? { linkedUserId: productContext.activeUserId }
+    : undefined;
+  const detail = await getPayoutDetail(id, productContext.workspaceId, scope);
 
   if (!detail) {
     notFound();
   }
 
-  const activity = await getPayoutActivity(id);
+  const projectedDetail = projectPayoutDetail(detail, productContext.actor);
+  if (productContext.actor === "reviewer") {
+    return (
+      <PayoutDetailClient
+        payout={projectedDetail.payout as never}
+        contributor={undefined}
+        initialMilestones={projectedDetail.milestones as never}
+        initialReleaseProof={undefined}
+        initialActivity={[]}
+        currentActor={productContext.actor}
+      />
+    );
+  }
+
+  const activity = await getPayoutActivity(id, productContext.workspaceId, scope, productContext.actor);
 
   return (
     <PayoutDetailClient
@@ -50,7 +72,7 @@ export default async function PayoutDetailPage({
       contributor={detail.contributor}
       initialMilestones={detail.milestones}
       initialReleaseProof={detail.releaseProof}
-      initialActivity={activity}
+      initialActivity={activity as unknown as import("@/lib/models/activity-item").ActivityItem[]}
       currentActor={productContext.actor}
     />
   );

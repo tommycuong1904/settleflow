@@ -62,9 +62,14 @@ export function derivePayoutStatusDecision(
 export async function recalculatePayoutStatus(
   tx: Prisma.TransactionClient,
   payoutId: string,
+  workspaceId: string,
+  alreadyLocked = false,
 ) {
-  const payout = await tx.payout.findUnique({
-    where: { id: payoutId },
+  if (!alreadyLocked) {
+    await tx.$queryRaw`SELECT id FROM "Payout" WHERE id = ${payoutId} AND "workspaceId" = ${workspaceId} FOR UPDATE`;
+  }
+  const payout = await tx.payout.findFirst({
+    where: { id: payoutId, workspaceId },
     select: {
       id: true,
       status: true,
@@ -82,8 +87,8 @@ export async function recalculatePayoutStatus(
   const decision = derivePayoutStatusDecision(payout);
 
   if (!decision.shouldPersist) {
-    return tx.payout.findUnique({
-      where: { id: payoutId },
+    return tx.payout.findFirst({
+      where: { id: payoutId, workspaceId },
       select: { id: true, status: true, completedAt: true },
     });
   }

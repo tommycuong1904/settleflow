@@ -121,6 +121,17 @@ test("returns null for malformed tokens", async () => {
   assert.equal(await verifySessionToken("a.b.c", SECRET), null);
 });
 
+test("rejects a signed token with a missing, empty, or non-string userId", async () => {
+  for (const userId of [undefined, "", "   ", 123]) {
+    const data = JSON.stringify({ ...samplePayload, userId, iat: Math.floor(Date.now() / 1000), exp: Math.floor(Date.now() / 1000) + 60 });
+    const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(SECRET), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+    const bytes = new TextEncoder().encode(data);
+    const signature = await crypto.subtle.sign("HMAC", key, bytes);
+    const token = `${base64UrlEncodeBytes(new Uint8Array(bytes))}.${base64UrlEncodeBytes(new Uint8Array(signature))}`;
+    assert.equal(await verifySessionToken(token, SECRET), null);
+  }
+});
+
 test("returns null for an expired token", async () => {
   const key = await crypto.subtle.importKey(
     "raw",

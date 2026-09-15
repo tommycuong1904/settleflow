@@ -1,6 +1,38 @@
 import { db } from "@/lib/db/client";
 import type { ActivityItem } from "@/lib/models/activity-item";
 
+export type ActivityViewRole = "owner" | "reviewer" | "contributor" | "ops";
+export type OwnerActivity = ActivityItem;
+export type ContributorActivity = ActivityItem;
+export type ReviewerActivity = {
+  id: string;
+  entityType: "milestone";
+  entityId: string;
+  action: "milestone_submitted" | "milestone_approved" | "milestone_rejected";
+  occurredAt: string;
+  title: "Milestone review activity";
+};
+export type OpsActivity = {
+  id: string;
+  entityType: "release" | "proof";
+  entityId: string;
+  action: string;
+  occurredAt: string;
+  title: "Settlement operation";
+  description?: "Settlement operation failed.";
+};
+
+export function projectActivity(item: ActivityItem, role: ActivityViewRole): OwnerActivity | ContributorActivity | ReviewerActivity | OpsActivity {
+  if (role === "owner" || role === "contributor") return item;
+  if (role === "reviewer") {
+    const action: ReviewerActivity["action"] = item.action === "milestone_approved" || item.action === "milestone_rejected"
+      ? item.action
+      : "milestone_submitted";
+    return { id: item.id, entityType: "milestone", entityId: item.entityId, action, occurredAt: item.occurredAt, title: "Milestone review activity" };
+  }
+  return { id: item.id, entityType: item.entityType === "proof" ? "proof" : "release", entityId: item.entityId, action: item.action, occurredAt: item.occurredAt, title: "Settlement operation", ...(item.action.includes("failed") ? { description: "Settlement operation failed." } : {}) };
+}
+
 function labelForUser(user?: { displayName: string | null; id: string } | null) {
   return user?.displayName?.trim() || user?.id || "System";
 }
@@ -67,36 +99,41 @@ function getLogDescription(action: string, metadata?: Record<string, unknown>) {
       return "Draft payout details were updated.";
     }
     case "milestone_submitted":
-      return asText(metadata?.summary) ?? "Contributor submitted milestone deliverables.";
+      return "Milestone deliverables were submitted.";
     case "milestone_approved":
     case "milestone_rejected":
-      return asText(metadata?.comment);
+      return undefined;
     case "release_queued": {
-      const amountUsdc = asText(metadata?.amountUsdc);
-      const executionMode = asText(metadata?.executionMode);
-      if (amountUsdc && executionMode) return `Requested ${amountUsdc} USDC via ${executionMode}.`;
-      return amountUsdc ? `Requested ${amountUsdc} USDC.` : "Release was queued.";
+      return "Release was queued.";
     }
     case "release_retried": {
-      const amountUsdc = asText(metadata?.amountUsdc);
-      const executionMode = asText(metadata?.executionMode);
-      if (amountUsdc && executionMode) return `Retried ${amountUsdc} USDC via ${executionMode}.`;
-      return amountUsdc ? `Retried ${amountUsdc} USDC.` : "Release retry was queued.";
+      return "Release retry was queued.";
     }
     case "release_failed":
     case "proof_failed":
-      return asText(metadata?.failureReason) ?? "Execution failed.";
+      return "Execution failed.";
     case "proof_confirmed":
-      return asText(metadata?.txHash);
+      return "Settlement proof confirmed.";
     default:
       return undefined;
   }
 }
 
-async function getLoggedPayoutActivity(payoutId: string): Promise<ActivityItem[]> {
+async function getLoggedPayoutActivity(payoutId: string, workspaceId: string, scope?: { linkedUserId?: string; createdByUserId?: string }): Promise<ActivityItem[]> {
   const [logs, milestones] = await Promise.all([
     db.activityLog.findMany({
-      where: { payoutId },
+      where: {
+        payoutId,
+        workspaceId,
+        ...(scope?.linkedUserId || scope?.createdByUserId
+          ? {
+              payout: {
+                ...(scope.linkedUserId ? { contributor: { linkedUserId: scope.linkedUserId } } : {}),
+                ...(scope.createdByUserId ? { createdByUserId: scope.createdByUserId } : {}),
+              },
+            }
+          : {}),
+      },
       orderBy: { occurredAt: "desc" },
       select: {
         id: true,
@@ -110,7 +147,7 @@ async function getLoggedPayoutActivity(payoutId: string): Promise<ActivityItem[]
       },
     }),
     db.milestone.findMany({
-      where: { payoutId },
+      where: { payoutId, payout: { workspaceId } },
       select: { id: true, title: true },
     }),
   ]);
@@ -145,9 +182,14 @@ async function getLoggedPayoutActivity(payoutId: string): Promise<ActivityItem[]
   });
 }
 
-async function getDerivedPayoutActivity(payoutId: string): Promise<ActivityItem[]> {
-  const payout = await db.payout.findUnique({
-    where: { id: payoutId },
+async function getDerivedPayoutActivity(payoutId: string, workspaceId: string, scope?: { linkedUserId?: string; createdByUserId?: string }): Promise<ActivityItem[]> {
+  const payout = await db.payout.findFirst({
+    where: {
+      id: payoutId,
+      workspaceId,
+      ...(scope?.linkedUserId ? { contributor: { linkedUserId: scope.linkedUserId } } : {}),
+      ...(scope?.createdByUserId ? { createdByUserId: scope.createdByUserId } : {}),
+    },
     select: {
       id: true,
       createdAt: true,
@@ -163,7 +205,7 @@ async function getDerivedPayoutActivity(payoutId: string): Promise<ActivityItem[
       select: { id: true, displayName: true },
     }),
     db.milestone.findMany({
-      where: { payoutId },
+      where: { payoutId, payout: { workspaceId } },
       orderBy: { sequence: "asc" },
       select: {
         id: true,
@@ -177,7 +219,7 @@ async function getDerivedPayoutActivity(payoutId: string): Promise<ActivityItem[
   const [submissions, reviews, releases] = milestoneIds.length
     ? await Promise.all([
         db.milestoneSubmission.findMany({
-          where: { milestoneId: { in: milestoneIds } },
+          where: { milestone: { id: { in: milestoneIds }, payout: { workspaceId } } },
           orderBy: { submittedAt: "desc" },
           select: {
             id: true,
@@ -188,7 +230,7 @@ async function getDerivedPayoutActivity(payoutId: string): Promise<ActivityItem[
           },
         }),
         db.milestoneReview.findMany({
-          where: { milestoneId: { in: milestoneIds } },
+          where: { milestone: { id: { in: milestoneIds }, payout: { workspaceId } } },
           orderBy: { reviewedAt: "desc" },
           select: {
             id: true,
@@ -200,7 +242,7 @@ async function getDerivedPayoutActivity(payoutId: string): Promise<ActivityItem[
           },
         }),
         db.release.findMany({
-          where: { payoutId },
+          where: { payoutId, payout: { workspaceId } },
           orderBy: { createdAt: "desc" },
           select: {
             id: true,
@@ -345,10 +387,35 @@ function getActivityDedupKey(item: ActivityItem) {
   return [item.action, item.entityType, item.entityId].join(":");
 }
 
-export async function getPayoutActivity(payoutId: string): Promise<ActivityItem[]> {
+async function getRestrictedPayoutActivity(
+  payoutId: string,
+  workspaceId: string,
+  role: "reviewer" | "ops",
+  scope?: { linkedUserId?: string; createdByUserId?: string },
+): Promise<ReviewerActivity[] | OpsActivity[]> {
+  const logs = await db.activityLog.findMany({
+    where: { payoutId, workspaceId, ...(scope?.linkedUserId ? { payout: { contributor: { linkedUserId: scope.linkedUserId } } } : {}), ...(scope?.createdByUserId ? { payout: { createdByUserId: scope.createdByUserId } } : {}) },
+    orderBy: { occurredAt: "desc" },
+    select: { id: true, entityId: true, action: true, occurredAt: true, milestoneId: true },
+  });
+  if (role === "reviewer") return logs
+    .filter((log) => log.action === "milestone_submitted" || log.action === "milestone_approved" || log.action === "milestone_rejected")
+    .map((log) => ({ id: `log:${log.id}`, entityType: "milestone" as const, entityId: log.milestoneId ?? log.entityId, action: log.action as ReviewerActivity["action"], occurredAt: log.occurredAt.toISOString(), title: "Milestone review activity" as const }));
+  return logs
+    .filter((log) => log.action === "release_queued" || log.action === "release_retried" || log.action === "release_failed" || log.action === "proof_failed" || log.action === "proof_confirmed")
+    .map((log) => ({ id: `log:${log.id}`, entityType: log.action.startsWith("proof_") ? "proof" as const : "release" as const, entityId: log.entityId, action: log.action, occurredAt: log.occurredAt.toISOString(), title: "Settlement operation" as const, ...(log.action.includes("failed") ? { description: "Settlement operation failed." as const } : {}) }));
+}
+
+export async function getPayoutActivity(
+  payoutId: string,
+  workspaceId: string,
+  scope?: { linkedUserId?: string; createdByUserId?: string },
+  role: ActivityViewRole = "owner",
+): Promise<Array<OwnerActivity | ContributorActivity | ReviewerActivity | OpsActivity>> {
+  if (role === "reviewer" || role === "ops") return getRestrictedPayoutActivity(payoutId, workspaceId, role, scope);
   const [logged, derived] = await Promise.all([
-    getLoggedPayoutActivity(payoutId),
-    getDerivedPayoutActivity(payoutId),
+    getLoggedPayoutActivity(payoutId, workspaceId, scope),
+    getDerivedPayoutActivity(payoutId, workspaceId, scope),
   ]);
 
   const merged = new Map<string, ActivityItem>();
@@ -361,15 +428,21 @@ export async function getPayoutActivity(payoutId: string): Promise<ActivityItem[
     merged.set(getActivityDedupKey(item), item);
   }
 
-  return Array.from(merged.values()).sort(
+  return Array.from(merged.values()).map((item) => projectActivity(item, role)).sort(
     (a, b) => new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime(),
   );
 }
 
-export async function getWorkspaceActivity(workspaceId?: string): Promise<ActivityItem[]> {
+export async function getWorkspaceActivity(workspaceId: string, role: ActivityViewRole = "owner", linkedUserId?: string): Promise<Array<OwnerActivity | ContributorActivity | ReviewerActivity | OpsActivity>> {
+  if (role === "reviewer" || role === "ops") {
+    const logs = await db.activityLog.findMany({ where: { workspaceId }, orderBy: { occurredAt: "desc" }, take: 50, select: { id: true, entityId: true, action: true, occurredAt: true, milestoneId: true } });
+    if (role === "reviewer") return logs.filter((l) => l.action.startsWith("milestone_")).map((l) => ({ id: `log:${l.id}`, entityType: "milestone" as const, entityId: l.milestoneId ?? l.entityId, action: l.action as ReviewerActivity["action"], occurredAt: l.occurredAt.toISOString(), title: "Milestone review activity" as const }));
+    return logs.filter((l) => l.action.startsWith("release_") || l.action.startsWith("proof_")).map((l) => ({ id: `log:${l.id}`, entityType: l.action.startsWith("proof_") ? "proof" as const : "release" as const, entityId: l.entityId, action: l.action, occurredAt: l.occurredAt.toISOString(), title: "Settlement operation" as const, ...(l.action.includes("failed") ? { description: "Settlement operation failed." as const } : {}) }));
+  }
+  const payoutScope = linkedUserId ? { contributor: { linkedUserId } } : undefined;
   const [logs, proofs] = await Promise.all([
     db.activityLog.findMany({
-      where: workspaceId ? { workspaceId } : {},
+      where: { workspaceId, ...(payoutScope ? { payout: payoutScope } : {}) },
       orderBy: { occurredAt: "desc" },
       take: 50,
       select: {
@@ -385,7 +458,7 @@ export async function getWorkspaceActivity(workspaceId?: string): Promise<Activi
       },
     }),
     db.transactionProof.findMany({
-      where: workspaceId ? { payout: { workspaceId } } : {},
+      where: { payout: { workspaceId, ...(linkedUserId ? payoutScope : {}) } },
       orderBy: { createdAt: "desc" },
       take: 20,
       select: {
@@ -407,7 +480,7 @@ export async function getWorkspaceActivity(workspaceId?: string): Promise<Activi
   const milestoneIds = logs.map((l) => l.milestoneId).filter((id): id is string => Boolean(id));
   const milestones = milestoneIds.length
     ? await db.milestone.findMany({
-        where: { id: { in: milestoneIds } },
+        where: { id: { in: milestoneIds }, payout: { workspaceId, ...(linkedUserId ? payoutScope : {}) } },
         select: { id: true, title: true },
       })
     : [];
@@ -475,7 +548,7 @@ export async function getWorkspaceActivity(workspaceId?: string): Promise<Activi
     merged.set(getActivityDedupKey(item), item);
   }
 
-  return Array.from(merged.values()).sort(
+  return Array.from(merged.values()).map((item) => projectActivity(item, role)).sort(
     (a, b) => new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime(),
   );
 }

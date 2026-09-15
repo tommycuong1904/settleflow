@@ -21,8 +21,8 @@ export async function GET(request: Request) {
     const settings = await getWorkspaceSettings(workspaceId);
     return NextResponse.json({ data: settings });
   } catch (error) {
-    if (error instanceof Error && error.message === "AUTH_CONTEXT_REQUIRED") {
-      return apiError("AUTH_CONTEXT_REQUIRED", { status: 403 });
+    if (error instanceof Error && (error.message === "AUTH_CONTEXT_REQUIRED" || error.message === "AUTH_ROLE_AMBIGUOUS")) {
+      return apiError(error.message, { status: 403 });
     }
     const message =
       error instanceof Error ? error.message : "Failed to load workspace settings.";

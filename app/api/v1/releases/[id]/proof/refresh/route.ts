@@ -56,6 +56,9 @@ export async function POST(
         TX_HASH_REQUIRED: 400,
         FAILURE_REASON_REQUIRED: 400,
         FORBIDDEN_PROOF_REFRESH: 403,
+        TX_SNAPSHOT_MISMATCH: 409,
+        CIRCLE_WALLET_FAILURE_REQUIRES_TRUSTED_EXECUTOR: 409,
+        SOURCE_WALLET_REQUIRED: 409,
       },
       {
         RELEASE_NOT_FOUND: "Release not found.",
@@ -69,6 +72,9 @@ export async function POST(
         TX_HASH_REQUIRED: "A transaction hash is required when confirming settlement.",
         FAILURE_REASON_REQUIRED: "A failure reason is required when marking settlement as failed.",
         FORBIDDEN_PROOF_REFRESH: "User is not allowed to refresh this settlement proof.",
+        TX_SNAPSHOT_MISMATCH: "Transaction does not match the Release snapshot.",
+        CIRCLE_WALLET_FAILURE_REQUIRES_TRUSTED_EXECUTOR: "Circle-wallet failures must be established by the trusted executor.",
+        SOURCE_WALLET_REQUIRED: "Circle-wallet source wallet is not bound.",
       },
       { message: "Unable to refresh settlement proof.", status: 500 },
     );

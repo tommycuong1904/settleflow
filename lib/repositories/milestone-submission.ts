@@ -7,9 +7,9 @@ import {
 } from "@/lib/notifications/webhook-dispatcher";
 
 export type SubmitMilestoneInput = {
-  contributorUserId: string;
+  authenticatedUserId: string;
   summary: string;
-  walletAddress?: string;
+
   artifactUrl?: string;
   artifactLabel?: string;
   notes?: string;
@@ -44,8 +44,9 @@ export async function submitMilestone(
   },
 ) {
   const result = await db.$transaction(async (tx: Prisma.TransactionClient) => {
-    const milestone = await tx.milestone.findUnique({
-      where: { id: milestoneId },
+    await tx.$queryRaw`SELECT id FROM "Milestone" WHERE id = ${milestoneId} FOR UPDATE`;
+    const milestone = await tx.milestone.findFirst({
+      where: { id: milestoneId, payout: { workspaceId } },
       select: {
         id: true,
         title: true,
@@ -55,35 +56,26 @@ export async function submitMilestone(
           select: {
             title: true,
             workspaceId: true,
-            targetWalletAddress: true,
-            contributor: { select: { linkedUserId: true, walletAddress: true } },
+            contributor: { select: { linkedUserId: true } },
           },
         },
       },
     });
     if (!milestone) throw new Error("MILESTONE_NOT_FOUND");
-    if (milestone.payout.workspaceId !== workspaceId) throw new Error("WORKSPACE_SCOPE_MISMATCH");
+
     if (milestone.status !== "pending" && milestone.status !== "rejected") {
       throw new Error("MILESTONE_NOT_SUBMITTABLE");
     }
 
-    const submitter = await tx.user.findUnique({ where: { id: input.contributorUserId }, select: { id: true } });
+    const submitter = await tx.user.findUnique({ where: { id: input.authenticatedUserId }, select: { id: true } });
     if (!submitter) throw new Error("USER_NOT_FOUND");
-
-    const targetWallet = (milestone.payout.contributor.walletAddress || milestone.payout.targetWalletAddress || "").toLowerCase();
-    const submitterWallet = (input.walletAddress || "").toLowerCase();
 
     const matchesLinkedUserId = Boolean(
       milestone.payout.contributor.linkedUserId &&
-      milestone.payout.contributor.linkedUserId === input.contributorUserId
-    );
-    const matchesWallet = Boolean(
-      submitterWallet &&
-      targetWallet &&
-      submitterWallet === targetWallet
+      milestone.payout.contributor.linkedUserId === input.authenticatedUserId
     );
 
-    if (!matchesLinkedUserId && !matchesWallet) {
+    if (!matchesLinkedUserId) {
       throw new Error("USER_NOT_ALLOWED_TO_SUBMIT");
     }
 
@@ -91,7 +83,7 @@ export async function submitMilestone(
     const submission = await tx.milestoneSubmission.create({
       data: {
         milestoneId,
-        submittedByUserId: input.contributorUserId,
+        submittedByUserId: input.authenticatedUserId,
         summary: input.summary,
         artifactUrl: input.artifactUrl,
         artifactLabel: input.artifactLabel,
@@ -107,7 +99,7 @@ export async function submitMilestone(
     });
     await recordActivity(tx, {
       workspaceId: milestone.payout.workspaceId,
-      actorUserId: input.contributorUserId,
+      actorUserId: input.authenticatedUserId,
       entityType: "milestone",
       entityId: milestoneId,
       milestoneId,

@@ -3,16 +3,27 @@ import { PageHeader } from "@/components/shared/page-header";
 import { WalletGate } from "@/components/dashboard/wallet-gate";
 import { ContributorListClient } from "@/components/contributors/contributor-list-client";
 import { listContributors } from "@/lib/repositories/contributors";
-import { resolveProductContextFromCookiesWithSession } from "@/lib/auth/session-server";
+import { resolveProductContextForServerPage } from "@/lib/auth/session-server";
+import { ServerAuthContextState } from "@/components/shared/server-auth-context-state";
+import { redirect } from "next/navigation";
 import { formatUsdc } from "@/lib/utils/format";
 import { Users, Coins, CheckCircle2 } from "lucide-react";
 
 export default async function ContributorsPage() {
   const cookieStore = await cookies();
-  const productContext = await resolveProductContextFromCookiesWithSession(cookieStore);
+  const contextResult = await resolveProductContextForServerPage(cookieStore);
+  if (contextResult.kind === "auth-required") redirect("/auth-required?next=/contributors");
+  if (contextResult.kind !== "authenticated") return <ServerAuthContextState kind={contextResult.kind} />;
+  const productContext = contextResult.productContext;
   const workspaceId = productContext.workspaceId;
 
-  const contributors = await listContributors({ workspaceId });
+  const contributors = await listContributors({
+    workspaceId,
+    linkedUserId:
+      productContext.actor === "contributor"
+        ? productContext.activeUserId
+        : undefined,
+  });
 
   const activeContributors = contributors.filter((c) => c.status === "active");
   const totalSettledUsdc = contributors.reduce(

@@ -1,6 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { buildDiscordEmbed, dispatchWebhookNotification } from "./webhook-dispatcher";
+import { buildDiscordEmbed, dispatchWebhookNotification, INVALID_WEBHOOK_DESTINATION, validateWebhookDestination } from "./webhook-dispatcher";
+
+const publicLookup = (async (_host: string, _options: { all: boolean; verbatim: boolean }) => [{ address: "93.184.216.34", family: 4 as const }]) as unknown as typeof import("node:dns/promises").lookup;
+const privateLookup = (async (_host: string, _options: { all: boolean; verbatim: boolean }) => [{ address: "192.168.1.10", family: 4 as const }]) as unknown as typeof import("node:dns/promises").lookup;
 
 // ─── buildDiscordEmbed ───────────────────────────────────────────────────────
 
@@ -87,6 +90,7 @@ test("dispatchWebhookNotification posts Discord embed when URL is Discord", asyn
       { event: "milestone_submitted", payoutTitle: "P", milestoneTitle: "M", amountUsdc: "100" },
       undefined,
       fakeFetch,
+      publicLookup,
     );
     assert.equal(result.success, true);
     assert.equal(calls.length, 1);
@@ -114,8 +118,9 @@ test("dispatchWebhookNotification posts plain text body when URL is generic", as
   try {
     const result = await dispatchWebhookNotification(
       { event: "milestone_approved", payoutTitle: "My Payout", milestoneTitle: "My Milestone" },
-      "https://hooks.example.com/notify",
+      "http://93.184.216.34/notify",
       fakeFetch,
+      publicLookup,
     );
     assert.equal(result.success, true);
     assert.equal(calls.length, 1);
@@ -139,11 +144,12 @@ test("dispatchWebhookNotification returns error on non-ok response", async () =>
   try {
     const result = await dispatchWebhookNotification(
       { event: "test_event", payoutTitle: "P", milestoneTitle: "M" },
-      "https://hooks.example.com/notify",
+      "http://93.184.216.34/notify",
       fakeFetch,
+      publicLookup,
     );
     assert.equal(result.success, false);
-    assert.equal(result.error, "Webhook responded with status 404");
+    assert.equal(result.error, "Webhook dispatch failed.");
   } finally {
     if (origUrl) process.env.SETTLEFLOW_WEBHOOK_URL = origUrl;
     if (origPub) process.env.NEXT_PUBLIC_SETTLEFLOW_WEBHOOK_URL = origPub;
@@ -161,13 +167,31 @@ test("dispatchWebhookNotification returns error when fetch throws", async () => 
   try {
     const result = await dispatchWebhookNotification(
       { event: "test_event", payoutTitle: "P", milestoneTitle: "M" },
-      "https://hooks.example.com/notify",
+      "http://93.184.216.34/notify",
       fakeFetch,
+      publicLookup,
     );
     assert.equal(result.success, false);
-    assert.equal(result.error, "Connection refused");
+    assert.equal(result.error, "Webhook dispatch failed.");
   } finally {
     if (origUrl) process.env.SETTLEFLOW_WEBHOOK_URL = origUrl;
     if (origPub) process.env.NEXT_PUBLIC_SETTLEFLOW_WEBHOOK_URL = origPub;
   }
+});
+
+test("SSRF policy rejects loopback, private, link-local, IPv6, and mapped addresses", async () => {
+  for (const url of ["http://127.0.0.1/hook", "http://10.0.0.1/hook", "http://169.254.169.254/hook", "http://[::1]/hook", "http://[fc00::1]/hook", "http://[::ffff:127.0.0.1]/hook"]) {
+    await assert.rejects(() => validateWebhookDestination(url), { message: INVALID_WEBHOOK_DESTINATION });
+  }
+});
+
+test("SSRF policy rejects hostname resolving to private IP", async () => {
+  await assert.rejects(() => validateWebhookDestination("https://public-looking.example/hook", privateLookup), { message: INVALID_WEBHOOK_DESTINATION });
+});
+
+test("dispatcher uses redirect error and does not disclose response body", async () => {
+  let options: RequestInit | undefined;
+  const fakeFetch = async (_url: string | URL | Request, init?: RequestInit) => { options = init; return new Response("secret", { status: 200 }); };
+  const result = await dispatchWebhookNotification({ event: "test_event", payoutTitle: "P", milestoneTitle: "M" }, "https://public.example/hook", fakeFetch, publicLookup);
+  assert.equal(result.success, true); assert.equal(options?.redirect, "error"); assert.equal((result as { body?: unknown }).body, undefined);
 });

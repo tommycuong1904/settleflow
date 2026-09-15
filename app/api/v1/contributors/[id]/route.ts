@@ -18,7 +18,7 @@ export async function PATCH(
     const body = await request.json();
     const productContext = await resolveProductContextFromRequestWithSession(request);
 
-    const ownership = await getContributorOwnership(id);
+    const ownership = await getContributorOwnership(id, productContext.workspaceId);
     if (!ownership) {
       return apiError("CONTRIBUTOR_NOT_FOUND", {
         message: "Contributor not found.",
@@ -121,7 +121,7 @@ export async function DELETE(
   try {
     const productContext = await resolveProductContextFromRequestWithSession(_request);
 
-    const ownership = await getContributorOwnership(id);
+    const ownership = await getContributorOwnership(id, productContext.workspaceId);
     if (!ownership) {
       return apiError("CONTRIBUTOR_NOT_FOUND", {
         message: "Contributor not found.",

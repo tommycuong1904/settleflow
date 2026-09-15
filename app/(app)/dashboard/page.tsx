@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { MilestoneStatusBadge } from "@/components/milestones/milestone-status-badge";
 import { Button } from "@/components/shared/button";
@@ -10,16 +11,38 @@ import PendingReview from "@/components/dashboard/PendingReview";
 import ActivePayouts from "@/components/dashboard/ActivePayouts";
 import RecentProof from "@/components/dashboard/RecentProof";
 import { getDashboardData } from "@/lib/repositories/dashboard";
-import { resolveProductContextFromCookiesWithSession } from "@/lib/auth/session-server";
+import { resolveProductContextForServerPage } from "@/lib/auth/session-server";
+import { ServerAuthContextState } from "@/components/shared/server-auth-context-state";
 import { WalletGate } from "@/components/dashboard/wallet-gate";
 import { formatUsdc, shortenAddress } from "@/lib/utils/format";
 
 export default async function DashboardPage() {
   const cookieStore = await cookies();
-  const productContext = await resolveProductContextFromCookiesWithSession(cookieStore);
-  const workspaceId = productContext.workspaceId;
-  const { payouts, milestones, contributors, transactionProofs } =
-    await getDashboardData(workspaceId);
+  let payouts: Awaited<ReturnType<typeof getDashboardData>>["payouts"] = [];
+  let milestones: Awaited<ReturnType<typeof getDashboardData>>["milestones"] = [];
+  let contributors: Awaited<ReturnType<typeof getDashboardData>>["contributors"] = [];
+  let transactionProofs: Awaited<ReturnType<typeof getDashboardData>>["transactionProofs"] = [];
+
+  const contextResult = await resolveProductContextForServerPage(cookieStore);
+  if (contextResult.kind === "auth-required") {
+    redirect("/auth-required?next=/dashboard");
+  }
+  if (contextResult.kind === "auth-context-required") {
+    return <ServerAuthContextState kind={contextResult.kind} />;
+  }
+  if (contextResult.kind === "authenticated") {
+    const productContext = contextResult.productContext;
+    if (productContext.actor === "reviewer" || productContext.actor === "ops") throw new Error("FORBIDDEN_DASHBOARD_SUMMARY");
+    const dashboardData = await getDashboardData({
+      workspaceId: productContext.workspaceId,
+      role: productContext.actor,
+      userId: productContext.activeUserId,
+    });
+    payouts = dashboardData.payouts;
+    milestones = dashboardData.milestones;
+    contributors = dashboardData.contributors;
+    transactionProofs = dashboardData.transactionProofs;
+  }
 
   const activePayouts = payouts.filter((payout) =>
     ["active", "partially_released"].includes(payout.status),

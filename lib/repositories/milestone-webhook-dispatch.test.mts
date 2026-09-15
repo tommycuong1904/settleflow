@@ -38,7 +38,7 @@ test("submitMilestone calls injected notify with milestone_submitted event", asy
     await submitMilestone(
       "m1",
       "ws1",
-      { contributorUserId: "u1", summary: "Work done" },
+      { authenticatedUserId: "u1", summary: "Work done" },
       makeNotifySpy(calls),
     );
     assert.equal(calls.length, 1);
