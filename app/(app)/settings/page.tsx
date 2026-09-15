@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/shared/button";
 import { PageHeader } from "@/components/shared/page-header";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useResolvedProductContext } from "@/lib/runtime/product-context-client";
 import { hasRole } from "@/lib/runtime/role-utils";
 import { useWallet } from "@/lib/context/wallet-context";
@@ -32,6 +32,7 @@ import { shortenAddress } from "@/lib/utils/format";
 
 export default function SettingsPage() {
   const router = useRouter();
+  const pathname = usePathname();
   const productContext = useResolvedProductContext();
   const actor = productContext.actor;
   const isOwner = hasRole(actor, "owner");
@@ -42,7 +43,7 @@ export default function SettingsPage() {
 
   const handleDisconnect = async () => {
     await disconnect();
-    router.refresh();
+    router.replace(`/auth-required?next=${encodeURIComponent(pathname || "/settings")}`);
   };
 
   const [workspaceName, setWorkspaceName] = useState("SettleFlow Core DAO");

@@ -1,21 +1,21 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useWallet } from "@/lib/context/wallet-context";
 import { useToast } from "@/lib/context/toast-context";
 import { useScrollLock } from "@/lib/hooks/use-scroll-lock";
+import { decodeGoogleJwt, loadGoogleGsiScript } from "@/lib/auth/google";
 import {
   X,
   Mail,
-  ArrowRight,
   ShieldCheck,
   Wallet,
   Sparkles,
   Loader2,
-  KeyRound,
-  AlertCircle,
 } from "lucide-react";
+
+type GoogleCredentialResponse = { credential: string };
 
 export function AuthModal() {
   const {
@@ -24,10 +24,11 @@ export function AuthModal() {
     connectWeb3,
     connectGoogle,
     isConnecting,
-    isConnected,
   } = useWallet();
   const { toast } = useToast();
   const router = useRouter();
+  const googleButtonRef = useRef<HTMLDivElement>(null);
+  const googleInitializedRef = useRef(false);
 
 
   const refreshCurrentPage = () => {
@@ -40,65 +41,81 @@ export function AuthModal() {
 
   const [activeTab, setActiveTab] = useState<"quick" | "web3">("quick");
   const [googleLoading, setGoogleLoading] = useState(false);
-  const [showConfigPrompt, setShowConfigPrompt] = useState(false);
-  const [customClientId, setCustomClientId] = useState("");
+  const [googleScriptLoaded, setGoogleScriptLoaded] = useState(false);
+  const [googleError, setGoogleError] = useState<string | null>(null);
+  const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
 
-  useEffect(() => {
-    if (isAuthModalOpen) {
-      const storedClientId = typeof window !== "undefined" ? localStorage.getItem("settleflow_google_client_id") || "" : "";
-      if (storedClientId) {
-        setCustomClientId(storedClientId);
-      }
-    }
-  }, [isAuthModalOpen]);
+  const getPostSignInDestination = useCallback(() => {
+    if (typeof window === "undefined") return "/dashboard";
+    const url = new URL(window.location.href);
+    const next = url.searchParams.get("next");
+    if (next && next.startsWith("/") && !next.startsWith("//")) return next;
+    if (url.pathname === "/accept-invite" && url.searchParams.get("token")) return `${url.pathname}${url.search}`;
+    return "/dashboard";
+  }, []);
 
   useScrollLock(isAuthModalOpen);
 
-  if (!isAuthModalOpen) return null;
-
-  const getEffectiveClientId = () => {
-    return process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || customClientId || "";
-  };
-
-  const handleGoogleSignIn = async () => {
+  const finishGoogleSignIn = useCallback(async (response: GoogleCredentialResponse) => {
     setGoogleLoading(true);
+    setGoogleError(null);
     try {
-      const next = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("next") : null;
-      window.location.assign(`/api/v1/auth/google/start?next=${encodeURIComponent(next || "/dashboard")}`);
+      const profile = decodeGoogleJwt(response.credential);
+      if (!profile) throw new Error("Google did not return a valid sign-in credential.");
+      await connectGoogle({ ...profile, idToken: response.credential });
+      router.replace(getPostSignInDestination());
     } catch (err: unknown) {
-      console.error("Google Auth error:", err);
       const errorMessage = err instanceof Error ? err.message : "Google authentication was cancelled or failed.";
-
-      if (errorMessage.includes("client_id") || errorMessage.includes("not found") || errorMessage.includes("origin")) {
-        setShowConfigPrompt(true);
-      } else if (!errorMessage.includes("popup_closed")) {
-        toast({
-          variant: "error",
-          title: "Google Sign-In",
-          description: errorMessage,
-        });
-      }
+      setGoogleError(errorMessage);
+      toast({ variant: "error", title: "Google Sign-In", description: errorMessage });
     } finally {
       setGoogleLoading(false);
     }
-  };
+  }, [connectGoogle, getPostSignInDestination, router, toast]);
 
-  const handleSaveCustomClientId = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!customClientId.trim()) return;
-    localStorage.setItem("settleflow_google_client_id", customClientId.trim());
-    toast({
-      variant: "success",
-      title: "Google Client ID Saved",
-      description: "Now click Continue with Google to authenticate.",
+  useEffect(() => {
+    if (!isAuthModalOpen || googleScriptLoaded) return;
+    let cancelled = false;
+    void loadGoogleGsiScript()
+      .then(() => {
+        if (!cancelled) setGoogleScriptLoaded(true);
+      })
+      .catch(() => {
+        if (!cancelled) setGoogleError("Google sign-in could not load. Try again or use the redirect fallback.");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [googleScriptLoaded, isAuthModalOpen]);
+
+  useEffect(() => {
+    if (!googleScriptLoaded || !googleClientId || !window.google || googleInitializedRef.current) return;
+    window.google.accounts.id.initialize({
+      client_id: googleClientId,
+      callback: (response) => void finishGoogleSignIn(response),
     });
-    setShowConfigPrompt(false);
-    void handleGoogleSignIn();
+    googleInitializedRef.current = true;
+  }, [finishGoogleSignIn, googleClientId, googleScriptLoaded]);
+
+  useEffect(() => {
+    if (activeTab !== "quick" || !isAuthModalOpen || !googleScriptLoaded || !googleButtonRef.current || !window.google) return;
+    const button = googleButtonRef.current;
+    button.replaceChildren();
+    window.google.accounts.id.renderButton(button, {
+      type: "standard",
+      theme: "outline",
+      size: "large",
+      text: "continue_with",
+      shape: "pill",
+      width: 360,
+    });
+  }, [activeTab, googleScriptLoaded, isAuthModalOpen]);
+
+  const handleGoogleRedirectFallback = () => {
+    window.location.assign(`/api/v1/auth/google/start?next=${encodeURIComponent(getPostSignInDestination())}`);
   };
 
-  const handleDemoGoogleSignIn = async () => {
-    toast({ variant: "error", title: "Google Sign-In", description: "Demo Google sign-in is unavailable; use a real Google account." });
-  };
+  if (!isAuthModalOpen) return null;
 
   return (
     <div
@@ -135,7 +152,7 @@ export function AuthModal() {
         {/* Quick Tabs */}
         <div className="mb-5 flex rounded-xl bg-[var(--surface-muted)] p-1 border border-[var(--border-soft)] text-xs font-medium">
           <button
-            onClick={() => { setActiveTab("quick"); setShowConfigPrompt(false); }}
+            onClick={() => setActiveTab("quick")}
             className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg py-2 transition-all ${
               activeTab === "quick"
                 ? "bg-[var(--foreground)] text-[var(--background)] font-semibold shadow-sm"
@@ -145,7 +162,7 @@ export function AuthModal() {
             <Mail size={14} /> Web2 (Social / Email)
           </button>
           <button
-            onClick={() => { setActiveTab("web3"); setShowConfigPrompt(false); }}
+            onClick={() => setActiveTab("web3")}
             className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg py-2 transition-all ${
               activeTab === "web3"
                 ? "bg-[var(--foreground)] text-[var(--background)] font-semibold shadow-sm"
@@ -159,80 +176,26 @@ export function AuthModal() {
         {/* Tab 1: Web2 / Social & Email */}
         {activeTab === "quick" && (
           <div className="space-y-4">
-            {showConfigPrompt ? (
-              <div className="rounded-2xl border border-[var(--border-strong)] bg-[var(--surface-muted)] p-4 space-y-3 text-xs text-[var(--foreground)]">
-                <div className="flex items-start gap-2">
-                  <AlertCircle size={16} className="text-[var(--foreground)] shrink-0 mt-0.5" />
-                  <div>
-                    <p className="font-semibold text-[var(--foreground)]">Google OAuth Client ID</p>
-                    <p className="text-[11px] text-[var(--text-muted)] mt-1 leading-relaxed">
-                      To open your real Google sign-in window, provide your Google Cloud OAuth Client ID (or configure <code className="font-mono text-[var(--foreground)] bg-[var(--surface-strong)] px-1 rounded">NEXT_PUBLIC_GOOGLE_CLIENT_ID</code> in <code className="font-mono text-[var(--foreground)] bg-[var(--surface-strong)] px-1 rounded">.env</code>).
-                    </p>
-                  </div>
+            <div className={googleLoading || isConnecting ? "pointer-events-none opacity-60" : undefined}>
+              {googleClientId ? <div ref={googleButtonRef} className="flex min-h-11 justify-center" /> : null}
+              {!googleScriptLoaded && !googleError ? (
+                <div className="flex min-h-11 items-center justify-center gap-2 text-sm text-[var(--text-muted)]">
+                  <Loader2 size={16} className="animate-spin" /> Loading Google sign-in...
                 </div>
-
-                <form onSubmit={handleSaveCustomClientId} className="space-y-2 pt-1">
-                  <input
-                    type="text"
-                    value={customClientId}
-                    onChange={(e) => setCustomClientId(e.target.value)}
-                    placeholder="e.g. 123456789-xyz.apps.googleusercontent.com"
-                    className="w-full rounded-xl border border-[var(--border-soft)] bg-[var(--surface)] py-2 px-3 text-xs text-[var(--foreground)] placeholder-[var(--text-muted)] focus:border-[var(--foreground)] focus:outline-none transition-all"
-                  />
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="submit"
-                      disabled={!customClientId.trim()}
-                      className="flex-1 rounded-xl bg-[var(--foreground)] hover:opacity-90 text-[var(--background)] py-2 text-xs font-semibold transition-all disabled:opacity-50"
-                    >
-                      Save & Sign In
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleDemoGoogleSignIn}
-                      className="rounded-xl border border-[var(--border-strong)] bg-[var(--surface-muted)] hover:bg-[var(--surface-strong)] text-[var(--foreground)] px-3 py-2 text-xs font-medium transition-all"
-                    >
-                      Use Demo Profile
-                    </button>
-                  </div>
-                </form>
-
-                <button
-                  type="button"
-                  onClick={() => setShowConfigPrompt(false)}
-                  className="text-[11px] text-[var(--text-muted)] hover:text-[var(--foreground)] underline text-center w-full block pt-1 transition-colors"
-                >
-                  ← Back to standard login
-                </button>
-              </div>
-            ) : (
-              <>
-                {/* Google Sign In Button */}
-                <button
-                  onClick={handleGoogleSignIn}
-                  disabled={isConnecting || googleLoading}
-                  className="w-full flex items-center justify-center gap-3 rounded-full border border-[var(--border-strong)] bg-[var(--surface-muted)] hover:bg-[var(--surface-strong)] py-3 px-4 text-sm font-normal text-[var(--foreground)] transition-all disabled:opacity-60 group shadow-sm"
-                >
-                  <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24">
-                    <path fill="#EA4335" d="M12 5c1.7 0 3 .7 3.9 1.6l2.9-2.9C17 2 14.7 1 12 1 7.5 1 3.7 3.6 1.9 7.4l3.7 2.9C6.5 7.4 9 5 12 5z" />
-                    <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z" />
-                    <path fill="#FBBC05" d="M5.6 14.7c-.2-.7-.4-1.5-.4-2.3s.1-1.6.4-2.3L1.9 7.2C.7 9.6 0 12.2 0 15s.7 5.4 1.9 7.8l3.7-2.9c-.3-.7-.5-1.5-.5-2.2z" />
-                    <path fill="#34A853" d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.4-6.4-5.3L1.9 15.9C3.7 19.7 7.5 23 12 23z" />
-                  </svg>
-                  {googleLoading ? (
-                    <span className="flex items-center gap-2 text-[var(--text-muted)]">
-                      <Loader2 size={16} className="animate-spin" /> Connecting with Google...
-                    </span>
-                  ) : (
-                    <span>Continue with Google</span>
-                  )}
-                </button>
-
-                <p className="text-center text-xs leading-relaxed text-[var(--text-muted)]">
-                  Sign in with Google or a provisioned wallet. Email-only sign-in is unavailable.
-                </p>
-              </>
-            )}
+              ) : null}
+            </div>
+            {googleError ? <p className="text-center text-xs text-rose-600">{googleError}</p> : null}
+            <button
+              type="button"
+              onClick={handleGoogleRedirectFallback}
+              disabled={googleLoading || isConnecting}
+              className="w-full text-center text-xs text-[var(--text-muted)] underline underline-offset-4 hover:text-[var(--foreground)] disabled:opacity-60"
+            >
+              Use Google sign-in in a new page instead
+            </button>
+            <p className="text-center text-xs leading-relaxed text-[var(--text-muted)]">
+              Sign in with Google or a provisioned wallet. Email-only sign-in is unavailable.
+            </p>
           </div>
         )}
 

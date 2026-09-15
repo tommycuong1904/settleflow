@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/shared/button";
 import { RoleSwitcher } from "@/components/shared/role-switcher";
 import { FaucetModal } from "@/components/shared/faucet-modal";
@@ -12,6 +13,8 @@ import { ExternalLink, LogOut, Wallet, User, ChevronDown, RefreshCw, Droplets, K
 import { useTheme } from "@/lib/context/theme-context";
 
 export function AppHeader() {
+  const router = useRouter();
+  const pathname = usePathname();
   const { theme, toggleTheme } = useTheme();
   const {
     isConnected,
@@ -65,6 +68,12 @@ export function AppHeader() {
 
   const handleOpenMobileSidebar = () => {
     window.dispatchEvent(new CustomEvent("toggle-mobile-sidebar"));
+  };
+
+  const handleDisconnect = async () => {
+    setIsDropdownOpen(false);
+    await disconnect();
+    router.replace(`/auth-required?next=${encodeURIComponent(pathname || "/dashboard")}`);
   };
 
   return (
@@ -253,10 +262,7 @@ export function AppHeader() {
                   )}
 
                   <button
-                    onClick={() => {
-                      setIsDropdownOpen(false);
-                      disconnect();
-                    }}
+                    onClick={() => void handleDisconnect()}
                     className="w-full flex items-center gap-2 rounded-lg hover:bg-[var(--surface-muted)] text-[var(--text-muted)] hover:text-[var(--foreground)] px-2 py-1.5 transition-colors font-medium text-[11px]"
                   >
                     <LogOut size={13} /> Disconnect

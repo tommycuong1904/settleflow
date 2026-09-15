@@ -12,6 +12,7 @@ import {
 } from "@/lib/auth/google";
 import { verifyGoogleIdToken } from "@/lib/auth/google-server";
 import { db } from "@/lib/db/client";
+import { provisionGoogleUser } from "@/lib/auth/google-provisioning";
 
 export const dynamic = "force-dynamic";
 
@@ -22,28 +23,21 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Missing required Google ID token." }, { status: 400 });
     }
 
-    const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+    const clientId = process.env.GOOGLE_CLIENT_ID || process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
     if (!clientId) return NextResponse.json({ error: "Google OAuth is not configured." }, { status: 500 });
     const profile = await verifyGoogleIdToken(body.idToken, clientId);
     if (profile.emailVerified === false) {
       return NextResponse.json({ error: "Google email is not verified." }, { status: 403 });
     }
 
-    const user = await db.user.findFirst({
-      where: { email: { equals: profile.email, mode: "insensitive" } },
-      select: { id: true, email: true, displayName: true, walletAddress: true },
-    });
-    if (!user) {
-      return NextResponse.json({ error: "Google account is not provisioned." }, { status: 403 });
-    }
-
-    const membership = await db.workspaceMember.findFirst({
-      where: { userId: user.id },
-      select: { userId: true },
-    });
-    if (!membership) {
-      return NextResponse.json({ error: "Google account has no workspace membership." }, { status: 403 });
-    }
+    // Google authentication establishes an account, never workspace authority.
+    // Invitation acceptance is the only path that grants a workspace membership.
+    const { user } = await db.$transaction((tx) => provisionGoogleUser(tx, {
+      sub: profile.sub,
+      email: profile.email,
+      name: profile.name,
+      picture: profile.picture,
+    }));
 
     const smartAccountAddress = deriveSmartAccountAddress(profile.sub || profile.email);
 

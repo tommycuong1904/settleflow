@@ -4,6 +4,21 @@ Playbook for fixing `Error 400: origin_mismatch` on Google Sign-In and for
 registering new environments (local + production) against the existing
 Google OAuth client.
 
+## Runtime login flow
+
+SettleFlow uses the Google Identity Services popup as its primary Web2 login
+experience. The popup returns an ID token to the app, which is verified by the
+server before a session cookie is issued. The server-side Authorization Code
+callback at `/api/v1/auth/google/callback` remains an explicit fallback when a
+user chooses to sign in in a separate page.
+
+Register both the JavaScript origin and callback URI for every environment:
+the popup requires the former, while the fallback requires the latter.
+
+Google sign-in may create or link a verified `User`, but it never grants a
+workspace role by itself. A new user gains workspace access only by accepting
+a valid invitation for the same verified account.
+
 ## Quick reference
 
 | Item | Value |
