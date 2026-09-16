@@ -9,6 +9,7 @@ import {
 import { verifyGoogleIdToken } from "@/lib/auth/google-server";
 import { db } from "@/lib/db/client";
 import { provisionGoogleUser } from "@/lib/auth/google-provisioning";
+import { PRODUCT_CONTEXT_COOKIE_NAMES } from "@/lib/runtime/product-context";
 
 export const dynamic = "force-dynamic";
 
@@ -53,6 +54,7 @@ export async function POST(request: Request) {
       ...SESSION_COOKIE_OPTIONS,
       name: SESSION_COOKIE_NAME,
     });
+    cookieStore.delete(PRODUCT_CONTEXT_COOKIE_NAMES.workspaceId);
 
     return NextResponse.json({
       success: true,

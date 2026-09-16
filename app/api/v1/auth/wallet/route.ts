@@ -5,6 +5,7 @@ import { createSessionToken, SESSION_COOKIE_NAME, SESSION_COOKIE_OPTIONS } from 
 import { consumeWalletChallenge } from "@/lib/auth/wallet-challenge";
 import { db } from "@/lib/db/client";
 import { provisionWalletUser } from "@/lib/auth/wallet-provisioning";
+import { PRODUCT_CONTEXT_COOKIE_NAMES } from "@/lib/runtime/product-context";
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +26,8 @@ export async function POST(request: Request) {
     const sessionToken = await createSessionToken({ userId: user.id, email: `${normalizedAddress}@wallet.settleflow.io`, name: body.walletName || "Web3 Wallet", address, authType: "web3_wallet" });
     const cookieStore = await cookies();
     cookieStore.set(SESSION_COOKIE_NAME, sessionToken, { ...SESSION_COOKIE_OPTIONS, name: SESSION_COOKIE_NAME });
+    // A wallet sign-in must not inherit a workspace selected by a prior account.
+    cookieStore.delete(PRODUCT_CONTEXT_COOKIE_NAMES.workspaceId);
     return NextResponse.json({ success: true, user: { address, walletName: body.walletName || "Web3 Wallet" } });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Failed to establish wallet session." }, { status: 500 });

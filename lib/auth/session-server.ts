@@ -89,45 +89,25 @@ async function resolveSessionMemberships(
 ): Promise<{ user: SessionUserInfo; memberships: Array<{ workspaceId: string; role: string }> } | null> {
   const email = readNonEmpty(session.email);
   const address = readNonEmpty(session.address);
+  const user = await db.user.findFirst({ where: { id: session.userId } });
+  if (!user) return null;
 
-  let userId: string | null = null;
-  let displayName: string | null = null;
-
-  if (email) {
-    const user = await db.user.findFirst({
-      where: { email: { equals: email, mode: "insensitive" } },
-    });
-    if (user) {
-      userId = user.id;
-      displayName = user.displayName;
-    }
-  }
-
-  // Wallet sessions identify by address; the User record stores the same
-  // address on `walletAddress`. Prefer an exact (lowercased) address match.
-  if (!userId && address) {
-    const user = await db.user.findFirst({
-      where: { walletAddress: address.toLowerCase() },
-    });
-    if (user) {
-      userId = user.id;
-      displayName = user.displayName;
-    }
-  }
-
-  if (!userId) return null;
+  // The session user ID is signed by the server only after the original
+  // Google token or wallet signature has been verified. Resolve authority
+  // from that persisted user instead of re-identifying it by a display-form
+  // EVM address or pseudo-email.
 
   const memberships = await db.workspaceMember.findMany({
-    where: { userId },
+    where: { userId: user.id },
     orderBy: { createdAt: "asc" },
     select: { workspaceId: true, role: true },
   });
 
   return {
     user: {
-      id: userId,
+      id: user.id,
       email: email ?? null,
-      displayName,
+      displayName: user.displayName,
       walletAddress: address ?? null,
     },
     memberships,

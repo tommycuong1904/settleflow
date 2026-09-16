@@ -5,6 +5,7 @@ import { db } from "@/lib/db/client";
 import { deriveSmartAccountAddress } from "@/lib/auth/smart-account";
 import { createSessionToken, SESSION_COOKIE_NAME, SESSION_COOKIE_OPTIONS } from "@/lib/auth/session";
 import { provisionGoogleUser } from "@/lib/auth/google-provisioning";
+import { PRODUCT_CONTEXT_COOKIE_NAMES } from "@/lib/runtime/product-context";
 
 export const dynamic = "force-dynamic";
 
@@ -45,6 +46,7 @@ export async function GET(request: Request) {
     const sessionToken = await createSessionToken({ userId: user.id, email: user.email ?? profile.email, googleSub: profile.sub, name: user.displayName || profile.name || profile.email.split("@")[0], address: user.walletAddress ?? deriveSmartAccountAddress(profile.sub), authType: "web2_google" });
     const response = NextResponse.redirect(new URL(next, origin));
     response.cookies.set(SESSION_COOKIE_NAME, sessionToken, { ...SESSION_COOKIE_OPTIONS, name: SESSION_COOKIE_NAME });
+    response.cookies.delete(PRODUCT_CONTEXT_COOKIE_NAMES.workspaceId);
     for (const name of clear()) response.cookies.delete(name);
     return response;
   } catch (error) {

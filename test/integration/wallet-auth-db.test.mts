@@ -7,6 +7,7 @@ import { db } from "@/lib/db/client";
 import { consumeWalletChallenge } from "@/lib/auth/wallet-challenge";
 import { provisionGoogleUser } from "@/lib/auth/google-provisioning";
 import { provisionWalletUser } from "@/lib/auth/wallet-provisioning";
+import { resolveSessionContext } from "@/lib/auth/session-server";
 import { POST as createNonce } from "@/app/api/v1/auth/wallet/nonce/route";
 
 const account = privateKeyToAccount("0x0123456789012345678901234567890123456789012345678901234567890123");
@@ -43,6 +44,17 @@ test("Google and wallet identity provisioning never grants membership", async ()
     });
     googleUserId = google.user.id;
     assert.equal(await db.workspaceMember.count({ where: { userId: googleUserId } }), 0);
+    const importedGoogleWallet = await provisionWalletUser(db, google.walletAddress!, "Imported Google Wallet");
+    assert.equal(importedGoogleWallet.id, googleUserId);
+    await db.workspaceMember.create({ data: { workspaceId: workspace.id, userId: googleUserId, role: "reviewer" } });
+    const web3Session = await resolveSessionContext({
+      userId: googleUserId,
+      email: `${google.walletAddress!.toLowerCase()}@wallet.settleflow.io`,
+      address: google.walletAddress!.toLowerCase(),
+      authType: "web3_wallet",
+    });
+    assert.equal(web3Session?.user.id, googleUserId);
+    assert.equal(web3Session?.productContext.actor, "reviewer");
 
     const provisioned = await provisionWalletUser(db, account.address, "Test Wallet");
     userId = provisioned.id;
