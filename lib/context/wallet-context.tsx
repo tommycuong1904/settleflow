@@ -132,15 +132,17 @@ export function WalletProvider({ children }: { children: ReactNode }) {
           setWalletName(null);
           return;
         }
-        if (!session.email || session.authType !== "web2_google") return;
+        if (session.authType !== "web2_google" && session.authType !== "web3_wallet") return;
+        if (session.authType === "web2_google" && !session.email) return;
+        if (session.authType === "web3_wallet" && !session.address) return;
         const next = {
           isConnected: true,
           address: session.address || null,
-          email: session.email,
-          userName: session.name || session.email.split("@")[0],
+          email: session.authType === "web2_google" ? session.email || null : null,
+          userName: session.name || (session.authType === "web2_google" ? session.email!.split("@")[0] : null),
           userAvatar: null,
-          authType: "web2_google" as const,
-          walletName: "Google Smart Account",
+          authType: session.authType,
+          walletName: session.authType === "web2_google" ? "Google Smart Account" : "Web3 Wallet",
           network: "Arc Testnet",
           usdcBalance: "1,250.00",
         };
@@ -148,7 +150,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         setAddress(next.address);
         setEmail(next.email);
         setUserName(next.userName);
-        setUserAvatar(null);
+        setUserAvatar(next.userAvatar);
         setAuthType(next.authType);
         setWalletName(next.walletName);
         try {
@@ -214,7 +216,10 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         const connectedAddr = result.connectedAddress;
         const wName = result.walletName || preferredWallet || "Web3 Wallet";
         const nonceResponse = await fetch("/api/v1/auth/wallet/nonce", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ address: connectedAddr }) });
-        if (!nonceResponse.ok) throw new Error("Unable to request wallet sign-in challenge.");
+        if (!nonceResponse.ok) {
+          const payload = (await nonceResponse.json().catch(() => null)) as { error?: string } | null;
+          throw new Error(payload?.error || "Unable to request wallet sign-in challenge.");
+        }
         const challenge = (await nonceResponse.json()) as { nonce: string; message: string };
         const signature = await (result.provider as unknown as { request: (args: { method: string; params: [string, string] }) => Promise<unknown> }).request({ method: "personal_sign", params: [challenge.message, connectedAddr] }) as string;
         await syncServerSession("/api/v1/auth/wallet", { address: connectedAddr, walletName: wName, nonce: challenge.nonce, message: challenge.message, signature });

@@ -93,7 +93,7 @@ model User {
   email         String?  @unique
   googleSub     String?  @unique
   avatarUrl     String?
-  walletAddress String?
+  walletAddress String? // Enforced case-insensitively by migration SQL.
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 

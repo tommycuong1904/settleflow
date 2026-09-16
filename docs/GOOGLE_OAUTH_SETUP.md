@@ -31,8 +31,8 @@ not sign the user out of Google itself.
 | OAuth 2.0 Client ID | `470607933103-1krtvifrij41a6emo835sp4k169kkhtt.apps.googleusercontent.com` |
 | Client type | **Web application** (required by the server-side Authorization Code flow) |
 | Client secret | Required server-side as `GOOGLE_CLIENT_SECRET`; never expose or commit it |
-| Env var (local) | `NEXT_PUBLIC_GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_DEFAULT_WORKSPACE_SLUG`, `GOOGLE_FIRST_LOGIN_ROLE` in `.env` |
-| Env var (Vercel) | All four Google variables in Vercel project settings |
+| Env var (local) | `NEXT_PUBLIC_GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` in `.env` |
+| Env var (Vercel) | Both Google variables in Vercel project settings |
 
 ## Problem
 
@@ -114,8 +114,8 @@ If a login attempt shows "Google hasn't verified this app" / access blocked:
 - In `.env` the value is currently wrapped in double quotes
   (`"4706...googleusercontent.com"`). Next.js strips these quotes at load
   (verified), so it works — but the quotes can be removed for cleanliness.
-- Local/staging first login auto-provisions into `settleflow-demo` as `owner` by
-  default. Production should use invitation/allowlist provisioning instead.
+- Google sign-in never auto-provisions a workspace role in any environment.
+  Use the invitation flow to grant membership.
 - The MVP wallet is deterministic and derived from the verified Google `sub`,
   not from an unverified client profile or email. Migrate to random encrypted
   key storage before production custody.

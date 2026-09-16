@@ -208,7 +208,7 @@ This repository is now a full-stack Next.js application for SettleFlow, an Arc-n
 ## 7. What appears unfinished
 
 ### Confirmed
-- **Authentication, membership, and invitations (verified in code and DB integration):** signed sessions resolve to persisted users and workspace memberships; Google and wallet sessions are provisioned-account-only; invitations are owner-created, atomically accepted, email-bound when specified, and cannot create a second workspace role.
+- **Authentication, membership, and invitations (verified in code and DB integration):** Google and verified-wallet sign-ins establish or reuse a persisted user identity but never self-grant workspace membership; signed sessions resolve permissions only from persisted workspace memberships. Invitations are owner-created, atomically accepted, email-bound when specified, and cannot create a second workspace role.
 - Mutation routes now have a request-derived actor boundary from the real session (not seeded roles):
   - payout create
   - payout activate

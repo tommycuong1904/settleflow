@@ -36,27 +36,7 @@ export async function provisionGoogleUser(db: Db, identity: VerifiedGoogleIdenti
     });
   }
 
-  // Option B: Auto-provisioning workspace is disabled by default (invitation-only model).
-  // If explicitly enabled via GOOGLE_AUTO_PROVISION_DEFAULT_WORKSPACE="true", provision into default workspace.
-  const autoProvision = process.env.GOOGLE_AUTO_PROVISION_DEFAULT_WORKSPACE === "true";
-  let workspaceId: string | null = null;
-
-  if (autoProvision) {
-    const workspaceSlug = (process.env.GOOGLE_DEFAULT_WORKSPACE_SLUG || "settleflow-demo").trim();
-    const role = process.env.GOOGLE_FIRST_LOGIN_ROLE || "owner";
-    if (!["owner", "ops", "reviewer", "contributor"].includes(role)) {
-      throw new Error("GOOGLE_FIRST_LOGIN_ROLE is invalid.");
-    }
-    const workspace = await db.workspace.findUnique({ where: { slug: workspaceSlug }, select: { id: true } });
-    if (workspace) {
-      workspaceId = workspace.id;
-      await db.workspaceMember.upsert({
-        where: { workspaceId_userId: { workspaceId: workspace.id, userId: user.id } },
-        update: {},
-        create: { workspaceId: workspace.id, userId: user.id, role: role as "owner" | "ops" | "reviewer" | "contributor" },
-      });
-    }
-  }
-
-  return { user, workspaceId, walletAddress };
+  // Authentication establishes an identity only. Workspace roles are granted
+  // solely by the invitation/membership flow, regardless of sign-in method.
+  return { user, walletAddress };
 }

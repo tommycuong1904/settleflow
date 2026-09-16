@@ -5,8 +5,9 @@ import { privateKeyToAccount } from "viem/accounts";
 import { NextRequest } from "next/server";
 import { db } from "@/lib/db/client";
 import { consumeWalletChallenge } from "@/lib/auth/wallet-challenge";
+import { provisionGoogleUser } from "@/lib/auth/google-provisioning";
+import { provisionWalletUser } from "@/lib/auth/wallet-provisioning";
 import { POST as createNonce } from "@/app/api/v1/auth/wallet/nonce/route";
-import { POST as authenticateWallet } from "@/app/api/v1/auth/wallet/route";
 
 const account = privateKeyToAccount("0x0123456789012345678901234567890123456789012345678901234567890123");
 const origin = "https://settleflow.local";
@@ -27,26 +28,36 @@ async function issueSignedChallenge() {
   return { ...challenge, signature };
 }
 
-test("wallet challenges are durable, single-use, and require a provisioned workspace member", async () => {
+test("Google and wallet identity provisioning never grants membership", async () => {
   const suffix = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-  const user = await db.user.create({
-    data: { displayName: "Wallet Auth Test", walletAddress: account.address.toLowerCase() },
-  });
   const workspace = await db.workspace.create({
     data: { name: "Wallet Auth Test", slug: `wallet-auth-${suffix}` },
   });
+  let userId: string | null = null;
+  let googleUserId: string | null = null;
 
   try {
-    const withoutMembership = await issueSignedChallenge();
-    const denied = await authenticateWallet(request("/api/v1/auth/wallet", {
-      address: account.address,
-      walletName: "Test Wallet",
-      ...withoutMembership,
-    }));
-    assert.equal(denied.status, 403);
-    assert.equal((await denied.json()).error, "Wallet account is not a workspace member.");
+    const google = await provisionGoogleUser(db, {
+      sub: `google-provisioning-${suffix}`,
+      email: `google-provisioning-${suffix}@example.test`,
+    });
+    googleUserId = google.user.id;
+    assert.equal(await db.workspaceMember.count({ where: { userId: googleUserId } }), 0);
 
-    await db.workspaceMember.create({ data: { workspaceId: workspace.id, userId: user.id, role: "owner" } });
+    const provisioned = await provisionWalletUser(db, account.address, "Test Wallet");
+    userId = provisioned.id;
+    assert.equal(provisioned.walletAddress, account.address);
+    assert.equal(await db.workspaceMember.count({ where: { userId } }), 0);
+
+    const reused = await provisionWalletUser(db, account.address.toLowerCase(), "Another Name");
+    assert.equal(reused.id, userId);
+    assert.equal(await db.user.count({ where: { walletAddress: { equals: account.address, mode: "insensitive" } } }), 1);
+    await assert.rejects(
+      db.user.create({ data: { displayName: "Duplicate Wallet", walletAddress: account.address.toLowerCase() } }),
+      /Unique constraint failed/,
+    );
+
+    await db.workspaceMember.create({ data: { workspaceId: workspace.id, userId, role: "owner" } });
 
     const valid = await issueSignedChallenge();
     assert.equal(
@@ -86,6 +97,7 @@ test("wallet challenges are durable, single-use, and require a provisioned works
     await db.walletAuthChallenge.deleteMany({ where: { address: account.address } });
     await db.workspaceMember.deleteMany({ where: { workspaceId: workspace.id } });
     await db.workspace.delete({ where: { id: workspace.id } });
-    await db.user.delete({ where: { id: user.id } });
+    if (userId) await db.user.delete({ where: { id: userId } });
+    if (googleUserId) await db.user.delete({ where: { id: googleUserId } });
   }
 });
