@@ -42,6 +42,7 @@ export async function POST(request: Request) {
     const sessionToken = await createSessionToken({
       userId: user.id,
       email: user.email ?? profile.email,
+      googleSub: profile.sub,
       name: user.displayName || profile.name || profile.email.split("@")[0],
       address: user.walletAddress ?? smartAccountAddress,
       authType: "web2_google",

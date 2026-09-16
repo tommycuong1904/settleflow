@@ -31,7 +31,7 @@ export interface WalletContextValue {
   closeAuthModal: () => void;
   refreshBalance: () => Promise<void>;
   connectWeb3: (preferredWallet?: string) => Promise<void>;
-  connectGoogle: (profile: { email: string; name?: string; picture?: string; sub?: string; idToken: string }) => Promise<void>;
+  connectGoogle: (profile: { email: string; name?: string; picture?: string; sub: string; idToken: string }) => Promise<void>;
   getPrivateKey: () => string | null;
   disconnect: () => Promise<void>;
 }
@@ -66,6 +66,7 @@ interface StoredSession {
   isConnected: boolean;
   address: string | null;
   email: string | null;
+  googleSub?: string | null;
   userName?: string | null;
   userAvatar?: string | null;
   authType: AuthType;
@@ -79,6 +80,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const [isConnecting, setIsConnecting] = useState<boolean>(false);
   const [address, setAddress] = useState<string | null>(null);
   const [email, setEmail] = useState<string | null>(null);
+  const [googleSub, setGoogleSub] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
   const [userAvatar, setUserAvatar] = useState<string | null>(null);
   const [authType, setAuthType] = useState<AuthType>(null);
@@ -98,6 +100,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
           setIsConnected(true);
           setAddress(session.address);
           setEmail(session.email);
+          setGoogleSub(session.googleSub || null);
           setUserName(session.userName || null);
           setUserAvatar(session.userAvatar || null);
           setAuthType(session.authType);
@@ -113,7 +116,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     void fetch("/api/v1/auth/me", { cache: "no-store" })
       .then(async (response) => {
         if (!response.ok) return null;
-        return (await response.json()) as { session?: { address?: string | null; email?: string; name?: string | null; authType?: AuthType } };
+        return (await response.json()) as { session?: { address?: string | null; email?: string; googleSub?: string | null; name?: string | null; authType?: AuthType } };
       })
       .then((payload) => {
         const session = payload?.session;
@@ -126,6 +129,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
           setIsConnected(false);
           setAddress(null);
           setEmail(null);
+          setGoogleSub(null);
           setUserName(null);
           setUserAvatar(null);
           setAuthType(null);
@@ -139,6 +143,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
           isConnected: true,
           address: session.address || null,
           email: session.authType === "web2_google" ? session.email || null : null,
+          googleSub: session.authType === "web2_google" ? session.googleSub || null : null,
           userName: session.name || (session.authType === "web2_google" ? session.email!.split("@")[0] : null),
           userAvatar: null,
           authType: session.authType,
@@ -149,6 +154,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         setIsConnected(true);
         setAddress(next.address);
         setEmail(next.email);
+        setGoogleSub(next.googleSub);
         setUserName(next.userName);
         setUserAvatar(next.userAvatar);
         setAuthType(next.authType);
@@ -227,6 +233,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         setIsConnected(true);
         setAddress(connectedAddr);
         setEmail(null);
+        setGoogleSub(null);
         setUserName(null);
         setUserAvatar(null);
         setAuthType("web3_wallet");
@@ -238,6 +245,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
           isConnected: true,
           address: connectedAddr,
           email: null,
+          googleSub: null,
           userName: null,
           userAvatar: null,
           authType: "web3_wallet",
@@ -258,10 +266,10 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   );
 
   const connectGoogle = useCallback(
-    async (profile: { email: string; name?: string; picture?: string; sub?: string; idToken: string }) => {
+    async (profile: { email: string; name?: string; picture?: string; sub: string; idToken: string }) => {
       setIsConnecting(true);
       try {
-        const smartAccount = deriveSmartAccountAddress(profile.sub || profile.email);
+        const smartAccount = deriveSmartAccountAddress(profile.sub);
         const name = profile.name || profile.email.split("@")[0];
         const avatar = profile.picture || null;
 
@@ -276,6 +284,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         setIsConnected(true);
         setAddress(smartAccount);
         setEmail(profile.email);
+        setGoogleSub(profile.sub);
         setUserName(name);
         setUserAvatar(avatar);
         setAuthType("web2_google");
@@ -287,6 +296,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
           isConnected: true,
           address: smartAccount,
           email: profile.email,
+          googleSub: profile.sub,
           userName: name,
           userAvatar: avatar,
           authType: "web2_google",
@@ -304,12 +314,11 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   );
 
   const getPrivateKey = useCallback(() => {
-    if (!isConnected || (authType !== "web2_google" && authType !== "web2_email")) {
+    if (!isConnected || authType !== "web2_google" || !googleSub) {
       return null;
     }
-    if (!email) return null;
-    return deriveDeterministicPrivateKey(email);
-  }, [isConnected, authType, email]);
+    return deriveDeterministicPrivateKey(googleSub);
+  }, [isConnected, authType, googleSub]);
 
   const disconnect = useCallback(async () => {
     await syncServerSession("/api/v1/auth/logout", {});
@@ -318,6 +327,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     setIsConnected(false);
     setAddress(null);
     setEmail(null);
+    setGoogleSub(null);
     setUserName(null);
     setUserAvatar(null);
     setAuthType(null);

@@ -15,6 +15,7 @@
 export interface SessionPayload {
   userId: string;
   email: string;
+  googleSub?: string | null;
   name?: string | null;
   address?: string | null;
   authType: "web2_google" | "web2_email" | "web3_wallet";
@@ -128,6 +129,7 @@ export async function verifySessionToken(
     return {
       userId: parsed.userId,
       email: parsed.email,
+      googleSub: typeof parsed.googleSub === "string" ? parsed.googleSub : null,
       name: parsed.name ?? null,
       address: parsed.address ?? null,
       authType: parsed.authType,

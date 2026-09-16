@@ -233,7 +233,7 @@ export function AppHeader() {
                     <Droplets size={13} /> Get Testnet USDC <ExternalLink size={10} className="ml-auto opacity-50" />
                   </a>
 
-                  {(authType === "web2_google" || authType === "web2_email") && (
+                  {authType === "web2_google" && getPrivateKey() && (
                     <button
                       onClick={() => {
                         setIsDropdownOpen(false);

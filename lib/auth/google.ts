@@ -79,10 +79,10 @@ export function decodeGoogleJwt(jwtToken: string): GoogleUserProfile | null {
       email_verified?: boolean;
     };
 
-    if (!parsed.email) return null;
+    if (!parsed.sub || !parsed.email) return null;
 
     return {
-      sub: parsed.sub || parsed.email,
+      sub: parsed.sub,
       email: parsed.email,
       name: parsed.name || parsed.email.split("@")[0],
       picture: parsed.picture,

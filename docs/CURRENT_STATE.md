@@ -100,7 +100,7 @@ This repository is now a full-stack Next.js application for SettleFlow, an Arc-n
 - Webhook URL configuration with HTTP/HTTPS format validation.
 - Per-event notification toggles (`notifyOnSubmit`, `notifyOnApprove`, `notifyOnRelease`) persisted to Workspace record.
 - Webhook Test Action calling `POST /api/v1/webhooks/test` secured with session auth & Owner-only enforcement.
-- RPC Node health check and non-custodial Smart Account private key export modal.
+- RPC Node health check and non-custodial Smart Account private key export modal. Google export derives from the server-verified Google subject, so importing it into a browser wallet yields the same address.
 
 ## 3. Data, database, and API state
 

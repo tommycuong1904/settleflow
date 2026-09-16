@@ -42,7 +42,7 @@ export async function GET(request: Request) {
     if (!profile?.sub || !profile.email || (nonce && profile.nonce !== nonce) || profile.email_verified === false) throw new Error("Google identity verification failed.");
     const provisioned = await db.$transaction((tx) => provisionGoogleUser(tx, { sub: profile.sub!, email: profile.email!, name: profile.name, picture: profile.picture }));
     const user = provisioned.user;
-    const sessionToken = await createSessionToken({ userId: user.id, email: user.email ?? profile.email, name: user.displayName || profile.name || profile.email.split("@")[0], address: user.walletAddress ?? deriveSmartAccountAddress(profile.sub), authType: "web2_google" });
+    const sessionToken = await createSessionToken({ userId: user.id, email: user.email ?? profile.email, googleSub: profile.sub, name: user.displayName || profile.name || profile.email.split("@")[0], address: user.walletAddress ?? deriveSmartAccountAddress(profile.sub), authType: "web2_google" });
     const response = NextResponse.redirect(new URL(next, origin));
     response.cookies.set(SESSION_COOKIE_NAME, sessionToken, { ...SESSION_COOKIE_OPTIONS, name: SESSION_COOKIE_NAME });
     for (const name of clear()) response.cookies.delete(name);

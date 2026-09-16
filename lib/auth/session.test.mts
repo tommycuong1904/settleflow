@@ -32,6 +32,7 @@ function base64UrlEncodeBytes(bytes: Uint8Array): string {
 const samplePayload: SessionPayload = {
   userId: "google-123",
   email: "user@example.com",
+  googleSub: "google-sub-123",
   name: "Example User",
   address: null,
   authType: "web2_google",
@@ -76,6 +77,7 @@ test("round-trips a valid session token with the correct secret", async () => {
   assert.ok(session, "expected a valid session");
   assert.equal(session.userId, "google-123");
   assert.equal(session.email, "user@example.com");
+  assert.equal(session.googleSub, "google-sub-123");
   assert.equal(session.name, "Example User");
   assert.equal(session.authType, "web2_google");
 });

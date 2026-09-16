@@ -624,7 +624,7 @@ export default function SettingsPage() {
               </p>
             </div>
 
-            {(authType === "web2_google" || authType === "web2_email") && (
+            {authType === "web2_google" && getPrivateKey() && (
               <div className="md:col-span-2 p-4 rounded-2xl bg-[var(--surface-muted)] border border-[var(--border-soft)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--surface-strong)] border border-[var(--border-soft)] text-[var(--foreground)] shrink-0">
