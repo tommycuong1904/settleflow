@@ -109,6 +109,7 @@ This repository is now a full-stack Next.js application for SettleFlow, an Arc-n
 - The configured datasource is PostgreSQL.
 - The repository has a seed script at `prisma/seed.js`.
 - `WorkspaceMember` enforces exactly one role per `(workspaceId, userId)`. The migration fails safely when historical duplicate role rows exist rather than choosing a role automatically.
+- A verified account with no memberships can explicitly create its first workspace through `POST /api/v1/workspaces`. The server locks that user, creates the workspace and its Owner membership in one transaction, and selects it for the new session. Authentication never grants access to an existing workspace; invitation acceptance remains the path to join one.
 - Invitation records are workspace-, role-, expiry-, and optional-email-bound. Acceptance is atomic, single-use, and preserves an existing membership role through the workspace/user uniqueness invariant.
 - Vercel deployments (`settleflow-dev.vercel.app`) build with `prisma migrate deploy && prisma generate && npm run build` (see `vercel.json`), so pending Prisma migrations are applied automatically on every deploy — this prevents the DB/schema drift that previously made `/payouts` and `/contributors` return an HTTP 200 app shell with empty content (the deployed DB was missing `Contributor.createdByUserId` from migration `20260828145326_add_contributor_created_by`).
 - The repository contains repository modules for:
@@ -183,7 +184,7 @@ This repository is now a full-stack Next.js application for SettleFlow, an Arc-n
 - Prisma seed configuration exists in `package.json#prisma.seed`.
 - ESLint is configured via `eslint.config.mjs`.
 - TypeScript strict mode is enabled in `tsconfig.json`.
-- `npm test` runs `node --import tsx --test "lib/**/*.test.mts"`.
+- `npm test` discovers and runs all unit test files under `lib/`; `npm run test:integration:db` does the same for `test/integration/`.
 - CI runs dependency installation, Prisma generation and migrations on `settleflow_test`, typecheck, lint, unit tests, DB integration tests, and `npm run build`.
 - No committed Playwright/browser E2E suite exists; browser E2E is intentionally deferred.
 

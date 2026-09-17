@@ -100,6 +100,8 @@ Requests carry a workspace context, and repository operations receive the worksp
 
 The request context resolver retains development/default fallbacks only when no session is present. For a verified session, `lib/auth/session-server.ts` requires a persisted `User` and `WorkspaceMember`; actor and user IDs are derived from the selected membership. A workspace selector is accepted only when it matches one of the user's memberships, and ambiguous multi-workspace sessions must select a workspace. Missing or unauthorized membership context returns `AUTH_CONTEXT_REQUIRED` (403).
 
+The sole membership bootstrap is explicit first-workspace creation: `POST /api/v1/workspaces` requires a verified session user with no existing memberships, locks that user, and creates one new workspace plus an `owner` membership in one transaction. It cannot grant access to an existing workspace or add an owner role to a workspace selected by client input.
+
 ## Authentication and actor alignment
 
 Protected API mutations require a valid `sf_session` cookie. `proxy.ts` verifies the signed session token and returns `401` with `AUTH_REQUIRED` for non-public API mutations without a valid session. Authentication endpoints remain open, and feedback endpoints are explicitly public mutations.

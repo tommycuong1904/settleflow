@@ -1,10 +1,12 @@
 import { Mail, ShieldAlert, AlertTriangle } from "lucide-react";
+import { CreateWorkspaceState } from "@/components/shared/create-workspace-state";
 
 type ServerAuthContextStateProps = {
-  kind: "auth-context-required" | "auth-role-ambiguous" | "authenticated-forbidden";
+  kind: "auth-context-required" | "workspace-creation-required" | "auth-role-ambiguous" | "authenticated-forbidden";
 };
 
 export function ServerAuthContextState({ kind }: ServerAuthContextStateProps) {
+  if (kind === "workspace-creation-required") return <CreateWorkspaceState />;
   const roleConflict = kind === "auth-role-ambiguous";
   const forbidden = kind === "authenticated-forbidden";
 

@@ -135,6 +135,7 @@ export async function resolveSessionContext(
 export type ServerPageContextResult =
   | { kind: "auth-required" }
   | { kind: "auth-context-required" }
+  | { kind: "workspace-creation-required" }
   | { kind: "authenticated"; productContext: ProductContext; user: SessionUserInfo };
 
 type ResolvedSessionContext = { productContext: ProductContext; user: SessionUserInfo };
@@ -152,6 +153,7 @@ async function resolveSessionContextForWorkspaceTyped(
     : resolved.memberships.length === 1
       ? resolved.memberships
       : [];
+  if (resolved.memberships.length === 0) return { kind: "workspace-creation-required" };
   // The database permits exactly one membership per workspace/user. Treat a
   // corrupted or pre-migration duplicate as missing context, never as a role
   // selection decision.
@@ -182,7 +184,7 @@ async function resolveSessionContextForWorkspace(
   requestedWorkspaceId?: string,
 ): Promise<ResolvedSessionContext | null> {
   const result = await resolveSessionContextForWorkspaceTyped(session, requestedWorkspaceId);
-  if (result.kind === "auth-context-required") return null;
+  if (result.kind !== "authenticated") return null;
   return result;
 }
 /**
