@@ -195,8 +195,8 @@ export function ExportKeyModal({
             </p>
             <ol className="list-decimal list-inside space-y-1 text-xs leading-relaxed">
               <li>Open your MetaMask or Rabby Wallet extension.</li>
-              <li>Click on your Account list icon &gt; Select <strong className="text-[var(--foreground)]">"Import Account"</strong>.</li>
-              <li>Paste the copied Private Key into the field &gt; Click <strong className="text-[var(--foreground)]">"Import"</strong>.</li>
+              <li>Click on your Account list icon &gt; Select <strong className="text-[var(--foreground)]">&quot;Import Account&quot;</strong>.</li>
+              <li>Paste the copied Private Key into the field &gt; Click <strong className="text-[var(--foreground)]">&quot;Import&quot;</strong>.</li>
               <li>Switch network to <strong className="text-[var(--foreground)]">Arc Testnet</strong> (Chain ID: <code className="text-[var(--accent-cyan)]">{ARC_CONFIG.chainId}</code>) to access your USDC funds directly!</li>
             </ol>
           </div>

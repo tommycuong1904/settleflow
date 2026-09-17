@@ -1,15 +1,14 @@
 import { SectionCard } from "@/components/shared/section-card";
-import { EmptyState } from "@/components/shared/empty-state";
 import { Button } from "@/components/shared/button";
-import { MilestoneStatusBadge } from "@/components/milestones/milestone-status-badge";
 import { formatUsdc } from "@/lib/utils/format";
+import type { DashboardData } from "@/lib/repositories/dashboard";
 
 type ActivePayoutsProps = {
-  activePayouts: any[];
-  payouts: any[];
-  contributors: any[];
-  milestones: any[];
-  transactionProofs: any[];
+  activePayouts: DashboardData["payouts"];
+  payouts: DashboardData["payouts"];
+  contributors: DashboardData["contributors"];
+  milestones: DashboardData["milestones"];
+  transactionProofs: DashboardData["transactionProofs"];
 };
 
 export default function ActivePayouts({ activePayouts, payouts, contributors, milestones, transactionProofs }: ActivePayoutsProps) {

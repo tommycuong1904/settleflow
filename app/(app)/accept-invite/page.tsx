@@ -25,16 +25,12 @@ export default function AcceptInvitePage({
   const { isConnected, email: userEmail, openAuthModal } = useWallet();
 
   const [invite, setInvite] = useState<InviteDetails | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => Boolean(token));
   const [error, setError] = useState<string | null>(null);
   const [accepting, setAccepting] = useState(false);
 
   useEffect(() => {
-    if (!token) {
-      setError("No invitation token provided.");
-      setLoading(false);
-      return;
-    }
+    if (!token) return;
 
     void fetch(`/api/v1/invitations/${encodeURIComponent(token)}`)
       .then(async (res) => {
@@ -55,6 +51,8 @@ export default function AcceptInvitePage({
         setLoading(false);
       });
   }, [token]);
+
+  const displayedError = token ? error : "No invitation token provided.";
 
   const handleAccept = async () => {
     if (!token) return;
@@ -90,7 +88,7 @@ export default function AcceptInvitePage({
     );
   }
 
-  if (error || !invite) {
+  if (displayedError || !invite) {
     return (
       <div className="min-h-[60vh] bg-white flex items-center justify-center py-16 px-4">
         <div className="w-full max-w-md rounded-2xl border border-neutral-200 bg-white p-8 text-center space-y-4 shadow-sm">
@@ -98,7 +96,7 @@ export default function AcceptInvitePage({
             <AlertCircle size={22} />
           </div>
           <h1 className="text-lg font-semibold text-neutral-900 tracking-tight">Invitation Error</h1>
-          <p className="text-xs text-neutral-600 leading-relaxed">{error || "Invalid invitation link."}</p>
+          <p className="text-xs text-neutral-600 leading-relaxed">{displayedError || "Invalid invitation link."}</p>
           <button
             className="w-full mt-4 py-2.5 px-4 rounded-full border border-black bg-black text-white text-xs font-semibold hover:bg-neutral-800 transition-all"
             onClick={() => router.push("/")}

@@ -82,12 +82,14 @@ const logFixture = {
   },
 };
 
-async function withActivityLog<T>(fn: (seen: any[]) => Promise<T>) {
+type ActivityFindManyArgs = Parameters<typeof db.activityLog.findMany>[0];
+
+async function withActivityLog<T>(fn: (seen: ActivityFindManyArgs[]) => Promise<T>) {
   const original = db.activityLog.findMany;
   const originalMilestones = db.milestone.findMany;
   const originalPayout = db.payout.findFirst;
-  const seen: any[] = [];
-  db.activityLog.findMany = (async (args: any) => { seen.push(args); return [logFixture]; }) as unknown as typeof db.activityLog.findMany;
+  const seen: ActivityFindManyArgs[] = [];
+  db.activityLog.findMany = (async (args) => { seen.push(args); return [logFixture]; }) as unknown as typeof db.activityLog.findMany;
   db.milestone.findMany = (async () => []) as unknown as typeof db.milestone.findMany;
   db.payout.findFirst = (async () => null) as unknown as typeof db.payout.findFirst;
   try { return await fn(seen); } finally {
@@ -100,7 +102,8 @@ async function withActivityLog<T>(fn: (seen: any[]) => Promise<T>) {
 function assertSafe(result: unknown) {
   const text = JSON.stringify(result);
   for (const value of ["731.42", "Wallet Sensitive", "Actor Sensitive Name", "0xSensitiveTx", "arc-testnet", "explorer.invalid", "999", "Failure Sensitive Text"]) assert.equal(text.includes(value), false, value);
-  for (const item of result as any[]) for (const key of ["amount", "amountUsdc", "wallet", "creator", "contributor", "actorLabel", "metadata", "txHash", "network", "explorerUrl", "blockNumber"]) assert.equal(Object.prototype.hasOwnProperty.call(item, key), false, key);
+  assert.ok(Array.isArray(result));
+  for (const item of result) for (const key of ["amount", "amountUsdc", "wallet", "creator", "contributor", "actorLabel", "metadata", "txHash", "network", "explorerUrl", "blockNumber"]) assert.equal(Object.prototype.hasOwnProperty.call(item, key), false, key);
 }
 
 test("repository Reviewer and Ops payout activity are policy-safe", async () => {
@@ -122,7 +125,7 @@ test("repository Reviewer and Ops workspace activity are policy-safe", async () 
 test("repository Contributor scope remains linked-user isolated", async () => {
   await withActivityLog(async (seen) => {
     await getPayoutActivity("payout-1", "workspace-1", { linkedUserId: "linked-user-1" }, "contributor");
-    assert.deepEqual(seen[0].where.payout.contributor, { linkedUserId: "linked-user-1" });
+    assert.deepEqual(seen[0]?.where?.payout?.contributor, { linkedUserId: "linked-user-1" });
   });
 });
 
@@ -135,8 +138,8 @@ test("repository Owner activity retains broad logged fields", async () => {
   db.payout.findFirst = (async () => null) as unknown as typeof db.payout.findFirst;
   try {
     const result = await getPayoutActivity("payout-1", "workspace-1", undefined, "owner");
-    assert.equal((result as any[]).some((item) => item.metadata?.amountUsdc === "731.42"), true);
-    assert.equal((result as any[]).some((item) => item.actorLabel === "Actor Sensitive Name"), true);
+    assert.equal(result.some((item) => item.metadata?.amountUsdc === "731.42"), true);
+    assert.equal(result.some((item) => item.actorLabel === "Actor Sensitive Name"), true);
   } finally {
     db.activityLog.findMany = originalLogs;
     db.milestone.findMany = originalMilestones;

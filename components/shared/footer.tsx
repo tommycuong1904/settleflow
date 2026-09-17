@@ -1,13 +1,12 @@
 import Link from "next/link";
-import type { ReactNode } from "react";
 
 export function Footer() {
   return (
     <footer className="sf-footer">
       <div className="sf-container">
-        <a href="/" className="sf-wordmark">
+        <Link href="/" className="sf-wordmark">
           <span>Settle</span>Flow
-        </a>
+        </Link>
         <p>Milestone-based USDC payouts, with approval built in.</p>
         <div>
           <a href="https://settleflow-dev.vercel.app">Live app</a>

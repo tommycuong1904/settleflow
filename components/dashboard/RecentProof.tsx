@@ -3,10 +3,11 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { Button } from "@/components/shared/button";
 import { MilestoneStatusBadge } from "@/components/milestones/milestone-status-badge";
 import { formatUsdc, shortenAddress } from "@/lib/utils/format";
+import type { DashboardData } from "@/lib/repositories/dashboard";
 
 type RecentProofProps = {
-  transactionProofs: any[];
-  milestones: any[];
+  transactionProofs: DashboardData["transactionProofs"];
+  milestones: DashboardData["milestones"];
 };
 
 export default function RecentProof({ transactionProofs, milestones }: RecentProofProps) {

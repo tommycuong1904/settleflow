@@ -11,7 +11,7 @@ const sensitiveRelease = {
   failureReason: "Failure Sensitive", requestedAt: new Date("2026-09-06T00:00:00Z"),
   executedAt: null, failedAt: new Date("2026-09-06T00:01:00Z"), createdAt: new Date("2026-09-06T00:00:00Z"),
   updatedAt: new Date("2026-09-06T00:01:00Z"), proofs: [{ id: "proof-1", status: "failed", txHash: "0xSensitiveTx", network: "arc-testnet", explorerUrl: "https://sensitive.invalid", blockNumber: BigInt(999), failureReason: "Proof Sensitive", confirmedAt: null, failedAt: new Date("2026-09-06T00:01:00Z"), createdAt: new Date(), updatedAt: new Date() }],
-} as any;
+} as unknown as Parameters<typeof projectReleaseDetail>[0];
 
 test("Reviewer and Ops release projections omit forbidden fields and values", () => {
   for (const role of ["reviewer", "ops"] as const) {
@@ -23,15 +23,15 @@ test("Reviewer and Ops release projections omit forbidden fields and values", ()
 });
 
 test("Reviewer payout detail omits contributorId", () => {
-  const result = projectPayoutDetail({ payout: { id: "p1", title: "Payout", contributorId: "contributor-sensitive", status: "active", createdAt: "2026-09-06T00:00:00Z", totalAmount: 731.42, currency: "USDC" }, milestones: [{ id: "m1", payoutId: "p1", title: "Review", description: "desc", amount: 731.42, status: "submitted" }] } as any, "reviewer");
+  const result = projectPayoutDetail({ payout: { id: "p1", title: "Payout", contributorId: "contributor-sensitive", status: "active", createdAt: "2026-09-06T00:00:00Z", totalAmount: 731.42, currency: "USDC" }, milestones: [{ id: "m1", payoutId: "p1", title: "Review", description: "desc", amount: 731.42, status: "submitted" }] } as unknown as Parameters<typeof projectPayoutDetail>[0], "reviewer");
   assert.equal("contributorId" in result.payout, false);
   assert.equal(JSON.stringify(result).includes("contributor-sensitive"), false);
 });
 
 test("listPayouts preserves workspace-wide Owner scope and contributor linked-user scope", async () => {
   const original = db.payout.findMany;
-  const seen: any[] = [];
-  db.payout.findMany = (async (args: any) => { seen.push(args); return []; }) as any;
+  const seen: Parameters<typeof db.payout.findMany>[0][] = [];
+  db.payout.findMany = (async (args) => { seen.push(args); return []; }) as typeof db.payout.findMany;
   try {
     await listPayouts({ workspaceId: "workspace-1" });
     assert.deepEqual(seen[0].where, { workspaceId: "workspace-1" });

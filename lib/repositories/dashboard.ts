@@ -27,7 +27,7 @@ export async function getDashboardSummary(workspaceId: string, linkedUserId?: st
 
 // ---------- Rich read model for dashboard page ----------
 
-type DashboardPayout = {
+export type DashboardPayout = {
   id: string;
   title: string;
   contributorId: string;
@@ -37,7 +37,7 @@ type DashboardPayout = {
   createdAt: string;
 };
 
-type DashboardMilestone = {
+export type DashboardMilestone = {
   id: string;
   payoutId: string;
   title: string;
@@ -49,14 +49,14 @@ type DashboardMilestone = {
   releasedAt?: string;
 };
 
-type DashboardContributor = {
+export type DashboardContributor = {
   id: string;
   name: string;
   walletAddress: string;
   role?: string;
 };
 
-type DashboardTransactionProof = {
+export type DashboardTransactionProof = {
   id: string;
   milestoneId: string;
   txHash: string;

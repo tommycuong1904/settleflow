@@ -92,28 +92,29 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
   // Restore the UI cache, then reconcile it with the HttpOnly server session.
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const session: StoredSession = JSON.parse(raw);
-        if (session.isConnected) {
-          setIsConnected(true);
-          setAddress(session.address);
-          setEmail(session.email);
-          setGoogleSub(session.googleSub || null);
-          setUserName(session.userName || null);
-          setUserAvatar(session.userAvatar || null);
-          setAuthType(session.authType);
-          setWalletName(session.walletName);
-          setNetwork(session.network || "Arc Testnet");
-          setUsdcBalance(session.usdcBalance || "1,250.00");
+    const restoreTimer = window.setTimeout(() => {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const session: StoredSession = JSON.parse(raw);
+          if (session.isConnected) {
+            setIsConnected(true);
+            setAddress(session.address);
+            setEmail(session.email);
+            setGoogleSub(session.googleSub || null);
+            setUserName(session.userName || null);
+            setUserAvatar(session.userAvatar || null);
+            setAuthType(session.authType);
+            setWalletName(session.walletName);
+            setNetwork(session.network || "Arc Testnet");
+            setUsdcBalance(session.usdcBalance || "1,250.00");
+          }
         }
+      } catch {
+        // Ignore storage read errors
       }
-    } catch {
-      // Ignore storage read errors
-    }
 
-    void fetch("/api/v1/auth/me", { cache: "no-store" })
+      void fetch("/api/v1/auth/me", { cache: "no-store" })
       .then(async (response) => {
         if (!response.ok) return null;
         return (await response.json()) as { session?: { address?: string | null; email?: string; googleSub?: string | null; name?: string | null; authType?: AuthType } };
@@ -166,6 +167,9 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         }
       })
       .catch(() => undefined);
+    }, 0);
+
+    return () => window.clearTimeout(restoreTimer);
   }, []);
 
   // Save session when state changes
@@ -207,11 +211,10 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
   // Auto-refresh balance on address change
   useEffect(() => {
-    if (isConnected && address) {
-      void refreshBalance();
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [address, isConnected]);
+    if (!isConnected || !address) return;
+    const refreshTimer = window.setTimeout(() => void refreshBalance(), 0);
+    return () => window.clearTimeout(refreshTimer);
+  }, [address, isConnected, refreshBalance]);
 
   const connectWeb3 = useCallback(
     async (preferredWallet?: string) => {

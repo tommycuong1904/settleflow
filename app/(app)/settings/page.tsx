@@ -326,7 +326,7 @@ export default function SettingsPage() {
                 </label>
                 <select
                   value={inviteRole}
-                  onChange={(e) => setInviteRole(e.target.value as any)}
+                  onChange={(e) => setInviteRole(e.target.value as typeof inviteRole)}
                   className="w-full rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] py-2.5 px-3.5 text-xs text-[var(--foreground)] focus:border-[var(--foreground)] focus:outline-none"
                 >
                   <option value="contributor">Contributor (Builder / Freelancer)</option>

@@ -23,7 +23,10 @@ async function ownerToken() {
   });
 }
 
-async function assertUnauthorized(handler: (request: Request, ...args: any[]) => Promise<Response>, url: string, ...args: any[]) {
+type RouteContext = { params: Promise<{ id: string }> };
+type ProtectedHandler = (request: Request, ...args: RouteContext[]) => Promise<Response>;
+
+async function assertUnauthorized(handler: ProtectedHandler, url: string, ...args: RouteContext[]) {
   const response = await handler(new Request(`https://settleflow.local${url}`), ...args);
   assert.equal(response.status, 401);
   const body = await response.json();
@@ -56,8 +59,9 @@ test("GET /api/v1/payouts uses the authorized membership workspace", async () =>
   db.user.findFirst = (async () => ({ id: "user-1", displayName: "Owner" })) as typeof db.user.findFirst;
   db.workspaceMember.findMany = (async () => [{ workspaceId: "workspace-a", role: "owner" }]) as typeof db.workspaceMember.findMany;
   let observedWorkspace: string | undefined;
-  db.payout.findMany = (async (args: any) => {
-    observedWorkspace = args.where.workspaceId;
+  db.payout.findMany = (async (args) => {
+    const workspaceId = args?.where?.workspaceId;
+    observedWorkspace = typeof workspaceId === "string" ? workspaceId : undefined;
     return [];
   }) as typeof db.payout.findMany;
 
@@ -183,8 +187,9 @@ test("GET /api/v1/payouts selects the requested membership in a multi-workspace 
     { workspaceId: "workspace-b", role: "owner" },
   ]) as typeof db.workspaceMember.findMany;
   let observedWorkspace: string | undefined;
-  db.payout.findMany = (async (args: any) => {
-    observedWorkspace = args.where.workspaceId;
+  db.payout.findMany = (async (args) => {
+    const workspaceId = args?.where?.workspaceId;
+    observedWorkspace = typeof workspaceId === "string" ? workspaceId : undefined;
     return [];
   }) as typeof db.payout.findMany;
   try {

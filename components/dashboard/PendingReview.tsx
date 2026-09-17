@@ -2,13 +2,14 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { SectionCard } from "@/components/shared/section-card";
 import { Button } from "@/components/shared/button";
 import { MilestoneStatusBadge } from "@/components/milestones/milestone-status-badge";
-import { formatUsdc, shortenAddress } from "@/lib/utils/format";
+import { formatUsdc } from "@/lib/utils/format";
+import type { DashboardData } from "@/lib/repositories/dashboard";
 
 type PendingReviewProps = {
-  pendingApprovals: any[];
-  payouts: any[];
-  contributors: any[];
-  milestones: any[];
+  pendingApprovals: DashboardData["milestones"];
+  payouts: DashboardData["payouts"];
+  contributors: DashboardData["contributors"];
+  milestones: DashboardData["milestones"];
 };
 
 export default function PendingReview({ pendingApprovals, payouts, contributors, milestones }: PendingReviewProps) {
