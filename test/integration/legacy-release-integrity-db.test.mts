@@ -51,10 +51,7 @@ test("legacy release stays disabled when repository state is unavailable", async
   process.env.NEXT_PUBLIC_ARC_EXECUTION_MODE = "mock";
   const f = await fixture("owner");
   const originalFindFirst = db.release.findFirst;
-  db.release.findFirst = (async (args) => {
-    if (args?.where?.payoutId === f.payout.id) return null;
-    return originalFindFirst.call(db.release, args);
-  }) as typeof db.release.findFirst;
+  db.release.findFirst = (async () => null) as typeof db.release.findFirst;
   try {
     const response = await legacyRelease(new Request("https://settleflow.local/api/release", {
       method: "POST",

@@ -89,7 +89,7 @@ async function withActivityLog<T>(fn: (seen: ActivityFindManyArgs[]) => Promise<
   const originalMilestones = db.milestone.findMany;
   const originalPayout = db.payout.findFirst;
   const seen: ActivityFindManyArgs[] = [];
-  db.activityLog.findMany = (async (args) => { seen.push(args); return [logFixture]; }) as unknown as typeof db.activityLog.findMany;
+  db.activityLog.findMany = (async (args: ActivityFindManyArgs) => { seen.push(args); return [logFixture]; }) as unknown as typeof db.activityLog.findMany;
   db.milestone.findMany = (async () => []) as unknown as typeof db.milestone.findMany;
   db.payout.findFirst = (async () => null) as unknown as typeof db.payout.findFirst;
   try { return await fn(seen); } finally {
@@ -138,8 +138,8 @@ test("repository Owner activity retains broad logged fields", async () => {
   db.payout.findFirst = (async () => null) as unknown as typeof db.payout.findFirst;
   try {
     const result = await getPayoutActivity("payout-1", "workspace-1", undefined, "owner");
-    assert.equal(result.some((item) => item.metadata?.amountUsdc === "731.42"), true);
-    assert.equal(result.some((item) => item.actorLabel === "Actor Sensitive Name"), true);
+    assert.equal(result.some((item) => "metadata" in item && item.metadata?.amountUsdc === "731.42"), true);
+    assert.equal(result.some((item) => "actorLabel" in item && item.actorLabel === "Actor Sensitive Name"), true);
   } finally {
     db.activityLog.findMany = originalLogs;
     db.milestone.findMany = originalMilestones;

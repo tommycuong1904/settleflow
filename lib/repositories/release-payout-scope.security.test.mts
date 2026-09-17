@@ -34,8 +34,8 @@ test("listPayouts preserves workspace-wide Owner scope and contributor linked-us
   db.payout.findMany = (async (args) => { seen.push(args); return []; }) as typeof db.payout.findMany;
   try {
     await listPayouts({ workspaceId: "workspace-1" });
-    assert.deepEqual(seen[0].where, { workspaceId: "workspace-1" });
+    assert.deepEqual(seen[0]?.where, { workspaceId: "workspace-1" });
     await listPayouts({ workspaceId: "workspace-1", linkedUserId: "linked-user-1" });
-    assert.deepEqual(seen[1].where, { workspaceId: "workspace-1", contributor: { linkedUserId: "linked-user-1" } });
+    assert.deepEqual(seen[1]?.where, { workspaceId: "workspace-1", contributor: { linkedUserId: "linked-user-1" } });
   } finally { db.payout.findMany = original; }
 });
