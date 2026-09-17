@@ -100,7 +100,7 @@ Requests carry a workspace context, and repository operations receive the worksp
 
 The request context resolver retains development/default fallbacks only when no session is present. For a verified session, `lib/auth/session-server.ts` requires a persisted `User` and `WorkspaceMember`; actor and user IDs are derived from the selected membership. A workspace selector is accepted only when it matches one of the user's memberships, and ambiguous multi-workspace sessions must select a workspace. Missing or unauthorized membership context returns `AUTH_CONTEXT_REQUIRED` (403).
 
-The sole membership bootstrap is explicit first-workspace creation: `POST /api/v1/workspaces` requires a verified session user with no existing memberships, locks that user, and creates one new workspace plus an `owner` membership in one transaction. It cannot grant access to an existing workspace or add an owner role to a workspace selected by client input.
+The sole self-service membership bootstrap occurs during the first verified Google or wallet sign-in. In that same transaction, an account with no memberships is locked and receives one new workspace plus its `owner` membership. It cannot grant access to an existing workspace or add an owner role to a workspace selected by client input; invitations remain the path into another user's workspace.
 
 ## Authentication and actor alignment
 

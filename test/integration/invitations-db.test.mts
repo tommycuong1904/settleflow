@@ -60,6 +60,7 @@ test("invitations enforce authorization, email binding, lifecycle, and one membe
       `https://settleflow.local/api/v1/invitations/${createdBody.invitation.token}/accept`, await tokenFor(recipient),
     ), routeParams(createdBody.invitation.token));
     assert.equal(accepted.status, 200);
+    assert.match(accepted.headers.get("set-cookie") ?? "", /sf_workspace_id=/);
     assert.equal((await accepted.json()).role, "reviewer");
     assert.equal((await db.workspaceMember.findUnique({ where: { workspaceId_userId: { workspaceId: workspace.id, userId: recipient.id } } }))?.role, "reviewer");
 

@@ -109,7 +109,7 @@ This repository is now a full-stack Next.js application for SettleFlow, an Arc-n
 - The configured datasource is PostgreSQL.
 - The repository has a seed script at `prisma/seed.js`.
 - `WorkspaceMember` enforces exactly one role per `(workspaceId, userId)`. The migration fails safely when historical duplicate role rows exist rather than choosing a role automatically.
-- A verified account with no memberships can explicitly create its first workspace through `POST /api/v1/workspaces`. The server locks that user, creates the workspace and its Owner membership in one transaction, and selects it for the new session. Authentication never grants access to an existing workspace; invitation acceptance remains the path to join one.
+- The first verified Google or wallet sign-in for an account with no memberships locks that user and creates one default user-owned workspace plus its Owner membership in the same transaction. Authentication never grants access to an existing workspace; invitation acceptance remains the path to join one.
 - Invitation records are workspace-, role-, expiry-, and optional-email-bound. Acceptance is atomic, single-use, and preserves an existing membership role through the workspace/user uniqueness invariant.
 - Vercel deployments (`settleflow-dev.vercel.app`) build with `prisma migrate deploy && prisma generate && npm run build` (see `vercel.json`), so pending Prisma migrations are applied automatically on every deploy — this prevents the DB/schema drift that previously made `/payouts` and `/contributors` return an HTTP 200 app shell with empty content (the deployed DB was missing `Contributor.createdByUserId` from migration `20260828145326_add_contributor_created_by`).
 - The repository contains repository modules for:
@@ -165,7 +165,7 @@ This repository is now a full-stack Next.js application for SettleFlow, an Arc-n
 - **Server-side session authentication is implemented for the current MVP flow.**
 - Google and wallet auth routes issue signed `sf_session` cookies; `proxy.ts` gates protected API mutations.
 - Session-aware handlers resolve the authenticated user and workspace membership into product context.
-- Protected session resolution is membership-authoritative: no membership fallback/provisioning is used; multi-workspace sessions require an authorized `workspaceId` selector. A user has one persisted role per workspace; owner-only settings and invitation actions are enforced by policy.
+- Protected session resolution is membership-authoritative. First-sign-in bootstrap is limited to creating a new user-owned workspace for an account with no memberships; multi-workspace sessions require an authorized `workspaceId` selector. A user has one persisted role per workspace; owner-only settings and invitation actions are enforced by policy.
 - Actor identity for core workflow mutations is derived from request/session context rather than trusted client body actor IDs.
 
 ### Unknown
@@ -209,7 +209,7 @@ This repository is now a full-stack Next.js application for SettleFlow, an Arc-n
 ## 7. What appears unfinished
 
 ### Confirmed
-- **Authentication, membership, and invitations (verified in code and DB integration):** Google and verified-wallet sign-ins establish or reuse a persisted user identity but never self-grant workspace membership; signed sessions resolve permissions only from persisted workspace memberships. Invitations are owner-created, atomically accepted, email-bound when specified, and cannot create a second workspace role.
+- **Authentication, membership, and invitations (verified in code and DB integration):** The first verified Google or wallet sign-in establishes a user-owned default workspace and Owner membership only when the account has no memberships; it never grants access to an existing workspace. Signed sessions resolve permissions only from persisted workspace memberships. Invitations are owner-created, atomically accepted, email-bound when specified, and cannot create a second workspace role.
 - Mutation routes now have a request-derived actor boundary from the real session (not seeded roles):
   - payout create
   - payout activate

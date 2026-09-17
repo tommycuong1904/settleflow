@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { apiError } from "@/lib/api/errors";
 import { getSessionFromRequest, getVerifiedSessionUser } from "@/lib/auth/session-server";
 import { acceptInvitation } from "@/lib/services/invitations";
+import { PRODUCT_CONTEXT_COOKIE_NAMES, PRODUCT_CONTEXT_COOKIE_OPTIONS } from "@/lib/runtime/product-context";
 
 export const dynamic = "force-dynamic";
 
@@ -30,5 +31,7 @@ export async function POST(
     return NextResponse.json({ error: result.error }, { status: 400 });
   }
 
-  return NextResponse.json(result);
+  const response = NextResponse.json(result);
+  response.cookies.set(PRODUCT_CONTEXT_COOKIE_NAMES.workspaceId, result.workspaceId, PRODUCT_CONTEXT_COOKIE_OPTIONS);
+  return response;
 }

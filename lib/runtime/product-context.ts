@@ -16,6 +16,12 @@ export const PRODUCT_CONTEXT_COOKIE_NAMES = {
   actor: "sf_actor",
 } as const;
 
+export const PRODUCT_CONTEXT_COOKIE_OPTIONS = {
+  path: "/",
+  sameSite: "lax" as const,
+  maxAge: 60 * 60 * 24 * 365,
+};
+
 export type ProductContext = {
   workspaceId: string;
   ownerUserId: string;

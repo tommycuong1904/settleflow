@@ -5,7 +5,8 @@ import { db } from "@/lib/db/client";
 import { deriveSmartAccountAddress } from "@/lib/auth/smart-account";
 import { createSessionToken, SESSION_COOKIE_NAME, SESSION_COOKIE_OPTIONS } from "@/lib/auth/session";
 import { provisionGoogleUser } from "@/lib/auth/google-provisioning";
-import { PRODUCT_CONTEXT_COOKIE_NAMES } from "@/lib/runtime/product-context";
+import { ensureInitialWorkspaceForUser } from "@/lib/services/workspaces";
+import { PRODUCT_CONTEXT_COOKIE_NAMES, PRODUCT_CONTEXT_COOKIE_OPTIONS } from "@/lib/runtime/product-context";
 
 export const dynamic = "force-dynamic";
 
@@ -41,12 +42,19 @@ export async function GET(request: Request) {
     const ticket = await client.verifyIdToken({ idToken: tokens.id_token, audience: clientId });
     const profile = ticket.getPayload();
     if (!profile?.sub || !profile.email || (nonce && profile.nonce !== nonce) || profile.email_verified === false) throw new Error("Google identity verification failed.");
-    const provisioned = await db.$transaction((tx) => provisionGoogleUser(tx, { sub: profile.sub!, email: profile.email!, name: profile.name, picture: profile.picture }));
-    const user = provisioned.user;
+    const { user, initialWorkspace } = await db.$transaction(async (tx) => {
+      const provisioned = await provisionGoogleUser(tx, { sub: profile.sub!, email: profile.email!, name: profile.name, picture: profile.picture });
+      const initialWorkspace = await ensureInitialWorkspaceForUser(tx, { userId: provisioned.user.id, displayName: provisioned.user.displayName });
+      return { user: provisioned.user, initialWorkspace };
+    });
     const sessionToken = await createSessionToken({ userId: user.id, email: user.email ?? profile.email, googleSub: profile.sub, name: user.displayName || profile.name || profile.email.split("@")[0], address: user.walletAddress ?? deriveSmartAccountAddress(profile.sub), authType: "web2_google" });
     const response = NextResponse.redirect(new URL(next, origin));
     response.cookies.set(SESSION_COOKIE_NAME, sessionToken, { ...SESSION_COOKIE_OPTIONS, name: SESSION_COOKIE_NAME });
-    response.cookies.delete(PRODUCT_CONTEXT_COOKIE_NAMES.workspaceId);
+    if (initialWorkspace.created) {
+      response.cookies.set(PRODUCT_CONTEXT_COOKIE_NAMES.workspaceId, initialWorkspace.workspaceId, PRODUCT_CONTEXT_COOKIE_OPTIONS);
+    } else {
+      response.cookies.delete(PRODUCT_CONTEXT_COOKIE_NAMES.workspaceId);
+    }
     for (const name of clear()) response.cookies.delete(name);
     return response;
   } catch (error) {

@@ -9,7 +9,8 @@ import {
 import { verifyGoogleIdToken } from "@/lib/auth/google-server";
 import { db } from "@/lib/db/client";
 import { provisionGoogleUser } from "@/lib/auth/google-provisioning";
-import { PRODUCT_CONTEXT_COOKIE_NAMES } from "@/lib/runtime/product-context";
+import { ensureInitialWorkspaceForUser } from "@/lib/services/workspaces";
+import { PRODUCT_CONTEXT_COOKIE_NAMES, PRODUCT_CONTEXT_COOKIE_OPTIONS } from "@/lib/runtime/product-context";
 
 export const dynamic = "force-dynamic";
 
@@ -27,14 +28,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Google email is not verified." }, { status: 403 });
     }
 
-    // Google authentication establishes an account, never workspace authority.
-    // Invitation acceptance is the only path that grants a workspace membership.
-    const { user } = await db.$transaction((tx) => provisionGoogleUser(tx, {
-      sub: profile.sub,
-      email: profile.email,
-      name: profile.name,
-      picture: profile.picture,
-    }));
+    const { user, initialWorkspace } = await db.$transaction(async (tx) => {
+      const provisioned = await provisionGoogleUser(tx, {
+        sub: profile.sub,
+        email: profile.email,
+        name: profile.name,
+        picture: profile.picture,
+      });
+      const initialWorkspace = await ensureInitialWorkspaceForUser(tx, {
+        userId: provisioned.user.id,
+        displayName: provisioned.user.displayName,
+      });
+      return { user: provisioned.user, initialWorkspace };
+    });
 
     const smartAccountAddress = deriveSmartAccountAddress(profile.sub || profile.email);
 
@@ -54,7 +60,11 @@ export async function POST(request: Request) {
       ...SESSION_COOKIE_OPTIONS,
       name: SESSION_COOKIE_NAME,
     });
-    cookieStore.delete(PRODUCT_CONTEXT_COOKIE_NAMES.workspaceId);
+    if (initialWorkspace.created) {
+      cookieStore.set(PRODUCT_CONTEXT_COOKIE_NAMES.workspaceId, initialWorkspace.workspaceId, PRODUCT_CONTEXT_COOKIE_OPTIONS);
+    } else {
+      cookieStore.delete(PRODUCT_CONTEXT_COOKIE_NAMES.workspaceId);
+    }
 
     return NextResponse.json({
       success: true,

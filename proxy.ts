@@ -1,12 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server";
 import {
   PRODUCT_CONTEXT_COOKIE_NAMES,
+  PRODUCT_CONTEXT_COOKIE_OPTIONS,
   PRODUCT_CONTEXT_HEADER_NAMES,
   readNonEmpty,
 } from "@/lib/runtime/product-context";
 import { SESSION_COOKIE_NAME, verifySessionToken } from "@/lib/auth/session";
-
-const PRODUCT_CONTEXT_COOKIE_OPTIONS = { path: "/", sameSite: "lax" as const, maxAge: 60 * 60 * 24 * 365 };
 
 const MUTATION_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
