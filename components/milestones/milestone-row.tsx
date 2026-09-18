@@ -10,11 +10,12 @@ import type { Milestone } from "@/lib/models/milestone";
 import type { ProductActor } from "@/lib/runtime/product-context";
 import { formatUsdc } from "@/lib/utils/format";
 import { FileCode, ExternalLink } from "lucide-react";
-import { hasRole, isRole } from "@/lib/runtime/role-utils";
+import { isRole } from "@/lib/runtime/role-utils";
 
 type MilestoneRowProps = {
   milestone: Milestone;
   currentActor: ProductActor;
+  workspaceId: string;
   onApprove?: (milestoneId: string) => void | Promise<void>;
   onReject?: (milestoneId: string, comment?: string) => void | Promise<void>;
   onStatusChange?: (
@@ -27,6 +28,7 @@ type MilestoneRowProps = {
 export function MilestoneRow({
   milestone,
   currentActor,
+  workspaceId,
   onApprove,
   onReject,
   onStatusChange,
@@ -45,6 +47,7 @@ export function MilestoneRow({
   const isContributorActor = isRole(currentActor, "contributor");
   const isReviewerActor = isRole(currentActor, "reviewer");
   const isOwnerActor = isRole(currentActor, "owner");
+  const canApproveMilestone = isOwnerActor || isReviewerActor;
   const isSubmittable = (status === "pending" || status === "rejected") && isContributorActor;
 
   const handleSubmissionSuccess = (meta?: { submittedAt?: string; summary?: string; artifactUrl?: string }) => {
@@ -134,10 +137,10 @@ export function MilestoneRow({
             {isSubmitted ? (
               <div className="space-y-3">
                 <div className="space-y-1">
-                  <p className="font-semibold text-[var(--foreground)]">Review needed</p>
-                  <p>Submitted work is ready for an approve or reject decision.</p>
+                  <p className="font-semibold text-[var(--foreground)]">Owner approval needed</p>
+                  <p>Submitted work is ready for the workspace owner to approve or reject.</p>
                 </div>
-                {hasRole(currentActor, 'reviewer') ? (
+                {canApproveMilestone ? (
                   <ReviewControls
                     submittedAt={milestone.submittedAt}
                     onApprove={handleApprove}
@@ -145,7 +148,7 @@ export function MilestoneRow({
                     busy={reviewBusy}
                   />
                 ) : (
-                  <p className="text-xs text-[var(--text-muted)]">Only the reviewer can approve or reject this milestone.</p>
+                  <p className="text-xs text-[var(--text-muted)]">Only the workspace owner can approve or reject this milestone.</p>
                 )}
               </div>
             ) : null}
@@ -179,7 +182,7 @@ export function MilestoneRow({
               <div className="space-y-3">
                 <div className="space-y-2">
                   <p className="font-semibold text-[var(--foreground)]">Revision requested</p>
-                  <p>The contributor needs to resubmit this milestone before review can continue.</p>
+                  <p>The contributor needs to resubmit this milestone before owner approval can continue.</p>
                 </div>
                 {isContributorActor ? (
                   <Button onClick={() => setIsSubmitModalOpen(true)} variant="secondary">
@@ -195,7 +198,7 @@ export function MilestoneRow({
               <div className="space-y-3">
                 <div className="space-y-2">
                   <p className="font-semibold text-[var(--foreground)]">Waiting for contributor submission</p>
-                  <p>Review and release actions will unlock after work is submitted.</p>
+                  <p>Owner approval and release actions will unlock after work is submitted.</p>
                 </div>
                 {isContributorActor ? (
                   <Button onClick={() => setIsSubmitModalOpen(true)} variant="secondary">
@@ -219,6 +222,7 @@ export function MilestoneRow({
         isOpen={isSubmitModalOpen}
         onClose={() => setIsSubmitModalOpen(false)}
         milestone={milestone}
+        workspaceId={workspaceId}
         onSuccess={handleSubmissionSuccess}
       />
     </>

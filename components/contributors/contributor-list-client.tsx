@@ -3,8 +3,8 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useResolvedProductContext } from "@/lib/runtime/product-context-client";
 import { hasRole } from "@/lib/runtime/role-utils";
+import type { ProductActor } from "@/lib/runtime/product-context";
 import type { ContributorListItem } from "@/lib/repositories/contributors";
 import { formatUsdc, shortenAddress } from "@/lib/utils/format";
 import { AddContributorDialog } from "./add-contributor-dialog";
@@ -32,15 +32,19 @@ import {
 
 type ContributorListClientProps = {
   initialContributors: ContributorListItem[];
+  workspaceId: string;
+  currentActor: ProductActor;
+  activeUserId: string;
 };
 
 export function ContributorListClient({
   initialContributors,
+  workspaceId,
+  currentActor,
+  activeUserId,
 }: ContributorListClientProps) {
   const router = useRouter();
-  const productContext = useResolvedProductContext();
-  const actor = productContext.actor;
-  const activeUserId = productContext.activeUserId;
+  const actor = currentActor;
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "archived">("all");
@@ -330,7 +334,7 @@ export function ContributorListClient({
                       </Button>
                     )}
                     <Button
-                      href={`/payouts/new?contributorId=${contributor.id}`}
+                      href={`/payouts/new?contributorId=${contributor.id}&workspaceId=${encodeURIComponent(workspaceId)}`}
                       variant="ghost"
                       className="text-xs py-1.5 px-3 h-auto"
                     >
@@ -347,6 +351,7 @@ export function ContributorListClient({
       {/* Add Contributor Modal */}
       <AddContributorDialog
         isOpen={isAddModalOpen}
+        workspaceId={workspaceId}
         onClose={() => setIsAddModalOpen(false)}
         onSuccess={() => {
           router.refresh();
@@ -362,6 +367,7 @@ export function ContributorListClient({
           setEditingContributor(null);
         }}
         contributor={editingContributor}
+        workspaceId={workspaceId}
         onSuccess={() => {
           router.refresh();
         }}
@@ -375,6 +381,7 @@ export function ContributorListClient({
           setDeletingContributor(null);
         }}
         contributor={deletingContributor}
+        workspaceId={workspaceId}
         onSuccess={() => {
           router.refresh();
         }}

@@ -168,6 +168,11 @@ export function createReleaseExecutor(
 ): ReleaseExecutor {
   return async (request: ArcSendRequest): Promise<ArcSendResult> => {
     if (mode === "browser_wallet") return executeBrowserWallet();
+    if (mode === "circle_user_wallet") {
+      return failedResult(
+        "Circle user-controlled wallet execution requires an authenticated client challenge; the server executor cannot sign for it.",
+      );
+    }
     return executeCircleWallet(request, deps?.circleWallet);
   };
 }

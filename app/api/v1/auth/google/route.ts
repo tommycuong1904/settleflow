@@ -60,11 +60,9 @@ export async function POST(request: Request) {
       ...SESSION_COOKIE_OPTIONS,
       name: SESSION_COOKIE_NAME,
     });
-    if (initialWorkspace.created) {
-      cookieStore.set(PRODUCT_CONTEXT_COOKIE_NAMES.workspaceId, initialWorkspace.workspaceId, PRODUCT_CONTEXT_COOKIE_OPTIONS);
-    } else {
-      cookieStore.delete(PRODUCT_CONTEXT_COOKIE_NAMES.workspaceId);
-    }
+    // Replace any stale workspace selection with the authenticated user's
+    // verified workspace so browser requests cannot fall back to a default.
+    cookieStore.set(PRODUCT_CONTEXT_COOKIE_NAMES.workspaceId, initialWorkspace.workspaceId, PRODUCT_CONTEXT_COOKIE_OPTIONS);
 
     return NextResponse.json({
       success: true,

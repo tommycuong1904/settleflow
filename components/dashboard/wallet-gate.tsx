@@ -10,41 +10,13 @@ import {
   Lock,
   Layers,
   Coins,
-  CheckCircle2,
 } from "lucide-react";
 
 export function WalletGate() {
-  const { isConnected, openAuthModal, authType, email, address, disconnect } =
-    useWallet();
+  const { isConnected, openAuthModal } = useWallet();
 
   if (isConnected) {
-    // Show connected notification / quick banner if needed, or null
-    return (
-      <div className="rounded-xl border border-[var(--border-soft)] bg-[var(--surface)] px-5 py-3.5 text-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-[var(--text-primary)]">
-        <div className="flex items-center gap-2.5">
-          <CheckCircle2 size={18} className="text-emerald-500 shrink-0" />
-          <span>
-            Connected via{" "}
-            <strong className="text-[var(--foreground)] font-medium">
-              {authType === "web2_google"
-                ? "Google Account"
-                : authType === "web2_email"
-                ? "Email Account"
-                : "Web3 Wallet"}
-            </strong>{" "}
-            ({email || address}) on <span className="text-emerald-500 font-medium">Arc Testnet</span>.
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={disconnect}
-            className="text-xs text-[var(--text-muted)] hover:text-rose-500 underline underline-offset-4 transition-colors"
-          >
-            Disconnect
-          </button>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   return (

@@ -47,6 +47,13 @@ test("browser_wallet mode returns an explicit client-execution failure (no synth
   assert.match(result.errorMessage ?? "", /client release flow/);
 });
 
+test("circle_user_wallet mode never falls back to the server signing key", async () => {
+  const executor = createReleaseExecutor("circle_user_wallet");
+  const result = await executor(makeRequest({ executionMode: "circle_user_wallet" }));
+  assert.equal(result.status, "failed");
+  assert.match(result.errorMessage ?? "", /client challenge/);
+});
+
 test("circle_wallet mode without ARC_SERVER_PRIVATE_KEY fails with a config error", async () => {
   const original = process.env.ARC_SERVER_PRIVATE_KEY;
   delete process.env.ARC_SERVER_PRIVATE_KEY;

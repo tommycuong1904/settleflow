@@ -10,6 +10,17 @@ export type PayoutListItem = {
   createdAt: string;
 };
 
+export type AccessiblePayoutListItem = PayoutListItem & {
+  workspaceId: string;
+  workspaceName: string;
+  membershipRole: PayoutViewRole;
+  contributor: {
+    id: string;
+    displayName: string;
+    walletAddress: string;
+  };
+};
+
 type PayoutRecord = {
   id: string;
   title: string;
@@ -66,6 +77,68 @@ export async function listPayouts(input: {
   });
 
   return payouts.map(toListItem);
+}
+
+/**
+ * Returns every payout the authenticated user may view across their workspace
+ * memberships. Contributor access remains limited to the contributor record
+ * linked to that user; owners and reviewers may view their workspace payouts.
+ */
+export async function listAccessiblePayouts(input: {
+  userId: string;
+  memberships: Array<{ workspaceId: string; role: string }>;
+}): Promise<AccessiblePayoutListItem[]> {
+  const roleByWorkspace = new Map(
+    input.memberships
+      .filter((membership): membership is { workspaceId: string; role: PayoutViewRole } =>
+        membership.role === "owner" || membership.role === "reviewer" || membership.role === "contributor" || membership.role === "ops",
+      )
+      .map((membership) => [membership.workspaceId, membership.role]),
+  );
+  const privilegedWorkspaceIds = input.memberships
+    .filter((membership) => membership.role === "owner" || membership.role === "reviewer")
+    .map((membership) => membership.workspaceId);
+  const contributorWorkspaceIds = input.memberships
+    .filter((membership) => membership.role === "contributor")
+    .map((membership) => membership.workspaceId);
+
+  if (privilegedWorkspaceIds.length === 0 && contributorWorkspaceIds.length === 0) return [];
+
+  const payouts = await db.payout.findMany({
+    where: {
+      OR: [
+        ...(privilegedWorkspaceIds.length > 0 ? [{ workspaceId: { in: privilegedWorkspaceIds } }] : []),
+        ...(contributorWorkspaceIds.length > 0
+          ? [{ workspaceId: { in: contributorWorkspaceIds }, contributor: { linkedUserId: input.userId } }]
+          : []),
+      ],
+    },
+    orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      title: true,
+      contributorId: true,
+      totalAmountUsdc: true,
+      currency: true,
+      status: true,
+      createdAt: true,
+      workspaceId: true,
+      workspace: { select: { name: true } },
+      contributor: { select: { id: true, name: true, walletAddress: true } },
+    },
+  });
+
+  return payouts.map((payout) => ({
+    ...toListItem(payout),
+    workspaceId: payout.workspaceId,
+    workspaceName: payout.workspace.name,
+    membershipRole: roleByWorkspace.get(payout.workspaceId)!,
+    contributor: {
+      id: payout.contributor.id,
+      displayName: payout.contributor.name,
+      walletAddress: payout.contributor.walletAddress,
+    },
+  }));
 }
 
 export async function getPayoutById(
@@ -181,6 +254,9 @@ export type PayoutDetailData = {
     failureReason?: string;
     confirmedAt?: string;
     failedAt?: string;
+    executionMode?: "browser_wallet" | "circle_wallet" | "circle_user_wallet";
+    releaseTxHash?: string;
+    releaseArcRequestId?: string;
   };
 };
 
@@ -248,6 +324,7 @@ export async function getPayoutDetail(
           failureReason: true,
           confirmedAt: true,
           failedAt: true,
+          release: { select: { executionMode: true, txHash: true, arcRequestId: true } },
         },
       },
     },
@@ -306,6 +383,10 @@ export async function getPayoutDetail(
             payout.transactionProofs[0].confirmedAt?.toISOString() ?? undefined,
           failedAt:
             payout.transactionProofs[0].failedAt?.toISOString() ?? undefined,
+          executionMode: payout.transactionProofs[0].release?.executionMode,
+          releaseTxHash: payout.transactionProofs[0].release?.txHash ?? undefined,
+          releaseArcRequestId: payout.transactionProofs[0].release?.arcRequestId ?? undefined,
+          releaseStatus: payout.transactionProofs[0].release?.status,
         }
       : undefined,
   };

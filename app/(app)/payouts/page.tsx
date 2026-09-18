@@ -4,9 +4,8 @@ import { PageHeader } from "@/components/shared/page-header";
 import { SectionCard } from "@/components/shared/section-card";
 import { WalletGate } from "@/components/dashboard/wallet-gate";
 import { PayoutListClient } from "@/components/payouts/payout-list-client";
-import { listPayouts } from "@/lib/repositories/payouts";
-import { listContributors } from "@/lib/repositories/contributors";
-import { resolveProductContextForServerPage } from "@/lib/auth/session-server";
+import { listAccessiblePayouts } from "@/lib/repositories/payouts";
+import { getSessionFromCookieStore, resolveSessionMemberships } from "@/lib/auth/session-server";
 import { ServerAuthContextState } from "@/components/shared/server-auth-context-state";
 import { redirect } from "next/navigation";
 import { formatUsdc } from "@/lib/utils/format";
@@ -14,20 +13,17 @@ import { Plus } from "lucide-react";
 
 export default async function PayoutsPage() {
   const cookieStore = await cookies();
-  const contextResult = await resolveProductContextForServerPage(cookieStore);
-  if (contextResult.kind === "auth-required") redirect("/auth-required?next=/payouts");
-  if (contextResult.kind !== "authenticated") return <ServerAuthContextState kind={contextResult.kind} />;
-  const productContext = contextResult.productContext;
-  if (productContext.actor === "reviewer" || productContext.actor === "ops") throw new Error("FORBIDDEN_PAYOUT_LIST");
-  const workspaceId = productContext.workspaceId;
+  const session = await getSessionFromCookieStore(cookieStore);
+  if (!session) redirect("/auth-required?next=/payouts");
+  const resolved = await resolveSessionMemberships(session);
+  if (!resolved || resolved.memberships.length === 0) {
+    return <ServerAuthContextState kind="auth-context-required" />;
+  }
 
-  const [payouts, contributors] = await Promise.all([
-    listPayouts({
-      workspaceId,
-      linkedUserId: productContext.actor === "contributor" ? productContext.activeUserId : undefined,
-    }),
-    listContributors({ workspaceId }),
-  ]);
+  const payouts = await listAccessiblePayouts({
+    userId: resolved.user.id,
+    memberships: resolved.memberships,
+  });
 
   const activePayouts = payouts.filter((p) =>
     ["active", "partially_released"].includes(p.status),
@@ -80,7 +76,7 @@ export default async function PayoutsPage() {
             Active Contributors
           </p>
           <p className="mt-3 text-2xl font-semibold tracking-tight text-[var(--foreground)]">
-            {contributors.length}
+            {new Set(payouts.map((payout) => payout.contributorId)).size}
           </p>
           <p className="mt-1.5 text-xs text-[var(--text-primary)]">
             Registered settlement targets
@@ -90,7 +86,7 @@ export default async function PayoutsPage() {
 
       {/* Payout List Section */}
       <SectionCard title="All Payout Agreements">
-        <PayoutListClient initialPayouts={payouts} contributors={contributors} />
+        <PayoutListClient initialPayouts={payouts} />
       </SectionCard>
     </div>
   );

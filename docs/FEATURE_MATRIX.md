@@ -16,7 +16,7 @@ Last verified: 2026-08
 | Arc server release path | Implemented in code; operationally unverified | `createReleaseExecutor`, `ARC_SERVER_PRIVATE_KEY`, viem send path; not production-ready |
 | Release retry | Implemented | `retryFailedRelease`, retry API route |
 | Session authentication | Implemented for current MVP flow | Google/wallet auth routes, signed `sf_session`, `proxy.ts` gate |
-| Workspace membership and actor mapping | Implemented | Prisma `WorkspaceMemberRole`; `ops → owner` in `session-mapping.ts` |
+| Workspace membership and actor mapping | Implemented | Prisma retains Ops and Reviewer for historical memberships; new invitations support Owner and Contributor only |
 | Operation authorization | Implemented | `lib/runtime/product-policy.ts` and session-aware v1 handlers |
 | Contributor create/edit/archive | Implemented | contributor routes/repository; EVM validation and duplicate-wallet guard |
 | Activity ledger and CSV export | Implemented | activity repositories and `/activity` surface |

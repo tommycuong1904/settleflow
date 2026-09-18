@@ -7,11 +7,13 @@ import { formatUsdc } from "@/lib/utils/format";
 import type { Milestone } from "@/lib/models/milestone";
 import { useWallet } from "@/lib/context/wallet-context";
 import { useScrollLock } from "@/lib/hooks/use-scroll-lock";
+import { PRODUCT_CONTEXT_HEADER_NAMES } from "@/lib/runtime/product-context";
 
 type SubmitMilestoneDialogProps = {
   isOpen: boolean;
   onClose: () => void;
   milestone: Milestone;
+  workspaceId: string;
   onSuccess: (submissionMeta?: { submittedAt?: string; summary?: string; artifactUrl?: string }) => void;
 };
 
@@ -26,6 +28,7 @@ export function SubmitMilestoneDialog({
   isOpen,
   onClose,
   milestone,
+  workspaceId,
   onSuccess,
 }: SubmitMilestoneDialogProps) {
   const [summary, setSummary] = useState(
@@ -55,7 +58,10 @@ export function SubmitMilestoneDialog({
     try {
       const response = await fetch(`/api/v1/milestones/${milestone.id}/submit`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          [PRODUCT_CONTEXT_HEADER_NAMES.workspaceId]: workspaceId,
+        },
         body: JSON.stringify({
           summary: summary.trim(),
           artifactUrl: artifactUrl.trim() || undefined,

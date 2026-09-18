@@ -64,7 +64,12 @@ export async function verifyReleaseTransaction({
   client: injectedClient,
   tokenAddress,
 }: {
-  release: { amountUsdc: unknown; destinationWalletAddress: string; sourceWalletAddress: string | null };
+  release: {
+    amountUsdc: unknown;
+    destinationWalletAddress: string;
+    sourceWalletAddress: string | null;
+    executionMode?: "browser_wallet" | "circle_wallet" | "circle_user_wallet";
+  };
   txHash: string;
   client?: VerificationClient;
   tokenAddress?: string;
@@ -77,11 +82,34 @@ export async function verifyReleaseTransaction({
   const receipt = receiptResult;
   const sourceWalletAddress = tx.from.toLowerCase();
   if (receipt.status !== "success" || Number(tx.chainId) !== ARC_CONFIG.chainId) throw new Error("TX_SNAPSHOT_MISMATCH");
-  if (release.sourceWalletAddress && tx.from.toLowerCase() !== release.sourceWalletAddress.toLowerCase()) throw new Error("TX_SNAPSHOT_MISMATCH");
+  const isCircleUserWallet = release.executionMode === "circle_user_wallet";
+  // Circle smart-wallet transfers are submitted by an account-abstraction
+  // relayer, so tx.from is not the user's smart-wallet address.
+  if (!isCircleUserWallet && release.sourceWalletAddress && tx.from.toLowerCase() !== release.sourceWalletAddress.toLowerCase()) {
+    throw new Error("TX_SNAPSHOT_MISMATCH");
+  }
 
   const amount = String(release.amountUsdc);
   const destination = release.destinationWalletAddress.toLowerCase();
   const token = (tokenAddress ?? ARC_CONFIG.usdcAddress).toLowerCase();
+  if (isCircleUserWallet) {
+    const transfer = receipt.logs.map((log) => {
+      const topics = parseTopics(log.topics);
+      if (!topics) return null;
+      try { return { decoded: decodeEventLog({ abi: transferAbi, data: log.data, topics }), address: log.address }; }
+      catch { return null; }
+    }).find((entry) =>
+      isTransferEvent(entry?.decoded) &&
+      entry.address.toLowerCase() === token &&
+      entry.decoded.args.from?.toLowerCase() === release.sourceWalletAddress?.toLowerCase() &&
+      entry.decoded.args.to?.toLowerCase() === destination &&
+      entry.decoded.args.value === decimalToUnits(amount, 6),
+    );
+    if (!transfer || !isTransferEvent(transfer.decoded) || !transfer.decoded.args.from) {
+      throw new Error("TX_SNAPSHOT_MISMATCH");
+    }
+    return { sourceWalletAddress: transfer.decoded.args.from };
+  }
   if (token === NATIVE_USDC) {
     if (tx.to?.toLowerCase() !== destination || tx.value !== decimalToUnits(amount, 18)) {
       throw new Error("TX_SNAPSHOT_MISMATCH");

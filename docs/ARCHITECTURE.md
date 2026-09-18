@@ -76,12 +76,15 @@ Workflow transitions are coordinated by repository modules including `payout-cre
 
 - `browser_wallet` — signing is performed by a connected browser wallet; the server executor fails explicitly for this mode.
 - `circle_wallet` — the server derives an account from server-only `ARC_SERVER_PRIVATE_KEY` and sends the configured USDC transfer.
+- `circle_user_wallet` — a Google-authenticated Owner uses a Circle user-controlled Arc Testnet SCA. The server creates a release-bound Circle challenge, the Web SDK confirms it in-app, and the server retrieves and verifies the provider transaction before recording proof. This path is feature-flagged and requires separate Circle configuration.
 
 Release proof and source-wallet information are persisted through release/proof repositories. Production custody, funding, gas, compliance, and operational readiness are not asserted here; see `docs/CURRENT_STATE.md` and `docs/SECURITY_INVARIANTS.md`.
 
 ## Configuration
 
 Public Arc/network values are read by `lib/arc/config.ts` from `NEXT_PUBLIC_*` variables with defaults. The server signing key is read by `lib/arc/release-executor.ts` from `ARC_SERVER_PRIVATE_KEY` and is not a public configuration value.
+
+The embedded Circle path is disabled unless `CIRCLE_USER_CONTROLLED_ENABLED=true`, a server-only `CIRCLE_USER_CONTROLLED_API_KEY`, and `NEXT_PUBLIC_CIRCLE_USER_CONTROLLED_APP_ID` are present. The API key never reaches the browser; Circle user tokens and encryption keys are short-lived SDK inputs.
 
 ## Implemented versus planned
 

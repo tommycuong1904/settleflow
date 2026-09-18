@@ -20,7 +20,7 @@ This document describes the domain concepts and relationships that are currently
 
 ### WorkspaceMember and role
 
-`WorkspaceMember` links a `User` to a `Workspace` and stores one `WorkspaceMemberRole`: `owner`, `ops`, `reviewer`, or `contributor`. A database uniqueness constraint allows only one membership row for each `(workspaceId, userId)`. The runtime actor has the corresponding values: `owner`, `ops`, `reviewer`, and `contributor`. Database roles and runtime actors must not be treated as interchangeable. Detailed policy is in `docs/AUTHORIZATION.md`.
+`WorkspaceMember` links a `User` to a `Workspace` and stores one `WorkspaceMemberRole`: `owner`, `ops`, `reviewer`, or `contributor`. A database uniqueness constraint allows only one membership row for each `(workspaceId, userId)`. New invitations use only `owner` and `contributor`; `ops` and `reviewer` remain for historical memberships. The runtime actor has the corresponding values: `owner`, `ops`, `reviewer`, and `contributor`. Database roles and runtime actors must not be treated as interchangeable. Detailed policy is in `docs/AUTHORIZATION.md`.
 
 ## Participants and payout agreement
 

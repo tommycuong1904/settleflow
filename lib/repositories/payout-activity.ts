@@ -1,5 +1,5 @@
 import { db } from "@/lib/db/client";
-import type { ActivityItem } from "@/lib/models/activity-item";
+import type { AccessibleActivityItem, ActivityItem } from "@/lib/models/activity-item";
 
 export type ActivityViewRole = "owner" | "reviewer" | "contributor" | "ops";
 export type OwnerActivity = ActivityItem;
@@ -551,4 +551,49 @@ export async function getWorkspaceActivity(workspaceId: string, role: ActivityVi
   return Array.from(merged.values()).map((item) => projectActivity(item, role)).sort(
     (a, b) => new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime(),
   );
+}
+
+/** Returns the newest permitted activity across all of a user's memberships. */
+export async function getAccessibleActivity(input: {
+  userId: string;
+  memberships: Array<{ workspaceId: string; role: string }>;
+  limit?: number;
+}): Promise<AccessibleActivityItem[]> {
+  const memberships = input.memberships.filter(
+    (membership): membership is { workspaceId: string; role: ActivityViewRole } =>
+      membership.role === "owner" ||
+      membership.role === "reviewer" ||
+      membership.role === "contributor" ||
+      membership.role === "ops",
+  );
+  if (memberships.length === 0) return [];
+
+  const workspaces = await db.workspace.findMany({
+    where: { id: { in: memberships.map((membership) => membership.workspaceId) } },
+    select: { id: true, name: true },
+  });
+  const workspaceNames = new Map(workspaces.map((workspace) => [workspace.id, workspace.name]));
+  const activityByMembership = await Promise.all(
+    memberships.map(async (membership) => ({
+      membership,
+      activities: await getWorkspaceActivity(
+        membership.workspaceId,
+        membership.role,
+        membership.role === "contributor" ? input.userId : undefined,
+      ),
+    })),
+  );
+
+  return activityByMembership
+    .flatMap(({ membership, activities }) =>
+      activities.map((activity) => ({
+        ...activity,
+        actorLabel: "actorLabel" in activity ? activity.actorLabel : "Restricted",
+        workspaceId: membership.workspaceId,
+        workspaceName: workspaceNames.get(membership.workspaceId) ?? "Workspace",
+        membershipRole: membership.role,
+      })),
+    )
+    .sort((a, b) => new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime())
+    .slice(0, input.limit ?? 50);
 }

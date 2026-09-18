@@ -49,6 +49,7 @@ enum ReviewDecision {
 enum ReleaseExecutionMode {
   browser_wallet
   circle_wallet
+  circle_user_wallet
 }
 
 enum ReleaseStatus {
@@ -106,6 +107,41 @@ model User {
   activityLogs       ActivityLog[]
   linkedContributors Contributor[]         @relation("LinkedContributor")
   createdInvitations Invitation[]          @relation("CreatedInvitations")
+  circleWallet       CircleUserWallet?
+  circleWalletProvisioning CircleWalletProvisioning?
+}
+
+/// The Arc Testnet smart-contract account held by a Circle user-controlled
+/// wallet. The user ID remains the stable external Circle user identifier;
+/// only non-secret identifiers are persisted here.
+model CircleUserWallet {
+  id            String   @id @default(uuid())
+  userId        String   @unique
+  walletId      String   @unique
+  address       String
+  blockchain    String
+  accountType   String
+  scaCore       String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([blockchain])
+}
+
+/// Persists the Circle idempotency key while a first-wallet challenge is
+/// pending, preventing duplicate wallets during reloads or concurrent clicks.
+model CircleWalletProvisioning {
+  id             String   @id @default(uuid())
+  userId         String   @unique
+  idempotencyKey String   @unique
+  challengeId    String?
+  status         String   @default("pending")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model WalletAuthChallenge {
@@ -279,6 +315,7 @@ model Release {
   amountUsdc               Decimal       @db.Decimal(30, 6)
   status                   ReleaseStatus @default(queued)
   arcRequestId             String?
+  circleChallengeId        String?       @unique
   executionMode            ReleaseExecutionMode
   sourceWalletAddress      String?
   destinationWalletAddress String

@@ -8,11 +8,11 @@ type TransactionProofCardProps = {
 
 const statusStyles: Record<TransactionProof["status"], string> = {
   pending:
-    "border border-amber-400/30 bg-amber-400/10 text-amber-200",
+    "border border-amber-400/30 bg-amber-400/10 text-amber-800 dark:text-amber-200",
   confirmed:
-    "border border-emerald-300/25 bg-emerald-400/10 text-emerald-100",
+    "border border-emerald-300/25 bg-emerald-400/10 text-emerald-800 dark:text-emerald-100",
   failed:
-    "border border-rose-300/25 bg-rose-400/10 text-rose-100",
+    "border border-rose-300/25 bg-rose-400/10 text-rose-800 dark:text-rose-100",
 };
 
 const statusTitles: Record<TransactionProof["status"], string> = {
@@ -107,8 +107,8 @@ export function TransactionProofCard({ proof, milestoneTitle }: TransactionProof
       </div>
 
       {proof.failureReason ? (
-        <div className="rounded-3xl border border-rose-300/20 bg-rose-400/10 p-4 text-sm text-rose-50">
-          <p className="text-xs uppercase tracking-[0.18em] text-rose-200/80">
+        <div className="rounded-3xl border border-rose-300/20 bg-rose-400/10 p-4 text-sm text-rose-800 dark:text-rose-50">
+          <p className="text-xs uppercase tracking-[0.18em] text-rose-800/80 dark:text-rose-200/80">
             Failure reason
           </p>
           <p className="mt-2 leading-6">{proof.failureReason}</p>

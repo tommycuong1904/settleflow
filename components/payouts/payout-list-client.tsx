@@ -1,62 +1,26 @@
 "use client";
 
-import React, { useState } from "react";
-import Link from "next/link";
+import { useState } from "react";
 import { formatUsdc, shortenAddress } from "@/lib/utils/format";
 import { Button } from "@/components/shared/button";
 import { EmptyState } from "@/components/shared/empty-state";
-import type { PayoutListItem } from "@/lib/repositories/payouts";
-import type { ContributorListItem } from "@/lib/repositories/contributors";
-import { Search, ArrowRight, Plus } from "lucide-react";
-
-import { useResolvedProductContext } from "@/lib/runtime/product-context-client";
-import { isRole } from "@/lib/runtime/role-utils";
-import { useWallet } from "@/lib/context/wallet-context";
+import type { AccessiblePayoutListItem } from "@/lib/repositories/payouts";
+import { Search, ArrowRight } from "lucide-react";
 
 type PayoutListClientProps = {
-  initialPayouts: PayoutListItem[];
-  contributors: ContributorListItem[];
+  initialPayouts: AccessiblePayoutListItem[];
 };
 
 export function PayoutListClient({
   initialPayouts,
-  contributors,
 }: PayoutListClientProps) {
-  const productContext = useResolvedProductContext();
-  const { address: connectedAddress, email: connectedEmail } = useWallet();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<
     "all" | "active" | "draft" | "completed"
   >("all");
 
-  const contributorMap = new Map(contributors.map((c) => [c.id, c]));
-  const isContributorActor = isRole(productContext.actor, "contributor");
-
-  const roleFilteredPayouts = initialPayouts.filter((payout) => {
-    // Owner and Reviewer see all payouts
-    if (!isContributorActor) return true;
-
-    // Contributor only sees their own assigned payouts
-    const contributor = contributorMap.get(payout.contributorId);
-    if (!contributor) return false;
-
-    const matchesWallet = Boolean(
-      connectedAddress &&
-      contributor.walletAddress &&
-      connectedAddress.toLowerCase() === contributor.walletAddress.toLowerCase()
-    );
-
-    const matchesEmail = Boolean(
-      connectedEmail &&
-      ((contributor.email && connectedEmail.toLowerCase() === contributor.email.toLowerCase()) ||
-       (contributor.displayName && connectedEmail.toLowerCase().startsWith(contributor.displayName.toLowerCase())))
-    );
-
-    return matchesWallet || matchesEmail;
-  });
-
-  const filteredPayouts = roleFilteredPayouts.filter((payout) => {
-    const contributor = contributorMap.get(payout.contributorId);
+  const filteredPayouts = initialPayouts.filter((payout) => {
+    const contributor = payout.contributor;
 
     if (statusFilter === "active" && !["active", "partially_released"].includes(payout.status)) {
       return false;
@@ -72,10 +36,11 @@ export function PayoutListClient({
     if (!query) return true;
 
     const matchesTitle = payout.title.toLowerCase().includes(query);
-    const matchesContributor = contributor?.displayName.toLowerCase().includes(query);
-    const matchesWallet = contributor?.walletAddress.toLowerCase().includes(query);
+    const matchesContributor = contributor.displayName.toLowerCase().includes(query);
+    const matchesWallet = contributor.walletAddress.toLowerCase().includes(query);
+    const matchesWorkspace = payout.workspaceName.toLowerCase().includes(query);
 
-    return matchesTitle || matchesContributor || matchesWallet;
+    return matchesTitle || matchesContributor || matchesWallet || matchesWorkspace;
   });
   // Pagination
   const itemsPerPage = 10;
@@ -162,7 +127,7 @@ export function PayoutListClient({
       ) : ( <>
         <div className="space-y-3.5">
           {paginatedPayouts.map((payout) => {
-            const contributor = contributorMap.get(payout.contributorId);
+            const contributor = payout.contributor;
             const statusLabel =
               payout.status === "completed"
                 ? "Completed"
@@ -174,10 +139,10 @@ export function PayoutListClient({
 
             const statusBg =
               payout.status === "completed"
-                ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300"
+                ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300"
                 : payout.status === "active" || payout.status === "partially_released"
-                ? "border-sky-400/20 bg-sky-400/10 text-sky-700"
-                : "border-white/10 bg-white/5 text-slate-400";
+                ? "border-sky-400/20 bg-sky-400/10 text-sky-800 dark:text-sky-200"
+                : "border-[var(--border-soft)] bg-[var(--surface-muted)] text-slate-700 dark:text-slate-400";
 
             return (
               <div
@@ -195,17 +160,23 @@ export function PayoutListClient({
                       >
                         {statusLabel}
                       </span>
+                      <span className="inline-flex items-center rounded-full border border-[var(--border-soft)] bg-[var(--surface-muted)] px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+                        {payout.membershipRole}
+                      </span>
                     </div>
                     <p className="text-xs text-[var(--text-muted)]">
                       Recipient:{" "}
                       <strong className="text-[var(--foreground)] font-medium">
-                        {contributor?.displayName ?? "Contributor"}
+                        {contributor.displayName}
                       </strong>{" "}
-                      {contributor?.walletAddress ? (
+                      {contributor.walletAddress ? (
                         <span className="font-mono opacity-70">
                           ({shortenAddress(contributor.walletAddress)})
                         </span>
                       ) : null}
+                    </p>
+                    <p className="text-xs text-[var(--text-muted)]">
+                      Workspace: <strong className="text-[var(--foreground)] font-medium">{payout.workspaceName}</strong>
                     </p>
                   </div>
 
@@ -218,7 +189,7 @@ export function PayoutListClient({
                         {formatUsdc(Number(payout.totalAmount))} USDC
                       </p>
                     </div>
-                    <Button href={`/payouts/${payout.id}`} variant="ghost">
+                    <Button href={`/payouts/${payout.id}?workspaceId=${encodeURIComponent(payout.workspaceId)}`} variant="ghost">
                       View Details <ArrowRight size={14} className="ml-1" />
                     </Button>
                   </div>

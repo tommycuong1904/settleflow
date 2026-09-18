@@ -19,12 +19,11 @@ import type { Milestone } from "@/lib/models/milestone";
 import type { Payout } from "@/lib/models/payout";
 import type { TransactionProof } from "@/lib/models/transaction-proof";
 import type { ProductActor } from "@/lib/runtime/product-context";
+import { PRODUCT_CONTEXT_HEADER_NAMES } from "@/lib/runtime/product-context";
 import { PayoutReceiptModal } from "@/components/payouts/payout-receipt-modal";
 import { formatUsdc, shortenAddress } from "@/lib/utils/format";
-import { Crown, Search, Code2, FileCheck, CheckCircle2, AlertCircle, ShieldAlert, Lock, ArrowLeft, Wallet } from "lucide-react";
+import { FileCheck, CheckCircle2, AlertCircle } from "lucide-react";
 import { hasRole, isRole } from "@/lib/runtime/role-utils";
-import { useWallet } from "@/lib/context/wallet-context";
-import Link from "next/link";
 
 type PersistedReleaseState = {
   releasedMilestoneId: string;
@@ -39,6 +38,7 @@ type PayoutDetailClientProps = {
   initialReleaseProof?: TransactionProof;
   initialActivity: ActivityItem[];
   currentActor: ProductActor;
+  workspaceId: string;
 };
 
 function getStorageKey(payoutId: string) {
@@ -71,9 +71,11 @@ export function PayoutDetailClient({
   initialReleaseProof,
   initialActivity,
   currentActor,
+  workspaceId,
 }: PayoutDetailClientProps) {
   const isOwnerActor = isRole(currentActor, "owner");
   const isReviewerActor = isRole(currentActor, "reviewer");
+  const canApproveMilestones = isOwnerActor || isReviewerActor;
   const [persistedRelease, setPersistedRelease] = useState<PersistedReleaseState | null>(() => {
     if (typeof window === "undefined" || initialReleaseProof) return null;
 
@@ -239,7 +241,7 @@ const [reviewingMilestoneId, setReviewingMilestoneId] = useState<string | null>(
       : nextReleasableMilestone
         ? `Release ${nextReleasableMilestone.title} to continue settlement.`
         : submittedCount > 0
-          ? "Review submitted milestones to unlock the next release."
+          ? "Approve submitted milestones to unlock the next release."
           : milestones.some((milestone) => milestone.status === "pending" || milestone.status === "rejected")
             ? "Ask the contributor to submit the next milestone deliverable."
             : effectivePayoutStatus === "completed"
@@ -270,7 +272,10 @@ const [reviewingMilestoneId, setReviewingMilestoneId] = useState<string | null>(
     try {
       const response = await fetch(`/api/v1/payouts/${payout.id}/activate`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          [PRODUCT_CONTEXT_HEADER_NAMES.workspaceId]: workspaceId,
+        },
         body: JSON.stringify({}),
       });
       const data = (await response.json()) as { error?: string; payout?: { status?: Payout["status"] } };
@@ -291,7 +296,10 @@ const [reviewingMilestoneId, setReviewingMilestoneId] = useState<string | null>(
   async function refreshActivity() {
     const response = await fetch(`/api/v1/payouts/${payout.id}/activity`, {
       method: "GET",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        [PRODUCT_CONTEXT_HEADER_NAMES.workspaceId]: workspaceId,
+      },
     });
     if (!response.ok) return;
     const data = (await response.json()) as { data?: ActivityItem[] };
@@ -312,7 +320,10 @@ const [reviewingMilestoneId, setReviewingMilestoneId] = useState<string | null>(
   }) {
     const response = await fetch(`/api/v1/payouts/${payout.id}`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        [PRODUCT_CONTEXT_HEADER_NAMES.workspaceId]: workspaceId,
+      },
       body: JSON.stringify(fields),
     });
     const data = (await response.json()) as {
@@ -493,7 +504,10 @@ const [reviewingMilestoneId, setReviewingMilestoneId] = useState<string | null>(
     try {
       const response = await fetch(`/api/v1/milestones/${milestoneId}/${decision === "approved" ? "approve" : "reject"}`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          [PRODUCT_CONTEXT_HEADER_NAMES.workspaceId]: workspaceId,
+        },
         body: JSON.stringify(decision === "rejected" ? { comment } : {}),
       });
       const data = (await response.json()) as {
@@ -574,184 +588,9 @@ const [reviewingMilestoneId, setReviewingMilestoneId] = useState<string | null>(
     void refreshActivity();
   }
 
-  const { address: connectedAddress, email: connectedEmail, isConnected, openAuthModal } = useWallet();
-
-  // Strict Role & Wallet Access Verification across all roles:
-  // 1. Contributor: Must be the designated recipient wallet/email for this payout
-  // 2. Owner: Must be the payout creator or authorized workspace owner (cannot be an unauthorized or recipient wallet)
-  // 3. Reviewer: Must be an independent authorized reviewer (recipient contributor cannot self-review)
-  const { isAuthorized, requiredRoleLabel, designatedIdentity } = useMemo(() => {
-    const currentWallet = (connectedAddress || "").toLowerCase();
-    const currentEmail = (connectedEmail || "").toLowerCase();
-    const targetWallet = (contributor?.walletAddress || payout.targetWalletAddress || "").toLowerCase();
-    const creatorWallet = (payout.creatorWalletAddress || "").toLowerCase();
-
-    // Contributor role check:
-    if (currentActor === "contributor") {
-      const matchesWallet = Boolean(currentWallet && targetWallet && currentWallet === targetWallet);
-      const matchesEmail = Boolean(
-        currentEmail &&
-        ((contributor?.email && currentEmail === contributor.email.toLowerCase()) ||
-         (contributor?.name && currentEmail.startsWith(contributor.name.toLowerCase())))
-      );
-      return {
-        isAuthorized: matchesWallet || matchesEmail,
-        requiredRoleLabel: "Designated Contributor",
-        designatedIdentity: contributor?.name
-          ? `${contributor.name} (${shortenAddress(contributor?.walletAddress || payout.targetWalletAddress || "")})`
-          : shortenAddress(contributor?.walletAddress || payout.targetWalletAddress || "Designated Recipient"),
-      };
-    }
-
-    // Owner role check:
-    if (currentActor === "owner") {
-      // Contributor cannot impersonate owner to self-release or access owner controls
-      const isDesignatedContributorOnly = Boolean(
-        currentWallet && targetWallet && currentWallet === targetWallet && currentWallet !== creatorWallet
-      );
-      if (isDesignatedContributorOnly) {
-        return {
-          isAuthorized: false,
-          requiredRoleLabel: "Workspace Owner / Payout Creator",
-          designatedIdentity: payout.creatorWalletAddress
-            ? shortenAddress(payout.creatorWalletAddress)
-            : "Authorized Payout Lead (Non-Recipient)",
-        };
-      }
-
-      // If creator wallet is known and wallet is connected, verify match
-      if (creatorWallet && currentWallet && currentWallet !== creatorWallet) {
-        return {
-          isAuthorized: false,
-          requiredRoleLabel: "Workspace Owner / Payout Creator",
-          designatedIdentity: shortenAddress(payout.creatorWalletAddress!),
-        };
-      }
-
-      return {
-        isAuthorized: true,
-        requiredRoleLabel: "Workspace Owner",
-        designatedIdentity: "Authorized Owner",
-      };
-    }
-
-    // Reviewer role check:
-    if (currentActor === "reviewer") {
-      // Contributor cannot review/approve their own payout
-      const isDesignatedContributorOnly = Boolean(
-        currentWallet && targetWallet && currentWallet === targetWallet && currentWallet !== creatorWallet
-      );
-      if (isDesignatedContributorOnly) {
-        return {
-          isAuthorized: false,
-          requiredRoleLabel: "Independent QA / Reviewer",
-          designatedIdentity: "Assigned Workspace Reviewer (Non-Recipient)",
-        };
-      }
-
-      return {
-        isAuthorized: true,
-        requiredRoleLabel: "Reviewer / QA Lead",
-        designatedIdentity: "Authorized Reviewer",
-      };
-    }
-
-    return { isAuthorized: true, requiredRoleLabel: currentActor, designatedIdentity: "" };
-  }, [currentActor, connectedAddress, connectedEmail, contributor, payout.targetWalletAddress, payout.creatorWalletAddress]);
-
-  if (!isAuthorized) {
-    return (
-      <div className="sf-container flex flex-col py-12 md:py-16 items-center justify-center min-h-[60vh]">
-        <div className="w-full max-w-xl rounded-3xl border border-rose-500/30 bg-[var(--surface)]/90 backdrop-blur-xl p-8 sm:p-10 shadow-[0_0_60px_rgba(244,63,94,0.1)] text-center space-y-6 animate-in fade-in zoom-in-95">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-rose-500/30 bg-rose-500/10 text-rose-400">
-            <ShieldAlert size={32} />
-          </div>
-
-          <div className="space-y-2">
-            <div className="inline-flex items-center gap-1.5 rounded-full border border-rose-500/30 bg-rose-500/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-rose-300">
-              <Lock size={12} />
-              <span>403 Restricted Access</span>
-            </div>
-            <h1 className="text-2xl font-bold tracking-tight text-[var(--foreground)] sm:text-3xl">
-              Private Payout Agreement
-            </h1>
-            <p className="text-sm leading-relaxed text-slate-400">
-              You are viewing as <strong className="text-[var(--foreground)] font-medium">{requiredRoleLabel}</strong>. This payout agreement is confidential and your current connected wallet does not have permission to view or manage it.
-            </p>
-          </div>
-
-          {/* Identity comparison card */}
-          <div className="rounded-2xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-4 text-xs text-left space-y-2.5">
-            <div className="flex items-center justify-between text-[var(--text-muted)] pb-2 border-b border-[var(--border-soft)]">
-              <span>Required Role / Identity:</span>
-              <strong className="font-mono text-[var(--foreground)] font-semibold">
-                {designatedIdentity}
-              </strong>
-            </div>
-            <div className="flex items-center justify-between text-[var(--text-muted)]">
-              <span>Your Connected Identity:</span>
-              <span className="font-mono text-rose-500 dark:text-rose-300 font-medium">
-                {connectedAddress
-                  ? shortenAddress(connectedAddress)
-                  : connectedEmail || "Not connected"}
-              </span>
-            </div>
-          </div>
-
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
-            <Button
-              variant="primary"
-              onClick={openAuthModal}
-              icon={<Wallet size={14} />}
-            >
-              {isConnected ? "Switch Wallet / Account" : "Connect Authorized Wallet"}
-            </Button>
-            <Link href="/payouts">
-              <Button variant="secondary" icon={<ArrowLeft size={14} />}>
-                Back to Payouts
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="sf-container flex flex-col py-10 md:py-12">
       <div className="flex flex-col gap-8">
-        {/* Role Simulation Context Banner */}
-        <div
-          className={`rounded-2xl border p-4 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
-              hasRole(currentActor, "owner")
-                ? "bg-amber-500/10 border-amber-500/30 text-amber-900 dark:text-amber-200"
-                : hasRole(currentActor, "reviewer")
-                ? "bg-cyan-500/10 border-cyan-500/30 text-cyan-900 dark:text-cyan-200"
-                : "bg-emerald-500/10 border-emerald-500/30 text-emerald-900 dark:text-emerald-200"
-            }`}
-        >
-          <div className="flex items-center gap-2.5">
-            {hasRole(currentActor, "owner") ? (
-                <Crown size={18} className="text-amber-400 shrink-0" />
-              ) : hasRole(currentActor, "reviewer") ? (
-                <Search size={18} className="text-cyan-400 shrink-0" />
-              ) : (
-                <Code2 size={18} className="text-emerald-400 shrink-0" />
-              )}
-            <p className="leading-relaxed">
-              Viewing as <strong className="font-semibold uppercase tracking-wider">{currentActor}</strong>:{" "}
-               {hasRole(currentActor, "owner")
-                 ? "You have full control to activate draft agreements, refine milestone allocations, and trigger Arc USDC releases."
-                 : hasRole(currentActor, "reviewer")
-                 ? "Your primary role is to inspect milestone deliverables and approve or reject submissions to authorize payout release."
-                 : "You can submit milestone deliverables for review and track your upcoming USDC escrow settlements."}
-            </p>
-          </div>
-          <span className="text-[10px] uppercase font-mono tracking-wider opacity-70 shrink-0">
-            Use Header to switch role
-          </span>
-        </div>
-
         {/* Header with Export Receipt CTA */}
         <PageHeader
           eyebrow="Payout detail"
@@ -950,7 +789,7 @@ const [reviewingMilestoneId, setReviewingMilestoneId] = useState<string | null>(
         <section className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
             <StatCard label="Milestones" value={milestones.length} />
-            <StatCard label="Awaiting review" value={submittedCount} />
+            <StatCard label="Awaiting owner approval" value={submittedCount} />
             <StatCard label="Ready to release" value={readyToReleaseCount} />
             <StatCard
               label="Released"
@@ -986,8 +825,9 @@ const [reviewingMilestoneId, setReviewingMilestoneId] = useState<string | null>(
                     key={milestone.id}
                     milestone={milestone}
                     currentActor={currentActor}
-                    onApprove={isReviewerActor ? () => handleApproveMilestone(milestone.id) : undefined}
-                    onReject={isReviewerActor ? (_milestoneId, comment) => handleRejectMilestone(milestone.id, comment) : undefined}
+                    workspaceId={workspaceId}
+                    onApprove={canApproveMilestones ? () => handleApproveMilestone(milestone.id) : undefined}
+                    onReject={canApproveMilestones ? (_milestoneId, comment) => handleRejectMilestone(milestone.id, comment) : undefined}
                     onStatusChange={handleMilestoneStatusChange}
                   />
                 ))}

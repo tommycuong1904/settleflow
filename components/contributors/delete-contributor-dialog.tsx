@@ -7,12 +7,14 @@ import { X, Trash2, Loader2, AlertTriangle } from "lucide-react";
 import { useToast } from "@/lib/context/toast-context";
 import { useScrollLock } from "@/lib/hooks/use-scroll-lock";
 import type { ContributorListItem } from "@/lib/repositories/contributors";
+import { PRODUCT_CONTEXT_HEADER_NAMES } from "@/lib/runtime/product-context";
 
 type DeleteContributorDialogProps = {
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: () => void;
   contributor: ContributorListItem | null;
+  workspaceId: string;
 };
 
 export function DeleteContributorDialog({
@@ -20,6 +22,7 @@ export function DeleteContributorDialog({
   onClose,
   onSuccess,
   contributor,
+  workspaceId,
 }: DeleteContributorDialogProps) {
   const router = useRouter();
   const { toast } = useToast();
@@ -38,6 +41,7 @@ export function DeleteContributorDialog({
     try {
       const res = await fetch(`/api/v1/contributors/${contributor.id}`, {
         method: "DELETE",
+        headers: { [PRODUCT_CONTEXT_HEADER_NAMES.workspaceId]: workspaceId },
       });
 
       const data = await res.json();

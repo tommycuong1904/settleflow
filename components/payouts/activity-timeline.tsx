@@ -1,3 +1,6 @@
+"use client";
+
+import { useSyncExternalStore } from "react";
 import type { ActivityItem } from "@/lib/models/activity-item";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,7 +9,17 @@ type ActivityTimelineProps = {
   items: ActivityItem[];
 };
 
+function formatServerTimestamp(value: string) {
+  return new Date(value).toISOString().replace("T", " ").replace(/\.\d{3}Z$/, " UTC");
+}
+
 export function ActivityTimeline({ items }: ActivityTimelineProps) {
+  const hasHydrated = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
+
   return (
     <Card className="sf-shell">
       <CardHeader>
@@ -31,9 +44,11 @@ export function ActivityTimeline({ items }: ActivityTimelineProps) {
                       {item.actorLabel}
                     </p>
                   </div>
-                  <p className="text-xs text-[var(--text-muted)]">
-                    {new Date(item.occurredAt).toLocaleString()}
-                  </p>
+                  <time dateTime={item.occurredAt} className="text-xs text-[var(--text-muted)]">
+                    {hasHydrated
+                      ? new Date(item.occurredAt).toLocaleString()
+                      : formatServerTimestamp(item.occurredAt)}
+                  </time>
                 </div>
                 {item.description ? (
                   <p className="mt-3 text-sm leading-6 text-[var(--text-primary)]">{item.description}</p>

@@ -66,7 +66,7 @@ This repository is now a full-stack Next.js application for SettleFlow, an Arc-n
 ### Dashboard (`/dashboard`)
 #### Confirmed
 - Fully verified and audit-passing.
-- Shows high-level payout operations metrics (Active payouts, Milestones awaiting review, Settlements in flight, Outstanding exposure).
+- Shows high-level payout operations metrics (Active payouts, Milestones awaiting owner approval, Settlements in flight, Outstanding exposure).
 - Priority queue banner with smart next-action routing.
 - Tabs for Pending Review, Active Payouts, and Recent Settlement Proofs backed by repository-driven server data.
 - Workspace isolation and live data refresh verified.
@@ -75,7 +75,7 @@ This repository is now a full-stack Next.js application for SettleFlow, an Arc-n
 #### Confirmed
 - Core Payout Workflow fully audited and verified: Create → Activate → Submit → Approve / Reject → Release → Proof.
 - Recipient auto-fill from query params (`?contributorId=...`).
-- Role-based action masking: Owner (activate, release, retry), Reviewer (approve/reject), Contributor (submit/resubmit).
+- Role-based action masking: Owner (activate, approve/reject, release, retry); Contributor (submit/resubmit). Historical Reviewer memberships remain supported for compatibility but are not newly assignable.
 - Release execution remains fail-closed / disabled for real transactions.
 
 ### Contributors (`/contributors`)
@@ -89,17 +89,15 @@ This repository is now a full-stack Next.js application for SettleFlow, an Arc-n
 
 ### Activity Ledger (`/activity`)
 #### Confirmed
-- Fully verified and audit-passing.
-- Shows comprehensive cryptographic audit trail with category filters (`All`, `Proofs & Releases`, `Approvals`, `Submissions`) and pagination.
-- Deduplication across `activityLog` and `transactionProof`.
-- CSV export functionality.
+- Shows the latest 50 permitted events across the signed-in user’s workspace memberships, with workspace and membership-role labels.
+- Contributor events remain limited to payouts linked to that contributor; owner and historical role projections retain their existing policy boundaries.
+- Includes category filters, pagination, deduplication across `activityLog` and `transactionProof`, and CSV export.
+- Database activity records are operational audit logs; confirmed transaction proofs provide the onchain settlement evidence.
 
 ### Settings (`/settings`)
 #### Confirmed
 - Fully verified and audit-passing.
-- Webhook URL configuration with HTTP/HTTPS format validation.
-- Per-event notification toggles (`notifyOnSubmit`, `notifyOnApprove`, `notifyOnRelease`) persisted to Workspace record.
-- Webhook Test Action calling `POST /api/v1/webhooks/test` secured with session auth & Owner-only enforcement.
+- Webhook configuration, per-event notification toggles, and the owner-only webhook test endpoint remain implemented in the API/data layer, but their Settings UI is intentionally deferred until delivery reliability is hardened.
 - RPC Node health check and non-custodial Smart Account private key export modal. Google export derives from the server-verified Google subject, so importing it into a browser wallet yields the same address.
 
 ## 3. Data, database, and API state
@@ -157,7 +155,6 @@ This repository is now a full-stack Next.js application for SettleFlow, an Arc-n
 - The repository now contains a request-derived product context boundary with:
   - header/query/cookie-aware resolution
   - proxy-based context bridging
-  - actor switch UX for seeded-role testing
   - route-level permission checks for core mutations
   - UI capability masking for owner / reviewer / contributor actions
 
@@ -219,7 +216,7 @@ This repository is now a full-stack Next.js application for SettleFlow, an Arc-n
   - milestone release
   - release proof refresh
   - release retry
-- Core UI surfaces now mask actions by actor role and include a header actor switcher for role testing.
+- Core UI surfaces mask actions from the session-derived workspace role; no role simulation controls are exposed.
 - **Dev server runs on port 3000**.
 - Browser E2E is intentionally deferred.
 - Arc execution has a server-side path, but real settlement and confirmation are intentionally deferred. CI forces mock execution and no real Arc credentials are configured.

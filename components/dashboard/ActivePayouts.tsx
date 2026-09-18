@@ -27,9 +27,10 @@ export default function ActivePayouts({ activePayouts, payouts, contributors, mi
             ? transactionProofs.find((proof) => proof.milestoneId === nextReleaseReady.id)
             : undefined;
           const statusClassMap: Record<string, string> = {
-            active: "border border-cyan-300/20 bg-cyan-400/10 text-cyan-700",
-            submitted: "border border-sky-400/20 bg-sky-400/10 text-sky-700",
-            // Add more status mappings as needed
+            draft: "border border-[var(--border-soft)] bg-[var(--surface-muted)] text-slate-700 dark:text-slate-400",
+            active: "border border-cyan-300/20 bg-cyan-400/10 text-cyan-800 dark:text-cyan-200",
+            partially_released: "border border-sky-400/20 bg-sky-400/10 text-sky-800 dark:text-sky-200",
+            completed: "border border-emerald-400/30 bg-emerald-400/10 text-emerald-800 dark:text-emerald-200",
           };
 
           const payoutStatusLabel =

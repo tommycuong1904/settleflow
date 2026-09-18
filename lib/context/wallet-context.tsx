@@ -30,6 +30,7 @@ export interface WalletContextValue {
   openAuthModal: () => void;
   closeAuthModal: () => void;
   refreshBalance: () => Promise<void>;
+  refreshCircleWallet: () => Promise<void>;
   connectWeb3: (preferredWallet?: string) => Promise<void>;
   connectGoogle: (profile: { email: string; name?: string; picture?: string; sub: string; idToken: string }) => Promise<void>;
   getPrivateKey: () => string | null;
@@ -316,6 +317,26 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     [saveSession],
   );
 
+  const refreshCircleWallet = useCallback(async () => {
+    if (!isConnected || authType !== "web2_google") return;
+    try {
+      const response = await fetch("/api/v1/circle/wallet", { cache: "no-store" });
+      if (!response.ok) return;
+      const payload = (await response.json()) as { wallet?: { address?: string } | null };
+      const circleAddress = payload.wallet?.address;
+      if (!circleAddress || circleAddress.toLowerCase() === address?.toLowerCase()) return;
+      setAddress(circleAddress);
+      setWalletName("Circle Smart Wallet");
+      saveSession({ address: circleAddress, walletName: "Circle Smart Wallet" });
+    } catch {
+      // Embedded wallet availability must not block the established auth session.
+    }
+  }, [address, authType, isConnected, saveSession]);
+
+  useEffect(() => {
+    void refreshCircleWallet();
+  }, [refreshCircleWallet]);
+
   const getPrivateKey = useCallback(() => {
     if (!isConnected || authType !== "web2_google" || !googleSub) {
       return null;
@@ -356,6 +377,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         openAuthModal,
         closeAuthModal,
         refreshBalance,
+        refreshCircleWallet,
         connectWeb3,
         connectGoogle,
         getPrivateKey,

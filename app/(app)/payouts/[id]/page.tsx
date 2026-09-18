@@ -60,6 +60,7 @@ export default async function PayoutDetailPage({
         initialReleaseProof={undefined}
         initialActivity={[]}
         currentActor={productContext.actor}
+        workspaceId={productContext.workspaceId}
       />
     );
   }
@@ -74,6 +75,7 @@ export default async function PayoutDetailPage({
       initialReleaseProof={detail.releaseProof}
       initialActivity={activity as unknown as import("@/lib/models/activity-item").ActivityItem[]}
       currentActor={productContext.actor}
+      workspaceId={productContext.workspaceId}
     />
   );
 }

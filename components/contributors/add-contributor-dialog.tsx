@@ -16,17 +16,20 @@ import {
 } from "lucide-react";
 import { useToast } from "@/lib/context/toast-context";
 import { useScrollLock } from "@/lib/hooks/use-scroll-lock";
+import { PRODUCT_CONTEXT_HEADER_NAMES } from "@/lib/runtime/product-context";
 
 type AddContributorDialogProps = {
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: () => void;
+  workspaceId: string;
 };
 
 export function AddContributorDialog({
   isOpen,
   onClose,
   onSuccess,
+  workspaceId,
 }: AddContributorDialogProps) {
   const router = useRouter();
   const { toast } = useToast();
@@ -61,7 +64,10 @@ export function AddContributorDialog({
     try {
       const res = await fetch("/api/contributors", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          [PRODUCT_CONTEXT_HEADER_NAMES.workspaceId]: workspaceId,
+        },
         body: JSON.stringify({
           name: name.trim(),
           walletAddress: cleanAddress,

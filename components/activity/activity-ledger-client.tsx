@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
-import type { ActivityItem } from "@/lib/models/activity-item";
+import React, { useState, useSyncExternalStore } from "react";
+import type { AccessibleActivityItem } from "@/lib/models/activity-item";
 import { shortenAddress } from "@/lib/utils/format";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Button } from "@/components/shared/button";
@@ -18,12 +18,27 @@ import {
 } from "lucide-react";
 
 type ActivityLedgerClientProps = {
-  initialActivities: ActivityItem[];
+  initialActivities: AccessibleActivityItem[];
 };
+
+function formatServerTimestamp(value: string) {
+  return new Date(value).toISOString().replace("T", " ").replace(/\.\d{3}Z$/, " UTC");
+}
+
+function csvCell(value: string | undefined) {
+  const text = value ?? "";
+  const safeText = /^[\t\r ]*[=+\-@]/.test(text) ? `'${text}` : text;
+  return `"${safeText.replace(/"/g, '""')}"`;
+}
 
 export function ActivityLedgerClient({
   initialActivities,
 }: ActivityLedgerClientProps) {
+  const hasHydrated = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFilter, setSelectedFilter] = useState<
     "all" | "proofs" | "approvals" | "submissions"
@@ -68,6 +83,8 @@ export function ActivityLedgerClient({
 
     const headers = [
       "Timestamp",
+      "Workspace",
+      "Access Role",
       "Actor",
       "Entity Type",
       "Action",
@@ -84,14 +101,16 @@ export function ActivityLedgerClient({
         (txHash ? `https://testnet.arcscan.app/tx/${txHash}` : "");
 
       return [
-        `"${a.occurredAt}"`,
-        `"${(a.actorLabel || "").replace(/"/g, '""')}"`,
-        `"${a.entityType}"`,
-        `"${a.action}"`,
-        `"${(a.title || "").replace(/"/g, '""')}"`,
-        `"${(a.description || "").replace(/"/g, '""')}"`,
-        `"${txHash}"`,
-        `"${explorerUrl}"`,
+        csvCell(a.occurredAt),
+        csvCell(a.workspaceName),
+        csvCell(a.membershipRole),
+        csvCell(a.actorLabel),
+        csvCell(a.entityType),
+        csvCell(a.action),
+        csvCell(a.title),
+        csvCell(a.description),
+        csvCell(txHash),
+        csvCell(explorerUrl),
       ].join(",");
     });
 
@@ -264,6 +283,9 @@ export function ActivityLedgerClient({
                           <span className="inline-flex items-center rounded-full border border-slate-700 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider">
                             {item.actorLabel}
                           </span>
+                          <span className="inline-flex items-center rounded-full border border-[var(--border-soft)] bg-[var(--surface-muted)] px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+                            {item.workspaceName} · {item.membershipRole}
+                          </span>
                         </div>
 
                         {item.description ? (
@@ -288,9 +310,14 @@ export function ActivityLedgerClient({
                       </div>
                     </div>
 
-                    <div className="text-right sm:shrink-0 text-xs text-slate-400 font-mono">
-                      {new Date(item.occurredAt).toLocaleString()}
-                    </div>
+                    <time
+                      dateTime={item.occurredAt}
+                      className="text-right sm:shrink-0 text-xs text-slate-400 font-mono"
+                    >
+                      {hasHydrated
+                        ? new Date(item.occurredAt).toLocaleString()
+                        : formatServerTimestamp(item.occurredAt)}
+                    </time>
                   </div>
                 </div>
               );

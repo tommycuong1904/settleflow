@@ -3,7 +3,12 @@
 import { useMemo, useState } from "react";
 
 import { ARC_CONFIG } from "@/lib/arc/config";
-import { sendUsdcWithBrowserWallet } from "@/lib/arc/browser-wallet";
+import {
+  BrowserWalletPreBroadcastError,
+  BrowserWalletSubmissionUnknownError,
+  sendUsdcWithBrowserWallet,
+} from "@/lib/arc/browser-wallet";
+import { executeCircleChallenge, type CircleSdkChallenge } from "@/lib/circle/user-controlled-client";
 import { mapSendResultToProof } from "@/lib/arc/map-send-result-to-proof";
 import {
   ReleasePanel,
@@ -37,6 +42,55 @@ type PayoutDetailReleaseShellProps = {
   onActivityChange?: () => void | Promise<void>;
 };
 
+type CircleReleasePayload = {
+  error?: string;
+  status?: "pending" | "confirmed" | "failed";
+  phase?: "confirmation" | "settlement";
+  release?: { id: string; status: string; txHash?: string; arcRequestId?: string };
+  proof?: {
+    id: string;
+    releaseId?: string;
+    milestoneId?: string;
+    txHash?: string;
+    network?: string;
+    status: "pending" | "confirmed" | "failed";
+    explorerUrl?: string;
+    confirmedAt?: string;
+    failedAt?: string;
+    failureReason?: string;
+    executionMode?: TransactionProof["executionMode"];
+    releaseTxHash?: string;
+    releaseArcRequestId?: string;
+  };
+};
+
+function proofFromCirclePayload(
+  payload: CircleReleasePayload,
+  fallback: TransactionProof,
+): TransactionProof | undefined {
+  if (!payload.proof) return undefined;
+  return {
+    ...fallback,
+    ...payload.proof,
+    milestoneId: payload.proof.milestoneId ?? fallback.milestoneId,
+    releaseId: payload.proof.releaseId ?? payload.release?.id ?? fallback.releaseId,
+    txHash: payload.proof.txHash ?? "",
+    network: payload.proof.network ?? "Arc Testnet",
+    explorerUrl: payload.proof.explorerUrl ?? "",
+    executionMode: payload.proof.executionMode ?? "circle_user_wallet",
+    releaseTxHash: payload.proof.releaseTxHash ?? payload.release?.txHash,
+    releaseArcRequestId: payload.proof.releaseArcRequestId ?? payload.release?.arcRequestId,
+  };
+}
+
+function releaseErrorMessage(error: unknown, fallback: string) {
+  const message = error instanceof Error ? error.message : fallback;
+  if (message === "CIRCLE_WALLET_PROVIDER_ERROR") {
+    return "Circle is temporarily unavailable. This release remains pending; retry the current confirmation or settlement refresh without creating a new release.";
+  }
+  return message;
+}
+
 export function PayoutDetailReleaseShell({
   payoutId,
   recipientAddress,
@@ -48,7 +102,7 @@ export function PayoutDetailReleaseShell({
   onActivityChange,
 }: PayoutDetailReleaseShellProps) {
   const productContext = useResolvedProductContext();
-  const { isConnected, openAuthModal } = useWallet();
+  const { isConnected, address, authType, openAuthModal, refreshCircleWallet } = useWallet();
   const isOwnerActor = isRole(currentActor, "owner");
   const [releaseStatus, setReleaseStatus] = useState<ReleasePanelStatus>(
     releaseProof?.status === "failed"
@@ -79,14 +133,50 @@ export function PayoutDetailReleaseShell({
           ? "submitting"
           : "confirmed"
       : releaseStatus;
-  const releaseActionEnabled = effectiveReleaseStatus !== "failed";
-  const releaseActionLabel =
-    effectiveReleaseStatus === "failed"
+  const isPendingCircleRelease = Boolean(
+    resolvedProof?.status === "pending" &&
+    resolvedProof.releaseId &&
+    resolvedProof.executionMode === "circle_user_wallet",
+  );
+  const isCircleSettlementPending = Boolean(
+    isPendingCircleRelease && (resolvedProof?.releaseTxHash || resolvedProof?.releaseArcRequestId),
+  );
+  const needsCircleConfirmation = isPendingCircleRelease && !isCircleSettlementPending;
+  const isBrowserReleasable = Boolean(
+    resolvedProof?.status === "pending" &&
+    resolvedProof.releaseId &&
+    resolvedProof.executionMode === "browser_wallet" &&
+    resolvedProof.releaseStatus === "queued",
+  );
+  const isBrowserReconciliationPending = Boolean(
+    resolvedProof?.status === "pending" &&
+    resolvedProof.executionMode === "browser_wallet" &&
+    resolvedProof.releaseStatus === "pending",
+  );
+  const releaseActionEnabled = effectiveReleaseStatus !== "failed" && !isBrowserReconciliationPending;
+  const releaseActionLabel = isCircleSettlementPending
+    ? "Refresh Circle settlement"
+    : needsCircleConfirmation
+      ? "Continue Circle confirmation"
+      : isBrowserReleasable
+        ? "Continue Web3 release"
+        : isBrowserReconciliationPending
+          ? "Await Web3 reconciliation"
+      : effectiveReleaseStatus === "failed"
       ? "Retry from proof panel"
       : undefined;
 
-// eslint-disable-next-line react-hooks/exhaustive-deps
   const statusText = useMemo(() => {
+    if (releaseError) return releaseError;
+    if (isCircleSettlementPending) {
+      return "Circle submitted the transaction. Refresh its settlement status without creating or signing another transaction.";
+    }
+    if (needsCircleConfirmation) {
+      return "Circle confirmation is waiting. Continue with the existing confirmation; SettleFlow will not create another release.";
+    }
+    if (isBrowserReconciliationPending) {
+      return "Wallet submission may have been broadcast. Check wallet activity and confirm with its transaction hash; retry is locked to prevent duplicate payment.";
+    }
     switch (effectiveReleaseStatus) {
       case "submitting":
         return "SettleFlow is preparing the Arc release and waiting for the settlement proof update.";
@@ -102,7 +192,7 @@ export function PayoutDetailReleaseShell({
           ? "This milestone is approved and can be released now. Trigger release here after confirming the recipient and amount."
           : "No approved milestone is ready for release yet. Approve a submitted milestone first to unlock this panel.";
     }
-  }, [effectiveReleaseStatus, nextReleasableMilestone, releaseError]);
+  }, [effectiveReleaseStatus, isBrowserReconciliationPending, isCircleSettlementPending, needsCircleConfirmation, nextReleasableMilestone, releaseError]);
 
   const productContextHeaders = useMemo(
     () => ({
@@ -115,7 +205,66 @@ export function PayoutDetailReleaseShell({
     [productContext.actor, productContext.contributorUserId, productContext.ownerUserId, productContext.reviewerUserId, productContext.workspaceId],
   );
 
-  async function handleRelease() {
+  async function ensureCircleSmartWallet() {
+    const response = await fetch("/api/v1/circle/wallet", { method: "POST" });
+    const payload = (await response.json()) as {
+      error?: string;
+      wallet?: { walletId: string } | null;
+      challenge?: CircleSdkChallenge | null;
+    };
+    if (!response.ok || payload.error) throw new Error(payload.error ?? "Unable to prepare your Circle smart wallet.");
+    if (payload.wallet) {
+      await refreshCircleWallet();
+      return;
+    }
+    if (!payload.challenge) throw new Error("Circle wallet provisioning did not return a confirmation challenge.");
+    await executeCircleChallenge(payload.challenge);
+    const completed = await fetch("/api/v1/circle/wallet/complete", { method: "POST" });
+    const completedPayload = (await completed.json()) as { error?: string; wallet?: { walletId: string } };
+    if (!completed.ok || completedPayload.error || !completedPayload.wallet) {
+      throw new Error(completedPayload.error ?? "Circle smart wallet setup was not completed.");
+    }
+    await refreshCircleWallet();
+  }
+
+  async function completeCircleRelease(releaseId: string) {
+    const completed = await fetch(`/api/v1/releases/${releaseId}/circle/complete`, {
+      method: "POST",
+      headers: productContextHeaders,
+    });
+    const completedPayload = (await completed.json()) as CircleReleasePayload;
+    if (!completed.ok && completed.status !== 202) throw new Error(completedPayload.error ?? "Circle wallet release failed.");
+    return completedPayload;
+  }
+
+  async function executeCircleRelease(releaseId: string) {
+    const challengeResponse = await fetch(`/api/v1/releases/${releaseId}/circle/challenge`, {
+      method: "POST",
+      headers: productContextHeaders,
+    });
+    const challengePayload = (await challengeResponse.json()) as { error?: string; challenge?: CircleSdkChallenge };
+    if (!challengeResponse.ok || challengePayload.error || !challengePayload.challenge) {
+      throw new Error(challengePayload.error ?? "Unable to prepare Circle wallet confirmation.");
+    }
+    try {
+      await executeCircleChallenge(challengePayload.challenge);
+    } catch (error) {
+      // The SDK can reject after Circle accepted the confirmation. Read the
+      // authoritative server state before treating it as a failed attempt.
+      try {
+        const reconciled = await completeCircleRelease(releaseId);
+        if (reconciled.status !== "pending" || reconciled.phase === "settlement") {
+          return reconciled;
+        }
+      } catch {
+        // Preserve the original SDK error when reconciliation is unavailable.
+      }
+      throw error;
+    }
+    return completeCircleRelease(releaseId);
+  }
+
+  async function handleRelease(resumeReleaseId?: string) {
     if (!isConnected) {
       openAuthModal();
       return;
@@ -129,7 +278,11 @@ export function PayoutDetailReleaseShell({
     setReleaseStatus("submitting");
 
     try {
-      const response = await fetch(`/api/v1/milestones/${nextReleasableMilestone.id}/release`, {
+      const useCircleSmartWallet = ARC_CONFIG.executionMode === "real" && authType === "web2_google";
+      if (useCircleSmartWallet) await ensureCircleSmartWallet();
+      const response = resumeReleaseId
+        ? null
+        : await fetch(`/api/v1/milestones/${nextReleasableMilestone.id}/release`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -137,10 +290,11 @@ export function PayoutDetailReleaseShell({
         },
         body: JSON.stringify({
           amountUsdc: String(nextReleasableMilestone.amount),
+          executionMode: useCircleSmartWallet ? "circle_user_wallet" : undefined,
         }),
       });
 
-      const data = (await response.json()) as {
+      const data = response ? (await response.json()) as {
         error?: string;
         release?: { id: string; status: string; txHash?: string };
         proof?: {
@@ -153,15 +307,40 @@ export function PayoutDetailReleaseShell({
           explorerUrl?: string;
           confirmedAt?: string;
         };
+      } : {
+        release: { id: resumeReleaseId!, status: "queued" },
+        proof: {
+          id: resolvedProof?.id ?? `proof-${nextReleasableMilestone.id}-pending`,
+          releaseId: resumeReleaseId!,
+          milestoneId: nextReleasableMilestone.id,
+          status: "pending",
+        },
       };
 
-      if (!response.ok || data.error) {
+      if ((response && !response.ok) || data.error) {
         setReleaseError(data.error ?? "Release request failed.");
         setReleaseStatus("failed");
         return;
       }
 
-      if (ARC_CONFIG.executionMode === "real" && data.release?.id) {
+      let circleProof: TransactionProof | undefined;
+      if (useCircleSmartWallet && data.release?.id) {
+        const completedPayload = await executeCircleRelease(data.release.id);
+        data.release = completedPayload.release ?? data.release;
+        data.proof = completedPayload.proof
+          ? { ...completedPayload.proof, milestoneId: completedPayload.proof.milestoneId ?? nextReleasableMilestone.id }
+          : data.proof;
+        circleProof = proofFromCirclePayload(completedPayload, {
+          id: data.proof?.id ?? `proof-${nextReleasableMilestone.id}-pending`,
+          releaseId: data.release?.id,
+          milestoneId: nextReleasableMilestone.id,
+          txHash: "",
+          network: "Arc Testnet",
+          status: "pending",
+          explorerUrl: "",
+          executionMode: "circle_user_wallet",
+        });
+      } else if (ARC_CONFIG.executionMode === "real" && data.release?.id) {
         const claimResponse = await fetch(`/api/v1/releases/${data.release.id}/claim`, {
           method: "POST",
           headers: { "Content-Type": "application/json", ...productContextHeaders },
@@ -170,14 +349,68 @@ export function PayoutDetailReleaseShell({
         if (!claimResponse.ok) {
           throw new Error("Release execution was already claimed or is no longer executable.");
         }
-        const walletResult = await sendUsdcWithBrowserWallet({
-          recipient: recipientAddress ?? "",
-          amount: String(nextReleasableMilestone.amount),
-        });
+        let walletResult: Awaited<ReturnType<typeof sendUsdcWithBrowserWallet>> | undefined;
+        try {
+          walletResult = await sendUsdcWithBrowserWallet({
+            recipient: recipientAddress ?? "",
+            amount: String(nextReleasableMilestone.amount),
+            expectedSender: authType === "web3_wallet" ? address ?? undefined : undefined,
+          });
+        } catch (error) {
+          if (error instanceof BrowserWalletPreBroadcastError) {
+            const failedResponse = await fetch(`/api/v1/releases/${data.release.id}/proof/refresh`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json", ...productContextHeaders },
+              body: JSON.stringify({
+                status: "failed",
+                failureReason: `BROWSER_WALLET_PRE_BROADCAST: ${error.message}`,
+              }),
+            });
+            const failedData = (await failedResponse.json()) as {
+              error?: string;
+              release?: { status?: string };
+              proof?: { id: string; releaseId?: string; milestoneId?: string; status: "failed"; failureReason?: string; failedAt?: string };
+            };
+            if (!failedResponse.ok || failedData.error || !failedData.proof) {
+              throw new Error(failedData.error ?? "Unable to safely record the cancelled wallet request.");
+            }
+            data.release.status = failedData.release?.status ?? "failed";
+            data.proof = {
+              id: failedData.proof.id,
+              releaseId: failedData.proof.releaseId,
+              milestoneId: failedData.proof.milestoneId ?? nextReleasableMilestone.id,
+              txHash: "",
+              network: "Arc Testnet",
+              status: "failed",
+              explorerUrl: "",
+            };
+          } else if (error instanceof BrowserWalletSubmissionUnknownError) {
+            setActiveProof({
+              id: data.proof?.id ?? `proof-${nextReleasableMilestone.id}-pending`,
+              releaseId: data.release.id,
+              milestoneId: nextReleasableMilestone.id,
+              txHash: "",
+              network: "Arc Testnet",
+              status: "pending",
+              explorerUrl: "",
+              executionMode: "browser_wallet",
+              releaseStatus: "pending",
+              failureReason: "Wallet submission outcome is unknown. Reconcile with the wallet transaction hash before retrying.",
+            });
+            setReleaseError("Wallet submission outcome is unknown. Check wallet activity and confirm with the transaction hash; retry is locked to prevent duplicate payment.");
+            setReleaseStatus("submitting");
+            return;
+          }
+          throw error;
+        }
 
-        if (walletResult.state !== "success" || !walletResult.txHash) {
+        if (data.proof?.status !== "failed" && (!walletResult || walletResult.state !== "success" || !walletResult.txHash)) {
           throw new Error("Arc browser-wallet send did not return a successful transaction.");
         }
+
+        if (data.proof?.status === "failed") {
+          // The trusted pre-broadcast path above already recorded failure.
+        } else {
 
         const proofResponse = await fetch(`/api/v1/releases/${data.release.id}/proof/refresh`, {
           method: "POST",
@@ -187,7 +420,7 @@ export function PayoutDetailReleaseShell({
           },
           body: JSON.stringify({
             status: "confirmed",
-            txHash: walletResult.txHash,
+            txHash: walletResult!.txHash,
             network: "Arc Testnet",
           }),
         });
@@ -215,15 +448,16 @@ export function PayoutDetailReleaseShell({
           id: proofData.proof.id,
           releaseId: proofData.proof.releaseId,
           milestoneId: proofData.proof.milestoneId ?? nextReleasableMilestone.id,
-          txHash: proofData.proof.txHash ?? walletResult.txHash,
+          txHash: proofData.proof.txHash ?? walletResult!.txHash,
           network: proofData.proof.network ?? "Arc Testnet",
           status: proofData.proof.status,
-          explorerUrl: proofData.proof.explorerUrl ?? walletResult.explorerUrl,
+          explorerUrl: proofData.proof.explorerUrl ?? walletResult!.explorerUrl,
           confirmedAt: proofData.proof.confirmedAt ?? new Date().toISOString(),
         };
+        }
       }
 
-      const result = mapSendResultToProof(
+      const result = circleProof ?? mapSendResultToProof(
         {
           result: {
             status:
@@ -249,6 +483,10 @@ export function PayoutDetailReleaseShell({
       }
 
       setActiveProof(result);
+      if (result.executionMode === undefined && data.release?.id && data.proof?.status) {
+        result.executionMode = useCircleSmartWallet ? "circle_user_wallet" : "browser_wallet";
+        result.releaseStatus = data.release.status as TransactionProof["releaseStatus"];
+      }
       if (result.status === "confirmed") {
         onReleaseSuccess?.({
           milestoneId: nextReleasableMilestone.id,
@@ -260,10 +498,67 @@ export function PayoutDetailReleaseShell({
       void onActivityChange?.();
       setReleaseStatus(result.status === "failed" ? "failed" : result.status === "pending" ? "submitting" : "confirmed");
     } catch (err) {
-      setReleaseError(
-        err instanceof Error ? err.message : "Release request failed.",
-      );
+      setReleaseError(releaseErrorMessage(err, "Release request failed."));
       setReleaseStatus("failed");
+    }
+  }
+
+  async function handleContinueCircleRelease() {
+    if (!isOwnerActor || !resolvedProof?.releaseId || !isPendingCircleRelease) return;
+
+    setReleaseError(null);
+    setReleaseStatus("submitting");
+    try {
+      // Inspect Circle first. A completed challenge must be reconciled, never
+      // reopened in the SDK; reopening it is what caused provider errors.
+      let completedPayload = await completeCircleRelease(resolvedProof.releaseId);
+      if (completedPayload.status === "pending" && completedPayload.phase === "confirmation") {
+        completedPayload = await executeCircleRelease(resolvedProof.releaseId);
+      }
+      const proof = proofFromCirclePayload(completedPayload, resolvedProof);
+      if (!proof) throw new Error("Circle wallet release did not return a settlement proof.");
+      setActiveProof(proof);
+      if (proof.status === "confirmed") {
+        onReleaseSuccess?.({
+          milestoneId: proof.milestoneId,
+          proof,
+          releasedAt: proof.confirmedAt ?? new Date().toISOString(),
+        });
+      }
+      if (proof.status === "failed") {
+        setReleaseError(proof.failureReason ?? "Circle wallet transfer failed before a transaction was submitted.");
+      }
+      void onActivityChange?.();
+      setReleaseStatus(proof.status === "confirmed" ? "confirmed" : proof.status === "failed" ? "failed" : "submitting");
+    } catch (err) {
+      setReleaseError(releaseErrorMessage(err, "Unable to continue Circle wallet confirmation."));
+    }
+  }
+
+  async function handleRefreshCircleSettlement() {
+    if (!isOwnerActor || !resolvedProof?.releaseId || !isCircleSettlementPending) return;
+
+    setReleaseError(null);
+    setReleaseStatus("submitting");
+    try {
+      const completedPayload = await completeCircleRelease(resolvedProof.releaseId);
+      const proof = proofFromCirclePayload(completedPayload, resolvedProof);
+      if (!proof) throw new Error("Circle settlement did not return a proof.");
+      setActiveProof(proof);
+      if (proof.status === "confirmed") {
+        onReleaseSuccess?.({
+          milestoneId: proof.milestoneId,
+          proof,
+          releasedAt: proof.confirmedAt ?? new Date().toISOString(),
+        });
+      }
+      if (proof.status === "failed") {
+        setReleaseError(proof.failureReason ?? "Circle wallet transfer failed.");
+      }
+      void onActivityChange?.();
+      setReleaseStatus(proof.status === "confirmed" ? "confirmed" : proof.status === "failed" ? "failed" : "submitting");
+    } catch (err) {
+      setReleaseError(releaseErrorMessage(err, "Unable to refresh Circle settlement."));
     }
   }
 
@@ -464,11 +759,18 @@ export function PayoutDetailReleaseShell({
             modeLabel={ARC_CONFIG.executionMode}
             enabled={isOwnerActor && (Boolean(nextReleasableMilestone) || Boolean(resolvedProof))}
             actionEnabled={releaseActionEnabled}
+            allowWhileSubmitting={isPendingCircleRelease || isBrowserReleasable}
             actionLabel={releaseActionLabel}
             status={effectiveReleaseStatus}
             errorMessage={releaseError}
             onRelease={() => {
-              void handleRelease();
+              void (isCircleSettlementPending
+                ? handleRefreshCircleSettlement()
+                : needsCircleConfirmation
+                  ? handleContinueCircleRelease()
+                  : isBrowserReleasable
+                    ? handleRelease(resolvedProof?.releaseId)
+                  : handleRelease());
             }}
           />
           {statusText ? (

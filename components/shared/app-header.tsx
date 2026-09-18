@@ -3,7 +3,6 @@
 import React, { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/shared/button";
-import { RoleSwitcher } from "@/components/shared/role-switcher";
 import { FaucetModal } from "@/components/shared/faucet-modal";
 import { ExportKeyModal } from "@/components/shared/export-key-modal";
 import { useWallet } from "@/lib/context/wallet-context";
@@ -93,11 +92,6 @@ export function AppHeader() {
 
       {/* Right group: Desktop Utilities & Wallet / Account (pushed to the right using ml-auto) */}
       <div className="ml-auto flex items-center justify-end gap-2 sm:gap-2.5">
-        {/* Role Switcher on Desktop */}
-        <div className="hidden md:block">
-          <RoleSwitcher />
-        </div>
-
         {/* Get test USDC on Desktop */}
         <a
           href="https://faucet.circle.com"

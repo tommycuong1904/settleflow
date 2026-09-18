@@ -5,8 +5,7 @@ import {
   getVerifiedSessionUser,
   resolveProductContextFromRequestWithSession,
 } from "@/lib/auth/session-server";
-import { createInvitation } from "@/lib/services/invitations";
-import type { WorkspaceMemberRole } from "@prisma/client";
+import { createInvitation, isInvitableWorkspaceRole } from "@/lib/services/invitations";
 
 export const dynamic = "force-dynamic";
 
@@ -37,9 +36,9 @@ export async function POST(request: NextRequest) {
       expiresInDays?: number;
     };
 
-    const role = (body.role || "contributor").trim().toLowerCase() as WorkspaceMemberRole;
-    if (!["owner", "ops", "reviewer", "contributor"].includes(role)) {
-      return NextResponse.json({ error: "Invalid role specified." }, { status: 400 });
+    const role = (body.role || "contributor").trim().toLowerCase();
+    if (!isInvitableWorkspaceRole(role)) {
+      return NextResponse.json({ error: "Invitations support owner or contributor roles." }, { status: 400 });
     }
 
     if (body.email !== undefined && typeof body.email !== "string") {

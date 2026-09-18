@@ -12,23 +12,14 @@ import { addArcNetworkToWallet } from "@/lib/arc/onchain";
 import { useToast } from "@/lib/context/toast-context";
 import { ExportKeyModal } from "@/components/shared/export-key-modal";
 import {
-  Settings,
   Shield,
-  Bell,
   Cpu,
-  Wallet,
   Check,
   Copy,
   ExternalLink,
-  Save,
-  Globe,
-  Radio,
-  Sliders,
-  Sparkles,
   KeyRound,
   UserPlus,
 } from "lucide-react";
-import { shortenAddress } from "@/lib/utils/format";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -37,7 +28,7 @@ export default function SettingsPage() {
   const actor = productContext.actor;
   const isOwner = hasRole(actor, "owner");
 
-  const { isConnected, address, email, authType, disconnect, network, getPrivateKey } = useWallet();
+  const { isConnected, address, email, authType, disconnect, getPrivateKey } = useWallet();
   const { toast } = useToast();
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
@@ -46,18 +37,10 @@ export default function SettingsPage() {
     router.replace(`/auth-required?next=${encodeURIComponent(pathname || "/settings")}`);
   };
 
-  const [workspaceName, setWorkspaceName] = useState("SettleFlow Core DAO");
-  const [supportEmail, setSupportEmail] = useState("ops@settleflow.io");
-  const [webhookUrl, setWebhookUrl] = useState("");
-  const [notifyOnSubmit, setNotifyOnSubmit] = useState(true);
-  const [notifyOnApprove, setNotifyOnApprove] = useState(true);
-  const [notifyOnRelease, setNotifyOnRelease] = useState(true);
   const [rpcStatus, setRpcStatus] = useState<"idle" | "testing" | "healthy">("idle");
   const [latencyMs, setLatencyMs] = useState<number | null>(null);
-  const [webhookBusy, setWebhookBusy] = useState(false);
-  const [isSavingSettings, setIsSavingSettings] = useState(false);
 
-  const [inviteRole, setInviteRole] = useState<"contributor" | "ops" | "reviewer" | "owner">("contributor");
+  const [inviteRole, setInviteRole] = useState<"contributor" | "owner">("contributor");
   const [inviteEmail, setInviteEmail] = useState("");
   const [generatedInviteUrl, setGeneratedInviteUrl] = useState<string | null>(null);
   const [isGeneratingInvite, setIsGeneratingInvite] = useState(false);
@@ -92,77 +75,9 @@ export default function SettingsPage() {
     }
   }, [isOwner, router]);
 
-  // Load persisted workspace webhook & notification settings.
-  useEffect(() => {
-    if (!isOwner) return;
-
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch("/api/v1/settings");
-        const json = (await res.json()) as {
-          data?: {
-            webhookUrl?: string;
-            notifyOnSubmit?: boolean;
-            notifyOnApprove?: boolean;
-            notifyOnRelease?: boolean;
-          };
-        };
-        if (cancelled || !res.ok || !json.data) return;
-        if (json.data.webhookUrl) setWebhookUrl(json.data.webhookUrl);
-        if (json.data.notifyOnSubmit !== undefined) setNotifyOnSubmit(json.data.notifyOnSubmit);
-        if (json.data.notifyOnApprove !== undefined) setNotifyOnApprove(json.data.notifyOnApprove);
-        if (json.data.notifyOnRelease !== undefined) setNotifyOnRelease(json.data.notifyOnRelease);
-      } catch {
-        // Keep defaults on failure; settings are non-critical and applied on save.
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [isOwner]);
-
   if (!isOwner) {
     return null;
   }
-
-  const handleTestWebhook = async () => {
-    if (!webhookUrl || !webhookUrl.startsWith("http")) {
-      toast({
-        variant: "warning",
-        title: "Invalid URL",
-        description: "Please enter a valid HTTP/HTTPS webhook URL first.",
-      });
-      return;
-    }
-
-    setWebhookBusy(true);
-    try {
-      const res = await fetch("/api/v1/webhooks/test", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ webhookUrl }),
-      });
-      const data = (await res.json()) as { error?: string; success?: boolean; message?: string };
-      if (!res.ok || data.error) {
-        throw new Error(data.error ?? "Failed to send test webhook.");
-      }
-      toast({
-        variant: "success",
-        title: "Webhook Delivered",
-        description: "Test notification payload dispatched successfully!",
-      });
-    } catch (err) {
-      toast({
-        variant: "error",
-        title: "Delivery Failed",
-        description: err instanceof Error ? err.message : "Unable to reach webhook URL.",
-      });
-    } finally {
-      setWebhookBusy(false);
-    }
-  };
 
   const handleTestRpc = async () => {
     setRpcStatus("testing");
@@ -196,125 +111,25 @@ export default function SettingsPage() {
     }
   };
 
-  const handleSaveSettings = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (isSavingSettings) return;
-
-    setIsSavingSettings(true);
-    try {
-      const res = await fetch("/api/v1/settings", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          webhookUrl: webhookUrl.trim() || null,
-          notifyOnSubmit,
-          notifyOnApprove,
-          notifyOnRelease,
-        }),
-      });
-      const data = (await res.json()) as { error?: string; message?: string };
-      if (!res.ok || data.error) {
-        throw new Error(data.error || data.message || "Failed to save settings.");
-      }
-      toast({
-        variant: "success",
-        title: "Settings Saved",
-        description: "Workspace preferences and notifications updated successfully.",
-      });
-    } catch (err) {
-      toast({
-        variant: "error",
-        title: "Save Failed",
-        description:
-          err instanceof Error ? err.message : "Unable to save workspace settings.",
-      });
-    } finally {
-      setIsSavingSettings(false);
-    }
-  };
-
   return (
     <div className="sf-app-wrapper flex flex-col py-8 md:py-12 gap-8">
       {/* Header */}
       <PageHeader
-        eyebrow="Preferences & Configuration"
+        eyebrow="Workspace Administration"
         title="Workspace Settings"
-        description="Configure your workspace defaults, Arc Testnet blockchain parameters, and event notification webhooks."
+        description="Manage team access, your active session, and optional Arc wallet tools."
       />
 
-      <form onSubmit={handleSaveSettings} className="space-y-8">
-        {/* Section 1: General Workspace Profile */}
-        <div className="rounded-xl border border-[var(--border-soft)] p-6 sm:p-8 space-y-6">
-          <div className="flex items-center gap-3 pb-4 border-b border-[var(--border-soft)]">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--surface-muted)] border border-[var(--border-soft)] text-[var(--text-muted)]">
-              <Sliders size={20} />
-            </div>
-            <div>
-              <h2 className="text-base font-semibold text-[var(--foreground)]">General Workspace Profile</h2>
-              <p className="text-xs text-[var(--text-muted)]">Organization identity and settlement currency defaults</p>
-            </div>
-          </div>
-
-          <div className="grid gap-5 md:grid-cols-2 text-xs">
-            <div className="space-y-2">
-              <label className="block font-semibold uppercase tracking-wider text-[var(--text-muted)]">
-                Workspace Display Name
-              </label>
-              <input
-                type="text"
-                value={workspaceName}
-                onChange={(e) => setWorkspaceName(e.target.value)}
-                className="w-full rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] py-2.5 px-3.5 text-xs text-[var(--foreground)] placeholder-[var(--text-muted)] focus:border-[var(--foreground)] focus:outline-none focus:ring-1 focus:ring-[var(--foreground)] transition-all"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="block font-semibold uppercase tracking-wider text-[var(--text-muted)]">
-                Operations / Notification Email
-              </label>
-              <input
-                type="email"
-                value={supportEmail}
-                onChange={(e) => setSupportEmail(e.target.value)}
-                className="w-full rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] py-2.5 px-3.5 text-xs text-[var(--foreground)] placeholder-[var(--text-muted)] focus:border-[var(--foreground)] focus:outline-none focus:ring-1 focus:ring-[var(--foreground)] transition-all"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="block font-semibold uppercase tracking-wider text-[var(--text-muted)]">
-                Settlement Token
-              </label>
-              <input
-                type="text"
-                disabled
-                value="Circle USDC (Native on Arc)"
-                className="w-full rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] py-2.5 px-3.5 text-xs text-[var(--text-muted)] cursor-not-allowed font-mono"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="block font-semibold uppercase tracking-wider text-[var(--text-muted)]">
-                Default Milestone Release Rule
-              </label>
-              <input
-                type="text"
-                disabled
-                value="Requires Explicit Reviewer Approval"
-                className="w-full rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] py-2.5 px-3.5 text-xs text-[var(--text-muted)] cursor-not-allowed"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Section 1B: Team Invitations & Access Control */}
+      <div className="space-y-8">
+        {/* Team access */}
         <div className="rounded-xl border border-[var(--border-soft)] p-6 sm:p-8 space-y-6 bg-[var(--surface-muted)]/30">
           <div className="flex items-center gap-3 pb-4 border-b border-[var(--border-soft)]">
             <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--surface-muted)] border border-[var(--border-soft)] text-[var(--text-muted)]">
               <UserPlus size={20} />
             </div>
             <div>
-              <h2 className="text-base font-semibold text-[var(--foreground)]">Team Invitations & Access Links</h2>
-              <p className="text-xs text-[var(--text-muted)]">Generate explicit invite tokens for Contributor, Ops, Reviewer, or Owner roles</p>
+              <h2 className="text-base font-semibold text-[var(--foreground)]">Team Access & Invitations</h2>
+              <p className="text-xs text-[var(--text-muted)]">Invite a team member with the role they need for this workspace</p>
             </div>
           </div>
 
@@ -330,8 +145,6 @@ export default function SettingsPage() {
                   className="w-full rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] py-2.5 px-3.5 text-xs text-[var(--foreground)] focus:border-[var(--foreground)] focus:outline-none"
                 >
                   <option value="contributor">Contributor (Builder / Freelancer)</option>
-                  <option value="ops">Ops Lead (Payout Operator)</option>
-                  <option value="reviewer">Reviewer (Milestone Approver)</option>
                   <option value="owner">Owner (Full Admin Access)</option>
                 </select>
               </div>
@@ -396,7 +209,78 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Section 2: Arc Blockchain & Protocol Configuration */}
+        {/* Active session */}
+        <div className="rounded-xl border border-[var(--border-soft)] p-6 sm:p-8 space-y-6">
+          <div className="flex items-center justify-between gap-4 pb-4 border-b border-[var(--border-soft)]">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--surface-muted)] border border-[var(--border-soft)] text-[var(--text-muted)]">
+                <Shield size={20} />
+              </div>
+              <div>
+                <h2 className="text-base font-semibold text-[var(--foreground)]">Active Session</h2>
+                <p className="text-xs text-[var(--text-muted)]">Your signed-in account and authentication method</p>
+              </div>
+            </div>
+
+            {isConnected && (
+              <Button
+                type="button"
+                variant="danger"
+                size="sm"
+                onClick={handleDisconnect}
+              >
+                Disconnect Session
+              </Button>
+            )}
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2 text-xs">
+            <div className="p-4 rounded-2xl bg-[var(--surface-muted)] border border-[var(--border-soft)] space-y-1.5">
+              <div className="flex items-center justify-between">
+                <p className="text-[11px] uppercase tracking-wider text-[var(--text-muted)] font-semibold">
+                  Active Account Principal
+                </p>
+                {address && (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      await navigator.clipboard.writeText(address);
+                      toast({
+                        variant: "success",
+                        title: "Address Copied",
+                        description: "Wallet address copied to clipboard!",
+                      });
+                    }}
+                    className="flex items-center gap-1 text-[11px] text-[var(--foreground)] hover:text-[var(--text-muted)] transition-colors"
+                  >
+                    <Copy size={12} /> Copy Address
+                  </button>
+                )}
+              </div>
+              <p className="text-sm font-mono text-[var(--foreground)] font-medium break-all">
+                {email ? `${email} (${address?.slice(0, 6)}...${address?.slice(-4)})` : address || "Guest / Not connected"}
+              </p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-[var(--surface-muted)] border border-[var(--border-soft)] space-y-1">
+              <p className="text-[11px] uppercase tracking-wider text-[var(--text-muted)] font-semibold">
+                Authentication Rail
+              </p>
+              <p className="text-sm font-semibold text-[var(--text-muted)]">
+                {authType === "web2_google"
+                  ? "Google Non-Custodial Smart Account"
+                  : authType === "web2_email"
+                  ? "Email Magic Link Smart Account"
+                  : authType === "web3_wallet"
+                  ? "Direct Web3 Browser Wallet (MetaMask / Rabby)"
+                  : "Guest Simulation Mode"}
+              </p>
+            </div>
+
+          </div>
+        </div>
+
+        {/* Advanced Arc tools */}
         <div className="rounded-xl border border-[var(--border-soft)] p-6 sm:p-8 space-y-6">
           <div className="flex items-center justify-between gap-4 pb-4 border-b border-[var(--border-soft)]">
             <div className="flex items-center gap-3">
@@ -404,8 +288,8 @@ export default function SettingsPage() {
                 <Cpu size={20} />
               </div>
               <div>
-                <h2 className="text-base font-semibold text-[var(--foreground)]">Arc Protocol & Node Config</h2>
-                <p className="text-xs text-[var(--text-muted)]">Network endpoints and contract verification</p>
+                <h2 className="text-base font-semibold text-[var(--foreground)]">Advanced: Arc Network</h2>
+                <p className="text-xs text-[var(--text-muted)]">Connection details, node diagnostics, and wallet setup</p>
               </div>
             </div>
 
@@ -474,196 +358,34 @@ export default function SettingsPage() {
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Section 3: Webhooks & Notifications */}
-        <div className="rounded-xl border border-[var(--border-soft)] p-6 sm:p-8 space-y-6">
-          <div className="flex items-center gap-3 pb-4 border-b border-[var(--border-soft)]">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--surface-muted)] border border-[var(--border-soft)] text-[var(--text-muted)]">
-              <Bell size={20} />
-            </div>
-            <div>
-              <h2 className="text-base font-semibold text-[var(--foreground)]">Event Webhooks & Alerts</h2>
-              <p className="text-xs text-[var(--text-muted)]">Receive real-time notifications on Discord, Slack, or custom endpoints</p>
-            </div>
-          </div>
-
-          <div className="space-y-4 text-xs">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="block font-semibold uppercase tracking-wider text-[var(--text-muted)]">
-                  Webhook URL (Discord / Slack / Telegram)
-                </label>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleTestWebhook}
-                  disabled={webhookBusy}
-                >
-                  {webhookBusy ? "Sending test..." : "Send Test Webhook"}
-                </Button>
-              </div>
-              <input
-                type="url"
-                value={webhookUrl}
-                onChange={(e) => setWebhookUrl(e.target.value)}
-                placeholder="https://discord.com/api/webhooks/... or https://hooks.slack.com/..."
-                className="w-full rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] py-2.5 px-3.5 text-xs text-[var(--foreground)] placeholder-[var(--text-muted)] focus:border-[var(--foreground)] focus:outline-none focus:ring-1 focus:ring-[var(--foreground)] transition-all font-mono"
-              />
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-3 pt-2">
-              <label className="flex items-center gap-3 p-3.5 rounded-2xl border border-[var(--border-soft)] bg-[var(--surface-muted)] cursor-pointer hover:border-[var(--border-soft)] transition-all">
-                <input
-                  type="checkbox"
-                  checked={notifyOnSubmit}
-                  onChange={(e) => setNotifyOnSubmit(e.target.checked)}
-                  className="rounded border-[var(--border-soft)] bg-[var(--surface-muted)] text-[var(--foreground)] focus:ring-[var(--foreground)] h-4 w-4"
-                />
-                <div>
-                  <p className="font-semibold text-[var(--foreground)]">Milestone Submitted</p>
-                  <p className="text-[10px] text-[var(--text-muted)]">Notify reviewers to inspect work</p>
+          {authType === "web2_google" && getPrivateKey() && (
+            <div className="p-4 rounded-2xl bg-[var(--surface-muted)] border border-[var(--border-soft)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--surface-strong)] border border-[var(--border-soft)] text-[var(--foreground)] shrink-0">
+                  <KeyRound size={18} />
                 </div>
-              </label>
-
-              <label className="flex items-center gap-3 p-3.5 rounded-2xl border border-[var(--border-soft)] bg-[var(--surface-muted)] cursor-pointer hover:border-[var(--border-soft)] transition-all">
-                <input
-                  type="checkbox"
-                  checked={notifyOnApprove}
-                  onChange={(e) => setNotifyOnApprove(e.target.checked)}
-                  className="rounded border-[var(--border-soft)] bg-[var(--surface-muted)] text-[var(--foreground)] focus:ring-[var(--foreground)] h-4 w-4"
-                />
                 <div>
-                  <p className="font-semibold text-[var(--foreground)]">Milestone Approved</p>
-                  <p className="text-[10px] text-[var(--text-muted)]">Notify payout lead for release</p>
+                  <p className="font-semibold text-[var(--foreground)]">Wallet Self-Custody & Backup</p>
+                  <p className="text-[11px] text-[var(--text-muted)]">
+                    Export your Arc Smart Account private key to import into MetaMask, Rabby, or other hardware wallets.
+                  </p>
                 </div>
-              </label>
-
-              <label className="flex items-center gap-3 p-3.5 rounded-2xl border border-[var(--border-soft)] bg-[var(--surface-muted)] cursor-pointer hover:border-[var(--border-soft)] transition-all">
-                <input
-                  type="checkbox"
-                  checked={notifyOnRelease}
-                  onChange={(e) => setNotifyOnRelease(e.target.checked)}
-                  className="rounded border-[var(--border-soft)] bg-[var(--surface-muted)] text-[var(--foreground)] focus:ring-[var(--foreground)] h-4 w-4"
-                />
-                <div>
-                  <p className="font-semibold text-[var(--foreground)]">USDC Released</p>
-                  <p className="text-[10px] text-[var(--text-muted)]">Attach proof & ping contributor</p>
-                </div>
-              </label>
-            </div>
-          </div>
-        </div>
-
-        {/* Section 4: Wallet & Security Session */}
-        <div className="rounded-xl border border-[var(--border-soft)] p-6 sm:p-8 space-y-6">
-          <div className="flex items-center justify-between gap-4 pb-4 border-b border-[var(--border-soft)]">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--surface-muted)] border border-[var(--border-soft)] text-[var(--text-muted)]">
-                <Shield size={20} />
               </div>
-              <div>
-                <h2 className="text-base font-semibold text-[var(--foreground)]">Security & Active Session</h2>
-                <p className="text-xs text-[var(--text-muted)]">Wallet connection and auth principal details</p>
-              </div>
-            </div>
-
-            {isConnected && (
               <Button
                 type="button"
-                variant="danger"
+                variant="secondary"
                 size="sm"
-                onClick={handleDisconnect}
+                onClick={() => setIsExportModalOpen(true)}
+                className="shrink-0"
               >
-                Disconnect Session
+                <KeyRound size={13} className="mr-1.5" /> Export Private Key
               </Button>
-            )}
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2 text-xs">
-            <div className="p-4 rounded-2xl bg-[var(--surface-muted)] border border-[var(--border-soft)] space-y-1.5">
-              <div className="flex items-center justify-between">
-                <p className="text-[11px] uppercase tracking-wider text-[var(--text-muted)] font-semibold">
-                  Active Account Principal
-                </p>
-                {address && (
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      await navigator.clipboard.writeText(address);
-                      toast({
-                        variant: "success",
-                        title: "Address Copied",
-                        description: "Wallet address copied to clipboard!",
-                      });
-                    }}
-                    className="flex items-center gap-1 text-[11px] text-[var(--foreground)] hover:text-[var(--text-muted)] transition-colors"
-                  >
-                    <Copy size={12} /> Copy Address
-                  </button>
-                )}
-              </div>
-              <p className="text-sm font-mono text-[var(--foreground)] font-medium break-all">
-                {email ? `${email} (${address?.slice(0, 6)}...${address?.slice(-4)})` : address || "Guest / Not connected"}
-              </p>
             </div>
-
-            <div className="p-4 rounded-2xl bg-[var(--surface-muted)] border border-[var(--border-soft)] space-y-1">
-              <p className="text-[11px] uppercase tracking-wider text-[var(--text-muted)] font-semibold">
-                Authentication Rail
-              </p>
-              <p className="text-sm font-semibold text-[var(--text-muted)]">
-                {authType === "web2_google"
-                  ? "Google Non-Custodial Smart Account"
-                  : authType === "web2_email"
-                  ? "Email Magic Link Smart Account"
-                  : authType === "web3_wallet"
-                  ? "Direct Web3 Browser Wallet (MetaMask / Rabby)"
-                  : "Guest Simulation Mode"}
-              </p>
-            </div>
-
-            {authType === "web2_google" && getPrivateKey() && (
-              <div className="md:col-span-2 p-4 rounded-2xl bg-[var(--surface-muted)] border border-[var(--border-soft)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--surface-strong)] border border-[var(--border-soft)] text-[var(--foreground)] shrink-0">
-                    <KeyRound size={18} />
-                  </div>
-                  <div>
-                    <p className="font-semibold text-[var(--foreground)]">Wallet Self-Custody & Backup</p>
-                    <p className="text-[11px] text-[var(--text-muted)]">
-                      Export your Arc Smart Account private key to import into MetaMask, Rabby, or other hardware wallets.
-                    </p>
-                  </div>
-                </div>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setIsExportModalOpen(true)}
-                  className="shrink-0"
-                >
-                  <KeyRound size={13} className="mr-1.5" /> Export Private Key
-                </Button>
-              </div>
-            )}
-          </div>
+          )}
         </div>
 
-        {/* Submit Actions */}
-        <div className="flex items-center justify-end gap-4 pt-2">
-          <Button
-            type="submit"
-            variant="primary"
-            size="lg"
-            icon={<Save size={16} />}
-            disabled={isSavingSettings}
-          >
-            {isSavingSettings ? "Saving..." : "Save Workspace Settings"}
-          </Button>
-        </div>
-      </form>
+      </div>
 
       {/* Export Private Key Modal */}
       <ExportKeyModal

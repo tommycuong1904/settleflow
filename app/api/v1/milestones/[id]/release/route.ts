@@ -8,9 +8,11 @@ import { queueMilestoneRelease } from "@/lib/repositories/milestone-release";
 import { claimReleaseExecution, markReleaseReconciliationPending, recordReleaseSourceWallet, recordReleaseTransactionHash, refreshReleaseProof } from "@/lib/repositories/release-proof";
 import { assertCanReleaseMilestone } from "@/lib/runtime/product-policy";
 import { resolveProductContextFromRequestWithSession } from "@/lib/auth/session-server";
+import { getSessionFromRequest } from "@/lib/auth/session-server";
+import { db } from "@/lib/db/client";
 
-function isReleaseExecutionMode(value: unknown): value is "browser_wallet" | "circle_wallet" {
-  return value === "browser_wallet" || value === "circle_wallet";
+function isReleaseExecutionMode(value: unknown): value is "browser_wallet" | "circle_wallet" | "circle_user_wallet" {
+  return value === "browser_wallet" || value === "circle_wallet" || value === "circle_user_wallet";
 }
 
 export async function POST(
@@ -32,7 +34,22 @@ export async function POST(
     }
 
     const executionMode = isReleaseExecutionMode(body.executionMode) ? body.executionMode : "browser_wallet";
-    const result = await queueMilestoneRelease(id, ownerUserId, productContext.workspaceId, body.amountUsdc, executionMode);
+    let sourceWalletAddress: string | null = null;
+    if (executionMode === "circle_user_wallet") {
+      const session = await getSessionFromRequest(request);
+      if (!session || session.authType !== "web2_google" || session.userId !== ownerUserId) {
+        return apiError("CIRCLE_WALLET_REQUIRES_GOOGLE_SESSION", { message: "A Google owner session is required for a Circle smart-wallet release.", status: 403 });
+      }
+      const wallet = await db.circleUserWallet.findUnique({
+        where: { userId: ownerUserId },
+        select: { address: true, blockchain: true, accountType: true },
+      });
+      if (!wallet || wallet.blockchain !== "ARC-TESTNET" || wallet.accountType !== "SCA") {
+        return apiError("CIRCLE_WALLET_NOT_PROVISIONED", { message: "Set up your Circle Arc smart wallet before releasing funds.", status: 409 });
+      }
+      sourceWalletAddress = wallet.address;
+    }
+    const result = await queueMilestoneRelease(id, ownerUserId, productContext.workspaceId, body.amountUsdc, executionMode, undefined, sourceWalletAddress);
     if (executionMode === "circle_wallet") await claimReleaseExecution(result.release.id, productContext.workspaceId);
 
     if (executionMode === "circle_wallet") {
@@ -103,6 +120,8 @@ export async function POST(
         FAILURE_REASON_REQUIRED: 400,
         SOURCE_WALLET_MISMATCH: 409,
         SOURCE_WALLET_REQUIRED: 409,
+        CIRCLE_WALLET_NOT_PROVISIONED: 409,
+        CIRCLE_WALLET_REQUIRES_GOOGLE_SESSION: 403,
       },
       {
         MILESTONE_NOT_FOUND: "Milestone not found.",
@@ -115,6 +134,8 @@ export async function POST(
         RELEASE_AMOUNT_MISMATCH: "Release amount must match the milestone amount.",
         SOURCE_WALLET_MISMATCH: "Release source wallet does not match the trusted executor.",
         SOURCE_WALLET_REQUIRED: "Release source wallet is required before confirmation.",
+        CIRCLE_WALLET_NOT_PROVISIONED: "Set up your Circle Arc smart wallet before releasing funds.",
+        CIRCLE_WALLET_REQUIRES_GOOGLE_SESSION: "A Google owner session is required for a Circle smart-wallet release.",
       },
       { message: "Unable to queue release.", status: 500 },
     );

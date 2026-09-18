@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/lib/context/toast-context";
 import { useScrollLock } from "@/lib/hooks/use-scroll-lock";
+import { PRODUCT_CONTEXT_HEADER_NAMES } from "@/lib/runtime/product-context";
 import type { ContributorListItem } from "@/lib/repositories/contributors";
 
 type EditContributorDialogProps = {
@@ -25,6 +26,7 @@ type EditContributorDialogProps = {
   onClose: () => void;
   onSuccess?: () => void;
   contributor: ContributorListItem | null;
+  workspaceId: string;
 };
 
 export function EditContributorDialog({
@@ -32,6 +34,7 @@ export function EditContributorDialog({
   onClose,
   onSuccess,
   contributor,
+  workspaceId,
 }: EditContributorDialogProps) {
   const router = useRouter();
   const { toast } = useToast();
@@ -70,7 +73,10 @@ export function EditContributorDialog({
     try {
       const res = await fetch(`/api/v1/contributors/${contributor.id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          [PRODUCT_CONTEXT_HEADER_NAMES.workspaceId]: workspaceId,
+        },
         body: JSON.stringify({
           name: name.trim(),
           walletAddress: cleanAddress,
@@ -118,7 +124,10 @@ export function EditContributorDialog({
     try {
       const res = await fetch(`/api/v1/contributors/${contributor.id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          [PRODUCT_CONTEXT_HEADER_NAMES.workspaceId]: workspaceId,
+        },
         body: JSON.stringify({ status: nextStatus }),
       });
 

@@ -3,24 +3,23 @@ import { PageHeader } from "@/components/shared/page-header";
 import { WalletGate } from "@/components/dashboard/wallet-gate";
 import { SectionCard } from "@/components/shared/section-card";
 import { ActivityLedgerClient } from "@/components/activity/activity-ledger-client";
-import { getWorkspaceActivity } from "@/lib/repositories/payout-activity";
-import { resolveProductContextForServerPage } from "@/lib/auth/session-server";
+import { getAccessibleActivity } from "@/lib/repositories/payout-activity";
+import { getSessionFromCookieStore, resolveSessionMemberships } from "@/lib/auth/session-server";
 import { ServerAuthContextState } from "@/components/shared/server-auth-context-state";
 import { redirect } from "next/navigation";
 
 export default async function ActivityPage() {
   const cookieStore = await cookies();
-  const contextResult = await resolveProductContextForServerPage(cookieStore);
-  if (contextResult.kind === "auth-required") redirect("/auth-required?next=/activity");
-  if (contextResult.kind !== "authenticated") return <ServerAuthContextState kind={contextResult.kind} />;
-  const productContext = contextResult.productContext;
-  const workspaceId = productContext.workspaceId;
-
-  const activities = await getWorkspaceActivity(
-    workspaceId,
-    productContext.actor,
-    productContext.actor === "contributor" ? productContext.activeUserId : undefined,
-  );
+  const session = await getSessionFromCookieStore(cookieStore);
+  if (!session) redirect("/auth-required?next=/activity");
+  const resolved = await resolveSessionMemberships(session);
+  if (!resolved || resolved.memberships.length === 0) {
+    return <ServerAuthContextState kind="auth-context-required" />;
+  }
+  const activities = await getAccessibleActivity({
+    userId: resolved.user.id,
+    memberships: resolved.memberships,
+  });
 
   const proofEvents = activities.filter(
     (a) =>
@@ -38,7 +37,7 @@ export default async function ActivityPage() {
       <PageHeader
         eyebrow="Audit & Settlement Ledger"
         title="Activity & Settlement Log"
-        description="Complete cryptographic audit trail of milestone submissions, reviewer approvals, USDC payouts, and Arc Testnet transaction proofs."
+        description="Recent permitted workspace events, including milestone submissions, approvals, USDC releases, and Arc Testnet settlement proofs."
       />
 
       {/* Inline Wallet Gate */}
@@ -48,13 +47,13 @@ export default async function ActivityPage() {
       <div className="grid gap-4 sm:grid-cols-3">
         <div className="rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-5">
           <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
-            Total Logged Events
+            Recent Events Shown
           </p>
           <p className="mt-3 text-2xl font-semibold tracking-tight text-[var(--foreground)]">
             {activities.length}
           </p>
           <p className="mt-1.5 text-xs text-[var(--text-primary)]">
-            Immutable workspace audit history
+            Up to 50 latest permitted events
           </p>
         </div>
 
@@ -78,14 +77,14 @@ export default async function ActivityPage() {
             {approvalEvents.length}
           </p>
           <p className="mt-1.5 text-xs text-[var(--text-primary)]">
-            Reviewer & Contributor decisions
+            Milestone submission and approval events
           </p>
         </div>
       </div>
 
       {/* Main Ledger Section with Interactive Filtering & Export */}
       <SectionCard title="Ledger Timeline">
-        <ActivityLedgerClient initialActivities={activities as unknown as import("@/lib/models/activity-item").ActivityItem[]} />
+        <ActivityLedgerClient initialActivities={activities} />
       </SectionCard>
     </div>
   );

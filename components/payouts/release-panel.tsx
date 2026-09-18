@@ -8,6 +8,7 @@ type ReleasePanelProps = {
   modeLabel?: string;
   enabled?: boolean;
   actionEnabled?: boolean;
+  allowWhileSubmitting?: boolean;
   actionLabel?: string;
   status?: ReleasePanelStatus;
   errorMessage?: string | null;
@@ -34,12 +35,13 @@ export function ReleasePanel({
   modeLabel,
   enabled = false,
   actionEnabled = true,
+  allowWhileSubmitting = false,
   actionLabel,
   status = "idle",
   errorMessage = null,
   onRelease,
 }: ReleasePanelProps) {
-  const canRelease = enabled && actionEnabled && status !== "submitting" && status !== "confirmed";
+  const canRelease = enabled && actionEnabled && (status !== "submitting" || allowWhileSubmitting) && status !== "confirmed";
 
   const statusLine =
     status === "confirmed"

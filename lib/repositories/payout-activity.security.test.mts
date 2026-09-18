@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { db } from "@/lib/db/client";
 import {
+  getAccessibleActivity,
   getPayoutActivity,
   getWorkspaceActivity,
   projectActivity,
@@ -127,6 +128,46 @@ test("repository Contributor scope remains linked-user isolated", async () => {
     await getPayoutActivity("payout-1", "workspace-1", { linkedUserId: "linked-user-1" }, "contributor");
     assert.deepEqual(seen[0]?.where?.payout?.contributor, { linkedUserId: "linked-user-1" });
   });
+});
+
+test("accessible activity retains contributor payout isolation across memberships", async () => {
+  const originalLogs = db.activityLog.findMany;
+  const originalMilestones = db.milestone.findMany;
+  const originalProofs = db.transactionProof.findMany;
+  const originalWorkspaces = db.workspace.findMany;
+  const seen: ActivityFindManyArgs[] = [];
+  db.activityLog.findMany = (async (args: ActivityFindManyArgs) => {
+    seen.push(args);
+    return [logFixture];
+  }) as unknown as typeof db.activityLog.findMany;
+  db.milestone.findMany = (async () => []) as unknown as typeof db.milestone.findMany;
+  db.transactionProof.findMany = (async () => []) as unknown as typeof db.transactionProof.findMany;
+  db.workspace.findMany = (async () => [
+    { id: "owner-workspace", name: "Owner workspace" },
+    { id: "contributor-workspace", name: "Contributor workspace" },
+  ]) as unknown as typeof db.workspace.findMany;
+  try {
+    const result = await getAccessibleActivity({
+      userId: "contributor-user",
+      memberships: [
+        { workspaceId: "owner-workspace", role: "owner" },
+        { workspaceId: "contributor-workspace", role: "contributor" },
+      ],
+    });
+
+    assert.equal(result.length, 2);
+    assert.equal(result.some((item) => item.workspaceName === "Owner workspace" && item.membershipRole === "owner"), true);
+    assert.equal(result.some((item) => item.workspaceName === "Contributor workspace" && item.membershipRole === "contributor"), true);
+    assert.deepEqual(
+      seen.find((args) => args?.where?.workspaceId === "contributor-workspace")?.where?.payout?.contributor,
+      { linkedUserId: "contributor-user" },
+    );
+  } finally {
+    db.activityLog.findMany = originalLogs;
+    db.milestone.findMany = originalMilestones;
+    db.transactionProof.findMany = originalProofs;
+    db.workspace.findMany = originalWorkspaces;
+  }
 });
 
 test("repository Owner activity retains broad logged fields", async () => {

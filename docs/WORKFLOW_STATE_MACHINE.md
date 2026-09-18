@@ -49,6 +49,7 @@ The executor may move execution through its mode-specific send path. `refreshRel
 
 - `browser_wallet`: server execution fails explicitly; browser signing is handled by the wallet boundary.
 - `circle_wallet`: `lib/arc/release-executor.ts` sends from the server-side key when configured, then proof refresh persists the result.
+- `circle_user_wallet`: a Google-authenticated owner confirms the persisted Circle challenge in the browser. The server then reconciles Circle's authoritative challenge and transaction states. A pending confirmation is resumed through the existing challenge; once Circle has a transaction request or hash, the UI refreshes settlement only and never creates a second release.
 
 Production settlement readiness is not asserted here.
 

@@ -1,8 +1,5 @@
 import { db } from "@/lib/db/client";
-import { createInvitation } from "@/lib/services/invitations";
-import type { WorkspaceMemberRole } from "@prisma/client";
-
-const VALID_ROLES: WorkspaceMemberRole[] = ["owner", "ops", "reviewer", "contributor"];
+import { createInvitation, isInvitableWorkspaceRole } from "@/lib/services/invitations";
 
 function usage(): never {
   console.error(
@@ -20,11 +17,11 @@ async function main() {
   const args = process.argv.slice(2);
   const workspaceId = option(args, "--workspace-id")?.trim();
   const createdByUserId = option(args, "--created-by-user-id")?.trim();
-  const role = (option(args, "--role") ?? "contributor").trim().toLowerCase() as WorkspaceMemberRole;
+  const role = (option(args, "--role") ?? "contributor").trim().toLowerCase();
   const email = option(args, "--email")?.trim().toLowerCase();
   const printUrl = args.includes("--print-url");
 
-  if (!workspaceId || !createdByUserId || !VALID_ROLES.includes(role)) usage();
+  if (!workspaceId || !createdByUserId || !isInvitableWorkspaceRole(role)) usage();
 
   const membership = await db.workspaceMember.findUnique({
     where: { workspaceId_userId: { workspaceId, userId: createdByUserId } },

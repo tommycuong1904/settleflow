@@ -1,14 +1,12 @@
 "use client";
 
 import React from "react";
-import { RoleSwitcher } from "@/components/shared/role-switcher";
 
 type PageHeaderProps = {
   eyebrow?: string;
   title: string;
   description?: string;
   children?: React.ReactNode;
-  showRoleSwitcherMobile?: boolean;
 };
 
 export function PageHeader({
@@ -16,21 +14,15 @@ export function PageHeader({
   title,
   description,
   children,
-  showRoleSwitcherMobile = true,
 }: PageHeaderProps) {
   return (
     <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between w-full">
       <div className="space-y-2.5 max-w-3xl flex-1">
         {eyebrow && (
-          <div className="flex items-center justify-between gap-3">
+          <div>
             <p className="text-xs md:text-sm font-medium uppercase tracking-[0.22em] text-[var(--text-muted)]">
               {eyebrow}
             </p>
-            {showRoleSwitcherMobile && (
-              <div className="md:hidden shrink-0">
-                <RoleSwitcher />
-              </div>
-            )}
           </div>
         )}
 

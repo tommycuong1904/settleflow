@@ -50,11 +50,9 @@ export async function GET(request: Request) {
     const sessionToken = await createSessionToken({ userId: user.id, email: user.email ?? profile.email, googleSub: profile.sub, name: user.displayName || profile.name || profile.email.split("@")[0], address: user.walletAddress ?? deriveSmartAccountAddress(profile.sub), authType: "web2_google" });
     const response = NextResponse.redirect(new URL(next, origin));
     response.cookies.set(SESSION_COOKIE_NAME, sessionToken, { ...SESSION_COOKIE_OPTIONS, name: SESSION_COOKIE_NAME });
-    if (initialWorkspace.created) {
-      response.cookies.set(PRODUCT_CONTEXT_COOKIE_NAMES.workspaceId, initialWorkspace.workspaceId, PRODUCT_CONTEXT_COOKIE_OPTIONS);
-    } else {
-      response.cookies.delete(PRODUCT_CONTEXT_COOKIE_NAMES.workspaceId);
-    }
+    // Replace any stale workspace selection with the authenticated user's
+    // verified workspace before returning to the application.
+    response.cookies.set(PRODUCT_CONTEXT_COOKIE_NAMES.workspaceId, initialWorkspace.workspaceId, PRODUCT_CONTEXT_COOKIE_OPTIONS);
     for (const name of clear()) response.cookies.delete(name);
     return response;
   } catch (error) {

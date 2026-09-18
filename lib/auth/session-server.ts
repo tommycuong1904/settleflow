@@ -84,7 +84,7 @@ export async function getVerifiedSessionUser(session: SessionPayload) {
  * Returns null when the user has no stored membership (e.g. a freshly signed-up
  * Google account that has not been invited to any workspace).
  */
-async function resolveSessionMemberships(
+export async function resolveSessionMemberships(
   session: SessionPayload,
 ): Promise<{ user: SessionUserInfo; memberships: Array<{ workspaceId: string; role: string }> } | null> {
   const email = readNonEmpty(session.email);

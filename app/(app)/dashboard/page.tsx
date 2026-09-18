@@ -176,7 +176,7 @@ export default async function DashboardPage() {
 
       <section className="grid gap-4 md:grid-cols-4">
         <StatCard label="Active payouts" value={activePayouts.length} />
-        <StatCard label="Milestones awaiting review" value={pendingApprovals.length} />
+        <StatCard label="Milestones awaiting owner approval" value={pendingApprovals.length} />
         <StatCard
           label="Settlements in flight"
           value={`${formatUsdc(inFlightSettlementValue)} USDC`}

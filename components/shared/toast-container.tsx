@@ -44,7 +44,7 @@ function ToastItem({
   const isError = variant === "error";
   const isWarning = variant === "warning";
 
-  // Theme styles: Solid green theme by default for success/info (Role Switched)
+  // Theme styles: solid green by default for success and info.
   const bgStyle = isError
     ? "#dc2626"
     : isWarning

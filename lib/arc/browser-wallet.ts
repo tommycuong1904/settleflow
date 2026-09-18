@@ -5,6 +5,9 @@ import { createViemAdapterFromProvider } from "@circle-fin/adapter-viem-v2";
 import { getAddress, type EIP1193Provider } from "viem";
 import { addArcNetworkToWallet } from "@/lib/arc/onchain";
 
+export class BrowserWalletPreBroadcastError extends Error {}
+export class BrowserWalletSubmissionUnknownError extends Error {}
+
 export type EIP6963ProviderInfo = {
   uuid: string;
   name: string;
@@ -116,6 +119,7 @@ export async function connectBrowserWallet() {
 export async function sendUsdcWithBrowserWallet(input: {
   recipient: string;
   amount: string;
+  expectedSender?: string;
 }) {
   const withTimeout = async <T,>(promise: Promise<T>, message: string, ms = 15000): Promise<T> => {
     return await Promise.race([
@@ -124,10 +128,19 @@ export async function sendUsdcWithBrowserWallet(input: {
     ]);
   };
 
-  const { adapter, connectedAddress, walletName } = await withTimeout(
-    connectBrowserWallet(),
-    "Wallet connection timed out. Open MetaMask or disable other wallet extensions, then try again.",
-  );
+  let connection: Awaited<ReturnType<typeof connectBrowserWallet>>;
+  try {
+    connection = await withTimeout(
+      connectBrowserWallet(),
+      "Wallet connection timed out. Open MetaMask or disable other wallet extensions, then try again.",
+    );
+  } catch (error) {
+    throw new BrowserWalletPreBroadcastError(error instanceof Error ? error.message : "Wallet connection was not completed.");
+  }
+  const { adapter, connectedAddress, walletName, provider } = connection;
+  if (input.expectedSender && connectedAddress.toLowerCase() !== input.expectedSender.toLowerCase()) {
+    throw new BrowserWalletPreBroadcastError("The connected wallet account does not match the authenticated Web3 account.");
+  }
   const kit = new AppKit();
 
   const sendParams: SendParams = {
@@ -141,21 +154,39 @@ export async function sendUsdcWithBrowserWallet(input: {
   // wallet_addEthereumChain both adds the chain (if missing) and switches to it,
   // avoiding the "Unrecognized chain ID" error from wallet_switchEthereumChain.
   try {
-    await addArcNetworkToWallet();
+    await addArcNetworkToWallet(provider);
   } catch {
     // Non-fatal: wallet may already have the chain or reject the prompt.
     // The send will still attempt and surface a clearer error if it fails.
   }
 
-  await withTimeout(
-    kit.estimateSend(sendParams),
-    "Arc send estimate timed out. Confirm Arc Testnet is selected in MetaMask.",
-  );
-  const result = await withTimeout(
-    kit.send(sendParams),
-    "Wallet send timed out. Approve the MetaMask popup or retry after reopening the extension.",
-    30000,
-  );
+  try {
+    await withTimeout(
+      kit.estimateSend(sendParams),
+      "Arc send estimate timed out. Confirm Arc Testnet is selected in MetaMask.",
+    );
+  } catch (error) {
+    throw new BrowserWalletPreBroadcastError(error instanceof Error ? error.message : "Arc transaction could not be prepared.");
+  }
+
+  let result: Awaited<ReturnType<typeof kit.send>>;
+  try {
+    result = await withTimeout(
+      kit.send(sendParams),
+      "Wallet send timed out. Check wallet activity before retrying.",
+      30000,
+    );
+  } catch (error) {
+    const code = typeof error === "object" && error && "code" in error ? (error as { code?: unknown }).code : undefined;
+    if (code === 4001) {
+      throw new BrowserWalletPreBroadcastError("Wallet request was rejected before a transaction was submitted.");
+    }
+    throw new BrowserWalletSubmissionUnknownError(error instanceof Error ? error.message : "Wallet submission outcome is unknown.");
+  }
+
+  if (result.state !== "success" || !("txHash" in result) || !result.txHash) {
+    throw new BrowserWalletSubmissionUnknownError("Wallet did not return a transaction hash. Check wallet activity before retrying.");
+  }
 
   return {
     connectedAddress,

@@ -35,8 +35,9 @@ export function AuthModal() {
     closeAuthModal();
     const next = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("next") : null;
     const destination = next && next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard";
-    if (next) router.replace(destination);
-    else router.refresh();
+    // `/auth-required` is a static sign-in boundary. Refreshing it after a
+    // successful wallet session leaves the user on the same sign-in screen.
+    router.replace(destination);
   };
 
   const [activeTab, setActiveTab] = useState<"quick" | "web3">("quick");

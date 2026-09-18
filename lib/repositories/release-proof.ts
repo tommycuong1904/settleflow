@@ -112,7 +112,7 @@ export async function refreshReleaseProof(
   refreshedByUserId: string,
   workspaceId: string,
   input: RefreshProofInput,
-  options: { trustedCircleWalletExecution?: boolean } = {},
+  options: { trustedCircleWalletExecution?: boolean; trustedCircleUserWalletExecution?: boolean } = {},
 ) {
   return db.$transaction(async (tx: Prisma.TransactionClient) => {
     let release = await tx.release.findFirst({
@@ -192,16 +192,19 @@ export async function refreshReleaseProof(
       throw new Error("MILESTONE_NOT_APPROVED_FOR_CONFIRMATION");
     }
     if (input.status === "confirmed" && !input.txHash) throw new Error("TX_HASH_REQUIRED");
-    if (release.executionMode === "circle_wallet" && input.status === "confirmed" && input.txHash !== release.txHash) {
+    if (["circle_wallet", "circle_user_wallet"].includes(release.executionMode) && input.status === "confirmed" && input.txHash !== release.txHash) {
       throw new Error("RELEASE_TX_HASH_MISMATCH");
     }
     if (input.status === "failed" && !input.failureReason) throw new Error("FAILURE_REASON_REQUIRED");
     if (release.executionMode === "circle_wallet" && input.status === "failed" && !options.trustedCircleWalletExecution) {
       throw new Error("CIRCLE_WALLET_FAILURE_REQUIRES_TRUSTED_EXECUTOR");
     }
+    if (release.executionMode === "circle_user_wallet" && input.status === "failed" && !options.trustedCircleUserWalletExecution) {
+      throw new Error("CIRCLE_WALLET_FAILURE_REQUIRES_TRUSTED_EXECUTOR");
+    }
     let verifiedBrowserSourceWallet: string | null = null;
-    if (input.status === "confirmed" && ["browser_wallet", "circle_wallet"].includes(release.executionMode)) {
-      if (release.executionMode === "circle_wallet" && !release.sourceWalletAddress) throw new Error("SOURCE_WALLET_REQUIRED");
+    if (input.status === "confirmed" && ["browser_wallet", "circle_wallet", "circle_user_wallet"].includes(release.executionMode)) {
+      if (["circle_wallet", "circle_user_wallet"].includes(release.executionMode) && !release.sourceWalletAddress) throw new Error("SOURCE_WALLET_REQUIRED");
       const { verifyReleaseTransaction } = await import("@/lib/arc/verify-release-transaction");
       try {
         const verified = await verifyReleaseTransaction({ release, txHash: input.txHash! });

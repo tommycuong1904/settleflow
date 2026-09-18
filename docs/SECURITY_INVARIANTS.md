@@ -42,6 +42,20 @@ It prevents callers from treating an arbitrary cookie value as an authenticated 
 ### Status
 Partially implemented
 
+## Circle user-controlled wallet boundary
+
+### Invariant
+Circle API credentials and wallet key material must never be sent to the browser. A Google Owner may confirm only a Circle challenge whose wallet source, destination, and amount match an already-authorized release.
+
+### Enforcement
+The server requires a verified Google Owner session, persists one Arc Testnet SCA identifier per user, creates Circle challenges with the release UUID as idempotency key, and re-reads the Circle transaction before onchain proof verification. The client receives only a short-lived user token and encryption key for the Circle Web SDK.
+
+### Evidence
+`lib/circle/user-controlled.ts`; `app/api/v1/circle/wallet/**`; `app/api/v1/releases/[id]/circle/**`; `lib/repositories/release-proof.ts`.
+
+### Status
+Implemented in code; operationally unverified until a separately configured Circle Arc Testnet project is tested.
+
 ## Actor/user alignment
 
 ### Invariant

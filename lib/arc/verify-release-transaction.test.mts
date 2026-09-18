@@ -64,6 +64,30 @@ test("ERC-20 Transfer verification accepts and rejects token, recipient, amount,
   await assert.rejects(verifyReleaseTransaction({ release: ercRelease, txHash: hash, tokenAddress: token, client: ercClient({ from: destination }) }), /TX_SNAPSHOT_MISMATCH/);
 });
 
+test("Circle smart-wallet verification trusts the matching Transfer event instead of the relayer sender", async () => {
+  const relayer = "0x4444444444444444444444444444444444444444";
+  const token = "0x3600000000000000000000000000000000000000";
+  const topics = encodeEventTopics({ abi: erc20Abi, eventName: "Transfer", args: { from: source, to: destination } });
+  const log = { address: token, topics, data: encodeAbiParameters([{ type: "uint256" }], [BigInt("1000000")]) };
+  const circleRelease = { ...release, executionMode: "circle_user_wallet" as const };
+  await verifyReleaseTransaction({
+    release: circleRelease,
+    txHash: hash,
+    client: {
+      getTransaction: async () => ({ chainId: 5042002, from: relayer, to: "0x5555555555555555555555555555555555555555", value: BigInt(0) }),
+      getTransactionReceipt: async () => ({ status: "success", logs: [log] }),
+    },
+  });
+  await assert.rejects(verifyReleaseTransaction({
+    release: { ...circleRelease, destinationWalletAddress: source },
+    txHash: hash,
+    client: {
+      getTransaction: async () => ({ chainId: 5042002, from: relayer, to: "0x5555555555555555555555555555555555555555", value: BigInt(0) }),
+      getTransactionReceipt: async () => ({ status: "success", logs: [log] }),
+    },
+  }), /TX_SNAPSHOT_MISMATCH/);
+});
+
 // Prove pending/unknown is not treated as a failed retry by the repository state machine.
 test("wallet rejection or unknown outcome remains non-retryable by contract", () => {
   assert.equal(true, true);

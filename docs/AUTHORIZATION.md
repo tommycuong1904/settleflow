@@ -15,9 +15,11 @@ The database role and runtime actor are intentionally not the same enum.
 
 ## Current roles and actor mapping
 
-`WorkspaceMemberRole` currently contains four values:
+`WorkspaceMemberRole` currently contains four persisted values:
 
 `owner`, `ops`, `reviewer`, `contributor`.
+
+New invitations support only `owner` and `contributor`. `ops` and `reviewer` remain in the database/runtime model for historical memberships, but cannot be newly invited or accepted.
 
 `ProductActor` currently contains four values:
 
@@ -28,8 +30,8 @@ The implemented mapping is:
 | WorkspaceMemberRole | ProductActor | Meaning in current policy |
 | --- | --- | --- |
 | `owner` | `owner` | owner-level operations |
-| `ops` | `ops` | operational access defined by the applicable policy |
-| `reviewer` | `reviewer` | review operations |
+| `ops` | `ops` | historical membership only; not assignable through invitations |
+| `reviewer` | `reviewer` | historical membership only; not assignable through invitations |
 | `contributor` | `contributor` | submission and contributor-scoped viewing |
 
 Unknown stored role strings are rejected by `mapMembershipRoleToActor`; they do not receive Owner-equivalent authority.
@@ -96,7 +98,7 @@ These are the permissions explicitly represented by `lib/runtime/product-policy.
 
 ## Workspace scoping
 
-Requests carry a workspace context, and repository operations receive the workspace ID when enforcing scope. Resource lookups and mutations reject or return no result for records belonging to another workspace, including contributor, payout, milestone, release, proof, and activity operations where the relevant repository check exists.
+Requests carry a workspace context, and repository operations receive the workspace ID when enforcing scope. Resource lookups and mutations reject or return no result for records belonging to another workspace, including contributor, payout, milestone, release, proof, and activity operations where the relevant repository check exists. The Payouts list is the narrow read-only exception: it aggregates only payouts accessible through each persisted membership, labels every result with that workspace and membership role, and passes the verified workspace ID to the detail route. It does not grant cross-workspace mutation authority.
 
 The request context resolver retains development/default fallbacks only when no session is present. For a verified session, `lib/auth/session-server.ts` requires a persisted `User` and `WorkspaceMember`; actor and user IDs are derived from the selected membership. A workspace selector is accepted only when it matches one of the user's memberships, and ambiguous multi-workspace sessions must select a workspace. Missing or unauthorized membership context returns `AUTH_CONTEXT_REQUIRED` (403).
 

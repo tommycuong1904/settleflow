@@ -39,7 +39,7 @@ export default function PendingReview({ pendingApprovals, payouts, contributors,
                     <div className="space-y-1.5">
                       <p className="text-lg font-semibold text-[var(--foreground)]">{milestone.title}</p>
                       <p className="text-sm text-[var(--text-primary)]">
-                        {contributor?.name ?? payout?.contributorId ?? "Unknown contributor"} · {formatUsdc(milestone.amount)} USDC awaiting review
+                        {contributor?.name ?? payout?.contributorId ?? "Unknown contributor"} · {formatUsdc(milestone.amount)} USDC awaiting owner approval
                       </p>
                     </div>
                     <p className="max-w-2xl text-sm leading-6 text-[var(--text-muted)]">
@@ -48,7 +48,7 @@ export default function PendingReview({ pendingApprovals, payouts, contributors,
                   </div>
                   <div className="flex min-w-[180px] flex-col gap-3">
                     <Button href={`/payouts/${milestone.payoutId}`} variant="primary">
-                      Review milestone
+                      Review & approve
                     </Button>
                     <div className="rounded-xl border border-dashed border-[var(--border-soft)] px-4 py-3 text-sm text-[var(--text-muted)]">
                       Approving this milestone unlocks the next release step.

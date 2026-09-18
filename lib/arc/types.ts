@@ -1,4 +1,4 @@
-export type ReleaseExecutionMode = "browser_wallet" | "circle_wallet";
+export type ReleaseExecutionMode = "browser_wallet" | "circle_wallet" | "circle_user_wallet";
 export type ArcExecutionMode = "mock" | "demo" | "real";
 
 export type ArcSendStatus = "pending" | "confirmed" | "failed";

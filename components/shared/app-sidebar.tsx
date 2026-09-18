@@ -2,14 +2,9 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, ArrowRightLeft, Users, Activity, Settings, X, Droplets, ExternalLink, Crown, Search, Code2, Check } from "lucide-react";
-import {
-  setProductContextCookie,
-  useResolvedProductContext,
-} from "@/lib/runtime/product-context-client";
-import { PRODUCT_CONTEXT_COOKIE_NAMES, type ProductActor } from "@/lib/runtime/product-context";
-import { showGlobalToast } from "@/lib/context/toast-context";
+import { usePathname } from "next/navigation";
+import { LayoutDashboard, ArrowRightLeft, Users, Activity, Settings, X, Droplets, ExternalLink } from "lucide-react";
+import { useResolvedProductContext } from "@/lib/runtime/product-context-client";
 import { hasRole } from "@/lib/runtime/role-utils";
 
 type NavItem = {
@@ -27,45 +22,11 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Settings", href: "/settings", icon: Settings },
 ];
 
-type RoleOption = {
-  actor: ProductActor;
-  label: string;
-  badge: string;
-  icon: React.ComponentType<{ size?: number; className?: string }>;
-};
-
-const ROLES: RoleOption[] = [
-  { actor: "owner", label: "Owner / Payout Lead", badge: "Owner", icon: Crown },
-  { actor: "reviewer", label: "Reviewer / QA Lead", badge: "Reviewer", icon: Search },
-  { actor: "contributor", label: "Contributor / Builder", badge: "Contributor", icon: Code2 },
-];
-
 export function AppSidebar() {
-  const router = useRouter();
   const pathname = usePathname();
   const productContext = useResolvedProductContext();
   const actor = productContext.actor;
   const [isMobileOpen, setIsMobileOpen] = useState(false);
-
-  const handleSelectRole = (nextActor: ProductActor) => {
-    // Persist role to cookie
-    setProductContextCookie(PRODUCT_CONTEXT_COOKIE_NAMES.actor, nextActor);
-    const nextRole = ROLES.find((r) => r.actor === nextActor);
-
-    // Update the singleton store before closing or navigating.
-    showGlobalToast({
-      variant: "success",
-      title: "Role Switched",
-      description: `Viewing application as ${nextRole?.badge}`,
-      durationMs: 3000,
-    });
-
-    // Close the drawer first, then allow the toast to paint before navigation.
-    setIsMobileOpen(false);
-    window.setTimeout(() => {
-      router.push(`?actor=${nextActor}`);
-    }, 500);
-  };
 
   useEffect(() => {
     const handleToggle = () => setIsMobileOpen((prev) => !prev);
@@ -137,37 +98,8 @@ export function AppSidebar() {
         </ul>
       </nav>
 
-      {/* Mobile Secondary Utilities (Role Switcher, Faucet) */}
+      {/* Mobile secondary utilities */}
       <div className="md:hidden px-4 py-3 border-t border-[var(--border-soft)] space-y-3 mt-auto">
-        {/* Role Switcher on Mobile */}
-        <div>
-          <p className="sf-sidebar-section-label text-[10px] mb-2">SWITCH ROLE</p>
-          <div className="space-y-1">
-            {ROLES.map((role) => {
-              const isSelected = role.actor === actor;
-              const RoleIcon = role.icon;
-              return (
-                <button
-                  key={role.actor}
-                  type="button"
-                  onClick={() => handleSelectRole(role.actor)}
-                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-colors ${
-                    isSelected
-                      ? "bg-[var(--surface-strong)] text-[var(--foreground)] font-semibold border border-[var(--border-strong)]"
-                      : "text-[var(--text-muted)] hover:text-[var(--foreground)] hover:bg-[var(--surface-muted)]"
-                  }`}
-                >
-                  <span className="flex items-center gap-2">
-                    <RoleIcon size={14} className={isSelected ? "text-[var(--foreground)]" : "text-[var(--text-muted)]"} />
-                    <span>{role.label}</span>
-                  </span>
-                  {isSelected && <Check size={14} className="text-[var(--foreground)]" />}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
         <div>
           <p className="sf-sidebar-section-label text-[10px] mb-2">PREFERENCES & TOOLS</p>
 

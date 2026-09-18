@@ -2,10 +2,17 @@ import { db } from "@/lib/db/client";
 import crypto from "crypto";
 import type { Prisma, WorkspaceMemberRole } from "@prisma/client";
 
+export const INVITABLE_WORKSPACE_ROLES = ["owner", "contributor"] as const;
+export type InvitableWorkspaceRole = (typeof INVITABLE_WORKSPACE_ROLES)[number];
+
+export function isInvitableWorkspaceRole(role: unknown): role is InvitableWorkspaceRole {
+  return typeof role === "string" && (INVITABLE_WORKSPACE_ROLES as readonly string[]).includes(role);
+}
+
 export type CreateInvitationInput = {
   workspaceId: string;
   createdByUserId: string;
-  role: WorkspaceMemberRole;
+  role: InvitableWorkspaceRole;
   email?: string | null;
   expiresInDays?: number;
 };
@@ -17,6 +24,7 @@ export async function createInvitation({
   email,
   expiresInDays = 7,
 }: CreateInvitationInput) {
+  if (!isInvitableWorkspaceRole(role)) throw new Error("INVITATION_ROLE_UNAVAILABLE");
   const token = crypto.randomBytes(24).toString("hex");
   const expiresAt = new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000);
 
@@ -68,6 +76,9 @@ export async function acceptInvitation(token: string, userId: string): Promise<A
   if (!invitation || !invitation.isValid) {
     return { success: false, error: "Invitation is invalid or expired." };
   }
+  if (!isInvitableWorkspaceRole(invitation.role)) {
+    return { success: false, error: "This invitation role is no longer accepted." };
+  }
 
   const user = await db.user.findUnique({ where: { id: userId } });
   if (!user) {
@@ -108,9 +119,13 @@ export async function acceptInvitation(token: string, userId: string): Promise<A
 
     // Auto-claim / Link Contributor record if role is contributor or matching email/wallet exists
     if (invitation.role === "contributor" || user.email || user.walletAddress) {
-      const contributorWhere: Array<{ email?: string; walletAddress?: string }> = [];
+      const contributorWhere: Prisma.ContributorWhereInput[] = [];
       if (user.email) contributorWhere.push({ email: user.email.toLowerCase() });
-      if (user.walletAddress) contributorWhere.push({ walletAddress: user.walletAddress.toLowerCase() });
+      if (user.walletAddress) {
+        contributorWhere.push({
+          walletAddress: { equals: user.walletAddress, mode: "insensitive" },
+        });
+      }
 
       if (contributorWhere.length > 0) {
         const matchingContributor = await tx.contributor.findFirst({

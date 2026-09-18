@@ -16,7 +16,7 @@ type QueueReleasePayload = {
   triggeredByUserId: string;
   amountUsdc: Decimal;
   executionMode: ReleaseExecutionMode;
-  sourceWalletAddress: null;
+  sourceWalletAddress: string | null;
   destinationWalletAddress: string;
   status: "queued";
 };
@@ -28,6 +28,7 @@ export function deriveQueuedReleasePayload(input: {
   amountUsdc: Decimal;
   executionMode: ReleaseExecutionMode;
   destinationWalletAddress: string;
+  sourceWalletAddress?: string | null;
 }): QueueReleasePayload {
   return {
     payoutId: input.payoutId,
@@ -35,7 +36,7 @@ export function deriveQueuedReleasePayload(input: {
     triggeredByUserId: input.triggeredByUserId,
     amountUsdc: input.amountUsdc,
     executionMode: input.executionMode,
-    sourceWalletAddress: null,
+    sourceWalletAddress: input.sourceWalletAddress ?? null,
     destinationWalletAddress: input.destinationWalletAddress,
     status: "queued",
   };
@@ -50,6 +51,7 @@ export async function queueMilestoneRelease(
   notify: (payload: WebhookPayload) => void = (payload) => {
     void dispatchWorkspaceWebhookNotification(workspaceId, payload);
   },
+  sourceWalletAddress: string | null = null,
 ) {
   if (!isValidUsdcAmount(amountUsdc)) throw new Error("INVALID_RELEASE_AMOUNT");
   let result;
@@ -107,6 +109,7 @@ export async function queueMilestoneRelease(
         amountUsdc: requestedAmount,
         executionMode,
         destinationWalletAddress: milestone.payout.targetWalletAddress,
+        sourceWalletAddress,
       }),
       select: {
         id: true,

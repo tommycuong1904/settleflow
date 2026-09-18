@@ -86,9 +86,9 @@ export async function fetchLiveArcBalances(
   }
 }
 
-export async function addArcNetworkToWallet(): Promise<boolean> {
+export async function addArcNetworkToWallet(provider?: { request: (args: unknown) => Promise<unknown> }): Promise<boolean> {
   if (typeof window === "undefined") return false;
-  const ethereum = (window as unknown as { ethereum?: { request: (args: unknown) => Promise<unknown> } }).ethereum;
+  const ethereum = provider ?? (window as unknown as { ethereum?: { request: (args: unknown) => Promise<unknown> } }).ethereum;
 
   if (!ethereum) {
     throw new Error("No Web3 wallet extension found (MetaMask / Rabby).");

@@ -9,3 +9,9 @@ export type ActivityItem = {
   description?: string;
   metadata?: Record<string, string | undefined>;
 };
+
+export type AccessibleActivityItem = ActivityItem & {
+  workspaceId: string;
+  workspaceName: string;
+  membershipRole: "owner" | "reviewer" | "contributor" | "ops";
+};
