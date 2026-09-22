@@ -19,7 +19,7 @@ SettleFlow is a Next.js App Router application. Its primary workflow is served b
 - `components/` — reusable presentation and workflow components.
 - `lib/repositories/` — Prisma-backed data access and workflow transitions.
 - `lib/api/` — request payload and error utilities.
-- `lib/auth/` — session, identity mapping, OAuth/wallet auth, and smart-account helpers.
+- `lib/auth/` — session, identity mapping, and OAuth/wallet auth.
 - `lib/runtime/` — product context and policy logic.
 - `lib/arc/` — Arc configuration, wallet integration, onchain helpers, and release execution.
 - `prisma/` — schema, migrations, and seed configuration.
@@ -46,6 +46,18 @@ The `(marketing)` and `(app)` directories are route groups and are not included 
 `proxy.ts` is the request boundary. For `POST`, `PUT`, `PATCH`, and `DELETE` requests under `/api/`, it verifies the `sf_session` cookie and returns `401 AUTH_REQUIRED` unless the path is an open auth endpoint or explicitly public feedback. It also bridges product-context headers, cookies, and query values.
 
 `lib/auth/session.ts` creates and verifies signed, expiring session tokens. Session-aware handlers use `lib/auth/session-server.ts` to verify the session, load the user and first workspace membership, and build product context through `lib/auth/session-mapping.ts`.
+
+`UserWallet` is the canonical mapping between a product user and verified
+EVM wallets. Google/Circle and Web3 sign-in create independent users; Google
+provisioning does not derive or export an EOA. A Web3 session resolves through
+its signed wallet link rather than `User.walletAddress`. A signed-in user may
+link only a new MetaMask EOA through a fresh nonce-signature ceremony; any
+address already present in `UserWallet` is rejected. Retired legacy-export
+links are retained only as historical records and cannot authenticate or fund
+releases. Circle SCA provisioning persists a linked `UserWallet`, and
+Circle-user releases snapshot that link. Browser-wallet releases require a
+verified Web3 session and snapshot its enabled EOA link before the browser is
+asked to sign; on-chain proof verification then requires the same source.
 
 ## Authorization and product context
 

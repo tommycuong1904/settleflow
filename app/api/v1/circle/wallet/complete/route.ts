@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getAddress, isAddress } from "viem";
 
 import { getSessionFromRequest, getVerifiedSessionUser } from "@/lib/auth/session-server";
 import { db } from "@/lib/db/client";
@@ -32,24 +33,46 @@ export async function POST(request: Request) {
     }
     const circleWallet = await getCircleWallet(circleSession.userToken, challenge.correlationIds[0]);
     assertArcSmartWallet(circleWallet);
-    const wallet = await db.circleUserWallet.upsert({
-      where: { userId: user.id },
-      create: {
-        userId: user.id,
-        walletId: circleWallet.id,
-        address: circleWallet.address,
-        blockchain: circleWallet.blockchain,
-        accountType: circleWallet.accountType,
-        scaCore: circleWallet.scaCore,
-      },
-      update: {
-        walletId: circleWallet.id,
-        address: circleWallet.address,
-        blockchain: circleWallet.blockchain,
-        accountType: circleWallet.accountType,
-        scaCore: circleWallet.scaCore,
-      },
-      select: { walletId: true, address: true, blockchain: true, accountType: true, scaCore: true },
+    if (!isAddress(circleWallet.address)) throw new Error("CIRCLE_WALLET_INVALID_ADDRESS");
+    const address = getAddress(circleWallet.address);
+    const normalizedAddress = address.toLowerCase();
+    const wallet = await db.$transaction(async (tx) => {
+      const walletLink = await tx.userWallet.upsert({
+        where: { normalizedAddress },
+        create: {
+          userId: user.id,
+          address,
+          normalizedAddress,
+          kind: "circle_sca",
+          transactionEnabled: true,
+        },
+        update: {},
+        select: { id: true, userId: true, kind: true },
+      });
+      if (walletLink.userId !== user.id || walletLink.kind !== "circle_sca") {
+        throw new Error("CIRCLE_WALLET_ADDRESS_ALREADY_LINKED");
+      }
+      return tx.circleUserWallet.upsert({
+        where: { userId: user.id },
+        create: {
+          userId: user.id,
+          walletId: circleWallet.id,
+          address,
+          blockchain: circleWallet.blockchain,
+          accountType: circleWallet.accountType,
+          scaCore: circleWallet.scaCore,
+          walletLinkId: walletLink.id,
+        },
+        update: {
+          walletId: circleWallet.id,
+          address,
+          blockchain: circleWallet.blockchain,
+          accountType: circleWallet.accountType,
+          scaCore: circleWallet.scaCore,
+          walletLinkId: walletLink.id,
+        },
+        select: { walletId: true, address: true, blockchain: true, accountType: true, scaCore: true },
+      });
     });
     await db.circleWalletProvisioning.delete({ where: { userId: user.id } });
     return NextResponse.json({ wallet });

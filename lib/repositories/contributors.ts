@@ -131,6 +131,73 @@ export async function listContributors(input: {
   return contributors.map(toContributorListItem);
 }
 
+export async function reconcileUserContributors(userId: string): Promise<{ linkedCount: number }> {
+  if (!userId) return { linkedCount: 0 };
+
+  const user = await db.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      email: true,
+      wallets: { select: { normalizedAddress: true } },
+    },
+  });
+
+  if (!user) return { linkedCount: 0 };
+
+  const normalizedWallets = user.wallets.map((w) => w.normalizedAddress.toLowerCase());
+  const userEmail = user.email?.trim().toLowerCase();
+
+  const conditions: Prisma.ContributorWhereInput[] = [];
+  if (normalizedWallets.length > 0) {
+    normalizedWallets.forEach((addr) => {
+      conditions.push({ walletAddress: { equals: addr, mode: "insensitive" } });
+    });
+  }
+  if (userEmail) {
+    conditions.push({ email: { equals: userEmail, mode: "insensitive" } });
+  }
+
+  if (conditions.length === 0) return { linkedCount: 0 };
+
+  const unlinkedContributors = await db.contributor.findMany({
+    where: {
+      linkedUserId: null,
+      OR: conditions,
+    },
+    select: { id: true, workspaceId: true },
+  });
+
+  if (unlinkedContributors.length === 0) return { linkedCount: 0 };
+
+  let linkedCount = 0;
+  for (const contrib of unlinkedContributors) {
+    await db.contributor.update({
+      where: { id: contrib.id },
+      data: { linkedUserId: userId },
+    });
+
+    await db.workspaceMember.upsert({
+      where: {
+        workspaceId_userId: {
+          workspaceId: contrib.workspaceId,
+          userId,
+        },
+      },
+      update: {},
+      create: {
+        workspaceId: contrib.workspaceId,
+        userId,
+        role: "contributor",
+      },
+    });
+
+    linkedCount++;
+  }
+
+  return { linkedCount };
+}
+
 export async function createContributor(
   input: CreateContributorInput,
 ): Promise<ContributorListItem> {
@@ -156,18 +223,54 @@ export async function createContributor(
     throw new Error("A contributor with this wallet address already exists in this workspace.");
   }
 
+  const email = input.email?.trim() || null;
+  const normalizedWallet = walletAddress.toLowerCase();
+
+  let matchedUserId: string | null = null;
+  const userWallet = await db.userWallet.findUnique({
+    where: { normalizedAddress: normalizedWallet },
+    select: { userId: true },
+  });
+  if (userWallet) {
+    matchedUserId = userWallet.userId;
+  } else if (email) {
+    const userByEmail = await db.user.findFirst({
+      where: { email: { equals: email, mode: "insensitive" } },
+      select: { id: true },
+    });
+    if (userByEmail) matchedUserId = userByEmail.id;
+  }
+
   const created = await db.contributor.create({
     data: {
       workspaceId: input.workspaceId,
       name,
       walletAddress,
-      email: input.email?.trim() || null,
+      email,
       role: input.role?.trim() || null,
       notes: input.notes?.trim() || null,
       createdByUserId: input.createdByUserId ?? null,
+      linkedUserId: matchedUserId,
       status: "active",
     },
   });
+
+  if (matchedUserId) {
+    await db.workspaceMember.upsert({
+      where: {
+        workspaceId_userId: {
+          workspaceId: input.workspaceId,
+          userId: matchedUserId,
+        },
+      },
+      update: {},
+      create: {
+        workspaceId: input.workspaceId,
+        userId: matchedUserId,
+        role: "contributor",
+      },
+    });
+  }
 
   return toContributorListItem(created);
 }

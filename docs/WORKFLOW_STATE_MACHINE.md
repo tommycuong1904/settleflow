@@ -26,7 +26,7 @@ States: `pending`, `submitted`, `approved`, `rejected`, `released`.
 
 ### Supported transitions
 
-- `pending -> submitted` and `rejected -> submitted`: `submitMilestone` requires the same workspace, a valid contributor user, contributor/link or wallet match, and a submittable status. It creates a `MilestoneSubmission` and resets review/release timestamps (`lib/repositories/milestone-submission.ts`).
+- `pending -> submitted` and `rejected -> submitted`: `submitMilestone` requires the same workspace, a valid contributor user, a linked contributor relationship, an `active` or `partially_released` payout, and a submittable milestone status. Draft payouts are not contributor-visible or submittable. It creates a `MilestoneSubmission` and resets review/release timestamps (`lib/repositories/milestone-submission.ts`).
 - `submitted -> approved`: `reviewMilestone(..., "approved")` requires a submitted milestone with a submission and an owner/ops/reviewer workspace role (`lib/repositories/milestone-review.ts`).
 - `submitted -> rejected`: the same function requires a non-empty rejection comment and records a rejected review.
 - `approved -> released`: `refreshReleaseProof` sets the milestone to `released` only when confirmation is recorded for an approved milestone (`lib/repositories/release-proof.ts`).

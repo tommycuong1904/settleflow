@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { deriveSmartAccountAddress } from "@/lib/auth/smart-account";
 import {
   createSessionToken,
   SESSION_COOKIE_NAME,
@@ -42,8 +41,6 @@ export async function POST(request: Request) {
       return { user: provisioned.user, initialWorkspace };
     });
 
-    const smartAccountAddress = deriveSmartAccountAddress(profile.sub || profile.email);
-
     // Issue a server-side HttpOnly session cookie so the proxy gate can enforce
     // that mutation routes require an authenticated session.
     const sessionToken = await createSessionToken({
@@ -51,7 +48,7 @@ export async function POST(request: Request) {
       email: user.email ?? profile.email,
       googleSub: profile.sub,
       name: user.displayName || profile.name || profile.email.split("@")[0],
-      address: user.walletAddress ?? smartAccountAddress,
+      address: null,
       authType: "web2_google",
     });
 
@@ -70,7 +67,7 @@ export async function POST(request: Request) {
         email: user.email ?? profile.email,
         name: user.displayName || profile.name || profile.email.split("@")[0],
         picture: profile.picture || null,
-        smartAccountAddress,
+        smartAccountAddress: null,
       },
     });
   } catch (error) {

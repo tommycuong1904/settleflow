@@ -5,6 +5,14 @@ export type MilestoneStatus =
   | "released"
   | "rejected";
 
+export type MilestoneSubmissionSummary = {
+  id: string;
+  summary: string;
+  artifactUrl?: string | null;
+  artifactLabel?: string | null;
+  notes?: string | null;
+  submittedAt: string;
+};
 export type Milestone = {
   id: string;
   payoutId: string;
@@ -16,4 +24,5 @@ export type Milestone = {
   approvedAt?: string;
   rejectedAt?: string;
   releasedAt?: string;
+  latestSubmission?: MilestoneSubmissionSummary;
 };

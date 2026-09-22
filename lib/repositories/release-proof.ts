@@ -215,9 +215,12 @@ export async function refreshReleaseProof(
     }
 
     if (verifiedBrowserSourceWallet) {
+      // Browser releases are bound to an enabled UserWallet when they are
+      // queued. The transaction verifier above rejects a different tx.from;
+      // this guarded write only attaches the first confirmed transaction.
       const bound = await tx.release.updateMany({
-        where: { id: release.id, status: "pending", sourceWalletAddress: null, txHash: null },
-        data: { sourceWalletAddress: verifiedBrowserSourceWallet, txHash: input.txHash },
+        where: { id: release.id, status: "pending", sourceWalletAddress: verifiedBrowserSourceWallet, txHash: null },
+        data: { txHash: input.txHash },
       });
       if (bound.count !== 1) throw new Error("RELEASE_TX_HASH_MISMATCH");
     }

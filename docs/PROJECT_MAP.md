@@ -208,7 +208,7 @@ settleflow/
 
 ### `lib/auth/`
 - **Confirmed**:
-  - `smart-account.ts` derives a deterministic smart-account address for the Google sign-in surface.
+  - Google/Circle and Web3 authentication establish independent product identities; a Web3 wallet can be explicitly linked only before it exists in `UserWallet`.
 
 ### `lib/notifications/`
 - **Confirmed**:

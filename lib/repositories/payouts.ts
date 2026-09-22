@@ -1,4 +1,7 @@
+import type { PayoutStatus } from "@prisma/client";
 import { db } from "@/lib/db/client";
+
+const CONTRIBUTOR_VISIBLE_PAYOUT_STATUSES: PayoutStatus[] = ["active", "partially_released", "completed"];
 
 export type PayoutListItem = {
   id: string;
@@ -109,7 +112,11 @@ export async function listAccessiblePayouts(input: {
       OR: [
         ...(privilegedWorkspaceIds.length > 0 ? [{ workspaceId: { in: privilegedWorkspaceIds } }] : []),
         ...(contributorWorkspaceIds.length > 0
-          ? [{ workspaceId: { in: contributorWorkspaceIds }, contributor: { linkedUserId: input.userId } }]
+          ? [{
+              workspaceId: { in: contributorWorkspaceIds },
+              status: { in: CONTRIBUTOR_VISIBLE_PAYOUT_STATUSES },
+              contributor: { linkedUserId: input.userId },
+            }]
           : []),
       ],
     },
@@ -150,7 +157,12 @@ export async function getPayoutById(
     where: {
       id,
       workspaceId,
-      ...(scope?.linkedUserId ? { contributor: { linkedUserId: scope.linkedUserId } } : {}),
+      ...(scope?.linkedUserId
+        ? {
+            status: { in: CONTRIBUTOR_VISIBLE_PAYOUT_STATUSES },
+            contributor: { linkedUserId: scope.linkedUserId },
+          }
+        : {}),
       ...(scope?.createdByUserId ? { createdByUserId: scope.createdByUserId } : {}),
     },
     select: {
@@ -241,6 +253,14 @@ export type PayoutDetailData = {
     submittedAt?: string;
     approvedAt?: string;
     releasedAt?: string;
+    latestSubmission?: {
+      id: string;
+      summary: string;
+      artifactUrl?: string | null;
+      artifactLabel?: string | null;
+      notes?: string | null;
+      submittedAt: string;
+    };
   }[];
   releaseProof?: {
     id: string;
@@ -257,6 +277,7 @@ export type PayoutDetailData = {
     executionMode?: "browser_wallet" | "circle_wallet" | "circle_user_wallet";
     releaseTxHash?: string;
     releaseArcRequestId?: string;
+    releaseStatus?: "queued" | "pending" | "confirmed" | "failed" | "cancelled";
   };
 };
 
@@ -273,7 +294,12 @@ export async function getPayoutDetail(
     where: {
       id,
       workspaceId,
-      ...(scope?.linkedUserId ? { contributor: { linkedUserId: scope.linkedUserId } } : {}),
+      ...(scope?.linkedUserId
+        ? {
+            status: { in: CONTRIBUTOR_VISIBLE_PAYOUT_STATUSES },
+            contributor: { linkedUserId: scope.linkedUserId },
+          }
+        : {}),
       ...(scope?.createdByUserId ? { createdByUserId: scope.createdByUserId } : {}),
     },
     select: {
@@ -307,6 +333,18 @@ export async function getPayoutDetail(
           approvedAt: true,
           rejectedAt: true,
           releasedAt: true,
+          submissions: {
+            orderBy: { submittedAt: "desc" },
+            take: 1,
+            select: {
+              id: true,
+              summary: true,
+              artifactUrl: true,
+              artifactLabel: true,
+              notes: true,
+              submittedAt: true,
+            },
+          },
         },
       },
       transactionProofs: {
@@ -324,7 +362,7 @@ export async function getPayoutDetail(
           failureReason: true,
           confirmedAt: true,
           failedAt: true,
-          release: { select: { executionMode: true, txHash: true, arcRequestId: true } },
+          release: { select: { executionMode: true, status: true, txHash: true, arcRequestId: true } },
         },
       },
     },
@@ -356,18 +394,31 @@ export async function getPayoutDetail(
           role: payout.contributor.role ?? undefined,
         }
       : undefined,
-    milestones: payout.milestones.map((m) => ({
-      id: m.id,
-      payoutId: m.payoutId,
-      title: m.title,
-      description: m.description,
-      amount: Number(m.amountUsdc.toString()),
-      status: m.status,
-      submittedAt: m.submittedAt?.toISOString() ?? undefined,
-      approvedAt: m.approvedAt?.toISOString() ?? undefined,
-      rejectedAt: m.rejectedAt?.toISOString() ?? undefined,
-      releasedAt: m.releasedAt?.toISOString() ?? undefined,
-    })),
+    milestones: payout.milestones.map((m) => {
+      const latest = m.submissions?.[0];
+      return {
+        id: m.id,
+        payoutId: m.payoutId,
+        title: m.title,
+        description: m.description,
+        amount: Number(m.amountUsdc.toString()),
+        status: m.status,
+        submittedAt: m.submittedAt?.toISOString() ?? undefined,
+        approvedAt: m.approvedAt?.toISOString() ?? undefined,
+        rejectedAt: m.rejectedAt?.toISOString() ?? undefined,
+        releasedAt: m.releasedAt?.toISOString() ?? undefined,
+        latestSubmission: latest
+          ? {
+              id: latest.id,
+              summary: latest.summary,
+              artifactUrl: latest.artifactUrl,
+              artifactLabel: latest.artifactLabel,
+              notes: latest.notes,
+              submittedAt: latest.submittedAt.toISOString(),
+            }
+          : undefined,
+      };
+    }),
     releaseProof: payout.transactionProofs[0]
       ? {
           id: payout.transactionProofs[0].id,

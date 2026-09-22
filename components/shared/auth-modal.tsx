@@ -1,35 +1,42 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useWallet } from "@/lib/context/wallet-context";
 import { useToast } from "@/lib/context/toast-context";
 import { useScrollLock } from "@/lib/hooks/use-scroll-lock";
-import { decodeGoogleJwt, loadGoogleGsiScript } from "@/lib/auth/google";
+import { discoverBrowserWallets, type EIP6963ProviderDetail } from "@/lib/arc/browser-wallet";
 import {
   X,
   Mail,
-  ShieldCheck,
   Wallet,
   Sparkles,
-  Loader2,
+  CheckCircle2,
 } from "lucide-react";
-
-type GoogleCredentialResponse = { credential: string };
 
 export function AuthModal() {
   const {
     isAuthModalOpen,
     closeAuthModal,
     connectWeb3,
-    connectGoogle,
     isConnecting,
   } = useWallet();
   const { toast } = useToast();
   const router = useRouter();
-  const googleButtonRef = useRef<HTMLDivElement>(null);
-  const googleInitializedRef = useRef(false);
+  const [detectedWallets, setDetectedWallets] = useState<EIP6963ProviderDetail[]>([]);
 
+  useEffect(() => {
+    if (!isAuthModalOpen) return;
+    let active = true;
+    discoverBrowserWallets()
+      .then((wallets) => {
+        if (active) setDetectedWallets(wallets);
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [isAuthModalOpen]);
 
   const refreshCurrentPage = () => {
     closeAuthModal();
@@ -40,83 +47,52 @@ export function AuthModal() {
     router.replace(destination);
   };
 
-  const [activeTab, setActiveTab] = useState<"quick" | "web3">("quick");
-  const [googleLoading, setGoogleLoading] = useState(false);
-  const [googleScriptLoaded, setGoogleScriptLoaded] = useState(false);
-  const [googleError, setGoogleError] = useState<string | null>(null);
-  const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
-
-  const getPostSignInDestination = useCallback(() => {
-    if (typeof window === "undefined") return "/dashboard";
-    const url = new URL(window.location.href);
-    const next = url.searchParams.get("next");
-    if (next && next.startsWith("/") && !next.startsWith("//")) return next;
-    if (url.pathname === "/accept-invite" && url.searchParams.get("token")) return `${url.pathname}${url.search}`;
-    return "/dashboard";
-  }, []);
-
   useScrollLock(isAuthModalOpen);
 
-  const finishGoogleSignIn = useCallback(async (response: GoogleCredentialResponse) => {
-    setGoogleLoading(true);
-    setGoogleError(null);
-    try {
-      const profile = decodeGoogleJwt(response.credential);
-      if (!profile) throw new Error("Google did not return a valid sign-in credential.");
-      await connectGoogle({ ...profile, idToken: response.credential });
-      router.replace(getPostSignInDestination());
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : "Google authentication was cancelled or failed.";
-      setGoogleError(errorMessage);
-      toast({ variant: "error", title: "Google Sign-In", description: errorMessage });
-    } finally {
-      setGoogleLoading(false);
-    }
-  }, [connectGoogle, getPostSignInDestination, router, toast]);
-
-  useEffect(() => {
-    if (!isAuthModalOpen || googleScriptLoaded) return;
-    let cancelled = false;
-    void loadGoogleGsiScript()
-      .then(() => {
-        if (!cancelled) setGoogleScriptLoaded(true);
-      })
-      .catch(() => {
-        if (!cancelled) setGoogleError("Google sign-in could not load. Try again or use the redirect fallback.");
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [googleScriptLoaded, isAuthModalOpen]);
-
-  useEffect(() => {
-    if (!googleScriptLoaded || !googleClientId || !window.google || googleInitializedRef.current) return;
-    window.google.accounts.id.initialize({
-      client_id: googleClientId,
-      callback: (response) => void finishGoogleSignIn(response),
-    });
-    googleInitializedRef.current = true;
-  }, [finishGoogleSignIn, googleClientId, googleScriptLoaded]);
-
-  useEffect(() => {
-    if (activeTab !== "quick" || !isAuthModalOpen || !googleScriptLoaded || !googleButtonRef.current || !window.google) return;
-    const button = googleButtonRef.current;
-    button.replaceChildren();
-    window.google.accounts.id.renderButton(button, {
-      type: "standard",
-      theme: "outline",
-      size: "large",
-      text: "continue_with",
-      shape: "pill",
-      width: 360,
-    });
-  }, [activeTab, googleScriptLoaded, isAuthModalOpen]);
-
-  const handleGoogleRedirectFallback = () => {
-    window.location.assign(`/api/v1/auth/google/start?next=${encodeURIComponent(getPostSignInDestination())}`);
-  };
-
   if (!isAuthModalOpen) return null;
+
+  const defaultWalletList = [
+    { id: "MetaMask", label: "MetaMask", icon: "/wallets/metamask.svg", desc: "Browser extension or mobile app", rdnsMatch: "io.metamask" },
+    { id: "Rabby Wallet", label: "Rabby Wallet", icon: "/wallets/rabby.svg", desc: "Game-changing Web3 experience", rdnsMatch: "io.rabby" },
+    { id: "OKX Wallet", label: "OKX Wallet", icon: "/wallets/okx.svg", desc: "Browser extension or mobile app", rdnsMatch: "com.okex.wallet" },
+    { id: "Coinbase Smart Wallet", label: "Coinbase / Passkey", icon: "/wallets/coinbase.svg", desc: "FaceID & biometric smart account", rdnsMatch: "com.coinbase.wallet" },
+    { id: "WalletConnect", label: "WalletConnect", icon: "/wallets/walletconnect.svg", desc: "Scan QR with 300+ mobile wallets", rdnsMatch: "walletconnect" },
+  ];
+
+  // Merge detected EIP-6963 wallet extension app icons into list
+  const walletItems = defaultWalletList.map((w) => {
+    const detected = detectedWallets.find(
+      (d) =>
+        (d.info.rdns && w.rdnsMatch && d.info.rdns.toLowerCase().includes(w.rdnsMatch.toLowerCase())) ||
+        d.info.name.toLowerCase().includes(w.id.toLowerCase()) ||
+        w.id.toLowerCase().includes(d.info.name.toLowerCase())
+    );
+    return {
+      ...w,
+      icon: detected?.info.icon && detected.info.icon.trim().length > 0 ? detected.info.icon : w.icon,
+      isDetected: Boolean(detected),
+    };
+  });
+
+  const extraWallets = detectedWallets
+    .filter(
+      (d) =>
+        !defaultWalletList.some(
+          (w) =>
+            (d.info.rdns && w.rdnsMatch && d.info.rdns.toLowerCase().includes(w.rdnsMatch.toLowerCase())) ||
+            d.info.name.toLowerCase().includes(w.id.toLowerCase()) ||
+            w.id.toLowerCase().includes(d.info.name.toLowerCase())
+        )
+    )
+    .map((d) => ({
+      id: d.info.name,
+      label: d.info.name,
+      icon: d.info.icon || "/wallets/metamask.svg",
+      desc: "Detected browser extension",
+      isDetected: true,
+    }));
+
+  const allWalletItems = [...walletItems, ...extraWallets];
 
   return (
     <div
@@ -130,7 +106,7 @@ export function AuthModal() {
         {/* Close Button */}
         <button
           onClick={closeAuthModal}
-          disabled={isConnecting || googleLoading}
+          disabled={isConnecting}
           className="absolute right-5 top-5 rounded-full p-1.5 text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--foreground)] transition-colors"
           aria-label="Close modal"
         >
@@ -145,70 +121,27 @@ export function AuthModal() {
           <h2 className="text-2xl font-bold tracking-tight text-[var(--foreground)]">
             Sign in to SettleFlow
           </h2>
-          <p className="mt-1.5 text-xs text-[var(--text-muted)] max-w-[320px] mx-auto leading-relaxed">
-            Access your milestone escrows, payout approvals, and smart settlement records.
-          </p>
         </div>
 
-        {/* Quick Tabs */}
         <div className="mb-5 flex rounded-xl bg-[var(--surface-muted)] p-1 border border-[var(--border-soft)] text-xs font-medium">
           <button
-            onClick={() => setActiveTab("quick")}
-            className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg py-2 transition-all ${
-              activeTab === "quick"
-                ? "bg-[var(--foreground)] text-[var(--background)] font-semibold shadow-sm"
-                : "text-[var(--text-muted)] hover:text-[var(--foreground)]"
-            }`}
+            type="button"
+            disabled
+            aria-label="Web2 sign-in is coming soon"
+            className="flex-1 flex items-center justify-center gap-1.5 rounded-lg py-2 text-[var(--text-muted)] opacity-55 cursor-not-allowed"
           >
-            <Mail size={14} /> Web2 (Social / Email)
+            <Mail size={14} /> Web2 Sign-in <span className="text-[10px]">Coming soon</span>
           </button>
           <button
-            onClick={() => setActiveTab("web3")}
-            className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg py-2 transition-all ${
-              activeTab === "web3"
-                ? "bg-[var(--foreground)] text-[var(--background)] font-semibold shadow-sm"
-                : "text-[var(--text-muted)] hover:text-[var(--foreground)]"
-            }`}
+            type="button"
+            className="flex-1 flex items-center justify-center gap-1.5 rounded-lg bg-[var(--foreground)] py-2 font-semibold text-[var(--background)] shadow-sm"
           >
-            <Wallet size={14} /> Web3 Wallet
+            <Wallet size={14} /> Connect Web3 Wallet
           </button>
         </div>
 
-        {/* Tab 1: Web2 / Social & Email */}
-        {activeTab === "quick" && (
-          <div className="space-y-4">
-            <div className={googleLoading || isConnecting ? "pointer-events-none opacity-60" : undefined}>
-              {googleClientId ? <div ref={googleButtonRef} className="flex min-h-11 justify-center" /> : null}
-              {!googleScriptLoaded && !googleError ? (
-                <div className="flex min-h-11 items-center justify-center gap-2 text-sm text-[var(--text-muted)]">
-                  <Loader2 size={16} className="animate-spin" /> Loading Google sign-in...
-                </div>
-              ) : null}
-            </div>
-            {googleError ? <p className="text-center text-xs text-rose-600">{googleError}</p> : null}
-            <button
-              type="button"
-              onClick={handleGoogleRedirectFallback}
-              disabled={googleLoading || isConnecting}
-              className="w-full text-center text-xs text-[var(--text-muted)] underline underline-offset-4 hover:text-[var(--foreground)] disabled:opacity-60"
-            >
-              Use Google sign-in in a new page instead
-            </button>
-            <p className="text-center text-xs leading-relaxed text-[var(--text-muted)]">
-              Sign in with Google or a provisioned wallet. Email-only sign-in is unavailable.
-            </p>
-          </div>
-        )}
-
-        {/* Tab 2: Web3 Wallets */}
-        {activeTab === "web3" && (
-          <div className="space-y-2.5">
-            {[
-              { id: "MetaMask", label: "MetaMask", emoji: "🦊", desc: "Browser extension or mobile app" },
-              { id: "Rabby Wallet", label: "Rabby Wallet", emoji: "🐰", desc: "Game-changing Web3 experience" },
-              { id: "Coinbase Smart Wallet", label: "Coinbase / Passkey", emoji: "🛡️", desc: "FaceID & biometric smart account" },
-              { id: "WalletConnect", label: "WalletConnect", emoji: "🔗", desc: "Scan QR with 300+ mobile wallets" },
-            ].map((w) => (
+        <div className="space-y-2.5">
+            {allWalletItems.map((w) => (
               <button
                 key={w.id}
                 onClick={async () => {
@@ -223,18 +156,34 @@ export function AuthModal() {
                 disabled={isConnecting}
                 className="w-full flex items-center justify-between rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-3.5 hover:border-[var(--border-strong)] hover:bg-[var(--surface-strong)] transition-all group disabled:opacity-50 text-left"
               >
-                <div className="flex items-center gap-3">
-                  <span className="text-xl">{w.emoji}</span>
+                <div className="flex items-center gap-3.5">
+                  <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[var(--border-soft)] bg-[var(--surface)] p-1.5 text-[var(--foreground)] shadow-xs">
+                    <img
+                      src={w.icon}
+                      alt={w.label}
+                      className="h-8 w-8 object-contain rounded-md"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src = "/wallets/metamask.svg";
+                      }}
+                    />
+                  </span>
                   <div>
-                    <p className="text-sm font-medium text-[var(--foreground)]">
-                      {w.label}
-                    </p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-medium text-[var(--foreground)]">
+                        {w.label}
+                      </p>
+                      {w.isDetected && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-400 border border-emerald-500/20">
+                          <CheckCircle2 size={10} /> Installed
+                        </span>
+                      )}
+                    </div>
                     <p className="text-[11px] text-[var(--text-muted)]">
                       {w.desc}
                     </p>
                   </div>
                 </div>
-                <span className="text-xs text-[var(--text-muted)] group-hover:text-[var(--foreground)] transition-colors">
+                <span className="text-xs text-[var(--text-muted)] group-hover:text-[var(--foreground)] transition-colors font-medium">
                   Connect →
                 </span>
               </button>
@@ -255,16 +204,8 @@ export function AuthModal() {
                 <span>🌐 Add / Switch Arc Testnet RPC in MetaMask</span>
               </button>
             </div>
-          </div>
-        )}
-
-        {/* Footer info banner */}
-        <div className="mt-5 rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-3.5 text-xs flex items-start gap-2.5">
-          <ShieldCheck size={16} className="text-[var(--text-muted)] shrink-0 mt-0.5" />
-          <p className="leading-relaxed text-[11px] text-[var(--text-muted)]">
-            <strong className="text-[var(--foreground)] font-semibold">New to Web3?</strong> Signing in with Google/Email automatically provisions a non-custodial Smart Account on Arc Testnet.
-          </p>
         </div>
+
       </div>
     </div>
   );

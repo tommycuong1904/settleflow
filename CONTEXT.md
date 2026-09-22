@@ -33,7 +33,7 @@ components/**         React components (dashboard, milestones, payouts, shared, 
 lib/api/**            Request validation / schema
 lib/repositories/**   Prisma data access
 lib/arc/**            Arc config, release-executor, onchain helpers
-lib/auth/**           Session, smart-account
+lib/auth/**           Session and authentication
 lib/notifications/**  Webhook dispatcher (Discord/Slack/custom)
 lib/runtime/**        Runtime utilities
 ```

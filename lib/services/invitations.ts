@@ -1,6 +1,7 @@
 import { db } from "@/lib/db/client";
 import crypto from "crypto";
 import type { Prisma, WorkspaceMemberRole } from "@prisma/client";
+import { reconcileUserContributors } from "@/lib/repositories/contributors";
 
 export const INVITABLE_WORKSPACE_ROLES = ["owner", "contributor"] as const;
 export type InvitableWorkspaceRole = (typeof INVITABLE_WORKSPACE_ROLES)[number];
@@ -92,7 +93,7 @@ export async function acceptInvitation(token: string, userId: string): Promise<A
     };
   }
 
-  return await db.$transaction(async (tx: Prisma.TransactionClient) => {
+  const result = await db.$transaction(async (tx: Prisma.TransactionClient) => {
     const claimed = await tx.invitation.updateMany({
       where: {
         id: invitation.id,
@@ -151,4 +152,10 @@ export async function acceptInvitation(token: string, userId: string): Promise<A
       role: membership.role,
     };
   });
+
+  if (result.success) {
+    await reconcileUserContributors(userId);
+  }
+
+  return result;
 }

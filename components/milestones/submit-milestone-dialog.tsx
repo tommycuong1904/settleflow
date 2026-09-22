@@ -2,7 +2,21 @@
 
 import React, { useState } from "react";
 import { Button } from "@/components/shared/button";
-import { X, Send, Link as LinkIcon, Loader2, Code2, Video, Layers, Globe } from "lucide-react";
+import {
+  X,
+  Send,
+  Link as LinkIcon,
+  Loader2,
+  Code2,
+  Video,
+  Layers,
+  Globe,
+  FileText,
+  ChevronDown,
+  Sparkles,
+  Plus,
+  Trash2,
+} from "lucide-react";
 import { formatUsdc } from "@/lib/utils/format";
 import type { Milestone } from "@/lib/models/milestone";
 import { useWallet } from "@/lib/context/wallet-context";
@@ -17,12 +31,32 @@ type SubmitMilestoneDialogProps = {
   onSuccess: (submissionMeta?: { submittedAt?: string; summary?: string; artifactUrl?: string }) => void;
 };
 
-const SUGGESTED_LABELS = [
+type LabelOption = {
+  label: string;
+  icon: React.ComponentType<{ size?: number; className?: string }>;
+};
+
+const SUGGESTED_LABELS: LabelOption[] = [
   { label: "GitHub Pull Request", icon: Code2 },
   { label: "Figma Design Specs", icon: Layers },
-  { label: "Loom Walkthrough Video", icon: Video },
-  { label: "Live Staging / Demo App", icon: Globe },
+  { label: "Walkthrough Video", icon: Video },
+  { label: "Documentation", icon: FileText },
+  { label: "Live Staging / Demo", icon: Globe },
 ];
+
+function detectLabelFromUrl(url: string): string {
+  const u = url.toLowerCase().trim();
+  if (!u) return "Deliverable";
+  if (u.includes("github.com") || u.includes("gitlab.com")) return "GitHub Pull Request";
+  if (u.includes("figma.com")) return "Figma Design Specs";
+  if (u.includes("loom.com") || u.includes("youtube.com") || u.includes("vimeo.com")) return "Walkthrough Video";
+  if (u.includes("docs.google.com") || u.includes("notion.so") || u.includes("notion.site")) return "Documentation";
+  return "Live Staging / Demo";
+}
+
+function getLabelIcon(label: string) {
+  return SUGGESTED_LABELS.find((l) => l.label === label)?.icon || Globe;
+}
 
 export function SubmitMilestoneDialog({
   isOpen,
@@ -31,12 +65,10 @@ export function SubmitMilestoneDialog({
   workspaceId,
   onSuccess,
 }: SubmitMilestoneDialogProps) {
-  const [summary, setSummary] = useState(
-    `Completed deliverable for "${milestone.title}". All acceptance criteria have been implemented and tested.`,
-  );
-  const [artifactUrl, setArtifactUrl] = useState("");
-  const [artifactLabel, setArtifactLabel] = useState("GitHub Pull Request");
+  const [proofs, setProofs] = useState<string[]>([""]);
+  const [summary, setSummary] = useState("");
   const [notes, setNotes] = useState("");
+  const [showExtraNotes, setShowExtraNotes] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -45,11 +77,68 @@ export function SubmitMilestoneDialog({
 
   if (!isOpen) return null;
 
+  const handleProofChange = (index: number, val: string) => {
+    setProofs((prev) => {
+      const next = [...prev];
+      next[index] = val;
+      return next;
+    });
+  };
+
+  const handleAddProof = () => {
+    if (proofs.length < 5) {
+      setProofs((prev) => [...prev, ""]);
+    }
+  };
+
+  const handleRemoveProof = (index: number) => {
+    setProofs((prev) => {
+      if (prev.length <= 1) return [""];
+      return prev.filter((_, i) => i !== index);
+    });
+  };
+
+  const handleFillTemplate = () => {
+    setSummary(
+      `Completed deliverable for "${milestone.title}". All acceptance criteria have been implemented, tested, and verified.`,
+    );
+  };
+
+  const handleFillDemoData = () => {
+    setProofs([
+      "https://github.com/settleflow/settleflow/pull/42",
+      "https://loom.com/share/demo-walkthrough-preview",
+    ]);
+    setSummary(
+      `Completed deliverable for "${milestone.title}". Implemented core architecture, passing all integration test suites, and verified on testnet.`,
+    );
+    setNotes(
+      "Staging preview: https://staging.settleflow.app • Test credentials: demo@settleflow.app",
+    );
+    setShowExtraNotes(true);
+    setError(null);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!summary.trim()) {
-      setError("Please provide a summary of the completed work.");
+    const trimmedSummary = summary.trim();
+
+    if (!trimmedSummary) {
+      setError("Please provide a summary of your completed work.");
       return;
+    }
+
+    const validProofs = proofs.map((p) => p.trim()).filter(Boolean);
+    const primaryUrl = validProofs[0] || undefined;
+    const primaryLabel = primaryUrl ? detectLabelFromUrl(primaryUrl) : undefined;
+
+    // If multiple proofs are attached, append them nicely formatted to the summary
+    let finalSummary = trimmedSummary;
+    if (validProofs.length > 1) {
+      const linksBlock = validProofs
+        .map((url) => `• ${detectLabelFromUrl(url)}: ${url}`)
+        .join("\n");
+      finalSummary = `${trimmedSummary}\n\nAttached Deliverables:\n${linksBlock}`;
     }
 
     setError(null);
@@ -63,9 +152,9 @@ export function SubmitMilestoneDialog({
           [PRODUCT_CONTEXT_HEADER_NAMES.workspaceId]: workspaceId,
         },
         body: JSON.stringify({
-          summary: summary.trim(),
-          artifactUrl: artifactUrl.trim() || undefined,
-          artifactLabel: artifactUrl.trim() ? artifactLabel : undefined,
+          summary: finalSummary,
+          artifactUrl: primaryUrl,
+          artifactLabel: primaryLabel,
           notes: notes.trim() || undefined,
           walletAddress: connectedAddress || undefined,
         }),
@@ -83,8 +172,8 @@ export function SubmitMilestoneDialog({
 
       onSuccess({
         submittedAt: data.submission?.submittedAt,
-        summary: summary.trim(),
-        artifactUrl: artifactUrl.trim() || undefined,
+        summary: finalSummary,
+        artifactUrl: primaryUrl,
       });
       onClose();
     } catch (err) {
@@ -100,7 +189,7 @@ export function SubmitMilestoneDialog({
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-lg rounded-3xl border border-[var(--border-strong)] bg-[var(--surface)] p-6 sm:p-8 shadow-2xl text-[var(--foreground)]"
+        className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-3xl border border-[var(--border-strong)] bg-[var(--surface)] p-6 sm:p-7 shadow-2xl text-[var(--foreground)]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close Button */}
@@ -114,98 +203,179 @@ export function SubmitMilestoneDialog({
         </button>
 
         {/* Header */}
-        <div className="mb-5">
-          <span className="text-[11px] uppercase tracking-[0.2em] text-cyan-400 font-semibold">
-            Deliverable Submission
-          </span>
-          <h2 className="text-xl font-bold tracking-tight text-[var(--foreground)] mt-1">
+        <div className="mb-5 pr-8">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[10px] uppercase tracking-[0.2em] text-[#091b33] font-bold">
+              Deliverable Submission
+            </span>
+            <button
+              type="button"
+              onClick={handleFillDemoData}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#091b33]/5 hover:bg-[#091b33]/10 text-[#091b33] border border-[#091b33]/15 text-[11px] font-semibold transition-all active:scale-95 cursor-pointer"
+              title="Populate demo links and summary for presentation"
+            >
+              <Sparkles size={12} /> Fill Demo Data
+            </button>
+          </div>
+          <h2 className="text-lg sm:text-xl font-bold tracking-tight text-[var(--foreground)] mt-1 line-clamp-1">
             Submit &quot;{milestone.title}&quot;
           </h2>
-          <p className="text-xs text-[var(--text-muted)] mt-1">
-            Value: <strong className="text-[var(--foreground)] font-mono font-semibold">{formatUsdc(milestone.amount)} USDC</strong> • Escrow release unlocks upon reviewer approval.
-          </p>
+          <div className="mt-1 flex items-center gap-2 text-xs text-[var(--text-muted)]">
+            <span>
+              Reward:{" "}
+              <strong className="text-[var(--foreground)] font-mono font-semibold">
+                {formatUsdc(milestone.amount)} USDC
+              </strong>
+            </span>
+            <span>•</span>
+            <span className="text-emerald-500 font-medium">Releases upon approval</span>
+          </div>
         </div>
 
         {error && (
-          <div className="mb-4 rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-200">
+          <div className="mb-4 rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-200 animate-in fade-in">
             {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4 text-xs">
-          {/* Deliverable Summary */}
+          {/* Deliverable / Proof Links (Supports multiple) */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="block uppercase tracking-wider font-semibold text-[var(--foreground)]">
+                Proof / Deliverable Links
+              </label>
+              <span className="text-[10px] text-[#091b33] font-semibold">Recommended</span>
+            </div>
+
+            <div className="space-y-2">
+              {proofs.map((proofUrl, index) => {
+                const detectedLabel = proofUrl.trim() ? detectLabelFromUrl(proofUrl) : null;
+                const DetectedIcon = detectedLabel ? getLabelIcon(detectedLabel) : null;
+
+                return (
+                  <div key={index} className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <div className="relative flex-1">
+                        <LinkIcon
+                          size={14}
+                          className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]"
+                        />
+                        <input
+                          type="url"
+                          value={proofUrl}
+                          onChange={(e) => handleProofChange(index, e.target.value)}
+                          placeholder={
+                            index === 0
+                              ? "Primary link: https://github.com/org/repo/pull/123"
+                              : "Additional link: Figma, Loom video, or demo URL"
+                          }
+                          className="w-full rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] py-2.5 pl-9 pr-3 text-xs text-[var(--foreground)] placeholder-[var(--text-muted)] focus:border-[var(--primary)] focus:outline-none focus:ring-1 focus:ring-[var(--primary)]/20 transition-all font-mono"
+                        />
+                      </div>
+
+                      {proofs.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveProof(index)}
+                          className="p-2 rounded-xl text-[var(--text-muted)] hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+                          title="Remove this link"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      )}
+                    </div>
+
+                    {detectedLabel && DetectedIcon && (
+                      <div className="pl-1 pt-0.5 flex items-center gap-1.5 animate-in fade-in duration-150">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-sky-500/10 border border-sky-500/20 text-sky-700 dark:text-sky-300 text-[10px] font-semibold">
+                          <DetectedIcon size={11} />
+                          {detectedLabel}
+                        </span>
+                        <span className="text-[10px] text-[var(--text-muted)]">
+                          {index === 0 ? "(Primary artifact)" : "(Attached artifact)"}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {proofs.length < 5 && (
+              <button
+                type="button"
+                onClick={handleAddProof}
+                className="inline-flex items-center gap-1 text-[11px] text-[var(--primary)] hover:opacity-80 font-semibold transition-opacity pt-1"
+              >
+                <Plus size={13} /> Add another proof link
+              </button>
+            )}
+          </div>
+
+          {/* Work Summary */}
           <div className="space-y-1.5">
-            <label className="block uppercase tracking-wider font-semibold text-slate-300">
-              Work Summary <span className="text-rose-400">*</span>
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="block uppercase tracking-wider font-semibold text-[var(--foreground)]">
+                Work Summary <span className="text-rose-400">*</span>
+              </label>
+              {!summary && (
+                <button
+                  type="button"
+                  onClick={handleFillTemplate}
+                  className="inline-flex items-center gap-1 text-[11px] text-[var(--primary)] hover:opacity-80 font-semibold transition-opacity"
+                >
+                  <Sparkles size={11} /> Auto-fill template
+                </button>
+              )}
+            </div>
             <textarea
               required
               rows={3}
               value={summary}
               onChange={(e) => setSummary(e.target.value)}
-              placeholder="Describe what has been delivered, features built, or bugs solved..."
-              className="w-full rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-3 text-xs text-[var(--foreground)] placeholder-[var(--text-muted)] focus:border-[var(--foreground)] focus:outline-none focus:ring-1 focus:ring-[var(--foreground)] transition-all resize-none"
+              placeholder="Briefly describe what has been completed, features built, or testing notes for the reviewer..."
+              className="w-full rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-3 text-xs text-[var(--foreground)] placeholder-[var(--text-muted)] focus:border-[var(--primary)] focus:outline-none focus:ring-1 focus:ring-[var(--primary)]/20 transition-all resize-none leading-relaxed"
             />
           </div>
 
-          {/* Deliverable Link */}
-          <div className="space-y-1.5">
-            <label className="block uppercase tracking-wider font-semibold text-slate-300">
-              Proof / Artifact URL <span className="text-slate-500 font-normal">(Optional)</span>
-            </label>
-            <div className="relative">
-              <LinkIcon size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                type="url"
-                value={artifactUrl}
-                onChange={(e) => setArtifactUrl(e.target.value)}
-                placeholder="https://github.com/org/repo/pull/123 or https://figma.com/file/..."
-                className="w-full rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] py-2.5 pl-9 pr-3 text-xs text-[var(--foreground)] placeholder-[var(--text-muted)] focus:border-[var(--foreground)] focus:outline-none focus:ring-1 focus:ring-[var(--foreground)] transition-all"
-              />
-            </div>
-          </div>
-
-          {/* Suggested Label Chips */}
-          {artifactUrl.trim() && (
-            <div className="space-y-1.5">
-              <label className="block text-[10px] uppercase tracking-wider text-slate-400">
-                Artifact Type:
-              </label>
-              <div className="flex flex-wrap gap-1.5">
-                {SUGGESTED_LABELS.map((item) => (
+          {/* Optional Extra Notes / Credentials (Collapsible) */}
+          <div className="pt-0.5">
+            {!showExtraNotes && !notes ? (
+              <button
+                type="button"
+                onClick={() => setShowExtraNotes(true)}
+                className="inline-flex items-center gap-1 text-[11px] text-[var(--text-muted)] hover:text-[var(--foreground)] transition-colors"
+              >
+                <ChevronDown size={13} /> + Add private notes or credentials for reviewer (optional)
+              </button>
+            ) : (
+              <div className="space-y-1.5 animate-in fade-in duration-150">
+                <div className="flex items-center justify-between">
+                  <label className="block uppercase tracking-wider font-semibold text-[var(--text-muted)] text-[10px]">
+                    Notes for Reviewer (Optional)
+                  </label>
                   <button
-                    key={item.label}
                     type="button"
-                    onClick={() => setArtifactLabel(item.label)}
-                    className={`rounded-lg px-2.5 py-1 text-[11px] font-medium transition-all flex items-center gap-1.5 border ${
-                      artifactLabel === item.label
-                        ? "bg-cyan-500/20 border-cyan-400 text-cyan-200"
-                        : "bg-slate-800/80 border-slate-700 text-slate-400 hover:text-slate-200"
-                    }`}
+                    onClick={() => setShowExtraNotes(false)}
+                    className="text-[10px] text-[var(--text-muted)] hover:text-[var(--foreground)]"
                   >
-                    <item.icon size={12} /> {item.label}
+                    Hide
                   </button>
-                ))}
+                </div>
+                <input
+                  type="text"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="e.g. Test login credentials, staging passwords, or specific tips"
+                  className="w-full rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] py-2 px-3 text-xs text-[var(--foreground)] placeholder-[var(--text-muted)] focus:border-[var(--primary)] focus:outline-none focus:ring-1 focus:ring-[var(--primary)]/20 transition-all"
+                />
               </div>
-            </div>
-          )}
-
-          {/* Additional Notes */}
-          <div className="space-y-1.5">
-            <label className="block uppercase tracking-wider font-semibold text-slate-300">
-              Notes for Reviewer <span className="text-slate-500 font-normal">(Optional)</span>
-            </label>
-            <input
-              type="text"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="e.g. Test credentials, staging URL environment variables, or review tips"
-              className="w-full rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] py-2.5 px-3 text-xs text-[var(--foreground)] placeholder-[var(--text-muted)] focus:border-[var(--foreground)] focus:outline-none focus:ring-1 focus:ring-[var(--foreground)] transition-all"
-            />
+            )}
           </div>
 
-          {/* Action CTAs */}
-          <div className="pt-3 flex items-center justify-end gap-3 border-t border-slate-800">
+          {/* Action Buttons */}
+          <div className="pt-3 flex items-center justify-end gap-3 border-t border-[var(--border-soft)]">
             <Button
               type="button"
               variant="secondary"

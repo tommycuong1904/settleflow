@@ -8,7 +8,7 @@ const source = async (file: string) => readFile(new URL(file, root), "utf8");
 const hash = `0x${"ab".repeat(32)}`;
 const from = "0x1111111111111111111111111111111111111111";
 const to = "0x2222222222222222222222222222222222222222";
-const release = { amountUsdc: "1", destinationWalletAddress: to, sourceWalletAddress: null };
+const release = { amountUsdc: "1", destinationWalletAddress: to, sourceWalletAddress: from, executionMode: "browser_wallet" as const };
 const rpc = (overrides: Record<string, unknown> = {}, receipt: Record<string, unknown> = { status: "success", logs: [] }) => ({
   getTransaction: async () => ({ chainId: 5042002, from, to, value: BigInt("1000000000000000000"), ...overrides }),
   getTransactionReceipt: async () => receipt,
@@ -29,7 +29,7 @@ test("caller sourceWalletAddress is not used by browser confirmation", async () 
   assert.doesNotMatch(refreshBody, /sourceWalletAddress|connectedAddress/);
 });
 
-test("verified tx.from is the only browser source authority", async () => {
+test("verified tx.from must match the browser source snapshot", async () => {
   const verifier = await source("lib/arc/verify-release-transaction.ts");
   assert.match(verifier, /const sourceWalletAddress = tx\.from\.toLowerCase\(\)/);
   const result = await verifyReleaseTransaction({ release, txHash: hash, client: rpc() });
@@ -44,20 +44,19 @@ for (const [name, overrides, receipt] of [
 ] as const) {
   test(`wrong ${name} rejects before any binding/finalization`, async () => {
     await assert.rejects(verifyReleaseTransaction({ release, txHash: hash, client: rpc(overrides, receipt) }), /TX_SNAPSHOT_MISMATCH/);
-    assert.equal(release.sourceWalletAddress, null);
+    assert.equal(release.sourceWalletAddress, from);
   });
 }
 
-test("account switching cannot override actual on-chain tx.from", async () => {
+test("account switching is rejected when it differs from the browser source snapshot", async () => {
   const switched = "0x3333333333333333333333333333333333333333";
-  const result = await verifyReleaseTransaction({ release, txHash: hash, client: rpc({ from: switched }) });
-  assert.equal(result.sourceWalletAddress, switched);
+  await assert.rejects(verifyReleaseTransaction({ release, txHash: hash, client: rpc({ from: switched }) }), /TX_SNAPSHOT_MISMATCH/);
 });
 
-test("same and conflicting txHash writes are null-only and cannot double-finalize", async () => {
+test("browser confirmation preserves the source snapshot and cannot double-finalize", async () => {
   const repo = await source("lib/repositories/release-proof.ts");
   const bind = repo.slice(repo.indexOf("if (verifiedBrowserSourceWallet)"), repo.indexOf("const now = new Date()"));
-  assert.match(bind, /status: "pending", sourceWalletAddress: null, txHash: null/);
+  assert.match(bind, /status: "pending", sourceWalletAddress: verifiedBrowserSourceWallet, txHash: null/);
   assert.match(bind, /if \(bound\.count !== 1\) throw/);
   assert.match(repo, /where: \{ id: proof\.id, status: "pending" \}/);
   assert.match(repo, /where: \{ id: release\.id, status: "pending" \}/);

@@ -14,9 +14,29 @@ function workspaceSlug(name: string) {
   return `${normalized}-${crypto.randomUUID().slice(0, 8)}`;
 }
 
-function defaultWorkspaceName(displayName: string) {
-  const base = displayName.trim() || "My";
-  return `${base.slice(0, 68)} Workspace`;
+export function defaultWorkspaceName(displayName: string, walletAddress?: string): string {
+  // Wallet sign-in: always prefer the on-chain address over the wallet app name
+  if (walletAddress) {
+    const addr = walletAddress.trim();
+    const short = addr.length >= 10 ? `${addr.slice(0, 6)}…${addr.slice(-4)}` : addr;
+    return `Treasury (${short})`;
+  }
+
+  const trimmed = displayName.trim();
+  if (!trimmed) return "Main Workspace";
+
+  // Legacy fallback: displayName already contains an address (e.g. "Wallet 0xABCD...")
+  const walletMatch = trimmed.match(/^(?:Wallet\s+)?(0x[a-fA-F0-9]{6,})/);
+  if (walletMatch) {
+    const raw = walletMatch[1];
+    const short = raw.length >= 10 ? `${raw.slice(0, 6)}…${raw.slice(-4)}` : raw;
+    return `Treasury (${short})`;
+  }
+
+  // Google / name-based sign-in: possessive form
+  const name = trimmed.slice(0, 60);
+  const possessive = name.toLowerCase().endsWith("s") ? `${name}'` : `${name}'s`;
+  return `${possessive} Workspace`;
 }
 
 /**
@@ -25,7 +45,7 @@ function defaultWorkspaceName(displayName: string) {
  */
 export async function ensureInitialWorkspaceForUser(
   tx: Transaction,
-  input: { userId: string; displayName: string },
+  input: { userId: string; displayName: string; walletAddress?: string },
 ) {
   // Serialize bootstrap for one account. Concurrent first sign-ins then
   // cannot both observe an empty membership set and create separate owners.
@@ -40,7 +60,7 @@ export async function ensureInitialWorkspaceForUser(
   });
   if (existingMembership) return { workspaceId: existingMembership.workspaceId, created: false };
 
-  const name = defaultWorkspaceName(input.displayName);
+  const name = defaultWorkspaceName(input.displayName, input.walletAddress);
   const workspace = await tx.workspace.create({
     data: { name, slug: workspaceSlug(name) },
     select: { id: true },

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { ARC_CONFIG } from "@/lib/arc/config";
 import {
@@ -25,7 +25,7 @@ import { useResolvedProductContext } from "@/lib/runtime/product-context-client"
 import { PRODUCT_CONTEXT_HEADER_NAMES, type ProductActor } from "@/lib/runtime/product-context";
 import { hasRole, isRole } from "@/lib/runtime/role-utils";
 import { useWallet } from "@/lib/context/wallet-context";
-import { formatUsdc } from "@/lib/utils/format";
+import { formatUsdc, shortenAddress } from "@/lib/utils/format";
 
 type PayoutDetailReleaseShellProps = {
   payoutId: string;
@@ -40,6 +40,12 @@ type PayoutDetailReleaseShellProps = {
     releasedAt: string;
   }) => void;
   onActivityChange?: () => void | Promise<void>;
+};
+
+type WalletInventoryItem = {
+  address: string;
+  kind: "web3_eoa" | "circle_sca" | "legacy_export_eoa";
+  transactionEnabled: boolean;
 };
 
 type CircleReleasePayload = {
@@ -119,6 +125,25 @@ export function PayoutDetailReleaseShell({
   const [confirmationTxHash, setConfirmationTxHash] = useState("");
   const [failureReason, setFailureReason] = useState("");
   const [activeProof, setActiveProof] = useState<TransactionProof | undefined>(releaseProof);
+  const [circleSourceAddress, setCircleSourceAddress] = useState<string | null>(null);
+
+  const loadWalletInventory = useCallback(async () => {
+    if (!isConnected || authType !== "web2_google") return;
+    try {
+      const response = await fetch("/api/v1/auth/wallet/link", { cache: "no-store" });
+      if (!response.ok) return;
+      const payload = await response.json() as { wallets?: WalletInventoryItem[] };
+      const circleWallet = payload.wallets?.find((wallet) => wallet.kind === "circle_sca" && wallet.transactionEnabled);
+      setCircleSourceAddress(circleWallet?.address ?? null);
+    } catch {
+      // Release setup will still obtain the authoritative Circle wallet source.
+    }
+  }, [authType, isConnected]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => { void loadWalletInventory(); }, 0);
+    return () => window.clearTimeout(timer);
+  }, [loadWalletInventory]);
 
   const resolvedProof = activeProof ?? releaseProof;
   const proofMatchesCurrentMilestone =
@@ -214,7 +239,7 @@ export function PayoutDetailReleaseShell({
     };
     if (!response.ok || payload.error) throw new Error(payload.error ?? "Unable to prepare your Circle smart wallet.");
     if (payload.wallet) {
-      await refreshCircleWallet();
+      await Promise.all([refreshCircleWallet(), loadWalletInventory()]);
       return;
     }
     if (!payload.challenge) throw new Error("Circle wallet provisioning did not return a confirmation challenge.");
@@ -224,7 +249,7 @@ export function PayoutDetailReleaseShell({
     if (!completed.ok || completedPayload.error || !completedPayload.wallet) {
       throw new Error(completedPayload.error ?? "Circle smart wallet setup was not completed.");
     }
-    await refreshCircleWallet();
+    await Promise.all([refreshCircleWallet(), loadWalletInventory()]);
   }
 
   async function completeCircleRelease(releaseId: string) {
@@ -278,7 +303,10 @@ export function PayoutDetailReleaseShell({
     setReleaseStatus("submitting");
 
     try {
-      const useCircleSmartWallet = ARC_CONFIG.executionMode === "real" && authType === "web2_google";
+      const useCircleSmartWallet = authType === "web2_google";
+      if (!useCircleSmartWallet && authType !== "web3_wallet") {
+        throw new Error("Connect an enabled Web3 wallet to release from a browser wallet.");
+      }
       if (useCircleSmartWallet) await ensureCircleSmartWallet();
       const response = resumeReleaseId
         ? null
@@ -752,6 +780,26 @@ export function PayoutDetailReleaseShell({
             <p className="mt-1 text-xs text-[var(--text-muted)]">
               Recipient: {recipientAddress ?? "Recipient address not resolved yet"}
             </p>
+            <div className="mt-4 rounded-2xl border border-[var(--border-soft)] bg-[var(--surface-muted)] px-4 py-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">Payment source</p>
+              {authType === "web2_google" ? (
+                <>
+                  <p className="mt-2 font-medium text-[var(--foreground)]">Circle Smart Wallet</p>
+                  <p className="mt-1 break-all font-mono text-xs text-[var(--text-primary)]">
+                    {circleSourceAddress ?? "Created and verified by Circle during first release setup"}
+                  </p>
+                  <p className="mt-2 text-xs text-[var(--text-muted)]">Confirmation: Circle confirmation UI and wallet PIN.</p>
+                </>
+              ) : authType === "web3_wallet" && address ? (
+                <>
+                  <p className="mt-2 font-medium text-[var(--foreground)]">Linked Web3 EOA · {shortenAddress(address)}</p>
+                  <p className="mt-1 break-all font-mono text-xs text-[var(--text-primary)]">{address}</p>
+                  <p className="mt-2 text-xs text-[var(--text-muted)]">Confirmation: sign and submit in the connected browser wallet.</p>
+                </>
+              ) : (
+                <p className="mt-2 text-xs text-[var(--text-muted)]">Sign in as the workspace owner to determine the payment source.</p>
+              )}
+            </div>
           </div>
           <ReleasePanel
             amount={nextReleasableMilestone?.amount ?? 0}

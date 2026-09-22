@@ -56,12 +56,17 @@ export async function submitMilestone(
           select: {
             title: true,
             workspaceId: true,
+            status: true,
             contributor: { select: { linkedUserId: true } },
           },
         },
       },
     });
     if (!milestone) throw new Error("MILESTONE_NOT_FOUND");
+
+    if (milestone.payout.status !== "active" && milestone.payout.status !== "partially_released") {
+      throw new Error("PAYOUT_NOT_ACTIVE");
+    }
 
     if (milestone.status !== "pending" && milestone.status !== "rejected") {
       throw new Error("MILESTONE_NOT_SUBMITTABLE");

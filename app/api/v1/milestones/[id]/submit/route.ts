@@ -37,12 +37,14 @@ export async function POST(
         USER_NOT_FOUND: 404,
         USER_NOT_ALLOWED_TO_SUBMIT: 403,
         MILESTONE_NOT_SUBMITTABLE: 409,
+        PAYOUT_NOT_ACTIVE: 409,
       },
       {
         MILESTONE_NOT_FOUND: "Milestone not found.",
         USER_NOT_FOUND: "Contributor context user not found.",
         USER_NOT_ALLOWED_TO_SUBMIT: "User is not allowed to submit for this milestone.",
         MILESTONE_NOT_SUBMITTABLE: "Milestone cannot be submitted in its current state.",
+        PAYOUT_NOT_ACTIVE: "Activate this payout before submitting milestones.",
       },
       { message: "Unable to submit milestone.", status: 500 },
     );

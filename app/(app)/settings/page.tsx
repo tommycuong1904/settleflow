@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Button } from "@/components/shared/button";
 import { PageHeader } from "@/components/shared/page-header";
 import { usePathname, useRouter } from "next/navigation";
@@ -10,15 +10,14 @@ import { useWallet } from "@/lib/context/wallet-context";
 import { ARC_CONFIG } from "@/lib/arc/config";
 import { addArcNetworkToWallet } from "@/lib/arc/onchain";
 import { useToast } from "@/lib/context/toast-context";
-import { ExportKeyModal } from "@/components/shared/export-key-modal";
 import {
   Shield,
   Cpu,
   Check,
   Copy,
   ExternalLink,
-  KeyRound,
   UserPlus,
+  Wallet,
 } from "lucide-react";
 
 export default function SettingsPage() {
@@ -28,19 +27,48 @@ export default function SettingsPage() {
   const actor = productContext.actor;
   const isOwner = hasRole(actor, "owner");
 
-  const { isConnected, address, email, authType, disconnect, getPrivateKey } = useWallet();
+  const { isConnected, address, email, authType, disconnect, linkWeb3 } = useWallet();
   const { toast } = useToast();
-  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [isLinkingWallet, setIsLinkingWallet] = useState(false);
+  const [linkedWallets, setLinkedWallets] = useState<Array<{
+    id: string;
+    address: string;
+    kind: "web3_eoa" | "circle_sca" | "legacy_export_eoa";
+    authEnabled: boolean;
+    transactionEnabled: boolean;
+    circleWallet?: { blockchain: string; accountType: string } | null;
+  }>>([]);
 
   const handleDisconnect = async () => {
     await disconnect();
     router.replace(`/auth-required?next=${encodeURIComponent(pathname || "/settings")}`);
   };
 
+  const handleLinkWallet = async () => {
+    setIsLinkingWallet(true);
+    try {
+      const linkedAddress = await linkWeb3();
+      const response = await fetch("/api/v1/auth/wallet/link", { cache: "no-store" });
+      if (response.ok) setLinkedWallets((await response.json() as { wallets: typeof linkedWallets }).wallets);
+      toast({ variant: "success", title: "Wallet linked", description: `${linkedAddress.slice(0, 6)}…${linkedAddress.slice(-4)} can now sign in to this account.` });
+    } catch (error) {
+      toast({ variant: "error", title: "Wallet link failed", description: error instanceof Error ? error.message : "Try again." });
+    } finally {
+      setIsLinkingWallet(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!isConnected) return;
+    void fetch("/api/v1/auth/wallet/link", { cache: "no-store" })
+      .then(async (response) => response.ok ? await response.json() as { wallets: typeof linkedWallets } : null)
+      .then((payload) => { if (payload) setLinkedWallets(payload.wallets); })
+      .catch(() => undefined);
+  }, [isConnected]);
+
   const [rpcStatus, setRpcStatus] = useState<"idle" | "testing" | "healthy">("idle");
   const [latencyMs, setLatencyMs] = useState<number | null>(null);
 
-  const [inviteRole, setInviteRole] = useState<"contributor" | "owner">("contributor");
   const [inviteEmail, setInviteEmail] = useState("");
   const [generatedInviteUrl, setGeneratedInviteUrl] = useState<string | null>(null);
   const [isGeneratingInvite, setIsGeneratingInvite] = useState(false);
@@ -53,7 +81,7 @@ export default function SettingsPage() {
       const res = await fetch("/api/v1/invitations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ role: inviteRole, email: inviteEmail.trim() || undefined }),
+        body: JSON.stringify({ role: "owner", email: inviteEmail.trim() || undefined }),
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
@@ -68,16 +96,6 @@ export default function SettingsPage() {
       setIsGeneratingInvite(false);
     }
   };
-
-  useEffect(() => {
-    if (!isOwner) {
-      router.replace("/dashboard");
-    }
-  }, [isOwner, router]);
-
-  if (!isOwner) {
-    return null;
-  }
 
   const handleTestRpc = async () => {
     setRpcStatus("testing");
@@ -122,7 +140,7 @@ export default function SettingsPage() {
 
       <div className="space-y-8">
         {/* Team access */}
-        <div className="rounded-xl border border-[var(--border-soft)] p-6 sm:p-8 space-y-6 bg-[var(--surface-muted)]/30">
+        {isOwner && <div className="rounded-xl border border-[var(--border-soft)] p-6 sm:p-8 space-y-6 bg-[var(--surface-muted)]/30">
           <div className="flex items-center gap-3 pb-4 border-b border-[var(--border-soft)]">
             <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--surface-muted)] border border-[var(--border-soft)] text-[var(--text-muted)]">
               <UserPlus size={20} />
@@ -134,19 +152,29 @@ export default function SettingsPage() {
           </div>
 
           <div className="space-y-4 text-xs">
+            {/* Contributor invite note */}
+            <div className="flex items-start gap-3 rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-3.5">
+              <UserPlus size={14} className="mt-0.5 shrink-0 text-[var(--text-muted)]" />
+              <p className="text-[var(--text-muted)] leading-relaxed">
+                To invite a <strong className="text-[var(--foreground)]">Contributor</strong>, use the{" "}
+                <a
+                  href="/contributors"
+                  className="underline underline-offset-2 text-[var(--foreground)] hover:opacity-70 transition-opacity"
+                >
+                  Contributors page
+                </a>
+                {" "}— each contributor must be linked to their workspace record first.
+              </p>
+            </div>
+
             <div className="grid gap-4 md:grid-cols-3 items-end">
               <div className="space-y-2 md:col-span-1">
                 <label className="block font-semibold uppercase tracking-wider text-[var(--text-muted)]">
                   Invite Role
                 </label>
-                <select
-                  value={inviteRole}
-                  onChange={(e) => setInviteRole(e.target.value as typeof inviteRole)}
-                  className="w-full rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] py-2.5 px-3.5 text-xs text-[var(--foreground)] focus:border-[var(--foreground)] focus:outline-none"
-                >
-                  <option value="contributor">Contributor (Builder / Freelancer)</option>
-                  <option value="owner">Owner (Full Admin Access)</option>
-                </select>
+                <div className="w-full rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] py-2.5 px-3.5 text-xs text-[var(--foreground)]">
+                  Owner (Full Admin Access)
+                </div>
               </div>
 
               <div className="space-y-2 md:col-span-1">
@@ -202,12 +230,12 @@ export default function SettingsPage() {
                   className="w-full rounded-lg border border-[var(--border-soft)] bg-[var(--surface-muted)] py-2 px-3 text-xs font-mono text-[var(--foreground)] select-all"
                 />
                 <p className="text-[11px] text-[var(--text-muted)]">
-                  Share this link with your team member. Upon opening, they will accept the invite and join this workspace with role <strong className="uppercase text-[var(--foreground)]">{inviteRole}</strong>.
+                  Share this link with your team member. Upon opening, they will accept the invite and join this workspace as <strong className="uppercase text-[var(--foreground)]">Owner</strong>.
                 </p>
               </div>
             )}
           </div>
-        </div>
+        </div>}
 
         {/* Active session */}
         <div className="rounded-xl border border-[var(--border-soft)] p-6 sm:p-8 space-y-6">
@@ -277,6 +305,37 @@ export default function SettingsPage() {
               </p>
             </div>
 
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-[var(--border-soft)] p-6 sm:p-8 space-y-4">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <h2 className="text-base font-semibold text-[var(--foreground)]">Login Methods & Wallets</h2>
+              <p className="text-xs text-[var(--text-muted)]">Link only a new MetaMask or Rabby address that has never been registered in SettleFlow.</p>
+            </div>
+            <Button type="button" variant="secondary" size="sm" onClick={handleLinkWallet} disabled={!isConnected || isLinkingWallet}>
+              <Wallet size={13} className="mr-1.5" /> {isLinkingWallet ? "Waiting for signature..." : "Link MetaMask"}
+            </Button>
+          </div>
+          <p className="text-[11px] leading-relaxed text-[var(--text-muted)]">
+            Linking requires a fresh signature from the selected wallet. It never changes workspace roles, imports a private key, or merges an existing account.
+          </p>
+          <div className="space-y-2 pt-1">
+            {linkedWallets.map((wallet) => (
+              <div key={wallet.id} className="flex flex-col gap-1 rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] px-3.5 py-3 text-xs sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="font-medium text-[var(--foreground)]">
+                    {wallet.kind === "circle_sca" ? "Circle Smart Wallet" : wallet.kind === "legacy_export_eoa" ? "Retired legacy EOA" : "Linked Web3 wallet"}
+                  </p>
+                  <p className="font-mono text-[11px] text-[var(--text-muted)]">{wallet.address}</p>
+                </div>
+                <p className="text-[11px] text-[var(--text-muted)]">
+                  {wallet.kind === "circle_sca" ? `${wallet.circleWallet?.blockchain ?? "Arc"} • Circle confirmation` : wallet.authEnabled ? "Web3 sign-in enabled" : "Transaction source"}
+                </p>
+              </div>
+            ))}
+            {isConnected && linkedWallets.length === 0 ? <p className="text-xs text-[var(--text-muted)]">No linked wallets are available yet.</p> : null}
           </div>
         </div>
 
@@ -359,42 +418,9 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          {authType === "web2_google" && getPrivateKey() && (
-            <div className="p-4 rounded-2xl bg-[var(--surface-muted)] border border-[var(--border-soft)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--surface-strong)] border border-[var(--border-soft)] text-[var(--foreground)] shrink-0">
-                  <KeyRound size={18} />
-                </div>
-                <div>
-                  <p className="font-semibold text-[var(--foreground)]">Wallet Self-Custody & Backup</p>
-                  <p className="text-[11px] text-[var(--text-muted)]">
-                    Export your Arc Smart Account private key to import into MetaMask, Rabby, or other hardware wallets.
-                  </p>
-                </div>
-              </div>
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                onClick={() => setIsExportModalOpen(true)}
-                className="shrink-0"
-              >
-                <KeyRound size={13} className="mr-1.5" /> Export Private Key
-              </Button>
-            </div>
-          )}
         </div>
 
       </div>
-
-      {/* Export Private Key Modal */}
-      <ExportKeyModal
-        isOpen={isExportModalOpen}
-        onClose={() => setIsExportModalOpen(false)}
-        address={address}
-        email={email}
-        privateKey={getPrivateKey()}
-      />
     </div>
   );
 }

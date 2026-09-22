@@ -28,6 +28,7 @@ import {
   Users,
   Pencil,
   Trash2,
+  X,
 } from "lucide-react";
 
 type ContributorListClientProps = {
@@ -72,6 +73,53 @@ export function ContributorListClient({
       durationMs: 2500,
     });
     setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const [invitingId, setInvitingId] = useState<string | null>(null);
+  const [inviteLinks, setInviteLinks] = useState<Record<string, string>>({});
+  const [copiedLinkId, setCopiedLinkId] = useState<string | null>(null);
+
+  const handleCopyClaimLink = async (contributor: ContributorListItem) => {
+    try {
+      setInvitingId(contributor.id);
+      const res = await fetch(`/api/v1/contributors/${contributor.id}/invite`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data?.error || "Failed to generate claim link.");
+      }
+      const inviteUrl = data?.data?.inviteUrl;
+      if (inviteUrl) {
+        setInviteLinks((prev) => ({ ...prev, [contributor.id]: inviteUrl }));
+        await navigator.clipboard.writeText(inviteUrl);
+        setCopiedLinkId(contributor.id);
+        setTimeout(() => setCopiedLinkId(null), 2000);
+        toast({
+          variant: "success",
+          title: "Invite Link Ready!",
+          description: `Link for ${contributor.displayName} copied to clipboard.`,
+          durationMs: 3000,
+        });
+      }
+    } catch (err) {
+      toast({
+        variant: "error",
+        title: "Error",
+        description: err instanceof Error ? err.message : "Could not generate link.",
+      });
+    } finally {
+      setInvitingId(null);
+    }
+  };
+
+  const handleDismissInviteLink = (contributorId: string) => {
+    setInviteLinks((prev) => {
+      const next = { ...prev };
+      delete next[contributorId];
+      return next;
+    });
   };
 
   const filteredContributors = initialContributors.filter((c) => {
@@ -195,6 +243,8 @@ export function ContributorListClient({
 
             const explorerUrl = `https://testnet.arcscan.app/address/${contributor.walletAddress}`;
 
+            const activeInviteUrl = inviteLinks[contributor.id];
+
             return (
               <div
                 key={contributor.id}
@@ -286,61 +336,128 @@ export function ContributorListClient({
                   </div>
                 </div>
 
-                {/* Bottom Section: Metrics & Actions */}
-                <div className="pt-3.5 border-t border-[var(--border-soft)] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div className="flex items-center gap-4">
-                    <div>
-                      <p className="text-[10px] uppercase tracking-wider text-[var(--text-muted)]">
-                        Settled
-                      </p>
-                      <p className="text-xs font-semibold text-[var(--foreground)] font-mono">
-                        {formatUsdc(contributor.totalSettledUsdc)} USDC
-                      </p>
+                {/* Bottom Section: Metrics, Actions & Integrated Invite Link */}
+                <div className="pt-3.5 border-t border-[var(--border-soft)] space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex items-center gap-4">
+                      <div>
+                        <p className="text-[10px] uppercase tracking-wider text-[var(--text-muted)]">
+                          Settled
+                        </p>
+                        <p className="text-xs font-semibold text-[var(--foreground)] font-mono">
+                          {formatUsdc(contributor.totalSettledUsdc)} USDC
+                        </p>
+                      </div>
+                      <div className="h-6 w-px bg-[var(--border-soft)]" />
+                      <div>
+                        <p className="text-[10px] uppercase tracking-wider text-[var(--text-muted)]">
+                          Payouts
+                        </p>
+                        <p className="text-xs font-semibold text-[var(--foreground)] font-mono">
+                          {contributor.payoutCount} ({contributor.activePayoutCount} active)
+                        </p>
+                      </div>
                     </div>
-                    <div className="h-6 w-px bg-[var(--border-soft)]" />
-                    <div>
-                      <p className="text-[10px] uppercase tracking-wider text-[var(--text-muted)]">
-                        Payouts
-                      </p>
-                      <p className="text-xs font-semibold text-[var(--foreground)] font-mono">
-                        {contributor.payoutCount} ({contributor.activePayoutCount} active)
-                      </p>
+
+                    <div className="flex items-center gap-2">
+                      {canManageContributor(contributor) && (
+                        <Button
+                          variant="outline"
+                          className="text-xs py-1.5 px-3 h-auto"
+                          disabled={invitingId === contributor.id}
+                          onClick={() => handleCopyClaimLink(contributor)}
+                        >
+                          <UserPlus size={13} className="mr-1" />
+                          {invitingId === contributor.id
+                            ? "Generating..."
+                            : activeInviteUrl
+                            ? "Regenerate"
+                            : "Invite Link"}
+                        </Button>
+                      )}
+                      {canManageContributor(contributor) && (
+                        <Button
+                          variant="outline"
+                          className="text-xs py-1.5 px-3 h-auto"
+                          onClick={() => {
+                            setEditingContributor(contributor);
+                            setIsEditModalOpen(true);
+                          }}
+                        >
+                          <Pencil size={13} /> Edit
+                        </Button>
+                      )}
+                      {canManageContributor(contributor) && (
+                        <Button
+                          variant="outline"
+                          className="text-xs py-1.5 px-3 h-auto text-red-400 border-red-400/40 hover:bg-red-500/10"
+                          onClick={() => {
+                            setDeletingContributor(contributor);
+                            setIsDeleteModalOpen(true);
+                          }}
+                        >
+                          <Trash2 size={13} /> Delete
+                        </Button>
+                      )}
+                      <Button
+                        href={`/payouts/new?contributorId=${contributor.id}&workspaceId=${encodeURIComponent(workspaceId)}`}
+                        variant="ghost"
+                        className="text-xs py-1.5 px-3 h-auto"
+                      >
+                        New Payout <ArrowRight size={13} className="ml-1" />
+                      </Button>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    {canManageContributor(contributor) && (
-                      <Button
-                        variant="outline"
-                        className="text-xs py-1.5 px-3 h-auto"
-                        onClick={() => {
-                          setEditingContributor(contributor);
-                          setIsEditModalOpen(true);
-                        }}
-                      >
-                        <Pencil size={13} /> Edit
-                      </Button>
-                    )}
-                    {canManageContributor(contributor) && (
-                      <Button
-                        variant="outline"
-                        className="text-xs py-1.5 px-3 h-auto text-red-400 border-red-400/40 hover:bg-red-500/10"
-                        onClick={() => {
-                          setDeletingContributor(contributor);
-                          setIsDeleteModalOpen(true);
-                        }}
-                      >
-                        <Trash2 size={13} /> Delete
-                      </Button>
-                    )}
-                    <Button
-                      href={`/payouts/new?contributorId=${contributor.id}&workspaceId=${encodeURIComponent(workspaceId)}`}
-                      variant="ghost"
-                      className="text-xs py-1.5 px-3 h-auto"
-                    >
-                      New Payout <ArrowRight size={13} className="ml-1" />
-                    </Button>
-                  </div>
+                  {/* Inline invite link box inside contributor card */}
+                  {activeInviteUrl && (
+                    <div className="rounded-2xl border border-cyan-500/30 bg-cyan-500/5 p-3 flex flex-col gap-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5">
+                          <span className="flex h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse" />
+                          <span className="text-[11px] font-semibold uppercase tracking-wider text-cyan-400">
+                            Invite Link
+                          </span>
+                          <span className="text-[10px] text-[var(--text-muted)] font-mono">
+                            • valid 7 days
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => handleDismissInviteLink(contributor.id)}
+                          className="text-[var(--text-muted)] hover:text-[var(--foreground)] transition-colors p-0.5 rounded"
+                          title="Dismiss"
+                        >
+                          <X size={13} />
+                        </button>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <input
+                          readOnly
+                          value={activeInviteUrl}
+                          className="flex-1 min-w-0 rounded-lg border border-[var(--border-soft)] bg-[var(--surface-muted)] py-1.5 px-2.5 text-[11px] font-mono text-[var(--foreground)] select-all truncate focus:outline-none focus:border-cyan-500/50"
+                          onFocus={(e) => e.target.select()}
+                        />
+                        <button
+                          onClick={async () => {
+                            await navigator.clipboard.writeText(activeInviteUrl);
+                            setCopiedLinkId(contributor.id);
+                            setTimeout(() => setCopiedLinkId(null), 2000);
+                          }}
+                          className="shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-soft)] bg-[var(--surface-muted)] px-2.5 py-1.5 text-[11px] font-medium text-[var(--foreground)] hover:border-cyan-500/40 hover:text-cyan-400 transition-all"
+                        >
+                          {copiedLinkId === contributor.id ? (
+                            <>
+                              <Check size={12} className="text-emerald-400" /> Copied!
+                            </>
+                          ) : (
+                            <>
+                              <Copy size={12} /> Copy
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             );

@@ -60,7 +60,7 @@ authorization = role + workspace scope + relationship + state + capability
 | --- | --- | --- | --- | --- | --- |
 | Create payout | Owner | Target workspace | Owner membership | N/A | Create draft payout |
 | Edit/activate payout | Owner | Payout workspace | Payout belongs to workspace | `draft` | Update or activate after validation |
-| Submit/resubmit milestone | Contributor | Milestone/payout workspace | Linked contributor relationship | `pending`, `rejected` | Create submission; state → `submitted` |
+| Submit/resubmit milestone | Contributor | Milestone/payout workspace | Linked contributor relationship | Active/partially released payout; `pending`, `rejected` milestone | Create submission; state → `submitted` |
 | Approve/reject milestone | Reviewer | Milestone/payout workspace | Submitted milestone in scope | `submitted` | Record review; state → `approved`/`rejected` |
 | Queue/release funds | Owner | Milestone/payout workspace | Approved milestone in scope | Approved milestone; active payout | Create/execute release |
 | Refresh/retry proof/release | Owner | Release/payout workspace | Release belongs to workspace | `queued`/`pending` or `failed` | Confirm/fail or create eligible retry |

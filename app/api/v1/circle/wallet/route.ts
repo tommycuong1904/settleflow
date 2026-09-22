@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getAddress, isAddress } from "viem";
 
 import { getSessionFromRequest, getVerifiedSessionUser } from "@/lib/auth/session-server";
 import { db } from "@/lib/db/client";
@@ -43,24 +44,48 @@ function circleErrorResponse(error: unknown) {
 
 async function persistWallet(userId: string, wallet: CircleWallet) {
   assertArcSmartWallet(wallet);
-  return db.circleUserWallet.upsert({
-    where: { userId },
-    create: {
-      userId,
-      walletId: wallet.id,
-      address: wallet.address,
-      blockchain: wallet.blockchain,
-      accountType: wallet.accountType,
-      scaCore: wallet.scaCore,
-    },
-    update: {
-      walletId: wallet.id,
-      address: wallet.address,
-      blockchain: wallet.blockchain,
-      accountType: wallet.accountType,
-      scaCore: wallet.scaCore,
-    },
-    select: { walletId: true, address: true, blockchain: true, accountType: true, scaCore: true },
+  if (!isAddress(wallet.address)) throw new Error("CIRCLE_WALLET_INVALID_ADDRESS");
+  const address = getAddress(wallet.address);
+  const normalizedAddress = address.toLowerCase();
+
+  return db.$transaction(async (tx) => {
+    const walletLink = await tx.userWallet.upsert({
+      where: { normalizedAddress },
+      create: {
+        userId,
+        address,
+        normalizedAddress,
+        kind: "circle_sca",
+        transactionEnabled: true,
+      },
+      update: {},
+      select: { id: true, userId: true, kind: true },
+    });
+    if (walletLink.userId !== userId || walletLink.kind !== "circle_sca") {
+      throw new Error("CIRCLE_WALLET_ADDRESS_ALREADY_LINKED");
+    }
+
+    return tx.circleUserWallet.upsert({
+      where: { userId },
+      create: {
+        userId,
+        walletId: wallet.id,
+        address,
+        blockchain: wallet.blockchain,
+        accountType: wallet.accountType,
+        scaCore: wallet.scaCore,
+        walletLinkId: walletLink.id,
+      },
+      update: {
+        walletId: wallet.id,
+        address,
+        blockchain: wallet.blockchain,
+        accountType: wallet.accountType,
+        scaCore: wallet.scaCore,
+        walletLinkId: walletLink.id,
+      },
+      select: { walletId: true, address: true, blockchain: true, accountType: true, scaCore: true },
+    });
   });
 }
 

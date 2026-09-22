@@ -66,6 +66,15 @@ enum TransactionProofStatus {
   failed
 }
 
+/// The provenance and supported capabilities of a verified EVM wallet that
+/// belongs to a persisted product user. A user may have several wallets, but
+/// one normalized address can belong to only one user.
+enum UserWalletKind {
+  web3_eoa
+  circle_sca
+  legacy_export_eoa
+}
+
 model Workspace {
   id                 String   @id @default(uuid())
   name               String
@@ -94,38 +103,64 @@ model User {
   email         String?  @unique
   googleSub     String?  @unique
   avatarUrl     String?
-  walletAddress String? // Enforced case-insensitively by migration SQL.
+  // Retained temporarily for a separately approved destructive migration.
+  // Runtime identity and authorization use UserWallet exclusively.
+  walletAddress String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  memberships        WorkspaceMember[]
-  createdPayouts     Payout[]              @relation("PayoutCreator")
-  createdContributors Contributor[]        @relation("ContributorCreator")
-  submissions        MilestoneSubmission[]
-  reviews            MilestoneReview[]
-  releases           Release[]
-  activityLogs       ActivityLog[]
-  linkedContributors Contributor[]         @relation("LinkedContributor")
-  createdInvitations Invitation[]          @relation("CreatedInvitations")
-  circleWallet       CircleUserWallet?
+  memberships              WorkspaceMember[]
+  createdPayouts           Payout[]                  @relation("PayoutCreator")
+  createdContributors      Contributor[]             @relation("ContributorCreator")
+  submissions              MilestoneSubmission[]
+  reviews                  MilestoneReview[]
+  releases                 Release[]
+  activityLogs             ActivityLog[]
+  linkedContributors       Contributor[]             @relation("LinkedContributor")
+  createdInvitations       Invitation[]              @relation("CreatedInvitations")
+  wallets                  UserWallet[]
+  circleWallet             CircleUserWallet?
   circleWalletProvisioning CircleWalletProvisioning?
+}
+
+/// Canonical account-to-wallet link. `address` is retained for display and
+/// `normalizedAddress` is the lowercase, globally unique authorization key.
+model UserWallet {
+  id                 String         @id @default(uuid())
+  userId             String
+  address            String
+  normalizedAddress  String         @unique
+  kind               UserWalletKind
+  authEnabled        Boolean        @default(false)
+  transactionEnabled Boolean        @default(false)
+  verifiedAt         DateTime       @default(now())
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+
+  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  circleWallet   CircleUserWallet? @relation("CircleWalletLink")
+  sourceReleases Release[]         @relation("ReleaseSourceWallet")
+
+  @@index([userId])
 }
 
 /// The Arc Testnet smart-contract account held by a Circle user-controlled
 /// wallet. The user ID remains the stable external Circle user identifier;
 /// only non-secret identifiers are persisted here.
 model CircleUserWallet {
-  id            String   @id @default(uuid())
-  userId        String   @unique
-  walletId      String   @unique
-  address       String
-  blockchain    String
-  accountType   String
-  scaCore       String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id           String   @id @default(uuid())
+  userId       String   @unique
+  walletId     String   @unique
+  address      String
+  blockchain   String
+  accountType  String
+  scaCore      String?
+  walletLinkId String   @unique
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  walletLink UserWallet @relation("CircleWalletLink", fields: [walletLinkId], references: [id], onDelete: Restrict)
 
   @@index([blockchain])
 }
@@ -156,16 +191,16 @@ model WalletAuthChallenge {
 }
 
 model Invitation {
-  id              String           @id @default(uuid())
+  id              String              @id @default(uuid())
   workspaceId     String
   email           String?
   role            WorkspaceMemberRole
-  token           String           @unique
-  status          InvitationStatus @default(pending)
+  token           String              @unique
+  status          InvitationStatus    @default(pending)
   expiresAt       DateTime
   createdByUserId String
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   createdBy User      @relation("CreatedInvitations", fields: [createdByUserId], references: [id], onDelete: Cascade)
@@ -308,35 +343,38 @@ model MilestoneReview {
 }
 
 model Release {
-  id                       String        @id @default(uuid())
+  id                       String               @id @default(uuid())
   payoutId                 String
   milestoneId              String?
   triggeredByUserId        String
-  amountUsdc               Decimal       @db.Decimal(30, 6)
-  status                   ReleaseStatus @default(queued)
+  amountUsdc               Decimal              @db.Decimal(30, 6)
+  status                   ReleaseStatus        @default(queued)
   arcRequestId             String?
-  circleChallengeId        String?       @unique
+  circleChallengeId        String?              @unique
   executionMode            ReleaseExecutionMode
+  sourceWalletId           String?
   sourceWalletAddress      String?
   destinationWalletAddress String
-  txHash                   String?       @unique
+  txHash                   String?              @unique
   explorerUrl              String?
   failureReason            String?
-  requestedAt              DateTime      @default(now())
+  requestedAt              DateTime             @default(now())
   executedAt               DateTime?
   failedAt                 DateTime?
-  createdAt                DateTime      @default(now())
-  updatedAt                DateTime      @updatedAt
+  createdAt                DateTime             @default(now())
+  updatedAt                DateTime             @updatedAt
 
   payout       Payout             @relation(fields: [payoutId], references: [id], onDelete: Restrict)
   milestone    Milestone?         @relation(fields: [milestoneId], references: [id], onDelete: Restrict)
   triggeredBy  User               @relation(fields: [triggeredByUserId], references: [id], onDelete: Restrict)
+  sourceWallet UserWallet?        @relation("ReleaseSourceWallet", fields: [sourceWalletId], references: [id], onDelete: Restrict)
   proofs       TransactionProof[]
   activityLogs ActivityLog[]
 
   @@index([payoutId, status])
   @@index([milestoneId])
   @@index([arcRequestId])
+  @@index([sourceWalletId])
   @@index([executionMode, status])
 }
 

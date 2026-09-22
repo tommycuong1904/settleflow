@@ -1,12 +1,11 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
-import { deriveSmartAccountAddress } from "@/lib/auth/smart-account";
+import { reconcileUserContributors } from "@/lib/repositories/contributors";
 
 type Db = PrismaClient | Prisma.TransactionClient;
 export type VerifiedGoogleIdentity = { sub: string; email: string; name?: string; picture?: string };
 
 export async function provisionGoogleUser(db: Db, identity: VerifiedGoogleIdentity) {
   const email = identity.email.trim().toLowerCase();
-  const walletAddress = deriveSmartAccountAddress(identity.sub);
 
   let user = await db.user.findFirst({ where: { OR: [{ googleSub: identity.sub }, { email }] } });
 
@@ -21,7 +20,6 @@ export async function provisionGoogleUser(db: Db, identity: VerifiedGoogleIdenti
         email,
         displayName: identity.name || email.split("@")[0],
         avatarUrl: identity.picture,
-        walletAddress,
       },
     });
   } else {
@@ -31,12 +29,13 @@ export async function provisionGoogleUser(db: Db, identity: VerifiedGoogleIdenti
         googleSub: identity.sub,
         email,
         avatarUrl: identity.picture || user.avatarUrl,
-        walletAddress: user.walletAddress || walletAddress,
       },
     });
   }
 
-  // Authentication establishes an identity only. Workspace roles are granted
-  // solely by the invitation/membership flow, regardless of sign-in method.
-  return { user, walletAddress };
+  await reconcileUserContributors(user.id);
+
+  // Google establishes only a Google/Circle account. It must not synthesize
+  // an EOA that can later be used to sign in as the same account.
+  return { user };
 }

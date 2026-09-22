@@ -21,12 +21,14 @@ export async function POST(request: Request) {
     if (!valid) return NextResponse.json({ error: "Invalid or expired wallet signature." }, { status: 401 });
     const address = getAddress(body.address);
     const normalizedAddress = address.toLowerCase();
-    const { user, initialWorkspace } = await db.$transaction(async (tx) => {
+    const { user, initialWorkspace, walletId } = await db.$transaction(async (tx) => {
       const user = await provisionWalletUser(tx, address, body.walletName);
-      const initialWorkspace = await ensureInitialWorkspaceForUser(tx, { userId: user.id, displayName: user.displayName });
-      return { user, initialWorkspace };
+      const wallet = user.wallet;
+      if (!wallet || wallet.userId !== user.id || !wallet.authEnabled) throw new Error("WALLET_LOGIN_NOT_ENABLED");
+      const initialWorkspace = await ensureInitialWorkspaceForUser(tx, { userId: user.id, displayName: user.displayName, walletAddress: address });
+      return { user, initialWorkspace, walletId: wallet.id };
     });
-    const sessionToken = await createSessionToken({ userId: user.id, email: `${normalizedAddress}@wallet.settleflow.io`, name: body.walletName || "Web3 Wallet", address, authType: "web3_wallet" });
+    const sessionToken = await createSessionToken({ userId: user.id, email: `${normalizedAddress}@wallet.settleflow.io`, name: body.walletName || "Web3 Wallet", address, walletId, authType: "web3_wallet" });
     const cookieStore = await cookies();
     cookieStore.set(SESSION_COOKIE_NAME, sessionToken, { ...SESSION_COOKIE_OPTIONS, name: SESSION_COOKIE_NAME });
     // Always replace any prior account's workspace selection with the one the

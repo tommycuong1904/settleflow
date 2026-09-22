@@ -10,6 +10,7 @@ type RetryReleasePayload = {
   triggeredByUserId: string;
   amountUsdc: Prisma.Decimal;
   executionMode: ReleaseExecutionMode;
+  sourceWalletId: string | null;
   sourceWalletAddress: string | null;
   destinationWalletAddress: string;
   status: "queued";
@@ -21,6 +22,7 @@ export function deriveRetryReleasePayload(input: {
   triggeredByUserId: string;
   amountUsdc: Prisma.Decimal;
   executionMode: ReleaseExecutionMode;
+  sourceWalletId: string | null;
   sourceWalletAddress: string | null;
   destinationWalletAddress: string;
 }): RetryReleasePayload {
@@ -30,6 +32,7 @@ export function deriveRetryReleasePayload(input: {
     triggeredByUserId: input.triggeredByUserId,
     amountUsdc: input.amountUsdc,
     executionMode: input.executionMode,
+    sourceWalletId: input.sourceWalletId,
     sourceWalletAddress: input.sourceWalletAddress,
     destinationWalletAddress: input.destinationWalletAddress,
     status: "queued",
@@ -55,6 +58,7 @@ export async function retryFailedRelease(releaseId: string, ownerUserId: string,
           milestoneId: true,
           amountUsdc: true,
           executionMode: true,
+          sourceWalletId: true,
           sourceWalletAddress: true,
           status: true,
           destinationWalletAddress: true,
@@ -118,6 +122,7 @@ export async function retryFailedRelease(releaseId: string, ownerUserId: string,
           triggeredByUserId: ownerUserId,
           amountUsdc: previous.amountUsdc,
           executionMode: previous.executionMode,
+          sourceWalletId: previous.executionMode === "circle_wallet" ? null : previous.sourceWalletId,
           sourceWalletAddress: previous.executionMode === "circle_wallet" ? null : previous.sourceWalletAddress,
           destinationWalletAddress: previous.destinationWalletAddress,
         }),

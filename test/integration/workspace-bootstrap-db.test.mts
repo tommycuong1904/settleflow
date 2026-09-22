@@ -24,7 +24,7 @@ test("first sign-in bootstrap creates one owner workspace atomically and preserv
     assert.equal(memberships.length, 1);
     assert.equal(memberships[0].role, "owner");
     const workspace = await db.workspace.findUnique({ where: { id: memberships[0].workspaceId } });
-    assert.equal(workspace?.name, "Bootstrap Creator Workspace");
+    assert.equal(workspace?.name, "Bootstrap Creator's Workspace");
 
     const existingResult = await db.$transaction((tx) => ensureInitialWorkspaceForUser(tx, {
       userId: existingUser.id,

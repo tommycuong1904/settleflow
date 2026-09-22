@@ -72,7 +72,17 @@ export async function getVerifiedSessionUser(session: SessionPayload) {
 
   if (session.authType === "web3_wallet") {
     const address = readNonEmpty(session.address)?.toLowerCase();
-    return address && user.walletAddress?.toLowerCase() === address ? user : null;
+    if (!address) return null;
+    const wallet = await db.userWallet.findFirst({
+      where: {
+        userId: user.id,
+        normalizedAddress: address,
+        authEnabled: true,
+        ...(session.walletId ? { id: session.walletId } : {}),
+      },
+      select: { id: true },
+    });
+    return wallet ? user : null;
   }
 
   const email = readNonEmpty(session.email)?.toLowerCase();

@@ -25,7 +25,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useResolvedProductContext } from "@/lib/runtime/product-context-client";
 import { useWallet } from "@/lib/context/wallet-context";
 import { formatUsdc, shortenAddress } from "@/lib/utils/format";
-import { Lock, CheckCircle2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Lock, CheckCircle2, AlertCircle } from "lucide-react";
 
 type MilestoneDraft = {
   id: string;
@@ -49,6 +50,7 @@ type FormErrors = {
   milestones?: string;
   totalAmount?: string;
   submit?: string;
+  milestoneErrors?: Record<string, { title?: string; amount?: string; description?: string }>;
 };
 
 const initialMilestoneDrafts: MilestoneDraft[] = [
@@ -66,7 +68,7 @@ function isLikelyWalletAddress(value: string) {
 }
 
 function sanitizeAmountInput(value: string) {
-  return value.replace(/[^0-9.]/g, "").replace(/(\\..*)\\./g, "$1");
+  return value.replace(/[^0-9.]/g, "").replace(/(\..*)\./g, "$1");
 }
 
 function CreatePayoutPageContent() {
@@ -127,9 +129,11 @@ function CreatePayoutPageContent() {
 
   function handleContributorChange(nextContributorId: string) {
     setContributorId(nextContributorId);
+    if (errors.contributorId) setErrors((prev) => ({ ...prev, contributorId: undefined }));
     const contributor = contributors.find((item) => item.id === nextContributorId);
     if (contributor) {
       setWalletAddress(contributor.walletAddress);
+      if (errors.walletAddress) setErrors((prev) => ({ ...prev, walletAddress: undefined }));
     }
   }
 
@@ -142,6 +146,17 @@ function CreatePayoutPageContent() {
     setMilestones((current) =>
       current.map((milestone) => (milestone.id === milestoneId ? { ...milestone, [field]: nextValue } : milestone))
     );
+    const errKey = field as keyof NonNullable<typeof errors.milestoneErrors>[string];
+    if (errors.milestoneErrors?.[milestoneId]?.[errKey]) {
+      setErrors((prev) => {
+        const nextMs = { ...prev.milestoneErrors };
+        if (nextMs[milestoneId]) {
+          delete nextMs[milestoneId][errKey];
+          if (Object.keys(nextMs[milestoneId]).length === 0) delete nextMs[milestoneId];
+        }
+        return { ...prev, milestoneErrors: nextMs, milestones: Object.keys(nextMs).length === 0 ? undefined : prev.milestones };
+      });
+    }
   }
 
   function handleAddMilestone() {
@@ -163,6 +178,8 @@ function CreatePayoutPageContent() {
 
   function validateForm() {
     const nextErrors: FormErrors = {};
+    const nextMilestoneErrors: Record<string, { title?: string; amount?: string; description?: string }> = {};
+
     if (!payoutTitle.trim()) {
       nextErrors.title = "Payout title is required.";
     }
@@ -172,26 +189,52 @@ function CreatePayoutPageContent() {
     if (!walletAddress.trim()) {
       nextErrors.walletAddress = "Wallet address is required.";
     } else if (!isLikelyWalletAddress(walletAddress)) {
-      nextErrors.walletAddress = "Wallet address should look like a valid EVM address.";
+      nextErrors.walletAddress = "Wallet address must be a valid EVM address (e.g. 0x...).";
     }
     if (!milestones.length) {
       nextErrors.milestones = "At least one milestone is required.";
     }
-    const invalidMilestone = milestones.find(
-      (milestone) =>
-        !milestone.title.trim() ||
-        !milestone.description.trim() ||
-        !Number.isFinite(Number(milestone.amount)) ||
-        Number(milestone.amount) <= 0,
-    );
-    if (invalidMilestone) {
-      nextErrors.milestones = "Each milestone needs a title, description, and amount greater than 0.";
+
+    let hasInvalidMilestone = false;
+    milestones.forEach((milestone, index) => {
+      const msErr: { title?: string; amount?: string; description?: string } = {};
+      if (!milestone.title.trim()) {
+        msErr.title = `Milestone ${index + 1} title is required.`;
+        hasInvalidMilestone = true;
+      }
+      if (!milestone.description.trim()) {
+        msErr.description = `Milestone ${index + 1} description is required.`;
+        hasInvalidMilestone = true;
+      }
+      if (!Number.isFinite(Number(milestone.amount)) || Number(milestone.amount) <= 0) {
+        msErr.amount = `Milestone ${index + 1} amount must be greater than 0.`;
+        hasInvalidMilestone = true;
+      }
+      if (Object.keys(msErr).length > 0) {
+        nextMilestoneErrors[milestone.id] = msErr;
+      }
+    });
+
+    if (hasInvalidMilestone) {
+      nextErrors.milestones = "Please fix the highlighted errors in your milestones below.";
     }
     if (totalAmount <= 0) {
-      nextErrors.totalAmount = "Total amount must be greater than 0.";
+      nextErrors.totalAmount = "Total amount must be greater than 0 USDC.";
     }
+
+    nextErrors.milestoneErrors = nextMilestoneErrors;
     setErrors(nextErrors);
-    return Object.keys(nextErrors).length === 0;
+
+    const hasErrors = Object.keys(nextErrors).length > 0 && (Boolean(nextErrors.title) || Boolean(nextErrors.contributorId) || Boolean(nextErrors.walletAddress) || Boolean(nextErrors.milestones) || Boolean(nextErrors.totalAmount));
+    if (hasErrors) {
+      setTimeout(() => {
+        const firstErrorEl = document.querySelector('[data-error="true"]');
+        if (firstErrorEl) {
+          firstErrorEl.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }, 50);
+    }
+    return !hasErrors;
   }
 
   async function handleCreatePayout() {
@@ -257,12 +300,32 @@ function CreatePayoutPageContent() {
     }
   }
 
+  const hasFormErrors = Object.keys(errors).length > 0 && !errors.submit;
+
   return (
     <section className="flex flex-col gap-6" aria-label="Create Payout Page Content">
       <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
         <div className="space-y-6">
           {loadError ? <p role="alert" className="rounded-2xl border border-rose-400/30 bg-rose-400/10 p-3 text-sm text-rose-700">{loadError}</p> : null}
           {errors.submit ? <p role="alert" className="rounded-2xl border border-rose-400/30 bg-rose-400/10 p-3 text-sm text-rose-700">{errors.submit}</p> : null}
+
+          {/* Summary Error Alert */}
+          {hasFormErrors ? (
+            <div className="rounded-2xl border border-rose-500/30 bg-rose-500/10 p-4 text-sm text-rose-700 flex items-start gap-3 shadow-xs animate-in fade-in" role="alert">
+              <AlertCircle size={20} className="text-rose-500 shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <p className="font-semibold text-rose-800">Please fill out all required fields</p>
+                <ul className="list-disc list-inside space-y-1 text-xs text-rose-600">
+                  {errors.title ? <li>{errors.title}</li> : null}
+                  {errors.contributorId ? <li>{errors.contributorId}</li> : null}
+                  {errors.walletAddress ? <li>{errors.walletAddress}</li> : null}
+                  {errors.totalAmount ? <li>{errors.totalAmount}</li> : null}
+                  {errors.milestones ? <li>{errors.milestones}</li> : null}
+                </ul>
+              </div>
+            </div>
+          ) : null}
+
           <div className="space-y-4">
             <div className="grid gap-3 sm:grid-cols-3">
               <div className="rounded-xl border border-[var(--border-soft)] bg-[var(--surface)] px-5 py-4">
@@ -318,18 +381,22 @@ function CreatePayoutPageContent() {
             </CardHeader>
             <CardContent>
               <div className="grid gap-5 md:grid-cols-2">
-                <label className="space-y-2 text-sm text-[var(--text-primary)]">
-                  <span>Payout title</span>
+                <label className="space-y-2 text-sm text-[var(--text-primary)]" data-error={Boolean(errors.title)}>
+                  <span>Payout title <span className="text-rose-500 font-semibold">*</span></span>
                   <Input
                     value={payoutTitle}
-                    onChange={(event) => setPayoutTitle(event.target.value)}
+                    onChange={(event) => {
+                      setPayoutTitle(event.target.value);
+                      if (errors.title) setErrors((prev) => ({ ...prev, title: undefined }));
+                    }}
+                    className={cn(errors.title && "border-rose-500 bg-rose-500/5 focus:border-rose-500")}
                   />
-                  {errors.title ? <p className="text-xs text-rose-600">{errors.title}</p> : null}
+                  {errors.title ? <p className="text-xs text-rose-600 font-medium">{errors.title}</p> : null}
                 </label>
-                <label className="space-y-2 text-sm text-[var(--text-primary)]">
-                  <span>Contributor</span>
+                <label className="space-y-2 text-sm text-[var(--text-primary)]" data-error={Boolean(errors.contributorId)}>
+                  <span>Contributor <span className="text-rose-500 font-semibold">*</span></span>
                   <Select value={contributorId} onValueChange={handleContributorChange}>
-                    <SelectTrigger>
+                    <SelectTrigger className={cn(errors.contributorId && "border-rose-500 bg-rose-500/5")}>
                       <SelectValue placeholder="Select a contributor" />
                     </SelectTrigger>
                     <SelectContent>
@@ -341,24 +408,28 @@ function CreatePayoutPageContent() {
                     </SelectContent>
                   </Select>
                   {errors.contributorId ? (
-                    <p className="text-xs text-rose-600">{errors.contributorId}</p>
+                    <p className="text-xs text-rose-600 font-medium">{errors.contributorId}</p>
                   ) : null}
                 </label>
-                <label className="space-y-2 text-sm text-[var(--text-primary)] md:col-span-2">
-                  <span>Wallet address</span>
+                <label className="space-y-2 text-sm text-[var(--text-primary)] md:col-span-2" data-error={Boolean(errors.walletAddress)}>
+                  <span>Wallet address <span className="text-rose-500 font-semibold">*</span></span>
                   <Input
                     value={walletAddress}
-                    onChange={(event) => setWalletAddress(event.target.value)}
+                    onChange={(event) => {
+                      setWalletAddress(event.target.value);
+                      if (errors.walletAddress) setErrors((prev) => ({ ...prev, walletAddress: undefined }));
+                    }}
+                    className={cn(errors.walletAddress && "border-rose-500 bg-rose-500/5 focus:border-rose-500")}
                   />
                   {errors.walletAddress ? (
-                    <p className="text-xs text-rose-600">{errors.walletAddress}</p>
+                    <p className="text-xs text-rose-600 font-medium">{errors.walletAddress}</p>
                   ) : null}
                 </label>
-                <label className="space-y-2 text-sm text-[var(--text-primary)]">
+                <label className="space-y-2 text-sm text-[var(--text-primary)]" data-error={Boolean(errors.totalAmount)}>
                   <span>Total amount (USDC)</span>
-                  <Input value={String(totalAmount)} readOnly />
+                  <Input value={String(totalAmount)} readOnly className={cn(errors.totalAmount && "border-rose-500 bg-rose-500/5")} />
                   {errors.totalAmount ? (
-                    <p className="text-xs text-rose-600">{errors.totalAmount}</p>
+                    <p className="text-xs text-rose-600 font-medium">{errors.totalAmount}</p>
                   ) : null}
                 </label>
                 <Card className="bg-[var(--surface-muted)]">
@@ -397,76 +468,84 @@ function CreatePayoutPageContent() {
               </div>
 
               {errors.milestones ? (
-                <div className="mb-4 rounded-2xl border border-rose-400/30 bg-rose-400/10 px-4 py-3 text-sm text-rose-700">
+                <div className="mb-4 rounded-2xl border border-rose-400/30 bg-rose-400/10 px-4 py-3 text-sm text-rose-700 font-medium">
                   {errors.milestones}
                 </div>
               ) : null}
 
               <div className="space-y-4">
-                {milestones.map((milestone, index) => (
-                  <Card key={milestone.id} className="sf-shell">
-                    <CardContent className="p-5">
-                      <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                        <div className="space-y-1.5">
-                          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--text-muted)]">
-                            Milestone {index + 1}
-                          </p>
-                          <p className="text-lg font-semibold text-[var(--foreground)]">
-                            {milestone.title.trim() || "Untitled milestone"}
-                          </p>
+                {milestones.map((milestone, index) => {
+                  const msErr = errors.milestoneErrors?.[milestone.id];
+                  return (
+                    <Card key={milestone.id} className="sf-shell">
+                      <CardContent className="p-5">
+                        <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                          <div className="space-y-1.5">
+                            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--text-muted)]">
+                              Milestone {index + 1}
+                            </p>
+                            <p className="text-lg font-semibold text-[var(--foreground)]">
+                              {milestone.title.trim() || "Untitled milestone"}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <Badge>{milestone.state}</Badge>
+                            {milestones.length > 1 ? (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="text-rose-600 hover:bg-rose-400/10 hover:text-rose-700"
+                                onClick={() => handleRemoveMilestone(milestone.id)}
+                              >
+                                Remove
+                              </Button>
+                            ) : null}
+                          </div>
                         </div>
-                        <div className="flex items-center gap-3">
-                          <Badge>{milestone.state}</Badge>
-                          {milestones.length > 1 ? (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              className="text-rose-600 hover:bg-rose-400/10 hover:text-rose-700"
-                              onClick={() => handleRemoveMilestone(milestone.id)}
-                            >
-                              Remove
-                            </Button>
-                          ) : null}
+                        <div className="grid gap-4 md:grid-cols-[1fr_180px]">
+                          <label className="space-y-2 text-sm text-[var(--text-primary)]" data-error={Boolean(msErr?.title)}>
+                            <span>Milestone title <span className="text-rose-500 font-semibold">*</span></span>
+                            <Input
+                              value={milestone.title}
+                              onChange={(event) =>
+                                handleMilestoneChange(milestone.id, "title", event.target.value)
+                              }
+                              className={cn(msErr?.title && "border-rose-500 bg-rose-500/5 focus:border-rose-500")}
+                            />
+                            {msErr?.title ? <p className="text-xs text-rose-600 font-medium">{msErr.title}</p> : null}
+                          </label>
+                          <label className="space-y-2 text-sm text-[var(--text-primary)]" data-error={Boolean(msErr?.amount)}>
+                            <span>Amount (USDC) <span className="text-rose-500 font-semibold">*</span></span>
+                            <Input
+                              type="number"
+                              inputMode="decimal"
+                              min="0"
+                              step="0.01"
+                              value={milestone.amount}
+                              onChange={(event) =>
+                                handleMilestoneChange(milestone.id, "amount", event.target.value)
+                              }
+                              className={cn(msErr?.amount && "border-rose-500 bg-rose-500/5 focus:border-rose-500")}
+                            />
+                            {msErr?.amount ? <p className="text-xs text-rose-600 font-medium">{msErr.amount}</p> : null}
+                          </label>
                         </div>
-                      </div>
-                      <div className="grid gap-4 md:grid-cols-[1fr_180px]">
-                        <label className="space-y-2 text-sm text-[var(--text-primary)]">
-                          <span>Milestone title</span>
-                          <Input
-                            value={milestone.title}
+                        <label className="mt-4 block space-y-2 text-sm text-[var(--text-primary)]" data-error={Boolean(msErr?.description)}>
+                          <span>Description <span className="text-rose-500 font-semibold">*</span></span>
+                          <Textarea
+                            className={cn("min-h-28 resize-none", msErr?.description && "border-rose-500 bg-rose-500/5 focus:border-rose-500")}
+                            value={milestone.description}
                             onChange={(event) =>
-                              handleMilestoneChange(milestone.id, "title", event.target.value)
+                              handleMilestoneChange(milestone.id, "description", event.target.value)
                             }
                           />
+                          {msErr?.description ? <p className="text-xs text-rose-600 font-medium">{msErr.description}</p> : null}
                         </label>
-                        <label className="space-y-2 text-sm text-[var(--text-primary)]">
-                          <span>Amount</span>
-                          <Input
-                            type="number"
-                            inputMode="decimal"
-                            min="0"
-                            step="0.01"
-                            value={milestone.amount}
-                            onChange={(event) =>
-                              handleMilestoneChange(milestone.id, "amount", event.target.value)
-                            }
-                          />
-                        </label>
-                      </div>
-                      <label className="mt-4 block space-y-2 text-sm text-[var(--text-primary)]">
-                        <span>Description</span>
-                        <Textarea
-                          className="min-h-28 resize-none"
-                          value={milestone.description}
-                          onChange={(event) =>
-                            handleMilestoneChange(milestone.id, "description", event.target.value)
-                          }
-                        />
-                      </label>
-                    </CardContent>
-                  </Card>
-                ))}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
               <div className="mt-4 flex flex-wrap gap-3">
                 <Button variant="secondary" onClick={handleAddMilestone}>

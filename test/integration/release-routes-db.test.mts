@@ -19,7 +19,24 @@ test("unapproved milestone release is rejected without creating release or proof
   const contributor = await db.contributor.create({ data: { workspaceId: workspace.id, createdByUserId: user.id, name: "Invalid State Contributor", walletAddress: wallet } });
   const payout = await db.payout.create({ data: { workspaceId: workspace.id, contributorId: contributor.id, createdByUserId: user.id, title: "Invalid State Payout", totalAmountUsdc: "5", status: "active", targetWalletAddress: wallet } });
   const milestone = await db.milestone.create({ data: { payoutId: payout.id, title: "Unapproved Milestone", description: "Invalid state test", amountUsdc: "5", sequence: 1, status: "submitted" } });
-  const token = await createSessionToken({ userId: user.id, email, name: "Invalid State Owner", address: null, authType: "web2_google" });
+  const sourceWallet = await db.userWallet.create({
+    data: {
+      userId: user.id,
+      address: "0x3333333333333333333333333333333333333333",
+      normalizedAddress: "0x3333333333333333333333333333333333333333",
+      kind: "web3_eoa",
+      authEnabled: true,
+      transactionEnabled: true,
+    },
+  });
+  const token = await createSessionToken({
+    userId: user.id,
+    email,
+    name: "Invalid State Owner",
+    address: sourceWallet.address,
+    walletId: sourceWallet.id,
+    authType: "web3_wallet",
+  });
 
   try {
     const response = await releaseRoute(new Request(`https://settleflow.local/api/v1/milestones/${milestone.id}/release?workspaceId=${workspace.id}`, {
@@ -52,17 +69,49 @@ test("release, retry, proof refresh, tampering, and workspace boundaries hold th
   const contributor = await db.contributor.create({ data: { workspaceId: workspace.id, createdByUserId: user.id, name: "Route Contributor", walletAddress: wallet } });
   const payout = await db.payout.create({ data: { workspaceId: workspace.id, contributorId: contributor.id, createdByUserId: user.id, title: "Route Payout", totalAmountUsdc: "5", status: "active", targetWalletAddress: wallet } });
   const milestone = await db.milestone.create({ data: { payoutId: payout.id, title: "Route Milestone", description: "Route test", amountUsdc: "5", sequence: 1, status: "approved" } });
-  const token = await createSessionToken({ userId: user.id, email, name: "Route Owner", address: null, authType: "web2_google" });
+  const sourceWallet = await db.userWallet.create({
+    data: {
+      userId: user.id,
+      address: "0x5555555555555555555555555555555555555555",
+      normalizedAddress: "0x5555555555555555555555555555555555555555",
+      kind: "web3_eoa",
+      authEnabled: true,
+      transactionEnabled: true,
+    },
+  });
+  const token = await createSessionToken({
+    userId: user.id,
+    email,
+    name: "Route Owner",
+    address: sourceWallet.address,
+    walletId: sourceWallet.id,
+    authType: "web3_wallet",
+  });
   const headers = { cookie: `sf_session=${token}` };
   const params = (id: string) => ({ params: Promise.resolve({ id }) });
 
   try {
+    const googleToken = await createSessionToken({ userId: user.id, email, name: "Route Owner", address: null, authType: "web2_google" });
+    const googleAttempt = await releaseRoute(new Request(`https://settleflow.local/api/v1/milestones/${milestone.id}/release?workspaceId=${workspace.id}`, {
+      method: "POST",
+      headers: { cookie: `sf_session=${googleToken}` },
+      body: JSON.stringify({ amountUsdc: "5", executionMode: "browser_wallet" }),
+    }), params(milestone.id));
+    assert.equal(googleAttempt.status, 403);
+    assert.equal((await googleAttempt.json()).code, "BROWSER_WALLET_REQUIRES_WEB3_SESSION");
+
     const queued = await releaseRoute(new Request(`https://settleflow.local/api/v1/milestones/${milestone.id}/release?workspaceId=${workspace.id}&actor=contributor`, {
       method: "POST", headers, body: JSON.stringify({ amountUsdc: "5", executionMode: "browser_wallet", ownerUserId: "other-user", workspaceId: otherWorkspace.id }),
     }), params(milestone.id));
     assert.equal(queued.status, 201);
     const queuedBody = await queued.json();
     assert.equal(queuedBody.release.status, "queued");
+    const releaseSnapshot = await db.release.findUnique({
+      where: { id: queuedBody.release.id },
+      select: { sourceWalletId: true, sourceWalletAddress: true },
+    });
+    assert.equal(releaseSnapshot?.sourceWalletId, sourceWallet.id);
+    assert.equal(releaseSnapshot?.sourceWalletAddress, sourceWallet.address);
 
     const claim = await claimRoute(new Request(`https://settleflow.local/api/v1/releases/${queuedBody.release.id}/claim`, {
       method: "POST", headers, body: JSON.stringify({ sourceWalletAddress: wallet }),

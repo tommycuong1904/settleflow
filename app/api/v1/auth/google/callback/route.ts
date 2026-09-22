@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { OAuth2Client } from "google-auth-library";
 import { db } from "@/lib/db/client";
-import { deriveSmartAccountAddress } from "@/lib/auth/smart-account";
 import { createSessionToken, SESSION_COOKIE_NAME, SESSION_COOKIE_OPTIONS } from "@/lib/auth/session";
 import { provisionGoogleUser } from "@/lib/auth/google-provisioning";
 import { ensureInitialWorkspaceForUser } from "@/lib/services/workspaces";
@@ -47,7 +46,7 @@ export async function GET(request: Request) {
       const initialWorkspace = await ensureInitialWorkspaceForUser(tx, { userId: provisioned.user.id, displayName: provisioned.user.displayName });
       return { user: provisioned.user, initialWorkspace };
     });
-    const sessionToken = await createSessionToken({ userId: user.id, email: user.email ?? profile.email, googleSub: profile.sub, name: user.displayName || profile.name || profile.email.split("@")[0], address: user.walletAddress ?? deriveSmartAccountAddress(profile.sub), authType: "web2_google" });
+    const sessionToken = await createSessionToken({ userId: user.id, email: user.email ?? profile.email, googleSub: profile.sub, name: user.displayName || profile.name || profile.email.split("@")[0], address: null, authType: "web2_google" });
     const response = NextResponse.redirect(new URL(next, origin));
     response.cookies.set(SESSION_COOKIE_NAME, sessionToken, { ...SESSION_COOKIE_OPTIONS, name: SESSION_COOKIE_NAME });
     // Replace any stale workspace selection with the authenticated user's

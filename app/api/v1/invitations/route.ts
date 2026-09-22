@@ -5,7 +5,8 @@ import {
   getVerifiedSessionUser,
   resolveProductContextFromRequestWithSession,
 } from "@/lib/auth/session-server";
-import { createInvitation, isInvitableWorkspaceRole } from "@/lib/services/invitations";
+import { createInvitation } from "@/lib/services/invitations";
+import { getAppBaseUrl } from "@/lib/utils/url";
 
 export const dynamic = "force-dynamic";
 
@@ -36,9 +37,12 @@ export async function POST(request: NextRequest) {
       expiresInDays?: number;
     };
 
-    const role = (body.role || "contributor").trim().toLowerCase();
-    if (!isInvitableWorkspaceRole(role)) {
-      return NextResponse.json({ error: "Invitations support owner or contributor roles." }, { status: 400 });
+    const role = (body.role || "owner").trim().toLowerCase();
+    if (role !== "owner") {
+      return NextResponse.json(
+        { error: "Contributor invitations must be created from the Contributor page to ensure proper record linking." },
+        { status: 400 },
+      );
     }
 
     if (body.email !== undefined && typeof body.email !== "string") {
@@ -61,8 +65,8 @@ export async function POST(request: NextRequest) {
       expiresInDays,
     });
 
-    const origin = request.nextUrl.origin.replace("0.0.0.0", "localhost");
-    const inviteUrl = `${origin}/accept-invite?token=${invitation.token}`;
+    const baseUrl = getAppBaseUrl(request);
+    const inviteUrl = `${baseUrl}/accept-invite?token=${invitation.token}`;
 
     return NextResponse.json({
       invitation: {

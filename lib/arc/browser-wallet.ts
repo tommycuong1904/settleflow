@@ -26,7 +26,7 @@ declare global {
   }
 }
 
-async function discoverBrowserWallets(): Promise<EIP6963ProviderDetail[]> {
+export async function discoverBrowserWallets(): Promise<EIP6963ProviderDetail[]> {
   const providers = new Map<string, EIP6963ProviderDetail>();
 
   const handleProviderAnnouncement = (
@@ -80,9 +80,13 @@ async function connectWallet(provider: EIP1193Provider) {
   };
 }
 
-export async function connectBrowserWallet() {
+export async function connectBrowserWallet(preferredWallet?: string) {
   const providers = await discoverBrowserWallets();
+  const preferredName = preferredWallet?.trim().toLowerCase();
   const selectedWallet =
+    (preferredName
+      ? providers.find(({ info }) => info.name.toLowerCase() === preferredName || info.name.toLowerCase().includes(preferredName))
+      : undefined) ??
     providers.find(({ info }) => info.rdns === "io.metamask" || info.name === "MetaMask") ??
     providers[0];
 
@@ -138,6 +142,9 @@ export async function sendUsdcWithBrowserWallet(input: {
     throw new BrowserWalletPreBroadcastError(error instanceof Error ? error.message : "Wallet connection was not completed.");
   }
   const { adapter, connectedAddress, walletName, provider } = connection;
+  if (!connectedAddress) {
+    throw new BrowserWalletPreBroadcastError("Browser wallet connected without an account.");
+  }
   if (input.expectedSender && connectedAddress.toLowerCase() !== input.expectedSender.toLowerCase()) {
     throw new BrowserWalletPreBroadcastError("The connected wallet account does not match the authenticated Web3 account.");
   }
@@ -154,7 +161,7 @@ export async function sendUsdcWithBrowserWallet(input: {
   // wallet_addEthereumChain both adds the chain (if missing) and switches to it,
   // avoiding the "Unrecognized chain ID" error from wallet_switchEthereumChain.
   try {
-    await addArcNetworkToWallet(provider);
+    await addArcNetworkToWallet(provider as unknown as { request: (args: unknown) => Promise<unknown> });
   } catch {
     // Non-fatal: wallet may already have the chain or reject the prompt.
     // The send will still attempt and surface a clearer error if it fails.

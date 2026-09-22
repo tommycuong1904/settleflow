@@ -16,6 +16,7 @@ type QueueReleasePayload = {
   triggeredByUserId: string;
   amountUsdc: Decimal;
   executionMode: ReleaseExecutionMode;
+  sourceWalletId: string | null;
   sourceWalletAddress: string | null;
   destinationWalletAddress: string;
   status: "queued";
@@ -28,6 +29,7 @@ export function deriveQueuedReleasePayload(input: {
   amountUsdc: Decimal;
   executionMode: ReleaseExecutionMode;
   destinationWalletAddress: string;
+  sourceWalletId?: string | null;
   sourceWalletAddress?: string | null;
 }): QueueReleasePayload {
   return {
@@ -36,6 +38,7 @@ export function deriveQueuedReleasePayload(input: {
     triggeredByUserId: input.triggeredByUserId,
     amountUsdc: input.amountUsdc,
     executionMode: input.executionMode,
+    sourceWalletId: input.sourceWalletId ?? null,
     sourceWalletAddress: input.sourceWalletAddress ?? null,
     destinationWalletAddress: input.destinationWalletAddress,
     status: "queued",
@@ -52,6 +55,7 @@ export async function queueMilestoneRelease(
     void dispatchWorkspaceWebhookNotification(workspaceId, payload);
   },
   sourceWalletAddress: string | null = null,
+  sourceWalletId: string | null = null,
 ) {
   if (!isValidUsdcAmount(amountUsdc)) throw new Error("INVALID_RELEASE_AMOUNT");
   let result;
@@ -93,6 +97,20 @@ export async function queueMilestoneRelease(
     const user = await tx.user.findUnique({ where: { id: ownerUserId }, select: { id: true } });
     if (!user) throw new Error("USER_NOT_FOUND");
 
+    if (sourceWalletId) {
+      const sourceWallet = await tx.userWallet.findFirst({
+        where: { id: sourceWalletId, userId: ownerUserId, transactionEnabled: true },
+        select: { normalizedAddress: true },
+      });
+      if (!sourceWallet) throw new Error("SOURCE_WALLET_NOT_ALLOWED");
+      if (
+        sourceWalletAddress
+        && sourceWallet.normalizedAddress !== sourceWalletAddress.toLowerCase()
+      ) {
+        throw new Error("SOURCE_WALLET_MISMATCH");
+      }
+    }
+
     const hasReleaseRole = await hasWorkspaceRole(
       tx,
       milestone.payout.workspaceId,
@@ -109,6 +127,7 @@ export async function queueMilestoneRelease(
         amountUsdc: requestedAmount,
         executionMode,
         destinationWalletAddress: milestone.payout.targetWalletAddress,
+        sourceWalletId,
         sourceWalletAddress,
       }),
       select: {

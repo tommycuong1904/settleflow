@@ -18,6 +18,14 @@ This document describes the domain concepts and relationships that are currently
 
 `User` is the persisted authenticated identity. It can be a workspace member, payout creator, contributor creator, milestone submitter, reviewer, release trigger, or activity actor. A user may optionally be linked to a contributor profile.
 
+`UserWallet` is the canonical account-to-wallet link. Google/Circle and Web3
+sign-in provision independent users. One user may explicitly link a new EVM
+wallet, while each normalized address belongs to exactly one user. It records
+the wallet kind and whether it may authenticate or fund a release.
+The legacy `User.walletAddress` remains only as a compatibility field during
+the staged migration. `CircleUserWallet` retains Circle-specific identifiers
+and references the corresponding `UserWallet` link.
+
 ### WorkspaceMember and role
 
 `WorkspaceMember` links a `User` to a `Workspace` and stores one `WorkspaceMemberRole`: `owner`, `ops`, `reviewer`, or `contributor`. A database uniqueness constraint allows only one membership row for each `(workspaceId, userId)`. New invitations use only `owner` and `contributor`; `ops` and `reviewer` remain for historical memberships. The runtime actor has the corresponding values: `owner`, `ops`, `reviewer`, and `contributor`. Database roles and runtime actors must not be treated as interchangeable. Detailed policy is in `docs/AUTHORIZATION.md`.
@@ -48,7 +56,7 @@ A review attaches a reviewer and decision (`approved` or `rejected`) to a submis
 
 ### Release
 
-`Release` represents a requested settlement for a payout/milestone. It records triggering user, amount, execution mode (`browser_wallet` or `circle_wallet`), destination/source wallets, Arc request/transaction metadata, and `ReleaseStatus` (`queued`, `pending`, `confirmed`, `failed`, `cancelled`).
+`Release` represents a requested settlement for a payout/milestone. It records triggering user, amount, execution mode, destination/source wallets, and an optional immutable `sourceWalletId` link for account-owned wallet paths, plus Arc request/transaction metadata and `ReleaseStatus` (`queued`, `pending`, `confirmed`, `failed`, `cancelled`).
 
 ### TransactionProof
 

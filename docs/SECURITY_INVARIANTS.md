@@ -42,6 +42,49 @@ It prevents callers from treating an arbitrary cookie value as an authenticated 
 ### Status
 Partially implemented
 
+## Account-owned wallet links
+
+### Invariant
+Google/Circle and Web3 sign-in provision independent product accounts. One
+normalized EVM address belongs to at most one `UserWallet`; a signed-in user
+may link only an address that is absent from `UserWallet`, after a fresh,
+single-use signature from that exact address.
+
+### Why it matters
+It prevents address/email guesswork, deterministic address derivation, and
+existing-wallet reassignment from merging accounts.
+
+### Enforcement
+`UserWallet.normalizedAddress` is globally unique. Google provisioning creates
+no synthetic EOA. The wallet-link route consumes the durable nonce challenge,
+rejects every address already present in `UserWallet`, and creates no workspace
+membership. Web3 sign-in resolves only an `authEnabled` Web3 EOA link. Circle
+SCAs and retired legacy-export EOAs are not Web3-login-enabled.
+
+### Evidence
+`prisma/schema.prisma`; `app/api/v1/auth/wallet/link/route.ts`;
+`lib/auth/wallet-provisioning.ts`; `lib/auth/session-server.ts`;
+`test/integration/wallet-auth-db.test.mts`.
+
+### Status
+Implemented and DB integration-tested for the covered paths.
+
+## Release source binding
+
+### Invariant
+A browser-wallet release can only be funded by the enabled EOA that established
+the current Web3 session. A Google session can only use its linked Circle SCA.
+
+### Enforcement
+The release route derives the source `UserWallet` from the signed session and
+snapshots its ID and address before queueing. Browser proof verification rejects
+a transaction whose `from` differs from that snapshot.
+
+### Evidence
+`app/api/v1/milestones/[id]/release/route.ts`,
+`lib/repositories/release-proof.ts`, and
+`lib/arc/verify-release-transaction.ts`.
+
 ## Circle user-controlled wallet boundary
 
 ### Invariant

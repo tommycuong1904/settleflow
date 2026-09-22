@@ -10,7 +10,6 @@ import React, {
 } from "react";
 import { connectBrowserWallet } from "@/lib/arc/browser-wallet";
 import { fetchLiveArcBalances } from "@/lib/arc/onchain";
-import { deriveSmartAccountAddress, deriveDeterministicPrivateKey } from "@/lib/auth/smart-account";
 
 export type AuthType = "web2_email" | "web2_google" | "web3_wallet" | null;
 
@@ -32,8 +31,8 @@ export interface WalletContextValue {
   refreshBalance: () => Promise<void>;
   refreshCircleWallet: () => Promise<void>;
   connectWeb3: (preferredWallet?: string) => Promise<void>;
+  linkWeb3: () => Promise<string>;
   connectGoogle: (profile: { email: string; name?: string; picture?: string; sub: string; idToken: string }) => Promise<void>;
-  getPrivateKey: () => string | null;
   disconnect: () => Promise<void>;
 }
 
@@ -149,7 +148,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
           userName: session.name || (session.authType === "web2_google" ? session.email!.split("@")[0] : null),
           userAvatar: null,
           authType: session.authType,
-          walletName: session.authType === "web2_google" ? "Google Smart Account" : "Web3 Wallet",
+          walletName: session.authType === "web2_google" ? "Google account" : "Web3 Wallet",
           network: "Arc Testnet",
           usdcBalance: "1,250.00",
         };
@@ -221,7 +220,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     async (preferredWallet?: string) => {
       setIsConnecting(true);
       try {
-        const result = await connectBrowserWallet();
+        const result = await connectBrowserWallet(preferredWallet);
         if (!result.connectedAddress || !result.provider) throw new Error("No browser wallet account available.");
         const connectedAddr = result.connectedAddress;
         const wName = result.walletName || preferredWallet || "Web3 Wallet";
@@ -269,11 +268,38 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     [saveSession],
   );
 
+  const linkWeb3 = useCallback(async () => {
+    const result = await connectBrowserWallet();
+    if (!result.connectedAddress || !result.provider) throw new Error("No browser wallet account available.");
+    const address = result.connectedAddress;
+    const nonceResponse = await fetch("/api/v1/auth/wallet/nonce", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ address }),
+    });
+    if (!nonceResponse.ok) throw new Error("Unable to request wallet-link challenge.");
+    const challenge = (await nonceResponse.json()) as { nonce: string; message: string };
+    const signature = await (result.provider as unknown as { request: (args: { method: string; params: [string, string] }) => Promise<unknown> }).request({
+      method: "personal_sign",
+      params: [challenge.message, address],
+    }) as string;
+    const response = await fetch("/api/v1/auth/wallet/link", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ address, nonce: challenge.nonce, message: challenge.message, signature }),
+    });
+    if (!response.ok) {
+      const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+      throw new Error(payload?.error || "Wallet link failed.");
+    }
+    const payload = await response.json() as { wallet: { address: string } };
+    return payload.wallet.address;
+  }, []);
+
   const connectGoogle = useCallback(
     async (profile: { email: string; name?: string; picture?: string; sub: string; idToken: string }) => {
       setIsConnecting(true);
       try {
-        const smartAccount = deriveSmartAccountAddress(profile.sub);
         const name = profile.name || profile.email.split("@")[0];
         const avatar = profile.picture || null;
 
@@ -286,25 +312,25 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         });
 
         setIsConnected(true);
-        setAddress(smartAccount);
+        setAddress(null);
         setEmail(profile.email);
         setGoogleSub(profile.sub);
         setUserName(name);
         setUserAvatar(avatar);
         setAuthType("web2_google");
-        setWalletName("Google Smart Account");
+        setWalletName("Google account");
         setNetwork("Arc Testnet");
         setUsdcBalance("1,000.00");
 
         saveSession({
           isConnected: true,
-          address: smartAccount,
+          address: null,
           email: profile.email,
           googleSub: profile.sub,
           userName: name,
           userAvatar: avatar,
           authType: "web2_google",
-          walletName: "Google Smart Account",
+          walletName: "Google account",
           network: "Arc Testnet",
           usdcBalance: "1,000.00",
         });
@@ -334,15 +360,12 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   }, [address, authType, isConnected, saveSession]);
 
   useEffect(() => {
-    void refreshCircleWallet();
+    let active = true;
+    void Promise.resolve().then(async () => {
+      if (active) await refreshCircleWallet();
+    });
+    return () => { active = false; };
   }, [refreshCircleWallet]);
-
-  const getPrivateKey = useCallback(() => {
-    if (!isConnected || authType !== "web2_google" || !googleSub) {
-      return null;
-    }
-    return deriveDeterministicPrivateKey(googleSub);
-  }, [isConnected, authType, googleSub]);
 
   const disconnect = useCallback(async () => {
     await syncServerSession("/api/v1/auth/logout", {});
@@ -379,8 +402,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         refreshBalance,
         refreshCircleWallet,
         connectWeb3,
+        linkWeb3,
         connectGoogle,
-        getPrivateKey,
         disconnect,
       }}
     >

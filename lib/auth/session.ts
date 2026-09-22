@@ -18,6 +18,7 @@ export interface SessionPayload {
   googleSub?: string | null;
   name?: string | null;
   address?: string | null;
+  walletId?: string | null;
   authType: "web2_google" | "web2_email" | "web3_wallet";
 }
 
@@ -132,6 +133,7 @@ export async function verifySessionToken(
       googleSub: typeof parsed.googleSub === "string" ? parsed.googleSub : null,
       name: parsed.name ?? null,
       address: parsed.address ?? null,
+      walletId: typeof parsed.walletId === "string" ? parsed.walletId : null,
       authType: parsed.authType,
     };
   } catch {

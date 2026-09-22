@@ -4,11 +4,10 @@ import React, { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/shared/button";
 import { FaucetModal } from "@/components/shared/faucet-modal";
-import { ExportKeyModal } from "@/components/shared/export-key-modal";
 import { useWallet } from "@/lib/context/wallet-context";
 import { addArcNetworkToWallet } from "@/lib/arc/onchain";
 import { useToast } from "@/lib/context/toast-context";
-import { ExternalLink, LogOut, Wallet, User, ChevronDown, RefreshCw, Droplets, KeyRound, Copy, Menu } from "lucide-react";
+import { ExternalLink, LogOut, Wallet, User, ChevronDown, RefreshCw, Droplets, Copy, Menu } from "lucide-react";
 
 export function AppHeader() {
   const router = useRouter();
@@ -27,13 +26,11 @@ export function AppHeader() {
     openAuthModal,
     disconnect,
     refreshBalance,
-    getPrivateKey,
   } = useWallet();
 
   const { toast } = useToast();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isFaucetOpen, setIsFaucetOpen] = useState(false);
-  const [isExportKeyOpen, setIsExportKeyOpen] = useState(false);
 
   const handleAddArcNetwork = async () => {
     try {
@@ -227,18 +224,6 @@ export function AppHeader() {
                     <Droplets size={13} /> Get Testnet USDC <ExternalLink size={10} className="ml-auto opacity-50" />
                   </a>
 
-                  {authType === "web2_google" && getPrivateKey() && (
-                    <button
-                      onClick={() => {
-                        setIsDropdownOpen(false);
-                        setIsExportKeyOpen(true);
-                      }}
-                      className="w-full flex items-center gap-2 rounded-lg hover:bg-[var(--surface-muted)] text-[var(--text-muted)] hover:text-[var(--foreground)] px-2 py-1.5 transition-colors font-medium text-[11px]"
-                    >
-                      <KeyRound size={13} /> Export Private Key
-                    </button>
-                  )}
-
                   <button
                     onClick={() => void handleDisconnect()}
                     className="w-full flex items-center gap-2 rounded-lg hover:bg-[var(--surface-muted)] text-[var(--text-muted)] hover:text-[var(--foreground)] px-2 py-1.5 transition-colors font-medium text-[11px]"
@@ -258,15 +243,6 @@ export function AppHeader() {
         isOpen={isFaucetOpen}
         onClose={() => setIsFaucetOpen(false)}
         userAddress={address}
-      />
-
-      {/* Export Private Key Modal */}
-      <ExportKeyModal
-        isOpen={isExportKeyOpen}
-        onClose={() => setIsExportKeyOpen(false)}
-        address={address}
-        email={email}
-        privateKey={getPrivateKey()}
       />
 
     </header>

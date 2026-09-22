@@ -16,10 +16,27 @@ test("queued release payload sets queued status and null source wallet", () => {
   });
 
   assert.equal(payload.status, "queued");
+  assert.equal(payload.sourceWalletId, null);
   assert.equal(payload.sourceWalletAddress, null);
   assert.equal(payload.destinationWalletAddress, "0xabc");
   assert.equal(payload.executionMode, "browser_wallet");
   assert.equal(payload.amountUsdc.toString(), "125.5");
+});
+
+test("queued release payload snapshots the linked source wallet", () => {
+  const payload = deriveQueuedReleasePayload({
+    payoutId: "p1",
+    milestoneId: "m1",
+    triggeredByUserId: "u1",
+    amountUsdc: new Decimal("125.50"),
+    executionMode: "circle_user_wallet",
+    destinationWalletAddress: "0xabc",
+    sourceWalletId: "wallet-link-1",
+    sourceWalletAddress: "0xsource",
+  });
+
+  assert.equal(payload.sourceWalletId, "wallet-link-1");
+  assert.equal(payload.sourceWalletAddress, "0xsource");
 });
 
 test("retry release payload preserves prior execution details and re-queues", () => {
@@ -29,12 +46,14 @@ test("retry release payload preserves prior execution details and re-queues", ()
     triggeredByUserId: "u2",
     amountUsdc: new Decimal("75"),
     executionMode: "circle_wallet",
+    sourceWalletId: null,
     sourceWalletAddress: "0xsource",
     destinationWalletAddress: "0xdest",
   });
 
   assert.equal(payload.status, "queued");
   assert.equal(payload.executionMode, "circle_wallet");
+  assert.equal(payload.sourceWalletId, null);
   assert.equal(payload.sourceWalletAddress, "0xsource");
   assert.equal(payload.destinationWalletAddress, "0xdest");
   assert.equal(payload.amountUsdc.toString(), "75");
