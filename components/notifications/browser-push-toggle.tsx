@@ -10,8 +10,10 @@ function applicationServerKey(value: string) {
   return Uint8Array.from(raw, (character) => character.charCodeAt(0));
 }
 
-export function BrowserPushToggle() {
+export function BrowserPushToggle({ workspaceId }: { workspaceId: string }) {
   const [state, setState] = useState<PushState>(publicKey ? "pending" : "unavailable");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const endpoint = `/api/v1/push-subscriptions?workspaceId=${encodeURIComponent(workspaceId)}`;
 
   useEffect(() => {
     if (!publicKey || !("serviceWorker" in navigator) || !("Notification" in window)) return;
@@ -26,40 +28,44 @@ export function BrowserPushToggle() {
   async function enable() {
     if (!publicKey || !("serviceWorker" in navigator) || !("Notification" in window)) return setState("unavailable");
     setState("pending");
+    setErrorMessage(null);
     try {
       const permission = await Notification.requestPermission();
       if (permission !== "granted") return setState("denied");
       const registration = await navigator.serviceWorker.register("/push-service-worker.js");
       const subscription = await registration.pushManager.getSubscription()
         ?? await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: applicationServerKey(publicKey) });
-      const response = await fetch("/api/v1/push-subscriptions", {
+      const response = await fetch(endpoint, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(subscription),
       });
-      if (!response.ok) throw new Error("PUSH_SUBSCRIPTION_FAILED");
+      if (!response.ok) throw new Error((await response.json().catch(() => null) as { error?: string } | null)?.error ?? "PUSH_SUBSCRIPTION_FAILED");
       setState("enabled");
-    } catch {
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "PUSH_SUBSCRIPTION_FAILED");
       setState("error");
     }
   }
 
   async function disable() {
     setState("pending");
+    setErrorMessage(null);
     try {
       const registration = await navigator.serviceWorker.getRegistration("/push-service-worker.js");
       const subscription = await registration?.pushManager.getSubscription();
       if (subscription) {
-        const response = await fetch("/api/v1/push-subscriptions", {
+        const response = await fetch(endpoint, {
           method: "DELETE",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ endpoint: subscription.endpoint }),
         });
-        if (!response.ok) throw new Error("PUSH_UNSUBSCRIPTION_FAILED");
+        if (!response.ok) throw new Error((await response.json().catch(() => null) as { error?: string } | null)?.error ?? "PUSH_UNSUBSCRIPTION_FAILED");
         await subscription.unsubscribe();
       }
       setState("idle");
-    } catch {
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "PUSH_UNSUBSCRIPTION_FAILED");
       setState("error");
     }
   }
@@ -67,7 +73,7 @@ export function BrowserPushToggle() {
   if (state === "unavailable") return <p className="text-xs text-[var(--text-muted)]">Browser Push is not configured for this environment.</p>;
   if (state === "pending") return <p className="text-xs text-[var(--text-muted)]">Checking Browser Push…</p>;
   if (state === "denied") return <p className="text-xs text-[var(--text-muted)]">Notifications are blocked by this browser. Enable them in browser settings to continue.</p>;
-  if (state === "error") return <p className="text-xs text-red-600">Browser Push could not be updated. Please try again.</p>;
+  if (state === "error") return <p className="text-xs text-red-600">Browser Push could not be updated: {errorMessage ?? "unknown error"}.</p>;
   if (state === "enabled") return <button type="button" className="sf-button sf-button-secondary" onClick={() => void disable()}>Disable Browser Push</button>;
   return <button type="button" className="sf-button sf-button-secondary" onClick={() => void enable()}>Enable Browser Push</button>;
 }

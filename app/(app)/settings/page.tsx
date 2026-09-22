@@ -343,7 +343,7 @@ export default function SettingsPage() {
         <div className="rounded-xl border border-[var(--border-soft)] p-6 sm:p-8 space-y-3">
           <h2 className="text-base font-semibold text-[var(--foreground)]">Browser Push</h2>
           <p className="text-xs text-[var(--text-muted)]">Receive workflow updates when SettleFlow is not open.</p>
-          <BrowserPushToggle />
+          <BrowserPushToggle workspaceId={productContext.workspaceId} />
         </div>
 
         {/* Advanced Arc tools */}
