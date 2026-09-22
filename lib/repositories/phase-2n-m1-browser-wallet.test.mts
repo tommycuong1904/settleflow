@@ -2,15 +2,22 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { readFile } from "node:fs/promises";
 import { verifyReleaseTransaction } from "@/lib/arc/verify-release-transaction";
+import { encodeAbiParameters, encodeEventTopics, erc20Abi } from "viem";
 
 const root = new URL("../../", import.meta.url);
 const source = async (file: string) => readFile(new URL(file, root), "utf8");
 const hash = `0x${"ab".repeat(32)}`;
 const from = "0x1111111111111111111111111111111111111111";
 const to = "0x2222222222222222222222222222222222222222";
+const usdc = "0x3600000000000000000000000000000000000000";
 const release = { amountUsdc: "1", destinationWalletAddress: to, sourceWalletAddress: from, executionMode: "browser_wallet" as const };
-const rpc = (overrides: Record<string, unknown> = {}, receipt: Record<string, unknown> = { status: "success", logs: [] }) => ({
-  getTransaction: async () => ({ chainId: 5042002, from, to, value: BigInt("1000000000000000000"), ...overrides }),
+const transferTopics = encodeEventTopics({ abi: erc20Abi, eventName: "Transfer", args: { from, to } });
+const receiptForAmount = (amount: bigint) => ({
+  status: "success",
+  logs: [{ address: usdc, topics: transferTopics, data: encodeAbiParameters([{ type: "uint256" }], [amount]) }],
+});
+const rpc = (overrides: Record<string, unknown> = {}, receipt: Record<string, unknown> = receiptForAmount(BigInt(1_000_000))) => ({
+  getTransaction: async () => ({ chainId: 5042002, from, to: usdc, value: BigInt(0), ...overrides }),
   getTransactionReceipt: async () => receipt,
 });
 
@@ -37,9 +44,9 @@ test("verified tx.from must match the browser source snapshot", async () => {
 });
 
 for (const [name, overrides, receipt] of [
-  ["recipient", { to: from }, { status: "success", logs: [] }],
-  ["amount", { value: BigInt("2") }, { status: "success", logs: [] }],
-  ["chain", { chainId: 1 }, { status: "success", logs: [] }],
+  ["recipient", { to: from }, receiptForAmount(BigInt(1_000_000))],
+  ["amount", {}, receiptForAmount(BigInt(2_000_000))],
+  ["chain", { chainId: 1 }, receiptForAmount(BigInt(1_000_000))],
   ["receipt", {}, { status: "reverted", logs: [] }],
 ] as const) {
   test(`wrong ${name} rejects before any binding/finalization`, async () => {
@@ -53,10 +60,11 @@ test("account switching is rejected when it differs from the browser source snap
   await assert.rejects(verifyReleaseTransaction({ release, txHash: hash, client: rpc({ from: switched }) }), /TX_SNAPSHOT_MISMATCH/);
 });
 
-test("browser confirmation preserves the source snapshot and cannot double-finalize", async () => {
+test("browser confirmation relies on the verified source snapshot and cannot double-finalize", async () => {
   const repo = await source("lib/repositories/release-proof.ts");
   const bind = repo.slice(repo.indexOf("if (verifiedBrowserSourceWallet)"), repo.indexOf("const now = new Date()"));
-  assert.match(bind, /status: "pending", sourceWalletAddress: verifiedBrowserSourceWallet, txHash: null/);
+  assert.match(bind, /status: "pending", txHash: null/);
+  assert.doesNotMatch(bind, /sourceWalletAddress: verifiedBrowserSourceWallet/);
   assert.match(bind, /if \(bound\.count !== 1\) throw/);
   assert.match(repo, /where: \{ id: proof\.id, status: "pending" \}/);
   assert.match(repo, /where: \{ id: release\.id, status: "pending" \}/);
