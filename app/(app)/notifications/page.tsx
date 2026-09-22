@@ -1,10 +1,10 @@
-import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { ServerAuthContextState } from "@/components/shared/server-auth-context-state";
+import { NotificationListClient } from "@/components/notifications/notification-list-client";
 import { getSessionFromCookieStore, resolveProductContextForServerPage } from "@/lib/auth/session-server";
 import { db } from "@/lib/db/client";
 
@@ -32,23 +32,11 @@ export default async function NotificationsPage() {
       {notifications.length === 0 ? (
         <EmptyState title="No notifications yet" description="Important payout and milestone updates will appear here." />
       ) : (
-        <section className="space-y-3">
-          {notifications.map((notification) => (
-            <Link
-              key={notification.id}
-              href={notification.href}
-              className={`block rounded-xl border p-4 transition-colors hover:border-[var(--border-strong)] ${notification.readAt ? "border-[var(--border-soft)] bg-[var(--surface)]" : "border-sky-500/30 bg-sky-500/5"}`}
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div className="space-y-1">
-                  <p className="text-sm font-semibold text-[var(--foreground)]">{notification.title}</p>
-                  <p className="text-xs leading-5 text-[var(--text-muted)]">{notification.body}</p>
-                </div>
-                <time className="shrink-0 text-[11px] text-[var(--text-muted)]">{notification.createdAt.toLocaleDateString()}</time>
-              </div>
-            </Link>
-          ))}
-        </section>
+        <NotificationListClient notifications={notifications.map((notification) => ({
+          ...notification,
+          readAt: notification.readAt?.toISOString() ?? null,
+          createdAt: notification.createdAt.toISOString(),
+        }))} />
       )}
     </div>
   );
