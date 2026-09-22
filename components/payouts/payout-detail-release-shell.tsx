@@ -171,7 +171,10 @@ export function PayoutDetailReleaseShell({
       : effectiveReleaseStatus === "failed"
       ? "Resolve failed release"
       : undefined;
-  const releaseProgressStep = resolvedProof?.status === "confirmed" ? 3 : resolvedProof?.status === "pending" ? 2 : 1;
+  // A confirmed proof has completed all three displayed steps. Use the step
+  // after the final item so the existing `progress > step` rendering marks it
+  // with a check rather than leaving it as the current numbered step.
+  const releaseProgressStep = resolvedProof?.status === "confirmed" ? 4 : resolvedProof?.status === "pending" ? 2 : 1;
 
   const statusText = useMemo(() => {
     if (releaseError) return releaseError;
