@@ -27,6 +27,8 @@ import { PRODUCT_CONTEXT_HEADER_NAMES, type ProductActor } from "@/lib/runtime/p
 import { hasRole, isRole } from "@/lib/runtime/role-utils";
 import { useWallet } from "@/lib/context/wallet-context";
 import { formatUsdc, shortenAddress } from "@/lib/utils/format";
+import { useScrollLock } from "@/lib/hooks/use-scroll-lock";
+import { X } from "lucide-react";
 
 type PayoutDetailReleaseShellProps = {
   payoutId: string;
@@ -120,6 +122,8 @@ export function PayoutDetailReleaseShell({
   const [confirmationTxHash, setConfirmationTxHash] = useState("");
   const [failureReason, setFailureReason] = useState("");
   const [activeProof, setActiveProof] = useState<TransactionProof | undefined>(releaseProof);
+  const [isReleaseReviewOpen, setIsReleaseReviewOpen] = useState(false);
+  useScrollLock(isReleaseReviewOpen);
 
   const resolvedProof = activeProof ?? releaseProof;
   const proofMatchesCurrentMilestone =
@@ -166,6 +170,7 @@ export function PayoutDetailReleaseShell({
       : effectiveReleaseStatus === "failed"
       ? "Retry from proof panel"
       : undefined;
+  const releaseProgressStep = resolvedProof?.status === "confirmed" ? 3 : resolvedProof?.status === "pending" ? 2 : 1;
 
   const statusText = useMemo(() => {
     if (releaseError) return releaseError;
@@ -747,6 +752,19 @@ export function PayoutDetailReleaseShell({
                 <p className="mt-2 text-xs text-[var(--text-muted)]">Sign in as the workspace owner to determine the payment source.</p>
               )}
             </div>
+            <ol className="mt-4 grid grid-cols-3 gap-2" aria-label="Release progress">
+              {["Review payment", "Sign in wallet", "Verify proof"].map((label, index) => {
+                const step = index + 1;
+                const complete = releaseProgressStep > step;
+                const current = releaseProgressStep === step;
+                return (
+                  <li key={label} className="min-w-0">
+                    <span className={`flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-semibold ${complete ? "bg-emerald-600 text-white" : current ? "bg-black text-white" : "bg-[var(--surface-strong)] text-[var(--text-muted)]"}`}>{complete ? "✓" : step}</span>
+                    <p className={`mt-1 text-[11px] ${current ? "font-medium text-[var(--foreground)]" : "text-[var(--text-muted)]"}`}>{label}</p>
+                  </li>
+                );
+              })}
+            </ol>
           </div>
           <ReleasePanel
             amount={nextReleasableMilestone?.amount ?? 0}
@@ -767,7 +785,7 @@ export function PayoutDetailReleaseShell({
                   ? handleContinueCircleRelease()
                   : isBrowserReleasable
                     ? handleRelease(resolvedProof?.releaseId)
-                  : handleRelease());
+                  : setIsReleaseReviewOpen(true));
             }}
           />
           {statusText ? (
@@ -788,15 +806,17 @@ export function PayoutDetailReleaseShell({
           {resolvedProof?.status === "pending" && resolvedProof.releaseId && isOwnerActor ? (
             <div id="settlement-proof-resolution" className="mt-4 space-y-4 rounded-2xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-4">
               <div>
-                <p className="text-sm font-semibold text-[var(--foreground)]">Refresh pending settlement</p>
+                <p className="text-sm font-semibold text-[var(--foreground)]">{isBrowserReconciliationPending ? "Resolve pending Web3 payment" : "Refresh pending settlement"}</p>
                 <p className="mt-1 text-sm text-[var(--text-muted)]">
-                  Confirm the proof when the Arc transfer lands, or mark it failed to unblock a retry.
+                  {isBrowserReconciliationPending
+                    ? "If MetaMask shows a submitted transaction, confirm it with the hash. If no transaction was sent, mark it failed to safely unlock a retry."
+                    : "Confirm the proof when the Arc transfer lands, or mark it failed to unblock a retry."}
                 </p>
               </div>
               <div className="grid gap-4 lg:grid-cols-2">
                 <div className="space-y-3">
                   <label className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                    Confirm with tx hash
+                    Transaction hash received
                   </label>
                   <Input
                     value={confirmationTxHash}
@@ -815,13 +835,13 @@ export function PayoutDetailReleaseShell({
                 </div>
                 <div className="space-y-3">
                   <label className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                    Mark failed
+                    No transaction was sent
                   </label>
                   <Textarea
                     id="settlement-failure-reason"
                     value={failureReason}
                     onChange={(event) => setFailureReason(event.target.value)}
-                    placeholder="Why did this settlement fail?"
+                    placeholder="Example: Wallet account mismatch before transaction broadcast"
                     className="min-h-24"
                   />
                   <Button
@@ -831,7 +851,7 @@ export function PayoutDetailReleaseShell({
                     }}
                     disabled={refreshingProof}
                   >
-                    {refreshingProof ? "Updating..." : "Mark failed"}
+                    {refreshingProof ? "Updating..." : "Mark failed and unlock retry"}
                   </Button>
                 </div>
               </div>
@@ -886,6 +906,24 @@ export function PayoutDetailReleaseShell({
         </div>
         </CardContent>
       </Card>
+      {isReleaseReviewOpen && nextReleasableMilestone ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md" onClick={() => setIsReleaseReviewOpen(false)}>
+          <div className="relative w-full max-w-lg rounded-3xl border border-[var(--border-strong)] bg-[var(--surface)] p-6 shadow-2xl" onClick={(event) => event.stopPropagation()}>
+            <button type="button" onClick={() => setIsReleaseReviewOpen(false)} className="absolute right-5 top-5 rounded-full p-1.5 text-[var(--text-muted)] hover:bg-[var(--surface-muted)]" aria-label="Close release review"><X size={18} /></button>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">Review payment</p>
+            <h2 className="mt-2 pr-8 text-xl font-semibold text-[var(--foreground)]">Confirm before signing</h2>
+            <p className="mt-2 text-sm text-[var(--text-muted)]">SettleFlow will verify your active wallet before creating a release. You will then sign the USDC transfer in your browser wallet.</p>
+            <dl className="mt-5 space-y-3 rounded-2xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-4 text-sm">
+              <div><dt className="text-xs text-[var(--text-muted)]">Milestone</dt><dd className="mt-1 font-medium text-[var(--foreground)]">{nextReleasableMilestone.title}</dd></div>
+              <div><dt className="text-xs text-[var(--text-muted)]">Amount</dt><dd className="mt-1 text-lg font-semibold text-[var(--foreground)]">{formatUsdc(nextReleasableMilestone.amount)} USDC</dd></div>
+              <div><dt className="text-xs text-[var(--text-muted)]">Recipient</dt><dd className="mt-1 break-all font-mono text-xs text-[var(--foreground)]">{recipientAddress ?? "Not resolved"}</dd></div>
+              <div><dt className="text-xs text-[var(--text-muted)]">Authenticated Web3 wallet</dt><dd className="mt-1 break-all font-mono text-xs text-[var(--foreground)]">{address ?? "Sign in with Web3 first"}</dd></div>
+            </dl>
+            <p className="mt-4 text-xs text-[var(--text-muted)]">If MetaMask has a different active account, SettleFlow will stop before creating a release and show you which account to switch.</p>
+            <div className="mt-6 flex justify-end gap-3"><Button variant="secondary" onClick={() => setIsReleaseReviewOpen(false)}>Cancel</Button><Button onClick={() => { setIsReleaseReviewOpen(false); void handleRelease(); }}>Verify wallet & sign</Button></div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
