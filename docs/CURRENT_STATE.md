@@ -4,7 +4,7 @@ Status: current
 SSoT: Current repository implementation and verification
 Last verified: 2026-09
 
-> **TL;DR** — Core auth, workspace membership, invitation, release-safety, Prisma migration, unit, DB integration, and production-build checks are verified on the current working tree. Real Arc settlement and browser E2E remain deferred; repository verification does not authorize production payments.
+> **TL;DR** — Core auth, workspace membership, invitation, release-safety, Prisma migration, unit, DB integration, production-build checks, and limited browser smoke coverage are verified on the current working tree. Real Arc settlement and browser E2E that requires a wallet remain deferred; repository verification does not authorize production payments.
 
 ## Summary
 This repository is now a full-stack Next.js application for SettleFlow, an Arc-native milestone-based USDC payout workflow for crypto teams. The current implementation has moved beyond a frontend-only demo: it now includes a PostgreSQL + Prisma data layer, repository-backed server reads/writes, and API routes for payout, milestone, and release actions. Real Arc release execution is wired through `createReleaseExecutor` (Phase 6): `circle_wallet` mode sends real USDC from a server-side EOA, while `browser_wallet` fails explicitly on the server. Session auth (Phase 4), contributor management + settings/productization (Phase 5), a minimalist black/white theme refactor, and the `6004b05` Reliability Hardening test coverage are merged into `main`.
@@ -180,12 +180,13 @@ This repository is now a full-stack Next.js application for SettleFlow, an Arc-n
   - `npm run start`
   - `npm run typecheck`
   - `npm run lint`
+  - `npm run test:e2e`
 - Prisma seed configuration exists in `package.json#prisma.seed`.
 - ESLint is configured via `eslint.config.mjs`.
 - TypeScript strict mode is enabled in `tsconfig.json`.
 - `npm test` discovers and runs all unit test files under `lib/`; `npm run test:integration:db` does the same for `test/integration/`.
 - CI runs dependency installation, Prisma generation and migrations on `settleflow_test`, typecheck, lint, unit tests, DB integration tests, and `npm run build`.
-- No committed Playwright/browser E2E suite exists; browser E2E is intentionally deferred.
+- A committed Playwright Chromium smoke suite verifies the Web3-first sign-in modal on the landing page and `/auth-required` boundary without connecting a wallet. Authenticated Owner/Contributor workflow E2E and real-wallet settlement remain deferred.
 
 ### Notes
 - Unit and DB integration coverage includes authorization, membership uniqueness, invitations, and release reliability. Three Arc-confirmation integration cases are intentionally skipped because they require independently verified transactions; no real transaction is submitted by CI.
@@ -220,7 +221,7 @@ This repository is now a full-stack Next.js application for SettleFlow, an Arc-n
   - release retry
 - Core UI surfaces mask actions from the session-derived workspace role; no role simulation controls are exposed.
 - **Dev server runs on port 3000**.
-- Browser E2E is intentionally deferred.
+- Authenticated workflow E2E and real-wallet browser settlement remain deferred; public Web3-first auth-boundary smoke coverage is committed.
 - Arc execution has a server-side path, but real settlement and confirmation are intentionally deferred. CI forces mock execution and no real Arc credentials are configured.
 - Webhook delivery is non-blocking and has no durable retry/replay queue.
 
