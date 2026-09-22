@@ -128,7 +128,7 @@ export default async function DashboardPage() {
         </Button>
       </PageHeader>
 
-      {/* Inline Wallet Connection Gate (Hybrid Web2.5) */}
+      {/* Inline Web3 wallet connection gate */}
       <WalletGate />
 
       <section className="sf-shell rounded-xl p-6 md:p-7">

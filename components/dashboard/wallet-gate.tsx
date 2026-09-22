@@ -28,24 +28,24 @@ export function WalletGate() {
         <div className="space-y-3 max-w-2xl">
           <div className="inline-flex items-center gap-2 rounded-full border border-[var(--border-soft)] bg-[var(--surface-muted)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">
             <Sparkles size={13} className="text-[var(--text-muted)]" />
-            Hybrid Web2.5 Milestone Escrow
+            Web3 milestone payouts
           </div>
 
           <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--foreground)]">
-            Connect your wallet or sign in with Email to unlock full payout operations.
+            Connect your Web3 wallet to unlock payout operations.
           </h2>
 
           <p className="text-sm leading-relaxed text-[var(--text-muted)]">
-            You are currently browsing in <strong className="text-[var(--foreground)]">Preview Mode</strong>. Sign in with Google, Email, or connect MetaMask to create new milestone payouts, release USDC, and verify Arc onchain proofs.
+            You are currently browsing in <strong className="text-[var(--foreground)]">Preview Mode</strong>. Connect a compatible Web3 wallet to create milestone payouts, sign USDC releases, and verify Arc onchain proofs.
           </p>
 
           {/* Value Badges */}
           <div className="flex flex-wrap gap-3 pt-1 text-xs text-[var(--text-muted)]">
             <span className="flex items-center gap-1.5 rounded-lg bg-[var(--surface-muted)] px-2.5 py-1 border border-[var(--border-soft)]">
-              <ShieldCheck size={14} className="text-[var(--text-muted)]" /> Non-custodial Escrow
+              <ShieldCheck size={14} className="text-[var(--text-muted)]" /> Non-custodial wallet
             </span>
             <span className="flex items-center gap-1.5 rounded-lg bg-[var(--surface-muted)] px-2.5 py-1 border border-[var(--border-soft)]">
-              <Coins size={14} className="text-[var(--text-muted)]" /> Instant Circle USDC
+              <Coins size={14} className="text-[var(--text-muted)]" /> Circle Smart Wallet — Coming soon
             </span>
             <span className="flex items-center gap-1.5 rounded-lg bg-[var(--surface-muted)] px-2.5 py-1 border border-[var(--border-soft)]">
               <Layers size={14} className="text-[var(--text-muted)]" /> Arc Testnet Settlements
