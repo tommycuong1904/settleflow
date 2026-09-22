@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 
 import { ARC_CONFIG } from "@/lib/arc/config";
 import {
+  assertBrowserWalletMatchesAuthenticatedAccount,
   BrowserWalletPreBroadcastError,
   BrowserWalletSubmissionUnknownError,
   sendUsdcWithBrowserWallet,
@@ -253,12 +254,22 @@ export function PayoutDetailReleaseShell({
     }
 
     setReleaseError(null);
+    if (authType !== "web3_wallet") {
+      setReleaseError("Connect an enabled Web3 wallet to release from a browser wallet.");
+      return;
+    }
+    if (ARC_CONFIG.executionMode === "real") {
+      try {
+        if (!address) throw new Error("The authenticated Web3 wallet address is unavailable. Sign in again before releasing.");
+        await assertBrowserWalletMatchesAuthenticatedAccount(address);
+      } catch (error) {
+        setReleaseError(releaseErrorMessage(error, "Unable to verify the browser wallet account."));
+        return;
+      }
+    }
     setReleaseStatus("submitting");
 
     try {
-      if (authType !== "web3_wallet") {
-        throw new Error("Connect an enabled Web3 wallet to release from a browser wallet.");
-      }
       const response = resumeReleaseId
         ? null
         : await fetch(`/api/v1/milestones/${nextReleasableMilestone.id}/release`, {

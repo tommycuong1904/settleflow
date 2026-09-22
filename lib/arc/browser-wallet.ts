@@ -120,6 +120,18 @@ export async function connectBrowserWallet(preferredWallet?: string) {
   };
 }
 
+export async function assertBrowserWalletMatchesAuthenticatedAccount(expectedSender: string) {
+  const { connectedAddress } = await connectBrowserWallet();
+  if (!connectedAddress) {
+    throw new BrowserWalletPreBroadcastError("Browser wallet connected without an account.");
+  }
+  if (connectedAddress.toLowerCase() !== expectedSender.toLowerCase()) {
+    throw new BrowserWalletPreBroadcastError(
+      `Switch the active wallet account from ${connectedAddress} to the authenticated Web3 account ${expectedSender}, then try again.`,
+    );
+  }
+}
+
 export async function sendUsdcWithBrowserWallet(input: {
   recipient: string;
   amount: string;
