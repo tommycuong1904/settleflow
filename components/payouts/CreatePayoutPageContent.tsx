@@ -238,6 +238,8 @@ function CreatePayoutPageContent() {
         const firstErrorEl = document.querySelector('[data-error="true"]');
         if (firstErrorEl) {
           firstErrorEl.scrollIntoView({ behavior: "smooth", block: "center" });
+          const field = firstErrorEl.querySelector<HTMLElement>('input, textarea, button');
+          field?.focus({ preventScroll: true });
         }
       }, 50);
     }
