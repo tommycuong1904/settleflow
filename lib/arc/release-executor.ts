@@ -23,9 +23,7 @@ export type ReleaseExecutor = (
   request: ArcSendRequest,
 ) => Promise<ArcSendResult>;
 
-/** USDC is the native gas token on Arc Testnet. */
-const NATIVE_USDC_ADDRESS = "0x3600000000000000000000000000000000000000";
-/** Standard ERC-20 USDC uses 6 decimals when an explicit contract is configured. */
+/** USDC transfers use the ERC-20 contract and six decimal places on Arc Testnet. */
 const ERC20_USDC_DECIMALS = 6;
 const RECEIPT_TIMEOUT_MS = 90_000;
 
@@ -45,10 +43,6 @@ export type ReleaseExecutorDeps = {
 
 function failedResult(errorMessage: string, sourceWalletAddress?: string, txHash?: Hex): ArcSendResult {
   return { status: "failed", network: "Arc Testnet", errorMessage, sourceWalletAddress, txHash };
-}
-
-function isNativeUsdc(tokenAddress: string): boolean {
-  return tokenAddress.trim().toLowerCase() === NATIVE_USDC_ADDRESS;
 }
 
 function buildCircleWalletDeps(privateKey: string): CircleWalletExecutorDeps {
@@ -112,20 +106,15 @@ async function executeCircleWallet(
   const destination = request.recipient.trim() as Address;
 
   try {
-    const txHash = isNativeUsdc(request.tokenAddress)
-      ? await resolvedDeps.sendTransaction({
-          to: destination,
-          value: parseUnits(request.amount, 18),
-        })
-      : await resolvedDeps.sendTransaction({
-          to: request.tokenAddress.trim() as Address,
-          value: BigInt(0),
-          data: encodeFunctionData({
-            abi: erc20Abi,
-            functionName: "transfer",
-            args: [destination, parseUnits(request.amount, ERC20_USDC_DECIMALS)],
-          }),
-        });
+    const txHash = await resolvedDeps.sendTransaction({
+      to: request.tokenAddress.trim() as Address,
+      value: BigInt(0),
+      data: encodeFunctionData({
+        abi: erc20Abi,
+        functionName: "transfer",
+        args: [destination, parseUnits(request.amount, ERC20_USDC_DECIMALS)],
+      }),
+    });
 
     let receipt: { status: "success" | "reverted" | undefined };
     try {

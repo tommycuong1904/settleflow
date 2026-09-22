@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { parseUnits, type Hex } from "viem";
+import { decodeFunctionData, parseUnits, erc20Abi, type Hex } from "viem";
 
 import {
   createReleaseExecutor,
@@ -85,7 +85,7 @@ test("circle_wallet mode with an invalid private key fails explicitly", async ()
 });
 
 
-test("circle_wallet mode sends native USDC and returns a confirmed proof with the real source wallet", async () => {
+test("circle_wallet mode sends Arc USDC as an ERC-20 transfer and returns a confirmed proof", async () => {
   const original = process.env.ARC_SERVER_PRIVATE_KEY;
   process.env.ARC_SERVER_PRIVATE_KEY = VALID_TEST_KEY;
   const captured: Array<{ to: string; value: bigint; data?: Hex }> = [];
@@ -107,11 +107,13 @@ test("circle_wallet mode sends native USDC and returns a confirmed proof with th
     assert.ok(result.confirmedAt);
     assert.equal(result.sourceWalletAddress, SERVER_ADDRESS);
 
-    // Native USDC on Arc is a plain value transfer (no contract call data).
     assert.equal(captured.length, 1);
-    assert.equal(captured[0].to.toLowerCase(), RECIPIENT.toLowerCase());
-    assert.equal(captured[0].value, parseUnits("25.5", 18));
-    assert.equal(captured[0].data, undefined);
+    assert.equal(captured[0].to.toLowerCase(), NATIVE_USDC_ADDRESS.toLowerCase());
+    assert.equal(captured[0].value, BigInt(0));
+    const decoded = decodeFunctionData({ abi: erc20Abi, data: captured[0].data! });
+    assert.equal(decoded.functionName, "transfer");
+    assert.equal(String(decoded.args?.[0]).toLowerCase(), RECIPIENT.toLowerCase());
+    assert.equal(decoded.args?.[1], parseUnits("25.5", 6));
   } finally {
     if (original === undefined) delete process.env.ARC_SERVER_PRIVATE_KEY;
     else process.env.ARC_SERVER_PRIVATE_KEY = original;

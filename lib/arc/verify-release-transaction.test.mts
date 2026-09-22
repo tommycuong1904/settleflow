@@ -5,22 +5,29 @@ import { encodeAbiParameters, encodeEventTopics, erc20Abi } from "viem";
 
 const source = "0x1111111111111111111111111111111111111111";
 const destination = "0x2222222222222222222222222222222222222222";
+const usdc = "0x3600000000000000000000000000000000000000";
 const hash = `0x${"aa".repeat(32)}`;
-function client(overrides: Record<string, unknown> = {}) {
+function usdcUnits(amount: string) {
+  const [whole, fraction = ""] = amount.split(".");
+  return BigInt(whole) * BigInt(1_000_000) + BigInt((fraction + "000000").slice(0, 6));
+}
+function client(overrides: Record<string, unknown> = {}, amount = "1") {
+  const topics = encodeEventTopics({ abi: erc20Abi, eventName: "Transfer", args: { from: source, to: destination } });
+  const log = { address: usdc, topics, data: encodeAbiParameters([{ type: "uint256" }], [usdcUnits(amount)]) };
   return {
-    getTransaction: async () => ({ chainId: 5042002, from: source, to: destination, value: BigInt("1000000000000000000"), ...overrides }),
-    getTransactionReceipt: async () => ({ status: "success", logs: [] }),
+    getTransaction: async () => ({ chainId: 5042002, from: source, to: usdc, value: BigInt(0), ...overrides }),
+    getTransactionReceipt: async () => ({ status: "success", logs: [log] }),
   };
 }
 const release = { amountUsdc: "1", destinationWalletAddress: destination, sourceWalletAddress: source };
 
-test("verifier accepts matching native transaction", async () => {
+test("verifier accepts Arc USDC ERC-20 transfer with zero native value", async () => {
   await verifyReleaseTransaction({ release, txHash: hash, client: client() });
 });
 for (const [name, overrides, snapshot] of [
   ["wrong chain", { chainId: 1 }, release],
   ["wrong destination", { to: source }, release],
-  ["wrong amount", { value: BigInt("2") }, release],
+  ["wrong amount", {}, { ...release, amountUsdc: "2" }],
   ["wrong sender", { from: destination }, release],
   ["wrong release destination", {}, { ...release, destinationWalletAddress: source }],
   ["wrong release sender", {}, { ...release, sourceWalletAddress: destination }],
@@ -30,13 +37,13 @@ for (const [name, overrides, snapshot] of [
   });
 }
 
-test("verifier preserves exact units for large native amounts", async () => {
+test("verifier preserves exact units for large USDC amounts", async () => {
   const largeAmount = "9007199254.740993";
   const largeRelease = { amountUsdc: largeAmount, destinationWalletAddress: destination, sourceWalletAddress: source };
   await verifyReleaseTransaction({
     release: largeRelease,
     txHash: hash,
-    client: client({ value: BigInt("9007199254740993000000000000") }),
+    client: client({}, largeAmount),
   });
 });
 

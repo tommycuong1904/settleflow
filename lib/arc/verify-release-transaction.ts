@@ -2,7 +2,6 @@ import { createPublicClient, decodeEventLog, erc20Abi, http, type Hex } from "vi
 import { ARC_CONFIG } from "@/lib/arc/config";
 import { arcChain } from "@/lib/arc/onchain";
 
-const NATIVE_USDC = "0x3600000000000000000000000000000000000000";
 const transferAbi = erc20Abi.filter((item) => item.type === "event" && item.name === "Transfer");
 
 type ReleaseTransaction = {
@@ -110,13 +109,6 @@ export async function verifyReleaseTransaction({
     }
     return { sourceWalletAddress: transfer.decoded.args.from };
   }
-  if (token === NATIVE_USDC) {
-    if (tx.to?.toLowerCase() !== destination || tx.value !== decimalToUnits(amount, 18)) {
-      throw new Error("TX_SNAPSHOT_MISMATCH");
-    }
-    return { sourceWalletAddress };
-  }
-
   if (tx.to?.toLowerCase() !== token) throw new Error("TX_SNAPSHOT_MISMATCH");
   const transfer = receipt.logs.map((log) => {
     const topics = parseTopics(log.topics);
