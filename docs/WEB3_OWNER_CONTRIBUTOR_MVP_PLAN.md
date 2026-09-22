@@ -9,8 +9,9 @@ historical schema values and future expansion paths; they are not offered in
 the active experience.
 
 Web3 EOA is the sole supported release source. Google/Web2 and Circle Smart
-Wallet surfaces remain disabled and labelled **Coming soon**. No real Arc
-transaction is authorized by this plan.
+Wallet surfaces remain disabled and labelled **Coming soon**; Circle
+provisioning and release endpoints are server-gated independently of provider
+credentials. No real Arc transaction is authorized by this plan.
 
 ## Delivery order
 

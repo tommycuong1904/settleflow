@@ -18,6 +18,7 @@ import {
   selectArcSmartWallet,
 } from "@/lib/circle/user-controlled";
 import { randomUUID } from "node:crypto";
+import { CIRCLE_SMART_WALLET_AVAILABLE, circleSmartWalletComingSoonResponse } from "@/lib/circle/availability";
 
 type GoogleSessionUser = { id: string };
 
@@ -105,6 +106,9 @@ export async function GET(request: Request) {
  * key for the Web SDK; no API key or private key ever reaches the client.
  */
 export async function POST(request: Request) {
+  if (!CIRCLE_SMART_WALLET_AVAILABLE) {
+    return NextResponse.json(circleSmartWalletComingSoonResponse(), { status: 503 });
+  }
   const user = await requireGoogleUser(request);
   if (user instanceof NextResponse) return user;
 

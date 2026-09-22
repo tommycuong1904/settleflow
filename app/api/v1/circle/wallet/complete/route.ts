@@ -3,6 +3,7 @@ import { getAddress, isAddress } from "viem";
 
 import { getSessionFromRequest, getVerifiedSessionUser } from "@/lib/auth/session-server";
 import { db } from "@/lib/db/client";
+import { CIRCLE_SMART_WALLET_AVAILABLE, circleSmartWalletComingSoonResponse } from "@/lib/circle/availability";
 import {
   CircleApiError,
   CircleConfigurationError,
@@ -13,6 +14,9 @@ import {
 } from "@/lib/circle/user-controlled";
 
 export async function POST(request: Request) {
+  if (!CIRCLE_SMART_WALLET_AVAILABLE) {
+    return NextResponse.json(circleSmartWalletComingSoonResponse(), { status: 503 });
+  }
   const session = await getSessionFromRequest(request);
   if (!session) return NextResponse.json({ error: "AUTH_REQUIRED" }, { status: 401 });
   if (session.authType !== "web2_google") {

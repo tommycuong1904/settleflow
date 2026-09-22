@@ -6,6 +6,7 @@ import { db } from "@/lib/db/client";
 import { markReleaseReconciliationPending, recordReleaseTransactionHash, refreshReleaseProof } from "@/lib/repositories/release-proof";
 import { assertCanReleaseMilestone } from "@/lib/runtime/product-policy";
 import { Decimal } from "@prisma/client/runtime/library";
+import { CIRCLE_SMART_WALLET_AVAILABLE, circleSmartWalletComingSoonResponse } from "@/lib/circle/availability";
 
 async function circleReleaseSnapshot(releaseId: string, workspaceId: string) {
   const release = await db.release.findFirst({
@@ -60,6 +61,9 @@ async function circleReleaseSnapshot(releaseId: string, workspaceId: string) {
 }
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  if (!CIRCLE_SMART_WALLET_AVAILABLE) {
+    return NextResponse.json(circleSmartWalletComingSoonResponse(), { status: 503 });
+  }
   const { id } = await params;
   const session = await getSessionFromRequest(request);
   if (!session) return NextResponse.json({ error: "AUTH_REQUIRED" }, { status: 401 });

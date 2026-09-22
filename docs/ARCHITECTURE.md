@@ -95,7 +95,7 @@ Release proof and source-wallet information are persisted through release/proof 
 
 Public Arc/network values are read by `lib/arc/config.ts` from `NEXT_PUBLIC_*` variables with defaults. The server signing key is read by `lib/arc/release-executor.ts` from `ARC_SERVER_PRIVATE_KEY` and is not a public configuration value.
 
-The embedded Circle path is disabled unless `CIRCLE_USER_CONTROLLED_ENABLED=true`, a server-only `CIRCLE_USER_CONTROLLED_API_KEY`, and `NEXT_PUBLIC_CIRCLE_USER_CONTROLLED_APP_ID` are present. The API key never reaches the browser; Circle user tokens and encryption keys are short-lived SDK inputs.
+The embedded Circle path is product-gated as Coming soon in the active MVP, independent of provider credentials. Its provisioning and release endpoints return `CIRCLE_SMART_WALLET_COMING_SOON`; Web3 EOA remains the sole enabled release source. The retained Circle credential boundary remains server-only for a future approved rollout.
 
 ## Implemented versus planned
 
