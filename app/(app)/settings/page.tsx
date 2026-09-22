@@ -298,7 +298,7 @@ export default function SettingsPage() {
                 {authType === "web2_google"
                   ? "Google account — Circle Smart Wallet coming soon"
                   : authType === "web2_email"
-                  ? "Email Magic Link Smart Account"
+                  ? "Email account — Circle Smart Wallet coming soon"
                   : authType === "web3_wallet"
                   ? "Direct Web3 Browser Wallet (MetaMask / Rabby)"
                   : "Guest Simulation Mode"}

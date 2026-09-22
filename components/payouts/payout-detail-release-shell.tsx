@@ -716,7 +716,7 @@ export function PayoutDetailReleaseShell({
             </p>
             <div className="mt-4 rounded-2xl border border-[var(--border-soft)] bg-[var(--surface-muted)] px-4 py-3">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">Payment source</p>
-              {authType === "web2_google" ? (
+              {authType === "web2_google" || authType === "web2_email" ? (
                 <>
                   <p className="mt-2 font-medium text-[var(--foreground)]">Circle Smart Wallet · Coming soon</p>
                   <p className="mt-2 text-xs text-[var(--text-muted)]">Connect an enabled Web3 wallet to sign releases in the current MVP.</p>

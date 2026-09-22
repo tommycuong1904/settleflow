@@ -35,7 +35,6 @@ export function AppHeader() {
 
   useEffect(() => {
     if (!isConnected) {
-      setUnreadNotifications(0);
       return;
     }
     let active = true;
@@ -80,6 +79,7 @@ export function AppHeader() {
 
   const handleDisconnect = async () => {
     setIsDropdownOpen(false);
+    setUnreadNotifications(0);
     await disconnect();
     router.replace(`/auth-required?next=${encodeURIComponent(pathname || "/dashboard")}`);
   };
@@ -236,7 +236,7 @@ export function AppHeader() {
                     {authType === "web2_google"
                       ? "Google account · Circle coming soon"
                       : authType === "web2_email"
-                      ? "Email Smart Account"
+                      ? "Email account · Circle coming soon"
                       : "External Web3 Wallet"}
                   </p>
                 </div>
