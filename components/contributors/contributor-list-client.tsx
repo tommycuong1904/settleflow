@@ -150,8 +150,8 @@ export function ContributorListClient({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search by name, role, email, or wallet..."
-            className="w-full rounded-2xl border border-[var(--border-soft)] bg-[var(--surface-muted)] py-2.5 pl-10 pr-4 text-xs text-[var(--foreground)] placeholder-[var(--text-muted)] focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400 transition-all"
+            placeholder="Search by name, email, or wallet..."
+            className="w-full rounded-full border border-[var(--border-soft)] bg-[var(--input-background)] py-2.5 pl-10 pr-4 text-xs text-[var(--foreground)] placeholder:text-[var(--input-placeholder)] focus:border-[var(--border-strong)] focus:bg-[var(--input-focus-background)] focus:outline-none focus:ring-1 focus:ring-[var(--border-strong)] transition-all"
           />
         </div>
 
@@ -248,18 +248,18 @@ export function ContributorListClient({
             return (
               <div
                 key={contributor.id}
-                className="rounded-3xl border border-[var(--border-soft)] bg-[var(--surface)] p-5 hover:border-cyan-500/30 transition-all flex flex-col justify-between gap-5 group"
+                className="rounded-xl border border-[var(--border-soft)] bg-[var(--surface)] p-5 hover:border-[var(--border-strong)] transition-all flex flex-col justify-between gap-5 group"
               >
                 {/* Top Section: Avatar & Info */}
                 <div>
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3.5">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-cyan-500/10 border border-cyan-500/30 text-[var(--accent-cyan)] font-bold text-base shadow-[0_0_15px_rgba(34,211,238,0.12)] shrink-0">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--surface-muted)] border border-[var(--border-soft)] text-[var(--foreground)] font-bold text-base shrink-0">
                         {initials || "C"}
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <h3 className="text-base font-semibold text-[var(--foreground)] group-hover:text-[var(--accent-cyan)] transition-colors">
+                          <h3 className="text-base font-semibold text-[var(--foreground)]">
                             {contributor.displayName}
                           </h3>
                           <span
@@ -273,7 +273,7 @@ export function ContributorListClient({
                           </span>
                         </div>
                         {contributor.role ? (
-                          <p className="mt-0.5 text-xs text-[var(--accent-cyan)] flex items-center gap-1.5">
+                          <p className="mt-0.5 text-xs text-[var(--text-muted)] flex items-center gap-1.5">
                             <Briefcase size={12} /> {contributor.role}
                           </p>
                         ) : null}
@@ -295,7 +295,7 @@ export function ContributorListClient({
                           onClick={() =>
                             handleCopy(`wallet-${contributor.id}`, contributor.walletAddress, contributor.displayName)
                           }
-                          className="inline-flex items-center gap-1.5 font-mono text-[var(--text-muted)] hover:text-[var(--accent-cyan)] transition-colors"
+                          className="inline-flex items-center gap-1.5 font-mono text-[var(--text-muted)] hover:text-[var(--foreground)] transition-colors"
                           title="Copy wallet address"
                         >
                           {isCopied ? (
@@ -309,7 +309,7 @@ export function ContributorListClient({
                           target="_blank"
                           rel="noopener noreferrer"
                           title="View on Arcscan"
-                          className="rounded-lg p-1.5 text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--accent-cyan)] transition-colors"
+                          className="rounded-lg p-1.5 text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--foreground)] transition-colors"
                         >
                           <ExternalLink size={13} />
                         </a>
