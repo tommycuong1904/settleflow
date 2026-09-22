@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/shared/button";
 import { FaucetModal } from "@/components/shared/faucet-modal";
 import { useWallet } from "@/lib/context/wallet-context";
 import { addArcNetworkToWallet } from "@/lib/arc/onchain";
 import { useToast } from "@/lib/context/toast-context";
-import { ExternalLink, LogOut, Wallet, User, ChevronDown, RefreshCw, Droplets, Copy, Menu } from "lucide-react";
+import { ExternalLink, LogOut, Wallet, User, ChevronDown, RefreshCw, Droplets, Copy, Menu, Bell } from "lucide-react";
 
 export function AppHeader() {
   const router = useRouter();
@@ -31,6 +31,20 @@ export function AppHeader() {
   const { toast } = useToast();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isFaucetOpen, setIsFaucetOpen] = useState(false);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
+
+  useEffect(() => {
+    if (!isConnected) {
+      setUnreadNotifications(0);
+      return;
+    }
+    let active = true;
+    void fetch("/api/v1/notifications", { cache: "no-store" })
+      .then(async (response) => response.ok ? await response.json() as { unreadCount?: number } : null)
+      .then((payload) => { if (active) setUnreadNotifications(payload?.unreadCount ?? 0); })
+      .catch(() => undefined);
+    return () => { active = false; };
+  }, [isConnected, pathname]);
 
   const handleAddArcNetwork = async () => {
     try {
@@ -89,6 +103,20 @@ export function AppHeader() {
 
       {/* Right group: Desktop Utilities & Wallet / Account (pushed to the right using ml-auto) */}
       <div className="ml-auto flex items-center justify-end gap-2 sm:gap-2.5">
+        {isConnected ? (
+          <a
+            href="/notifications"
+            className="relative inline-flex h-8 w-8 items-center justify-center rounded-full border border-[var(--border-soft)] bg-[var(--surface)] text-[var(--text-muted)] transition-colors hover:border-[var(--border-strong)] hover:text-[var(--foreground)]"
+            aria-label={unreadNotifications > 0 ? `${unreadNotifications} unread notifications` : "Notifications"}
+          >
+            <Bell size={14} />
+            {unreadNotifications > 0 ? (
+              <span className="absolute -right-1 -top-1 min-w-4 rounded-full bg-rose-500 px-1 text-center text-[10px] font-bold leading-4 text-white">
+                {unreadNotifications > 9 ? "9+" : unreadNotifications}
+              </span>
+            ) : null}
+          </a>
+        ) : null}
         {/* Get test USDC on Desktop */}
         <a
           href="https://faucet.circle.com"
