@@ -29,3 +29,10 @@ test("unauthenticated payout route renders the sign-in boundary", async ({ page 
   await expect(page.getByRole("heading", { name: "Sign in to continue" })).toBeVisible();
   await expect(page.getByText("Authentication required")).toBeVisible();
 });
+
+test("unauthenticated payout mutation is rejected before it can create data", async ({ request }) => {
+  const response = await request.post("/api/v1/payouts", { data: {} });
+
+  expect(response.status()).toBe(401);
+  await expect(response.json()).resolves.toMatchObject({ error: "AUTH_REQUIRED" });
+});
