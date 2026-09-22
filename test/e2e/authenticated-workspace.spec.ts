@@ -11,6 +11,7 @@ test("owner dashboard and contributor My Work are scoped to their workspace", as
   const contributorAddress = `0x${crypto.randomUUID().replaceAll("-", "").padEnd(40, "2")}`;
   const db = createTestPrismaClient();
   let workspaceId = "";
+  let personalWorkspaceId = "";
   let ownerId = "";
   let contributorUserId = "";
 
@@ -21,9 +22,12 @@ test("owner dashboard and contributor My Work are scoped to their workspace", as
     contributorUserId = contributorUser.id;
     const workspace = await db.workspace.create({ data: { name: "E2E Workspace", slug: `e2e-browser-${suffix}` } });
     workspaceId = workspace.id;
+    const personalWorkspace = await db.workspace.create({ data: { name: "E2E Personal Workspace", slug: `e2e-personal-${suffix}` } });
+    personalWorkspaceId = personalWorkspace.id;
     await db.workspaceMember.createMany({ data: [
       { workspaceId, userId: owner.id, role: "owner" },
       { workspaceId, userId: contributorUser.id, role: "contributor" },
+      { workspaceId: personalWorkspaceId, userId: contributorUser.id, role: "owner" },
     ] });
     await db.userWallet.createMany({ data: [
       { userId: owner.id, address: ownerAddress, normalizedAddress: ownerAddress, kind: "web3_eoa", authEnabled: true, transactionEnabled: true },
@@ -49,6 +53,7 @@ test("owner dashboard and contributor My Work are scoped to their workspace", as
     const contributorPage = await contributorContext.newPage();
     await contributorPage.goto("/my-work");
     await expect(contributorPage.getByRole("link", { name: "My Work" })).toBeVisible();
+    await expect(contributorPage.getByRole("link", { name: "Payouts" })).toBeVisible();
     await expect(contributorPage.getByRole("heading", { name: "My work and payments" })).toBeVisible();
     await expect(contributorPage.getByText("Browser-scoped payout")).toBeVisible();
     await contributorPage.goto(`/payouts/${payout.id}`);
@@ -68,6 +73,10 @@ test("owner dashboard and contributor My Work are scoped to their workspace", as
       await db.contributor.deleteMany({ where: { workspaceId } });
       await db.workspaceMember.deleteMany({ where: { workspaceId } });
       await db.workspace.delete({ where: { id: workspaceId } });
+    }
+    if (personalWorkspaceId) {
+      await db.workspaceMember.deleteMany({ where: { workspaceId: personalWorkspaceId } });
+      await db.workspace.delete({ where: { id: personalWorkspaceId } });
     }
     if (ownerId) await db.user.delete({ where: { id: ownerId } });
     if (contributorUserId) await db.user.delete({ where: { id: contributorUserId } });

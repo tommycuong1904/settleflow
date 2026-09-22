@@ -24,10 +24,12 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Settings", href: "/settings", icon: Settings },
 ];
 
-export function AppSidebar({ initialActor }: { initialActor?: ProductContext["actor"] }) {
+export function AppSidebar({ initialActor, initialRoles }: { initialActor?: ProductContext["actor"]; initialRoles?: ProductContext["actor"][] }) {
   const pathname = usePathname();
   const productContext = useResolvedProductContext();
   const actor = initialActor ?? productContext.actor;
+  const isOwner = initialRoles ? initialRoles.includes("owner") : hasRole(actor, "owner");
+  const hasContributorMembership = initialRoles ? initialRoles.includes("contributor") : hasRole(actor, "contributor");
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   useEffect(() => {
@@ -51,12 +53,14 @@ export function AppSidebar({ initialActor }: { initialActor?: ProductContext["ac
 
   // Determine visible navigation items based on role hierarchy
   const visibleNavItems = NAV_ITEMS.filter((item) => {
-    if (hasRole(actor, "owner")) return true;
+    if (isOwner) return true;
     if (item.href === "/settings" || item.href === "/contributors") return false;
     return true;
   });
-  const roleAwareNavItems: NavItem[] = hasRole(actor, "owner")
-    ? visibleNavItems
+  const roleAwareNavItems: NavItem[] = isOwner
+    ? hasContributorMembership
+      ? [...visibleNavItems.slice(0, 2), { label: "My Work", href: "/my-work", icon: ListTodo }, ...visibleNavItems.slice(2)]
+      : visibleNavItems
     : visibleNavItems.map((item) => item.href === "/payouts"
       ? { label: "My Work", href: "/my-work", icon: ListTodo }
       : item,
