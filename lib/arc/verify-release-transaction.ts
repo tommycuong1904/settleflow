@@ -115,7 +115,11 @@ export async function verifyReleaseTransaction({
     if (!topics) return null;
     try { return { decoded: decodeEventLog({ abi: transferAbi, data: log.data, topics }), address: log.address }; }
     catch { return null; }
-  }).find((entry) => isTransferEvent(entry?.decoded) && String(entry.decoded.args.to).toLowerCase() === destination);
+  }).find((entry) =>
+    isTransferEvent(entry?.decoded) &&
+    entry.address.toLowerCase() === token &&
+    String(entry.decoded.args.to).toLowerCase() === destination,
+  );
   if (!transfer || !isTransferEvent(transfer.decoded) || transfer.address.toLowerCase() !== token || transfer.decoded.args.from?.toLowerCase() !== tx.from.toLowerCase() || transfer.decoded.args.value !== decimalToUnits(amount, 6)) {
     throw new Error("TX_SNAPSHOT_MISMATCH");
   }

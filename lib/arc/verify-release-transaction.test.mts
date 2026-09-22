@@ -6,6 +6,7 @@ import { encodeAbiParameters, encodeEventTopics, erc20Abi } from "viem";
 const source = "0x1111111111111111111111111111111111111111";
 const destination = "0x2222222222222222222222222222222222222222";
 const usdc = "0x3600000000000000000000000000000000000000";
+const gasToken = "0xfffffffffffffffffffffffffffffffffffffffe";
 const hash = `0x${"aa".repeat(32)}`;
 function usdcUnits(amount: string) {
   const [whole, fraction = ""] = amount.split(".");
@@ -14,9 +15,12 @@ function usdcUnits(amount: string) {
 function client(overrides: Record<string, unknown> = {}, amount = "1") {
   const topics = encodeEventTopics({ abi: erc20Abi, eventName: "Transfer", args: { from: source, to: destination } });
   const log = { address: usdc, topics, data: encodeAbiParameters([{ type: "uint256" }], [usdcUnits(amount)]) };
+  // Arc includes a gas-token Transfer event before the USDC event. The verifier
+  // must select the event emitted by the configured USDC contract.
+  const gasLog = { address: gasToken, topics, data: encodeAbiParameters([{ type: "uint256" }], [BigInt("1000000000000000000")]) };
   return {
     getTransaction: async () => ({ chainId: 5042002, from: source, to: usdc, value: BigInt(0), ...overrides }),
-    getTransactionReceipt: async () => ({ status: "success", logs: [log] }),
+    getTransactionReceipt: async () => ({ status: "success", logs: [gasLog, log] }),
   };
 }
 const release = { amountUsdc: "1", destinationWalletAddress: destination, sourceWalletAddress: source };
