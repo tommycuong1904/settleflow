@@ -326,12 +326,12 @@ function CreatePayoutPageContent() {
       <ol className="grid grid-cols-3 gap-2" aria-label="Create payout progress">{["Choose contributor", "Plan payments", "Review & create"].map((label, index) => { const step = index + 1; const complete = creationStep > step; const current = creationStep === step; return <li key={label} className="flex flex-col items-center text-center"><span className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold ${complete ? "bg-emerald-600 text-white" : current ? "bg-black text-white" : "bg-[var(--surface-strong)] text-[var(--text-muted)]"}`}>{complete ? "✓" : step}</span><p className={`mt-1 text-xs ${current ? "font-medium text-[var(--foreground)]" : "text-[var(--text-muted)]"}`}>{label}</p></li>; })}</ol>
       <div className="grid w-full gap-6">
         <div className="space-y-6">
-          {loadError ? <p role="alert" className="rounded-2xl border border-rose-400/30 bg-rose-400/10 p-3 text-sm text-rose-700">{loadError}</p> : null}
-          {errors.submit ? <p role="alert" className="rounded-2xl border border-rose-400/30 bg-rose-400/10 p-3 text-sm text-rose-700">{errors.submit}</p> : null}
+          {loadError ? <p role="alert" className="rounded-xl border border-rose-400/30 bg-rose-400/10 p-3 text-sm text-rose-700">{loadError}</p> : null}
+          {errors.submit ? <p role="alert" className="rounded-xl border border-rose-400/30 bg-rose-400/10 p-3 text-sm text-rose-700">{errors.submit}</p> : null}
 
           {/* Summary Error Alert */}
           {hasFormErrors ? (
-            <div className="rounded-2xl border border-rose-500/30 bg-rose-500/10 p-4 text-sm text-rose-700 flex items-start gap-3 shadow-xs animate-in fade-in" role="alert">
+            <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-4 text-sm text-rose-700 flex items-start gap-3 shadow-xs animate-in fade-in" role="alert">
               <AlertCircle size={20} className="text-rose-500 shrink-0 mt-0.5" />
               <div className="space-y-1">
                 <p className="font-semibold text-rose-800">Please fill out all required fields</p>
@@ -352,11 +352,11 @@ function CreatePayoutPageContent() {
                 <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">Total payout</p>
                 <p className="mt-2 text-2xl font-semibold tracking-tight text-[var(--foreground)]">{formatUsdc(totalAmount)} USDC</p>
               </div>
-              <div className="rounded-3xl border border-[var(--border-soft)] bg-[var(--surface)] px-5 py-4">
+              <div className="rounded-xl border border-[var(--border-soft)] bg-[var(--surface)] px-5 py-4">
                 <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">Milestones</p>
                 <p className="mt-2 text-2xl font-semibold tracking-tight text-[var(--foreground)]">{milestones.length}</p>
               </div>
-              <div className="rounded-3xl border border-[var(--border-soft)] bg-[var(--surface)] px-5 py-4">
+              <div className="rounded-xl border border-[var(--border-soft)] bg-[var(--surface)] px-5 py-4">
                 <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">Release rule</p>
                 <p className="mt-2 text-lg font-semibold tracking-tight text-[var(--foreground)]">Release after approval</p>
               </div>
@@ -439,7 +439,7 @@ function CreatePayoutPageContent() {
               <CardTitle>Milestone Structure</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="mb-5 rounded-3xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-5">
+              <div className="mb-5 rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-5">
                 <div className="grid gap-4 md:grid-cols-3">
                   <div>
                     <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">Review step</p>
@@ -457,7 +457,7 @@ function CreatePayoutPageContent() {
               </div>
 
               {errors.milestones ? (
-                <div className="mb-4 rounded-2xl border border-rose-400/30 bg-rose-400/10 px-4 py-3 text-sm text-rose-700 font-medium">
+                <div className="mb-4 rounded-xl border border-rose-400/30 bg-rose-400/10 px-4 py-3 text-sm text-rose-700 font-medium">
                   {errors.milestones}
                 </div>
               ) : null}
@@ -549,7 +549,7 @@ function CreatePayoutPageContent() {
           </Card>
 
           {submitState === "created" && createdSummary ? (
-            <div className="rounded-3xl border border-emerald-400/30 bg-emerald-400/10 px-5 py-4 text-sm text-emerald-800">
+            <div className="rounded-xl border border-emerald-400/30 bg-emerald-400/10 px-5 py-4 text-sm text-emerald-800">
               <p className="font-semibold text-[var(--foreground)]">Payout draft created</p>
               <p className="mt-2 leading-6">
                 <span className="font-semibold text-[var(--foreground)]">{createdSummary.title}</span> is now
@@ -578,7 +578,7 @@ function CreatePayoutPageContent() {
                     { title: "Approve before release", description: "Approval is the one event that unlocks release on Arc." },
                     { title: "Release and attach proof", description: "Once released, settlement proof becomes part of the payout record." }]
                     .map((step, index) => (
-                      <div key={step.title} className="rounded-3xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-4">
+                      <div key={step.title} className="rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-4">
                         <div className="flex gap-3">
                           <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-cyan-500/30 bg-cyan-400/10 text-xs font-semibold text-cyan-700">
                             {index + 1}
