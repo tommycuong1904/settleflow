@@ -670,7 +670,7 @@ function CreatePayoutPageContent() {
         </div>
       </div>
       <div>
-        <Link href="/payouts"><Button variant="secondary">Back to payouts</Button></Link>
+        <Link href="/payouts"><Button variant="secondary" icon={<ArrowLeft size={16} />}>Back to payouts</Button></Link>
       </div>
     </section>
   );
