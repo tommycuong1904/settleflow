@@ -144,9 +144,15 @@ function CreatePayoutPageContent() {
     value: string,
   ) {
     const nextValue = field === "amount" ? sanitizeAmountInput(value) : value;
-    setMilestones((current) =>
-      current.map((milestone) => (milestone.id === milestoneId ? { ...milestone, [field]: nextValue } : milestone))
-    );
+    const nextMilestones = milestones.map((milestone) => (milestone.id === milestoneId ? { ...milestone, [field]: nextValue } : milestone));
+    const nextTotal = nextMilestones.reduce((sum, milestone) => sum + (Number(milestone.amount) || 0), 0);
+    const milestonesComplete = nextMilestones.length > 0 && nextMilestones.every((milestone) => milestone.title.trim() && milestone.description.trim() && Number(milestone.amount) > 0);
+    setMilestones(nextMilestones);
+    setErrors((prev) => ({
+      ...prev,
+      milestones: milestonesComplete ? undefined : prev.milestones,
+      totalAmount: nextTotal > 0 ? undefined : prev.totalAmount,
+    }));
     const errKey = field as keyof NonNullable<typeof errors.milestoneErrors>[string];
     if (errors.milestoneErrors?.[milestoneId]?.[errKey]) {
       setErrors((prev) => {
@@ -319,7 +325,9 @@ function CreatePayoutPageContent() {
     }
   }
 
-  const hasFormErrors = Object.keys(errors).length > 0 && !errors.submit;
+  const hasFormErrors = Boolean(
+    errors.title || errors.contributorId || errors.walletAddress || errors.totalAmount || errors.milestones,
+  );
 
   return (
     <section className="flex flex-col gap-6" aria-label="Create Payout Page Content">
