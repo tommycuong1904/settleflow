@@ -121,8 +121,8 @@ export function PayoutDetailReleaseShell({
   const [confirmationTxHash, setConfirmationTxHash] = useState("");
   const [showTxHashEntry, setShowTxHashEntry] = useState(false);
   const [activeProof, setActiveProof] = useState<TransactionProof | undefined>(releaseProof);
-  const [isReleaseReviewOpen, setIsReleaseReviewOpen] = useState(false);
-  useScrollLock(isReleaseReviewOpen);
+  const [releaseModalMode, setReleaseModalMode] = useState<"review" | "pending" | null>(null);
+  useScrollLock(releaseModalMode !== null);
 
   const resolvedProof = activeProof ?? releaseProof;
   const proofMatchesCurrentMilestone =
@@ -481,7 +481,8 @@ export function PayoutDetailReleaseShell({
   }
 
   function focusPendingSettlementResolution() {
-    document.getElementById("settlement-proof-resolution")?.scrollIntoView({ behavior: "smooth", block: "center" });
+    setShowTxHashEntry(false);
+    setReleaseModalMode("pending");
   }
 
   async function handleContinueCircleRelease() {
@@ -598,7 +599,7 @@ export function PayoutDetailReleaseShell({
 
   async function handleRefreshProof(status: "confirmed" | "failed", failureReasonOverride?: string) {
     if (!isOwnerActor || !resolvedProof?.releaseId || refreshingProof) {
-      return;
+      return false;
     }
 
     const txHash = confirmationTxHash.trim();
@@ -606,12 +607,12 @@ export function PayoutDetailReleaseShell({
 
     if (status === "confirmed" && txHash.length === 0) {
       setReleaseError("Tx hash is required to confirm settlement proof.");
-      return;
+      return false;
     }
 
     if (status === "failed" && reason.length === 0) {
       setReleaseError("Failure reason is required to mark settlement proof as failed.");
-      return;
+      return false;
     }
 
     setReleaseError(null);
@@ -691,9 +692,11 @@ export function PayoutDetailReleaseShell({
         setShowTxHashEntry(false);
         void onActivityChange?.();
       }
+      return true;
     } catch (err) {
       setReleaseError(err instanceof Error ? err.message : "Proof refresh request failed.");
       setReleaseStatus("failed");
+      return false;
     } finally {
       setRefreshingProof(false);
     }
@@ -783,7 +786,7 @@ export function PayoutDetailReleaseShell({
                   ? handleContinueCircleRelease()
                   : isBrowserReleasable
                     ? handleRelease(resolvedProof?.releaseId)
-                  : setIsReleaseReviewOpen(true));
+                  : setReleaseModalMode("review"));
             }}
           />
           {statusText ? (
@@ -802,38 +805,7 @@ export function PayoutDetailReleaseShell({
         <CardContent>
           <TransactionProofCard proof={resolvedProof} milestoneTitle={releaseMilestoneTitle} />
           {resolvedProof?.status === "pending" && resolvedProof.releaseId && isOwnerActor ? (
-            <div id="settlement-proof-resolution" className="mt-4 space-y-4 rounded-2xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-4">
-              <div>
-                <p className="text-sm font-semibold text-[var(--foreground)]">{isBrowserReconciliationPending ? "Resolve pending Web3 payment" : "Refresh pending settlement"}</p>
-                <p className="mt-1 text-sm text-[var(--text-muted)]">
-                  {isBrowserReconciliationPending
-                    ? "If MetaMask shows a submitted transaction, confirm it with the hash. If no transaction was sent, mark it failed to safely unlock a retry."
-                    : "Confirm the proof when the Arc transfer lands, or mark it failed to unblock a retry."}
-                </p>
-              </div>
-              <div className="space-y-3">
-                <p className="text-sm font-medium text-[var(--foreground)]">Did MetaMask show a submitted transaction?</p>
-                <div className="flex flex-wrap gap-3">
-                  <Button variant="secondary" onClick={() => setShowTxHashEntry(true)} disabled={refreshingProof}>Yes, I have the transaction hash</Button>
-                  <Button
-                    variant="danger"
-                    onClick={() => { void handleRefreshProof("failed", "OWNER_CONFIRMED_NO_TRANSACTION: Owner confirmed that MetaMask did not submit a transaction."); }}
-                    disabled={refreshingProof}
-                  >
-                    No, unlock retry
-                  </Button>
-                </div>
-                {showTxHashEntry ? (
-                  <div className="space-y-3 rounded-xl border border-[var(--border-soft)] bg-[var(--surface)] p-3">
-                    <label className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">Transaction hash</label>
-                    <Input value={confirmationTxHash} onChange={(event) => setConfirmationTxHash(event.target.value)} placeholder="0x..." />
-                    <Button variant="secondary" onClick={() => { void handleRefreshProof("confirmed"); }} disabled={refreshingProof}>
-                      {refreshingProof ? "Verifying..." : "Verify transaction"}
-                    </Button>
-                  </div>
-                ) : null}
-              </div>
-            </div>
+            <p className="mt-4 text-sm text-[var(--text-muted)]">This payment still needs an Owner decision. Use Resolve pending Web3 release above.</p>
           ) : null}
           {resolvedProof?.status === "failed" && resolvedProof.releaseId && isOwnerActor ? (
             <div className="mt-4 flex flex-wrap items-center gap-3">
@@ -884,21 +856,37 @@ export function PayoutDetailReleaseShell({
         </div>
         </CardContent>
       </Card>
-      {isReleaseReviewOpen && nextReleasableMilestone ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md" onClick={() => setIsReleaseReviewOpen(false)}>
+      {releaseModalMode && nextReleasableMilestone ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md" onClick={() => setReleaseModalMode(null)}>
           <div className="relative w-full max-w-lg rounded-3xl border border-[var(--border-strong)] bg-[var(--surface)] p-6 shadow-2xl" onClick={(event) => event.stopPropagation()}>
-            <button type="button" onClick={() => setIsReleaseReviewOpen(false)} className="absolute right-5 top-5 rounded-full p-1.5 text-[var(--text-muted)] hover:bg-[var(--surface-muted)]" aria-label="Close release review"><X size={18} /></button>
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">Review payment</p>
-            <h2 className="mt-2 pr-8 text-xl font-semibold text-[var(--foreground)]">Confirm before signing</h2>
-            <p className="mt-2 text-sm text-[var(--text-muted)]">SettleFlow will verify your active wallet before creating a release. You will then sign the USDC transfer in your browser wallet.</p>
-            <dl className="mt-5 space-y-3 rounded-2xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-4 text-sm">
-              <div><dt className="text-xs text-[var(--text-muted)]">Milestone</dt><dd className="mt-1 font-medium text-[var(--foreground)]">{nextReleasableMilestone.title}</dd></div>
-              <div><dt className="text-xs text-[var(--text-muted)]">Amount</dt><dd className="mt-1 text-lg font-semibold text-[var(--foreground)]">{formatUsdc(nextReleasableMilestone.amount)} USDC</dd></div>
-              <div><dt className="text-xs text-[var(--text-muted)]">Recipient</dt><dd className="mt-1 break-all font-mono text-xs text-[var(--foreground)]">{recipientAddress ?? "Not resolved"}</dd></div>
-              <div><dt className="text-xs text-[var(--text-muted)]">Authenticated Web3 wallet</dt><dd className="mt-1 break-all font-mono text-xs text-[var(--foreground)]">{address ?? "Sign in with Web3 first"}</dd></div>
-            </dl>
-            <p className="mt-4 text-xs text-[var(--text-muted)]">If MetaMask has a different active account, SettleFlow will stop before creating a release and show you which account to switch.</p>
-            <div className="mt-6 flex justify-end gap-3"><Button variant="secondary" onClick={() => setIsReleaseReviewOpen(false)}>Cancel</Button><Button onClick={() => { setIsReleaseReviewOpen(false); void handleRelease(); }}>Verify wallet & sign</Button></div>
+            <button type="button" onClick={() => setReleaseModalMode(null)} className="absolute right-5 top-5 rounded-full p-1.5 text-[var(--text-muted)] hover:bg-[var(--surface-muted)]" aria-label="Close release dialog"><X size={18} /></button>
+            {releaseModalMode === "review" ? (
+              <>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">Review payment</p>
+                <h2 className="mt-2 pr-8 text-xl font-semibold text-[var(--foreground)]">Confirm before signing</h2>
+                <p className="mt-2 text-sm text-[var(--text-muted)]">SettleFlow will verify your active wallet before creating a release. You will then sign the USDC transfer in your browser wallet.</p>
+                <dl className="mt-5 space-y-3 rounded-2xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-4 text-sm">
+                  <div><dt className="text-xs text-[var(--text-muted)]">Milestone</dt><dd className="mt-1 font-medium text-[var(--foreground)]">{nextReleasableMilestone.title}</dd></div>
+                  <div><dt className="text-xs text-[var(--text-muted)]">Amount</dt><dd className="mt-1 text-lg font-semibold text-[var(--foreground)]">{formatUsdc(nextReleasableMilestone.amount)} USDC</dd></div>
+                  <div><dt className="text-xs text-[var(--text-muted)]">Recipient</dt><dd className="mt-1 break-all font-mono text-xs text-[var(--foreground)]">{recipientAddress ?? "Not resolved"}</dd></div>
+                  <div><dt className="text-xs text-[var(--text-muted)]">Authenticated Web3 wallet</dt><dd className="mt-1 break-all font-mono text-xs text-[var(--foreground)]">{address ?? "Sign in with Web3 first"}</dd></div>
+                </dl>
+                <p className="mt-4 text-xs text-[var(--text-muted)]">If MetaMask has a different active account, SettleFlow will stop before creating a release and show you which account to switch.</p>
+                <div className="mt-6 flex justify-end gap-3"><Button variant="secondary" onClick={() => setReleaseModalMode(null)}>Cancel</Button><Button onClick={() => { setReleaseModalMode(null); void handleRelease(); }}>Verify wallet & sign</Button></div>
+              </>
+            ) : (
+              <>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">Payment needs a decision</p>
+                <h2 className="mt-2 pr-8 text-xl font-semibold text-[var(--foreground)]">Did MetaMask submit a transaction?</h2>
+                <p className="mt-2 text-sm text-[var(--text-muted)]">Choose one option. This prevents a duplicate payment while the earlier wallet result is uncertain.</p>
+                <div className="mt-5 space-y-3 rounded-2xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-4">
+                  <Button variant="secondary" onClick={() => setShowTxHashEntry(true)} disabled={refreshingProof}>Yes, I have the transaction hash</Button>
+                  {showTxHashEntry ? <div className="space-y-3"><Input value={confirmationTxHash} onChange={(event) => setConfirmationTxHash(event.target.value)} placeholder="0x..." /><Button variant="secondary" onClick={() => { void handleRefreshProof("confirmed").then((resolved) => { if (resolved) setReleaseModalMode(null); }); }} disabled={refreshingProof}>{refreshingProof ? "Verifying..." : "Verify transaction"}</Button></div> : null}
+                  <Button variant="danger" onClick={() => { void handleRefreshProof("failed", "OWNER_CONFIRMED_NO_TRANSACTION: Owner confirmed that MetaMask did not submit a transaction.").then((resolved) => { if (resolved) setReleaseModalMode(null); }); }} disabled={refreshingProof}>No, unlock retry</Button>
+                </div>
+                {releaseError ? <p className="mt-3 text-sm text-rose-600">{releaseError}</p> : null}
+              </>
+            )}
           </div>
         </div>
       ) : null}
