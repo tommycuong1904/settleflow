@@ -15,7 +15,7 @@ export async function POST(
     const reviewerUserId = productContext.activeUserId;
 
     if (!hasReviewerContext(reviewerUserId)) {
-      return apiError("INVALID_REVIEW_PAYLOAD", { message: "reviewer context is required.", status: 400 });
+      return apiError("INVALID_REVIEW_PAYLOAD", { message: "owner context is required.", status: 400 });
     }
 
     const policyViolation = assertCanApproveMilestone({ productContext, actorUserId: reviewerUserId });
@@ -38,7 +38,7 @@ export async function POST(
       {
         MILESTONE_NOT_FOUND: "Milestone not found.",
         USER_NOT_FOUND: "Reviewer context user not found.",
-        USER_NOT_ALLOWED_TO_REVIEW: "User is not allowed to review this milestone.",
+        USER_NOT_ALLOWED_TO_REVIEW: "Only the workspace owner can review this milestone.",
         MILESTONE_NOT_REVIEWABLE: "Milestone has no submitted work to review.",
       },
       { message: "Unable to approve milestone.", status: 500 },
