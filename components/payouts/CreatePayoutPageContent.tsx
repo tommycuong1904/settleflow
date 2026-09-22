@@ -26,7 +26,7 @@ import { useResolvedProductContext } from "@/lib/runtime/product-context-client"
 import { useWallet } from "@/lib/context/wallet-context";
 import { formatUsdc, shortenAddress } from "@/lib/utils/format";
 import { cn } from "@/lib/utils";
-import { Lock, CheckCircle2, AlertCircle } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 
 type MilestoneDraft = {
   id: string;
@@ -76,7 +76,7 @@ function CreatePayoutPageContent() {
   const searchParams = useSearchParams();
   const queryContributorId = searchParams.get("contributorId");
   const productContext = useResolvedProductContext();
-  const { isConnected, openAuthModal, address, email, network } = useWallet();
+  const { isConnected, openAuthModal } = useWallet();
   const [contributors, setContributors] = useState<ContributorOption[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [payoutTitle, setPayoutTitle] = useState("Community Campaign Design");
@@ -362,38 +362,6 @@ function CreatePayoutPageContent() {
               </div>
             </div>
           </div>
-
-          {/* Auth Status Notice */}
-          {isConnected ? (
-            <div className="rounded-2xl border border-cyan-400/30 bg-cyan-400/10 px-5 py-3 text-xs text-cyan-700 flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <CheckCircle2 size={16} className="text-cyan-400 shrink-0" />
-                <span>
-                  Creating payout agreement as {" "}
-                  <strong className="text-[var(--foreground)] font-medium">
-                    {email || (address ? shortenAddress(address) : "Connected Account")}
-                  </strong>{" "}
-                  on <strong className="text-cyan-700 font-semibold">{network}</strong>.
-                </span>
-              </div>
-            </div>
-          ) : (
-            <div className="rounded-2xl border border-amber-400/40 bg-amber-400/10 px-5 py-3.5 text-xs text-amber-700 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm">
-              <div className="flex items-center gap-2.5">
-                <Lock size={16} className="text-amber-400 shrink-0" />
-                <span>
-                  You are in <strong className="text-amber-800 font-medium">Preview Mode</strong>. You can configure milestones, but you will be prompted to sign in before saving.
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={openAuthModal}
-                className="shrink-0 rounded-full bg-amber-400/20 hover:bg-amber-400/30 text-amber-800 px-4 py-1.5 font-medium transition-colors border border-amber-400/40 text-xs"
-              >
-                Sign In / Connect
-              </button>
-            </div>
-          )}
 
           <Card className={cn("sf-shell", creationStep === 1 ? "" : "hidden")}>
             <CardHeader>
