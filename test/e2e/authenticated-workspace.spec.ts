@@ -5,7 +5,7 @@ import { createTestPrismaClient } from "@/test/support/test-db";
 const enabled = Boolean(process.env.SETTLEFLOW_TEST_DATABASE_URL);
 test.skip(!enabled, "requires SETTLEFLOW_TEST_DATABASE_URL");
 
-test("owner dashboard and contributor My Work are scoped to their workspace", async ({ browser }) => {
+test("owner and contributor payout views are scoped to their workspace", async ({ browser }) => {
   const suffix = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const ownerAddress = `0x${crypto.randomUUID().replaceAll("-", "").padEnd(40, "1")}`;
   const contributorAddress = `0x${crypto.randomUUID().replaceAll("-", "").padEnd(40, "2")}`;
@@ -51,10 +51,8 @@ test("owner dashboard and contributor My Work are scoped to their workspace", as
     await expect(ownerPage.getByRole("button", { name: "Submit milestone" })).toHaveCount(0);
 
     const contributorPage = await contributorContext.newPage();
-    await contributorPage.goto("/my-work");
-    await expect(contributorPage.getByRole("link", { name: "My Work" })).toBeVisible();
+    await contributorPage.goto("/payouts");
     await expect(contributorPage.getByRole("link", { name: "Payouts" })).toBeVisible();
-    await expect(contributorPage.getByRole("heading", { name: "My work and payments" })).toBeVisible();
     await expect(contributorPage.getByText("Browser-scoped payout")).toBeVisible();
     await contributorPage.goto(`/payouts/${payout.id}`);
     await contributorPage.getByRole("button", { name: "Submit milestone" }).click();

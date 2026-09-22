@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, ArrowRightLeft, Users, Activity, Settings, X, Droplets, ExternalLink, ListTodo, Bell } from "lucide-react";
+import { LayoutDashboard, ArrowRightLeft, Users, Activity, Settings, X, Droplets, ExternalLink, Bell } from "lucide-react";
 import { useResolvedProductContext } from "@/lib/runtime/product-context-client";
 import { hasRole } from "@/lib/runtime/role-utils";
 import type { ProductContext } from "@/lib/runtime/product-context";
@@ -29,7 +29,6 @@ export function AppSidebar({ initialActor, initialRoles }: { initialActor?: Prod
   const productContext = useResolvedProductContext();
   const actor = initialActor ?? productContext.actor;
   const isOwner = initialRoles ? initialRoles.includes("owner") : hasRole(actor, "owner");
-  const hasContributorMembership = initialRoles ? initialRoles.includes("contributor") : hasRole(actor, "contributor");
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   useEffect(() => {
@@ -57,14 +56,7 @@ export function AppSidebar({ initialActor, initialRoles }: { initialActor?: Prod
     if (item.href === "/settings" || item.href === "/contributors") return false;
     return true;
   });
-  const roleAwareNavItems: NavItem[] = isOwner
-    ? hasContributorMembership
-      ? [...visibleNavItems.slice(0, 2), { label: "My Work", href: "/my-work", icon: ListTodo }, ...visibleNavItems.slice(2)]
-      : visibleNavItems
-    : visibleNavItems.map((item) => item.href === "/payouts"
-      ? { label: "My Work", href: "/my-work", icon: ListTodo }
-      : item,
-    );
+  const roleAwareNavItems = visibleNavItems;
 
   const sidebarContent = (
     <>

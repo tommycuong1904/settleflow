@@ -186,7 +186,7 @@ This repository is now a full-stack Next.js application for SettleFlow, an Arc-n
 - TypeScript strict mode is enabled in `tsconfig.json`.
 - `npm test` discovers and runs all unit test files under `lib/`; `npm run test:integration:db` does the same for `test/integration/`.
 - CI runs dependency installation, Prisma generation and migrations on `settleflow_test`, typecheck, lint, unit tests, DB integration tests, production build, and the Web3-first browser smoke suite.
-- A committed Playwright Chromium suite verifies the Web3-first sign-in modal, unauthenticated payout boundary, and isolated session-backed Owner dashboard / Contributor My Work views against `settleflow_test`. Wallet signing and real settlement remain deferred.
+- A committed Playwright Chromium suite verifies the Web3-first sign-in modal, unauthenticated payout boundary, and isolated session-backed Owner dashboard / Contributor payout views against `settleflow_test`. Wallet signing and real settlement remain deferred.
 
 ### Notes
 - Unit and DB integration coverage includes authorization, membership uniqueness, invitations, and release reliability. Three Arc-confirmation integration cases are intentionally skipped because they require independently verified transactions; no real transaction is submitted by CI.

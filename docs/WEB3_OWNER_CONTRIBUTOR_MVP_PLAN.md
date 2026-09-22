@@ -27,7 +27,7 @@ credentials. No real Arc transaction is authorized by this plan.
 3. **Clear status and next-action surfaces**
    - Use distinct work and payment status copy.
    - Give Owner a review/release/reconciliation queue and Contributor a
-     focused My Work view.
+     focused, role-scoped payout view.
 4. **In-app notifications**
    - Add scoped, durable notifications for submit, approve, reject, confirmed
      release, and safe release failure.
