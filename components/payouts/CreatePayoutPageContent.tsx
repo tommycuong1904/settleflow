@@ -83,6 +83,7 @@ function CreatePayoutPageContent() {
   const [contributorId, setContributorId] = useState("");
   const [walletAddress, setWalletAddress] = useState("");
   const [milestones, setMilestones] = useState<MilestoneDraft[]>(initialMilestoneDrafts);
+  const [creationStep, setCreationStep] = useState<1 | 2 | 3>(1);
   const [submitState, setSubmitState] = useState<"idle" | "creating" | "created">("idle");
   const [errors, setErrors] = useState<FormErrors>({});
   const [createdSummary, setCreatedSummary] = useState<{
@@ -237,6 +238,24 @@ function CreatePayoutPageContent() {
     return !hasErrors;
   }
 
+  function continueFromContributor() {
+    const nextErrors: FormErrors = {};
+    if (!payoutTitle.trim()) nextErrors.title = "Payout title is required.";
+    if (!contributorId) nextErrors.contributorId = "Contributor selection is required.";
+    if (!walletAddress.trim() || !isLikelyWalletAddress(walletAddress)) nextErrors.walletAddress = "Choose a contributor with a valid wallet address.";
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length === 0) setCreationStep(2);
+  }
+
+  function continueFromPlan() {
+    const valid = milestones.length > 0 && milestones.every((milestone) => milestone.title.trim() && milestone.description.trim() && Number(milestone.amount) > 0);
+    if (!valid || totalAmount <= 0) {
+      validateForm();
+      return;
+    }
+    setCreationStep(3);
+  }
+
   async function handleCreatePayout() {
     if (submitState === "creating") return;
     if (!isConnected) {
@@ -304,6 +323,7 @@ function CreatePayoutPageContent() {
 
   return (
     <section className="flex flex-col gap-6" aria-label="Create Payout Page Content">
+      <ol className="grid grid-cols-3 gap-2" aria-label="Create payout progress">{["Choose contributor", "Plan payments", "Review & create"].map((label, index) => { const step = index + 1; const complete = creationStep > step; const current = creationStep === step; return <li key={label}><span className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold ${complete ? "bg-emerald-600 text-white" : current ? "bg-black text-white" : "bg-[var(--surface-strong)] text-[var(--text-muted)]"}`}>{complete ? "✓" : step}</span><p className={`mt-1 text-xs ${current ? "font-medium text-[var(--foreground)]" : "text-[var(--text-muted)]"}`}>{label}</p></li>; })}</ol>
       <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
         <div className="space-y-6">
           {loadError ? <p role="alert" className="rounded-2xl border border-rose-400/30 bg-rose-400/10 p-3 text-sm text-rose-700">{loadError}</p> : null}
@@ -375,7 +395,7 @@ function CreatePayoutPageContent() {
             </div>
           )}
 
-          <Card className="sf-shell">
+          <Card className={cn("sf-shell", creationStep === 1 ? "" : "hidden")}>
             <CardHeader>
               <CardTitle>Payout Basics</CardTitle>
             </CardHeader>
@@ -442,10 +462,11 @@ function CreatePayoutPageContent() {
                   </CardContent>
                 </Card>
               </div>
+              <div className="mt-6 flex justify-end"><Button onClick={continueFromContributor}>Continue to payment plan</Button></div>
             </CardContent>
           </Card>
 
-          <Card className="sf-shell">
+          <Card className={cn("sf-shell", creationStep === 2 ? "" : "hidden")}>
             <CardHeader>
               <CardTitle>Milestone Structure</CardTitle>
             </CardHeader>
@@ -548,11 +569,12 @@ function CreatePayoutPageContent() {
                 })}
               </div>
               <div className="mt-4 flex flex-wrap gap-3">
+                <Button variant="secondary" onClick={() => setCreationStep(1)}>Back</Button>
                 <Button variant="secondary" onClick={handleAddMilestone}>
                   Add Milestone
                 </Button>
-                <Button disabled={submitState === "creating"} onClick={() => void handleCreatePayout()}>
-                  {submitState === "creating" ? "Creating payout..." : "Create payout draft"}
+                <Button onClick={continueFromPlan}>
+                  Review payout
                 </Button>
               </div>
             </CardContent>
@@ -576,8 +598,8 @@ function CreatePayoutPageContent() {
         </div>
 
         {/* Right column — sidebar */}
-        <div className="flex flex-col gap-6">
-          <Card className="sf-shell">
+        <div className={cn("flex flex-col gap-6", creationStep === 3 ? "" : "hidden")}>
+          <Card className="hidden">
             <CardHeader>
               <CardTitle>Approval Logic</CardTitle>
             </CardHeader>
@@ -678,6 +700,7 @@ function CreatePayoutPageContent() {
                       contributor context.
                     </CardContent>
                   </Card>
+                  <div className="flex flex-wrap gap-3"><Button variant="secondary" onClick={() => setCreationStep(2)}>Back to payment plan</Button><Button disabled={submitState === "creating"} onClick={() => void handleCreatePayout()}>{submitState === "creating" ? "Creating payout..." : "Create payout"}</Button></div>
                 </div>
               </CardContent>
           </Card>
