@@ -7,7 +7,15 @@ type SubscriptionBody = { endpoint?: string; keys?: { p256dh?: string; auth?: st
 export async function POST(request: Request) {
   const session = await getSessionFromRequest(request);
   if (!session) return NextResponse.json({ error: "AUTH_REQUIRED" }, { status: 401 });
-  const context = await resolveProductContextFromRequestWithSession(request);
+  let context;
+  try {
+    context = await resolveProductContextFromRequestWithSession(request);
+  } catch (error) {
+    if (error instanceof Error && error.message === "AUTH_CONTEXT_REQUIRED") {
+      return NextResponse.json({ error: "AUTH_CONTEXT_REQUIRED" }, { status: 403 });
+    }
+    throw error;
+  }
   const body = await request.json().catch(() => null) as SubscriptionBody | null;
   if (!body?.endpoint || !body.keys?.p256dh || !body.keys.auth || !body.endpoint.startsWith("https://")) {
     return NextResponse.json({ error: "INVALID_PUSH_SUBSCRIPTION" }, { status: 400 });
