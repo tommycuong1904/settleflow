@@ -419,25 +419,26 @@ export function PayoutDetailReleaseShell({
         };
 
         if (!proofResponse.ok || proofData.error || !proofData.proof) {
-          if (proofData.error === "TX_SNAPSHOT_MISMATCH") {
-            setActiveProof({
-              id: data.proof?.id ?? `proof-${nextReleasableMilestone.id}-pending`,
-              releaseId: data.release.id,
-              milestoneId: nextReleasableMilestone.id,
-              txHash: walletResult!.txHash!,
-              network: "Arc Testnet",
-              status: "pending",
-              explorerUrl: walletResult!.explorerUrl ?? "",
-              executionMode: "browser_wallet",
-              releaseStatus: "pending",
-              failureReason: "Payment needs review. The submitted transaction could not be verified against this release.",
-            });
-            setReleaseError("Payment needs review. Do not retry until the submitted transaction is checked.");
-            setReleaseStatus("submitting");
-            focusPendingSettlementResolution();
-            return;
-          }
-          throw new Error(proofData.error ?? "Unable to persist Arc settlement proof.");
+          setActiveProof({
+            id: data.proof?.id ?? `proof-${nextReleasableMilestone.id}-pending`,
+            releaseId: data.release.id,
+            milestoneId: nextReleasableMilestone.id,
+            txHash: walletResult!.txHash!,
+            network: "Arc Testnet",
+            status: "pending",
+            explorerUrl: walletResult!.explorerUrl ?? "",
+            executionMode: "browser_wallet",
+            releaseStatus: "pending",
+            failureReason: "Payment needs review. The submitted transaction could not be verified against this release.",
+          });
+          setReleaseError(
+            proofData.error
+              ? `Payment needs review: ${proofData.error}`
+              : `Payment needs review: settlement verification returned HTTP ${proofResponse.status}.`,
+          );
+          setReleaseStatus("submitting");
+          focusPendingSettlementResolution();
+          return;
         }
 
         data.release.status = "confirmed";
@@ -664,8 +665,9 @@ export function PayoutDetailReleaseShell({
         }),
       });
 
-      const data = (await response.json()) as {
+      let data: {
         error?: string;
+        code?: string;
         proof?: {
           id: string;
           releaseId?: string;
@@ -678,9 +680,14 @@ export function PayoutDetailReleaseShell({
           failureReason?: string | null;
         };
       };
+      try {
+        data = (await response.json()) as typeof data;
+      } catch {
+        throw new Error(`Settlement verification returned HTTP ${response.status}.`);
+      }
 
       if (!response.ok || data.error || !data.proof) {
-        throw new Error(data.error ?? "Proof refresh request failed.");
+        throw new Error(data.error ?? data.code ?? `Settlement verification returned HTTP ${response.status}.`);
       }
 
       const proof = data.proof;
@@ -725,8 +732,9 @@ export function PayoutDetailReleaseShell({
       }
       return true;
     } catch (err) {
-      setReleaseError(err instanceof Error ? err.message : "Proof refresh request failed.");
-      setReleaseStatus("failed");
+      const message = err instanceof Error ? err.message : "Settlement verification did not complete.";
+      setReleaseError(`${message} The payment remains pending; do not retry or sign again.`);
+      setReleaseStatus("submitting");
       return false;
     } finally {
       setRefreshingProof(false);
