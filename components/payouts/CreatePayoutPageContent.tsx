@@ -26,7 +26,7 @@ import { useResolvedProductContext } from "@/lib/runtime/product-context-client"
 import { useWallet } from "@/lib/context/wallet-context";
 import { formatUsdc, shortenAddress } from "@/lib/utils/format";
 import { cn } from "@/lib/utils";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, ArrowLeft } from "lucide-react";
 
 type MilestoneDraft = {
   id: string;
@@ -537,7 +537,7 @@ function CreatePayoutPageContent() {
                 })}
               </div>
               <div className="mt-4 flex flex-wrap gap-3">
-                <Button variant="secondary" onClick={() => setCreationStep(1)}>Back</Button>
+                <Button variant="secondary" icon={<ArrowLeft size={16} />} onClick={() => setCreationStep(1)}>Back</Button>
                 <Button variant="secondary" onClick={handleAddMilestone}>
                   Add Milestone
                 </Button>
@@ -668,7 +668,7 @@ function CreatePayoutPageContent() {
                       contributor context.
                     </CardContent>
                   </Card>
-                  <div className="flex flex-wrap gap-3"><Button variant="secondary" onClick={() => setCreationStep(2)}>Back to payment plan</Button><Button disabled={submitState === "creating"} onClick={() => void handleCreatePayout()}>{submitState === "creating" ? "Creating payout..." : "Create payout"}</Button></div>
+                  <div className="flex flex-wrap gap-3"><Button variant="secondary" icon={<ArrowLeft size={16} />} onClick={() => setCreationStep(2)}>Back to payment plan</Button><Button disabled={submitState === "creating"} onClick={() => void handleCreatePayout()}>{submitState === "creating" ? "Creating payout..." : "Create payout"}</Button></div>
                 </div>
               </CardContent>
           </Card>
