@@ -43,11 +43,15 @@ test("owner dashboard and contributor My Work are scoped to their workspace", as
     const ownerPage = await ownerContext.newPage();
     await ownerPage.goto("/dashboard");
     await expect(ownerPage.getByText("Payout operations", { exact: true })).toBeVisible();
+    await ownerPage.goto(`/payouts/${payout.id}`);
+    await expect(ownerPage.getByRole("button", { name: "Submit milestone" })).toHaveCount(0);
 
     const contributorPage = await contributorContext.newPage();
     await contributorPage.goto("/my-work");
     await expect(contributorPage.getByRole("heading", { name: "My work and payments" })).toBeVisible();
     await expect(contributorPage.getByText("Browser-scoped payout")).toBeVisible();
+    await contributorPage.goto(`/payouts/${payout.id}`);
+    await expect(contributorPage.getByRole("button", { name: "Submit milestone" })).toBeVisible();
     await ownerContext.close();
     await contributorContext.close();
   } finally {
