@@ -22,7 +22,7 @@ function SelectTrigger({ className, children, ...props }: React.ComponentProps<t
   return (
     <SelectPrimitive.Trigger
       className={cn(
-        "flex h-11 w-full items-center justify-between rounded-2xl border border-[var(--border-soft)] bg-[var(--input-background)] px-4 py-3 text-sm text-[var(--foreground)] outline-none transition-colors data-[placeholder]:text-[var(--input-placeholder)] focus:border-[var(--border-strong)] focus:bg-[var(--input-focus-background)]",
+        "flex h-11 w-full items-center justify-between rounded-full border border-[var(--border-soft)] bg-[var(--input-background)] px-4 py-3 text-sm text-[var(--foreground)] outline-none transition-colors data-[placeholder]:text-[var(--input-placeholder)] focus:border-[var(--border-strong)] focus:bg-[var(--input-focus-background)]",
         className,
       )}
       {...props}
