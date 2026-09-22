@@ -10,6 +10,7 @@ import { useWallet } from "@/lib/context/wallet-context";
 import { ARC_CONFIG } from "@/lib/arc/config";
 import { addArcNetworkToWallet } from "@/lib/arc/onchain";
 import { useToast } from "@/lib/context/toast-context";
+import { BrowserPushToggle } from "@/components/notifications/browser-push-toggle";
 import {
   Shield,
   Cpu,
@@ -337,6 +338,12 @@ export default function SettingsPage() {
             ))}
             {isConnected && linkedWallets.length === 0 ? <p className="text-xs text-[var(--text-muted)]">No linked wallets are available yet.</p> : null}
           </div>
+        </div>
+
+        <div className="rounded-xl border border-[var(--border-soft)] p-6 sm:p-8 space-y-3">
+          <h2 className="text-base font-semibold text-[var(--foreground)]">Browser Push</h2>
+          <p className="text-xs text-[var(--text-muted)]">Receive workflow updates when SettleFlow is not open.</p>
+          <BrowserPushToggle />
         </div>
 
         {/* Advanced Arc tools */}

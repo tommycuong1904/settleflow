@@ -1,4 +1,5 @@
 import type { Prisma } from "@prisma/client";
+import { dispatchBrowserPush } from "@/lib/notifications/browser-push";
 
 type CreateNotificationsInput = {
   workspaceId: string;
@@ -25,4 +26,5 @@ export async function createInAppNotifications(
       href: input.href,
     })),
   });
+  await dispatchBrowserPush(tx, { ...input, userIds });
 }

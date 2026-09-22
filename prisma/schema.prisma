@@ -96,6 +96,7 @@ model Workspace {
   activityLogs ActivityLog[]
   invitations  Invitation[]
   notifications Notification[]
+  pushSubscriptions PushSubscription[]
 }
 
 model User {
@@ -118,6 +119,7 @@ model User {
   releases                 Release[]
   activityLogs             ActivityLog[]
   notifications            Notification[]
+  pushSubscriptions         PushSubscription[]
   linkedContributors       Contributor[]             @relation("LinkedContributor")
   createdInvitations       Invitation[]              @relation("CreatedInvitations")
   wallets                  UserWallet[]
@@ -447,4 +449,20 @@ model Notification {
 
   @@index([userId, readAt, createdAt])
   @@index([workspaceId, createdAt])
+}
+
+model PushSubscription {
+  id          String   @id @default(uuid())
+  workspaceId String
+  userId      String
+  endpoint    String   @unique
+  p256dh      String
+  auth        String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, userId])
 }
