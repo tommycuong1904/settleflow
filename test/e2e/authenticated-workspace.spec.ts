@@ -1,0 +1,64 @@
+import { expect, test } from "@playwright/test";
+import { createSessionToken } from "@/lib/auth/session";
+import { createTestPrismaClient } from "@/test/support/test-db";
+
+const enabled = Boolean(process.env.SETTLEFLOW_TEST_DATABASE_URL);
+test.skip(!enabled, "requires SETTLEFLOW_TEST_DATABASE_URL");
+
+test("owner dashboard and contributor My Work are scoped to their workspace", async ({ browser }) => {
+  const suffix = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const ownerAddress = `0x${crypto.randomUUID().replaceAll("-", "").padEnd(40, "1")}`;
+  const contributorAddress = `0x${crypto.randomUUID().replaceAll("-", "").padEnd(40, "2")}`;
+  const db = createTestPrismaClient();
+  let workspaceId = "";
+  let ownerId = "";
+  let contributorUserId = "";
+
+  try {
+    const owner = await db.user.create({ data: { displayName: "E2E Owner", email: `owner-${suffix}@example.test` } });
+    const contributorUser = await db.user.create({ data: { displayName: "E2E Contributor", email: `contributor-${suffix}@example.test` } });
+    ownerId = owner.id;
+    contributorUserId = contributorUser.id;
+    const workspace = await db.workspace.create({ data: { name: "E2E Workspace", slug: `e2e-browser-${suffix}` } });
+    workspaceId = workspace.id;
+    await db.workspaceMember.createMany({ data: [
+      { workspaceId, userId: owner.id, role: "owner" },
+      { workspaceId, userId: contributorUser.id, role: "contributor" },
+    ] });
+    await db.userWallet.createMany({ data: [
+      { userId: owner.id, address: ownerAddress, normalizedAddress: ownerAddress, kind: "web3_eoa", authEnabled: true, transactionEnabled: true },
+      { userId: contributorUser.id, address: contributorAddress, normalizedAddress: contributorAddress, kind: "web3_eoa", authEnabled: true },
+    ] });
+    const contributor = await db.contributor.create({ data: { workspaceId, linkedUserId: contributorUser.id, createdByUserId: owner.id, name: "E2E Contributor", walletAddress: contributorAddress } });
+    const payout = await db.payout.create({ data: { workspaceId, contributorId: contributor.id, createdByUserId: owner.id, title: "Browser-scoped payout", totalAmountUsdc: "100", status: "active" } });
+    await db.milestone.create({ data: { payoutId: payout.id, title: "Browser milestone", description: "Visible to the assigned contributor", amountUsdc: "100", sequence: 1 } });
+
+    const ownerToken = await createSessionToken({ userId: owner.id, email: owner.email!, name: owner.displayName, address: ownerAddress, authType: "web3_wallet" }, "e2e-test-session-secret");
+    const contributorToken = await createSessionToken({ userId: contributorUser.id, email: contributorUser.email!, name: contributorUser.displayName, address: contributorAddress, authType: "web3_wallet" }, "e2e-test-session-secret");
+    const ownerContext = await browser.newContext();
+    const contributorContext = await browser.newContext();
+    await ownerContext.addCookies([{ name: "sf_session", value: ownerToken, domain: "127.0.0.1", path: "/" }]);
+    await contributorContext.addCookies([{ name: "sf_session", value: contributorToken, domain: "127.0.0.1", path: "/" }]);
+
+    const ownerPage = await ownerContext.newPage();
+    await ownerPage.goto("/dashboard");
+    await expect(ownerPage.getByText("Payout operations", { exact: true })).toBeVisible();
+
+    const contributorPage = await contributorContext.newPage();
+    await contributorPage.goto("/my-work");
+    await expect(contributorPage.getByRole("heading", { name: "My work and payments" })).toBeVisible();
+    await expect(contributorPage.getByText("Browser-scoped payout")).toBeVisible();
+    await ownerContext.close();
+    await contributorContext.close();
+  } finally {
+    if (workspaceId) {
+      await db.payout.deleteMany({ where: { workspaceId } });
+      await db.contributor.deleteMany({ where: { workspaceId } });
+      await db.workspaceMember.deleteMany({ where: { workspaceId } });
+      await db.workspace.delete({ where: { id: workspaceId } });
+    }
+    if (ownerId) await db.user.delete({ where: { id: ownerId } });
+    if (contributorUserId) await db.user.delete({ where: { id: contributorUserId } });
+    await db.$disconnect();
+  }
+});
