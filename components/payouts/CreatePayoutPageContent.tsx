@@ -414,22 +414,6 @@ function CreatePayoutPageContent() {
                     <p className="text-xs text-rose-600 font-medium">{errors.walletAddress}</p>
                   ) : null}
                 </label>
-                <label className="space-y-2 text-sm text-[var(--text-primary)]" data-error={Boolean(errors.totalAmount)}>
-                  <span>Total amount (USDC)</span>
-                  <Input value={String(totalAmount)} readOnly className={cn(errors.totalAmount && "border-rose-500 bg-rose-500/5")} />
-                  {errors.totalAmount ? (
-                    <p className="text-xs text-rose-600 font-medium">{errors.totalAmount}</p>
-                  ) : null}
-                </label>
-                <Card className="bg-[var(--surface-muted)]">
-                  <CardContent className="p-5">
-                    <p className="font-semibold text-[var(--foreground)]">Why this agreement matters</p>
-                    <p className="mt-2 text-sm leading-6 text-[var(--text-muted)]">
-                      Contributors get clarity on payout scope, while teams keep each
-                      release locked behind explicit milestone review.
-                    </p>
-                  </CardContent>
-                </Card>
               </div>
               <div className="mt-6 flex justify-end"><Button onClick={continueFromContributor}>Continue to payment plan</Button></div>
             </CardContent>
