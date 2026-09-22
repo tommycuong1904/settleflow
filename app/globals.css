@@ -7,6 +7,9 @@
   --surface: #FFFFFF;
   --surface-muted: #F0EFED;
   --surface-strong: #E8E7E4;
+  --input-background: #F9FAFB;
+  --input-focus-background: #FFFFFF;
+  --input-placeholder: #9CA3AF;
   /* --foreground: #111111; */
   --foreground: #0d0d0d;
   --text-primary: #374151;
@@ -31,6 +34,9 @@
   --surface: #111318;
   --surface-muted: #0d0f13;
   --surface-strong: #171a21;
+  --input-background: #171a21;
+  --input-focus-background: #1f232c;
+  --input-placeholder: #94a3b8;
   --foreground: #ffffff;
   --text-primary: #e2e8f0;
   --text-muted: #8e9aa8;
