@@ -22,3 +22,10 @@ test("protected-page sign-in boundary opens the same Web3-first modal", async ({
   await expect(page.getByRole("button", { name: "Web2 sign-in is coming soon" })).toBeDisabled();
   await expect(page.getByRole("button", { name: /connect web3 wallet/i })).toBeVisible();
 });
+
+test("unauthenticated payout route renders the sign-in boundary", async ({ page }) => {
+  await page.goto("/payouts");
+
+  await expect(page.getByRole("heading", { name: "Sign in to continue" })).toBeVisible();
+  await expect(page.getByText("Authentication required")).toBeVisible();
+});
