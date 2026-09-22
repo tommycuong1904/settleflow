@@ -61,8 +61,8 @@ export function PayoutListClient({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search by title, recipient, or wallet..."
-            className="w-full rounded-xl border border-[var(--border-soft)] bg-[var(--surface)] py-2.5 pl-10 pr-4 text-xs text-[var(--foreground)] placeholder:text-[var(--text-muted)] focus:border-[var(--border-strong)] focus:outline-none focus:ring-1 focus:ring-[var(--border-strong)] transition-all"
+            placeholder="Search payouts or contributors..."
+            className="w-full rounded-full border border-[var(--border-soft)] bg-[var(--input-background)] py-2.5 pl-10 pr-4 text-xs text-[var(--foreground)] placeholder:text-[var(--input-placeholder)] focus:border-[var(--border-strong)] focus:bg-[var(--input-focus-background)] focus:outline-none focus:ring-1 focus:ring-[var(--border-strong)] transition-all"
           />
         </div>
 
@@ -160,12 +160,9 @@ export function PayoutListClient({
                       >
                         {statusLabel}
                       </span>
-                      <span className="inline-flex items-center rounded-full border border-[var(--border-soft)] bg-[var(--surface-muted)] px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
-                        {payout.membershipRole}
-                      </span>
                     </div>
                     <p className="text-xs text-[var(--text-muted)]">
-                      Recipient:{" "}
+                      Contributor:{" "}
                       <strong className="text-[var(--foreground)] font-medium">
                         {contributor.displayName}
                       </strong>{" "}
@@ -174,9 +171,6 @@ export function PayoutListClient({
                           ({shortenAddress(contributor.walletAddress)})
                         </span>
                       ) : null}
-                    </p>
-                    <p className="text-xs text-[var(--text-muted)]">
-                      Workspace: <strong className="text-[var(--foreground)] font-medium">{payout.workspaceName}</strong>
                     </p>
                   </div>
 
@@ -190,7 +184,7 @@ export function PayoutListClient({
                       </p>
                     </div>
                     <Button href={`/payouts/${payout.id}?workspaceId=${encodeURIComponent(payout.workspaceId)}`} variant="ghost">
-                      View Details <ArrowRight size={14} className="ml-1" />
+                      Open payout <ArrowRight size={14} className="ml-1" />
                     </Button>
                   </div>
                 </div>
@@ -208,7 +202,7 @@ export function PayoutListClient({
             >
               Previous
             </Button>
-            <span className="text-sm text-white">
+            <span className="text-sm text-[var(--foreground)]">
               Page {currentPage} of {totalPages}
             </span>
             <Button
