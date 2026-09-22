@@ -11,10 +11,7 @@ import {
 } from "@/lib/arc/browser-wallet";
 import { executeCircleChallenge, type CircleSdkChallenge } from "@/lib/circle/user-controlled-client";
 import { mapSendResultToProof } from "@/lib/arc/map-send-result-to-proof";
-import {
-  ReleasePanel,
-  type ReleasePanelStatus,
-} from "@/components/payouts/release-panel";
+import type { ReleasePanelStatus } from "@/components/payouts/release-panel";
 import { TransactionProofCard } from "@/components/payouts/transaction-proof-card";
 import { Button } from "@/components/shared/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -119,8 +116,6 @@ export function PayoutDetailReleaseShell({
   const [retryingRelease, setRetryingRelease] = useState(false);
   const [refreshingProof, setRefreshingProof] = useState(false);
   const [confirmationTxHash, setConfirmationTxHash] = useState("");
-  const [showTxHashEntry, setShowTxHashEntry] = useState(false);
-  const [showAdvancedRecovery, setShowAdvancedRecovery] = useState(false);
   const [activeProof, setActiveProof] = useState<TransactionProof | undefined>(releaseProof);
   const [releaseModalMode, setReleaseModalMode] = useState<"review" | "pending" | "failed" | null>(null);
   const [resumeReleaseId, setResumeReleaseId] = useState<string | undefined>();
@@ -159,51 +154,6 @@ export function PayoutDetailReleaseShell({
     resolvedProof.executionMode === "browser_wallet" &&
     resolvedProof.releaseStatus === "pending",
   );
-  const releaseActionEnabled = true;
-  const releaseActionLabel = isCircleSettlementPending
-    ? "Refresh Circle settlement"
-    : needsCircleConfirmation
-      ? "Continue Circle confirmation"
-      : isBrowserReleasable
-        ? "Continue Web3 release"
-      : isBrowserReconciliationPending
-          ? "Resolve pending Web3 release"
-      : effectiveReleaseStatus === "failed"
-      ? "Resolve failed release"
-      : undefined;
-  // A confirmed proof has completed all three displayed steps. Use the step
-  // after the final item so the existing `progress > step` rendering marks it
-  // with a check rather than leaving it as the current numbered step.
-  const releaseProgressStep = resolvedProof?.status === "confirmed" ? 4 : resolvedProof?.status === "pending" ? 2 : 1;
-
-  const statusText = useMemo(() => {
-    if (releaseError) return releaseError;
-    if (isCircleSettlementPending) {
-      return "Circle submitted the transaction. Refresh its settlement status without creating or signing another transaction.";
-    }
-    if (needsCircleConfirmation) {
-      return "Circle confirmation is waiting. Continue with the existing confirmation; SettleFlow will not create another release.";
-    }
-    if (isBrowserReconciliationPending) {
-      return "Wallet submission may have been broadcast. Check wallet activity and confirm with its transaction hash; retry is locked to prevent duplicate payment.";
-    }
-    switch (effectiveReleaseStatus) {
-      case "submitting":
-        return "SettleFlow is preparing the Arc release and waiting for the settlement proof update.";
-      case "confirmed":
-        return nextReleasableMilestone
-          ? "Release completed. Review the proof below, then continue with the next approved milestone when you are ready."
-          : "Release completed. Review the proof below and return after the next milestone is approved for settlement.";
-      case "failed":
-        return releaseError ?? "Release failed before settlement proof could be attached. Retry after checking the current payout state.";
-      case "idle":
-      default:
-        return nextReleasableMilestone
-          ? "This milestone is approved and can be released now. Trigger release here after confirming the recipient and amount."
-          : "No approved milestone is ready for release yet. Approve a submitted milestone first to unlock this panel.";
-    }
-  }, [effectiveReleaseStatus, isBrowserReconciliationPending, isCircleSettlementPending, needsCircleConfirmation, nextReleasableMilestone, releaseError]);
-
   const productContextHeaders = useMemo(
     () => ({
       [PRODUCT_CONTEXT_HEADER_NAMES.workspaceId]: productContext.workspaceId,
@@ -505,8 +455,7 @@ export function PayoutDetailReleaseShell({
   }
 
   function focusPendingSettlementResolution() {
-    setShowTxHashEntry(false);
-    setShowAdvancedRecovery(false);
+    setConfirmationTxHash(resolvedProof?.txHash ?? "");
     setReleaseModalMode("pending");
   }
 
@@ -619,7 +568,6 @@ export function PayoutDetailReleaseShell({
           : current,
       );
       setConfirmationTxHash("");
-      setShowTxHashEntry(false);
       setReleaseStatus("submitting");
       void onActivityChange?.();
       return data.release?.id ?? null;
@@ -730,7 +678,6 @@ export function PayoutDetailReleaseShell({
         setConfirmationTxHash("");
       }
       if (status === "failed") {
-        setShowTxHashEntry(false);
         void onActivityChange?.();
       }
       return true;
@@ -748,150 +695,46 @@ export function PayoutDetailReleaseShell({
     <div className="flex flex-col gap-6">
       <Card className="sf-shell">
         <CardHeader>
-          <CardTitle>Release Target</CardTitle>
-          <CardDescription>Keep the release action, recipient context, and Arc execution mode in one place.</CardDescription>
+          <CardTitle>Next action</CardTitle>
+          <CardDescription>SettleFlow will guide this payment one safe step at a time.</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4 text-sm text-[var(--text-primary)]">
-          <div className="rounded-3xl border border-[var(--border-soft)] bg-[var(--surface)]/74 p-4">
-            <p className="font-semibold text-[var(--foreground)]">
-              {nextReleasableMilestone
-                ? nextReleasableMilestone.title
-                : resolvedProof
-                  ? "Latest released milestone"
-                  : "No release available yet"}
-            </p>
-            <p className="mt-2 text-lg font-semibold text-[var(--foreground)]">
-              {nextReleasableMilestone
-                ? `${formatUsdc(nextReleasableMilestone.amount)} USDC`
-                : resolvedProof
-                  ? "Released"
-                  : "0 USDC"}
-            </p>
-            <p className="mt-1 text-sm text-[var(--text-primary)]">
-              {ARC_CONFIG.executionMode === "real"
-                ? "Arc Testnet • Live execution path"
-                : ARC_CONFIG.executionMode === "demo"
-                  ? "Arc Testnet • Staged execution path"
-                  : "Arc Testnet • Mock execution path"}
-            </p>
-            <p className="mt-1 text-xs text-[var(--text-muted)]">
-              Recipient: {recipientAddress ?? "Recipient address not resolved yet"}
-            </p>
-            <div className="mt-4 rounded-2xl border border-[var(--border-soft)] bg-[var(--surface-muted)] px-4 py-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">Payment source</p>
-              {authType === "web2_google" || authType === "web2_email" ? (
-                <>
-                  <p className="mt-2 font-medium text-[var(--foreground)]">Circle Smart Wallet · Coming soon</p>
-                  <p className="mt-2 text-xs text-[var(--text-muted)]">Connect an enabled Web3 wallet to sign releases in the current MVP.</p>
-                </>
-              ) : authType === "web3_wallet" && address ? (
-                <>
-                  <p className="mt-2 font-medium text-[var(--foreground)]">Linked Web3 EOA · {shortenAddress(address)}</p>
-                  <p className="mt-1 break-all font-mono text-xs text-[var(--text-primary)]">{address}</p>
-                  <p className="mt-2 text-xs text-[var(--text-muted)]">Confirmation: sign and submit in the connected browser wallet.</p>
-                </>
-              ) : (
-                <p className="mt-2 text-xs text-[var(--text-muted)]">Sign in as the workspace owner to determine the payment source.</p>
-              )}
-            </div>
-            <ol className="mt-4 grid grid-cols-3 gap-2" aria-label="Release progress">
-              {["Review payment", "Sign in wallet", "Verify proof"].map((label, index) => {
-                const step = index + 1;
-                const complete = releaseProgressStep > step;
-                const current = releaseProgressStep === step;
-                return (
-                  <li key={label} className="min-w-0">
-                    <span className={`flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-semibold ${complete ? "bg-emerald-600 text-white" : current ? "bg-black text-white" : "bg-[var(--surface-strong)] text-[var(--text-muted)]"}`}>{complete ? "✓" : step}</span>
-                    <p className={`mt-1 text-[11px] ${current ? "font-medium text-[var(--foreground)]" : "text-[var(--text-muted)]"}`}>{label}</p>
-                  </li>
-                );
-              })}
-            </ol>
+          <div className="rounded-3xl border border-[var(--border-soft)] bg-[var(--surface)]/74 p-5 text-sm text-[var(--text-primary)]">
+            {effectiveReleaseStatus === "confirmed" ? (
+              <><p className="text-lg font-semibold text-[var(--foreground)]">Payment complete</p><p className="mt-2 text-[var(--text-muted)]">This payment has been verified on Arc. No further action is needed.</p></>
+            ) : !isOwnerActor ? (
+              <><p className="text-lg font-semibold text-[var(--foreground)]">Waiting for the owner</p><p className="mt-2 text-[var(--text-muted)]">Only the workspace owner can approve or release this payment.</p></>
+            ) : isCircleSettlementPending ? (
+              <><p className="text-lg font-semibold text-[var(--foreground)]">Payment sent — checking status</p><p className="mt-2 text-[var(--text-muted)]">SettleFlow is checking the existing payment. Do not create another one.</p><Button className="mt-5" onClick={() => { void handleRefreshCircleSettlement(); }}>Check payment</Button></>
+            ) : needsCircleConfirmation ? (
+              <><p className="text-lg font-semibold text-[var(--foreground)]">Finish payment confirmation</p><p className="mt-2 text-[var(--text-muted)]">Continue the existing confirmation. SettleFlow will not create another payment.</p><Button className="mt-5" onClick={() => { void handleContinueCircleRelease(); }}>Continue confirmation</Button></>
+            ) : isBrowserReconciliationPending ? (
+              <><p className="text-lg font-semibold text-[var(--foreground)]">Payment sent — verify it</p><p className="mt-2 text-[var(--text-muted)]">Do not sign again. Verify the transaction already sent from your wallet.</p><Button className="mt-5" onClick={focusPendingSettlementResolution}>Verify payment</Button></>
+            ) : effectiveReleaseStatus === "failed" ? (
+              <><p className="text-lg font-semibold text-[var(--foreground)]">Payment was not completed</p><p className="mt-2 text-[var(--text-muted)]">Check the prior attempt before starting a new payment.</p><Button className="mt-5" onClick={() => setReleaseModalMode("failed")}>Review payment issue</Button></>
+            ) : isBrowserReleasable ? (
+              <><p className="text-lg font-semibold text-[var(--foreground)]">Ready to continue payment</p><p className="mt-2 text-[var(--text-muted)]">SettleFlow will use the existing release. It will not create another one.</p><Button className="mt-5" onClick={() => openReleaseReview(resolvedProof?.releaseId)}>Review & sign</Button></>
+            ) : nextReleasableMilestone ? (
+              <><p className="text-lg font-semibold text-[var(--foreground)]">Ready to pay {formatUsdc(nextReleasableMilestone.amount)} USDC</p><p className="mt-2 text-[var(--text-muted)]">Review the recipient, then sign once in your browser wallet.</p><Button className="mt-5" onClick={() => openReleaseReview()}>Review & pay</Button></>
+            ) : (
+              <><p className="text-lg font-semibold text-[var(--foreground)]">No payment action needed</p><p className="mt-2 text-[var(--text-muted)]">Approve a submitted milestone to unlock the next payment.</p></>
+            )}
+            {releaseError ? <p className="mt-4 text-sm text-rose-600">{releaseError}</p> : null}
+            <details className="mt-5 border-t border-[var(--border-soft)] pt-4"><summary className="cursor-pointer font-medium text-[var(--foreground)]">Payment details</summary><div className="mt-3 space-y-2 text-xs text-[var(--text-muted)]"><p>Recipient: <span className="break-all font-mono text-[var(--text-primary)]">{recipientAddress ?? "Not resolved"}</span></p><p>Wallet: <span className="font-mono text-[var(--text-primary)]">{address ? shortenAddress(address) : "Sign in with Web3"}</span></p><p>Network: Arc Testnet</p></div></details>
           </div>
-          <ReleasePanel
-            amount={nextReleasableMilestone?.amount ?? 0}
-            network="Arc Testnet"
-            modeLabel="Web3 browser wallet"
-            enabled={isOwnerActor && (Boolean(nextReleasableMilestone) || Boolean(resolvedProof))}
-            actionEnabled={releaseActionEnabled}
-            allowWhileSubmitting={isPendingCircleRelease || isBrowserReleasable || isBrowserReconciliationPending}
-            actionLabel={releaseActionLabel}
-            status={effectiveReleaseStatus}
-            errorMessage={releaseError}
-            onRelease={() => {
-              void (isBrowserReconciliationPending
-                ? focusPendingSettlementResolution()
-                : isCircleSettlementPending
-                ? handleRefreshCircleSettlement()
-                : needsCircleConfirmation
-                  ? handleContinueCircleRelease()
-                  : effectiveReleaseStatus === "failed"
-                    ? setReleaseModalMode("failed")
-                  : isBrowserReleasable
-                    ? openReleaseReview(resolvedProof?.releaseId)
-                  : openReleaseReview());
-            }}
-          />
-          {statusText ? (
-            <div className="rounded-2xl border border-dashed border-[var(--border-soft)] px-4 py-3 text-sm text-[var(--text-muted)]">
-              {statusText}
-            </div>
-          ) : null}
-        </div>
         </CardContent>
       </Card>
 
       <Card className="sf-shell">
         <CardHeader>
-          <CardTitle>Settlement Proof</CardTitle>
+          <CardTitle>Payment record</CardTitle>
+          <CardDescription>Transaction and settlement details are available when you need them.</CardDescription>
         </CardHeader>
         <CardContent>
-          <TransactionProofCard proof={resolvedProof} milestoneTitle={releaseMilestoneTitle} />
-          {resolvedProof?.status === "pending" && resolvedProof.releaseId && isOwnerActor ? (
-            <p className="mt-4 text-sm text-[var(--text-muted)]">
-              {resolvedProof.txHash
-                ? "Do not sign again. Choose Resolve pending Web3 release above, then verify the transaction already sent from your wallet."
-                : "Choose Resolve pending Web3 release above after checking whether your wallet submitted a transaction."}
-            </p>
-          ) : null}
-          {!isOwnerActor ? (
-            <div className="mt-4 rounded-2xl border border-dashed border-[var(--border-soft)] px-4 py-3 text-sm text-[var(--text-muted)]">
-              Release, proof refresh, and retry controls are only available in the owner view.
-            </div>
-          ) : null}
-        <div className="mt-4 rounded-2xl border border-dashed border-[var(--border-soft)] px-4 py-3 text-sm text-[var(--text-muted)]">
-          {ARC_CONFIG.executionMode === "real"
-            ? "Real USDC moves on Arc after you sign in your connected browser wallet. The settlement proof is attached to the payout after the transfer settles."
-            : ARC_CONFIG.executionMode === "demo"
-              ? "This proof comes from the current staged Arc path while live settlement execution is still being completed."
-              : "This proof comes from the current mock Arc path while live settlement execution is still being completed."}
-        </div>
-        </CardContent>
-      </Card>
-
-      <Card className="sf-shell">
-        <CardHeader>
-          <CardTitle>How SettleFlow works</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3 text-sm text-[var(--text-primary)]">
-          {[
-            "Contributor submits work against a milestone.",
-            "Owner approves the milestone before release.",
-            "Approved funds move in USDC on Arc, then refresh the settlement proof attached to the payout.",
-          ].map((item, index) => (
-            <div
-              key={item}
-              className="flex gap-3 rounded-2xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-4"
-            >
-              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[var(--border-strong)] bg-[var(--surface)] text-xs font-semibold text-[var(--foreground)]">
-                {index + 1}
-              </div>
-              <p className="leading-6">{item}</p>
-            </div>
-          ))}
-        </div>
+          <details>
+            <summary className="cursor-pointer text-sm font-medium text-[var(--foreground)]">View transaction details</summary>
+            <div className="mt-4"><TransactionProofCard proof={resolvedProof} milestoneTitle={releaseMilestoneTitle} /></div>
+          </details>
         </CardContent>
       </Card>
       {releaseModalMode && nextReleasableMilestone ? (
@@ -914,19 +757,16 @@ export function PayoutDetailReleaseShell({
               </>
             ) : releaseModalMode === "pending" ? (
               <>
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">Payment needs review</p>
-                <h2 className="mt-2 pr-8 text-xl font-semibold text-[var(--foreground)]">Do not retry this payment yet</h2>
-                <p className="mt-2 text-sm text-[var(--text-muted)]">SettleFlow received a wallet result but could not verify the payment details automatically. Check the transaction first to avoid paying twice.</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">Verify payment</p>
+                <h2 className="mt-2 pr-8 text-xl font-semibold text-[var(--foreground)]">Did MetaMask send this payment?</h2>
+                <p className="mt-2 text-sm text-[var(--text-muted)]">Do not sign again. Verify the transaction already sent from your wallet, or confirm that MetaMask never submitted one.</p>
                 {resolvedProof?.txHash ? <a href={`${ARC_CONFIG.explorerUrl}/tx/${resolvedProof.txHash}`} target="_blank" rel="noreferrer" className="mt-5 inline-flex text-sm font-medium text-[var(--foreground)] underline underline-offset-4">View submitted transaction</a> : null}
-                <details className="mt-5 rounded-2xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-4" open={showAdvancedRecovery} onToggle={(event) => setShowAdvancedRecovery(event.currentTarget.open)}>
-                  <summary className="cursor-pointer text-sm font-medium text-[var(--foreground)]">Advanced recovery</summary>
-                  <p className="mt-2 text-sm text-[var(--text-muted)]">Use this only after checking MetaMask or the transaction link.</p>
-                  <div className="mt-4 space-y-3">
-                    <Button variant="secondary" onClick={() => setShowTxHashEntry(true)} disabled={refreshingProof}>I have a transaction hash</Button>
-                    {showTxHashEntry ? <div className="space-y-3"><Input value={confirmationTxHash} onChange={(event) => setConfirmationTxHash(event.target.value)} placeholder="0x..." /><Button variant="secondary" onClick={() => { void handleRefreshProof("confirmed").then((resolved) => { if (resolved) setReleaseModalMode(null); }); }} disabled={refreshingProof}>{refreshingProof ? "Verifying..." : "Verify transaction"}</Button></div> : null}
-                    <Button variant="danger" onClick={() => { void handleRefreshProof("failed", "OWNER_CONFIRMED_NO_TRANSACTION: Owner confirmed that MetaMask did not submit a transaction.").then((resolved) => { if (resolved) setReleaseModalMode(null); }); }} disabled={refreshingProof}>I confirm no transaction was sent</Button>
-                  </div>
-                </details>
+                <div className="mt-5 space-y-3 rounded-2xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-4">
+                  <label className="text-sm font-medium text-[var(--foreground)]" htmlFor="payment-transaction-hash">Transaction hash</label>
+                  <Input id="payment-transaction-hash" value={confirmationTxHash} onChange={(event) => setConfirmationTxHash(event.target.value)} placeholder="Paste the 0x… hash from MetaMask" />
+                  <Button onClick={() => { void handleRefreshProof("confirmed").then((resolved) => { if (resolved) setReleaseModalMode(null); }); }} disabled={refreshingProof}>{refreshingProof ? "Verifying payment..." : "Verify payment"}</Button>
+                </div>
+                <Button className="mt-4" variant="secondary" onClick={() => { void handleRefreshProof("failed", "OWNER_CONFIRMED_NO_TRANSACTION: Owner confirmed that MetaMask did not submit a transaction.").then((resolved) => { if (resolved) setReleaseModalMode(null); }); }} disabled={refreshingProof}>MetaMask did not send a payment</Button>
                 {releaseError ? <p className="mt-3 text-sm text-rose-600">{releaseError}</p> : null}
               </>
             ) : (
