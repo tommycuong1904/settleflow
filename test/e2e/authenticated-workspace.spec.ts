@@ -47,14 +47,14 @@ test("owner and contributor payout views are scoped to their workspace", async (
     const ownerPage = await ownerContext.newPage();
     await ownerPage.goto("/dashboard");
     await expect(ownerPage.getByText("Payout operations", { exact: true })).toBeVisible();
-    await ownerPage.goto(`/payouts/${payout.id}`);
+    await ownerPage.goto(`/payouts/${payout.id}?workspaceId=${workspaceId}`);
     await expect(ownerPage.getByRole("button", { name: "Submit milestone" })).toHaveCount(0);
 
     const contributorPage = await contributorContext.newPage();
-    await contributorPage.goto("/payouts");
+    await contributorPage.goto(`/payouts?workspaceId=${workspaceId}`);
     await expect(contributorPage.getByRole("link", { name: "Payouts" })).toBeVisible();
     await expect(contributorPage.getByText("Browser-scoped payout")).toBeVisible();
-    await contributorPage.goto(`/payouts/${payout.id}`);
+    await contributorPage.goto(`/payouts/${payout.id}?workspaceId=${workspaceId}`);
     await contributorPage.getByRole("button", { name: "Submit milestone" }).click();
     await contributorPage.getByPlaceholder(/Primary link/).fill("https://example.test/e2e-proof");
     await contributorPage.getByPlaceholder(/Briefly describe/).fill("Browser evidence submitted by the assigned contributor.");
@@ -62,7 +62,12 @@ test("owner and contributor payout views are scoped to their workspace", async (
     await expect(contributorPage.getByText("Submitted • Awaiting workspace owner review")).toBeVisible();
 
     await ownerPage.reload();
-    await expect(ownerPage.getByRole("button", { name: "Approve Milestone" })).toBeVisible();
+    await ownerPage.getByRole("button", { name: "Approve Milestone" }).click();
+    await expect(ownerPage.getByText("Ready for release")).toBeVisible();
+
+    await contributorPage.reload();
+    await expect(contributorPage.getByText("Waiting for owner release")).toBeVisible();
+    await expect(contributorPage.getByRole("button", { name: "Release Payout" })).toHaveCount(0);
     await ownerContext.close();
     await contributorContext.close();
   } finally {
