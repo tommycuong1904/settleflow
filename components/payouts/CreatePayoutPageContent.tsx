@@ -341,16 +341,7 @@ function CreatePayoutPageContent() {
           {hasFormErrors ? (
             <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-4 text-sm text-rose-700 flex items-start gap-3 shadow-xs animate-in fade-in" role="alert">
               <AlertCircle size={20} className="text-rose-500 shrink-0 mt-0.5" />
-              <div className="space-y-1">
-                <p className="font-semibold text-rose-800">Please fill out all required fields</p>
-                <ul className="list-disc list-inside space-y-1 text-xs text-rose-600">
-                  {errors.title ? <li>{errors.title}</li> : null}
-                  {errors.contributorId ? <li>{errors.contributorId}</li> : null}
-                  {errors.walletAddress ? <li>{errors.walletAddress}</li> : null}
-                  {errors.totalAmount ? <li>{errors.totalAmount}</li> : null}
-                  {errors.milestones ? <li>{errors.milestones}</li> : null}
-                </ul>
-              </div>
+              <p className="font-semibold text-rose-800">Complete the highlighted fields to continue.</p>
             </div>
           ) : null}
 
