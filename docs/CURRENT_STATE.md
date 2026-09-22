@@ -185,7 +185,7 @@ This repository is now a full-stack Next.js application for SettleFlow, an Arc-n
 - ESLint is configured via `eslint.config.mjs`.
 - TypeScript strict mode is enabled in `tsconfig.json`.
 - `npm test` discovers and runs all unit test files under `lib/`; `npm run test:integration:db` does the same for `test/integration/`.
-- CI runs dependency installation, Prisma generation and migrations on `settleflow_test`, typecheck, lint, unit tests, DB integration tests, and `npm run build`.
+- CI runs dependency installation, Prisma generation and migrations on `settleflow_test`, typecheck, lint, unit tests, DB integration tests, production build, and the Web3-first browser smoke suite.
 - A committed Playwright Chromium smoke suite verifies the Web3-first sign-in modal on the landing page and `/auth-required` boundary without connecting a wallet. Authenticated Owner/Contributor workflow E2E and real-wallet settlement remain deferred.
 
 ### Notes
