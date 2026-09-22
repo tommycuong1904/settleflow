@@ -838,7 +838,11 @@ export function PayoutDetailReleaseShell({
         <CardContent>
           <TransactionProofCard proof={resolvedProof} milestoneTitle={releaseMilestoneTitle} />
           {resolvedProof?.status === "pending" && resolvedProof.releaseId && isOwnerActor ? (
-            <p className="mt-4 text-sm text-[var(--text-muted)]">This payment still needs an Owner decision. Use Resolve pending Web3 release above.</p>
+            <p className="mt-4 text-sm text-[var(--text-muted)]">
+              {resolvedProof.txHash
+                ? "Do not sign again. Choose Resolve pending Web3 release above, then verify the transaction already sent from your wallet."
+                : "Choose Resolve pending Web3 release above after checking whether your wallet submitted a transaction."}
+            </p>
           ) : null}
           {!isOwnerActor ? (
             <div className="mt-4 rounded-2xl border border-dashed border-[var(--border-soft)] px-4 py-3 text-sm text-[var(--text-muted)]">

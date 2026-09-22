@@ -15,15 +15,12 @@ const statusStyles: Record<TransactionProof["status"], string> = {
     "border border-rose-300/25 bg-rose-400/10 text-rose-800 dark:text-rose-100",
 };
 
-const statusTitles: Record<TransactionProof["status"], string> = {
-  pending: "Settlement submitted",
+const statusTitles: Record<Exclude<TransactionProof["status"], "pending">, string> = {
   confirmed: "Settlement confirmed",
   failed: "Settlement failed",
 };
 
-const statusDescriptions: Record<TransactionProof["status"], string> = {
-  pending:
-    "The Arc release path has been created and is waiting for final settlement confirmation.",
+const statusDescriptions: Record<Exclude<TransactionProof["status"], "pending">, string> = {
   confirmed:
     "The Arc settlement proof is confirmed and attached to this payout release.",
   failed:
@@ -44,6 +41,16 @@ export function TransactionProofCard({ proof, milestoneTitle }: TransactionProof
     );
   }
 
+  const pendingWithTransaction = proof.status === "pending" && Boolean(proof.txHash);
+  const statusTitle = proof.status === "pending"
+    ? pendingWithTransaction ? "Payment sent — verification needed" : "Payment needs review"
+    : statusTitles[proof.status];
+  const statusDescription = proof.status === "pending"
+    ? pendingWithTransaction
+      ? "Your wallet returned a transaction hash, but SettleFlow has not confirmed that transaction against this payout yet. Do not sign or retry again."
+      : "SettleFlow has not received a transaction hash yet. Check your wallet activity before deciding whether a payment was sent."
+    : statusDescriptions[proof.status];
+
   return (
     <div className="space-y-4 text-sm text-[var(--text-primary)]">
       <div className="flex flex-wrap items-start justify-between gap-3 rounded-2xl border border-[var(--border-soft)] bg-[var(--surface)]/56 p-4">
@@ -51,13 +58,13 @@ export function TransactionProofCard({ proof, milestoneTitle }: TransactionProof
           <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
             Settlement status
           </p>
-          <p className="text-base font-semibold text-[var(--foreground)]">{statusTitles[proof.status]}</p>
-          <p>{statusDescriptions[proof.status]}</p>
+          <p className="text-base font-semibold text-[var(--foreground)]">{statusTitle}</p>
+          <p>{statusDescription}</p>
         </div>
         <span
           className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] ${statusStyles[proof.status]}`}
         >
-          {proof.status}
+          {proof.status === "pending" ? "Action needed" : proof.status}
         </span>
       </div>
 
@@ -127,7 +134,7 @@ export function TransactionProofCard({ proof, milestoneTitle }: TransactionProof
                 : proof.status === "failed"
                   ? "No confirmed transaction hash is available for this failed settlement attempt."
                   : proof.status === "pending"
-                    ? "Transaction hash will appear after settlement proof is confirmed."
+                    ? "No transaction hash was recorded. Check wallet activity before taking any further action."
                     : "Confirmed settlement hash unavailable."}
             </p>
           </div>
