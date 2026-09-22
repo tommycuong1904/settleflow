@@ -122,6 +122,7 @@ export function PayoutDetailReleaseShell({
   const [showTxHashEntry, setShowTxHashEntry] = useState(false);
   const [activeProof, setActiveProof] = useState<TransactionProof | undefined>(releaseProof);
   const [releaseModalMode, setReleaseModalMode] = useState<"review" | "pending" | null>(null);
+  const [resumeReleaseId, setResumeReleaseId] = useState<string | undefined>();
   useScrollLock(releaseModalMode !== null);
 
   const resolvedProof = activeProof ?? releaseProof;
@@ -485,6 +486,12 @@ export function PayoutDetailReleaseShell({
     setReleaseModalMode("pending");
   }
 
+  function openReleaseReview(releaseId?: string) {
+    setResumeReleaseId(releaseId);
+    setReleaseError(null);
+    setReleaseModalMode("review");
+  }
+
   async function handleContinueCircleRelease() {
     if (!isOwnerActor || !resolvedProof?.releaseId || !isPendingCircleRelease) return;
 
@@ -785,8 +792,8 @@ export function PayoutDetailReleaseShell({
                 : needsCircleConfirmation
                   ? handleContinueCircleRelease()
                   : isBrowserReleasable
-                    ? handleRelease(resolvedProof?.releaseId)
-                  : setReleaseModalMode("review"));
+                    ? openReleaseReview(resolvedProof?.releaseId)
+                  : openReleaseReview());
             }}
           />
           {statusText ? (
@@ -862,9 +869,9 @@ export function PayoutDetailReleaseShell({
             <button type="button" onClick={() => setReleaseModalMode(null)} className="absolute right-5 top-5 rounded-full p-1.5 text-[var(--text-muted)] hover:bg-[var(--surface-muted)]" aria-label="Close release dialog"><X size={18} /></button>
             {releaseModalMode === "review" ? (
               <>
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">Review payment</p>
-                <h2 className="mt-2 pr-8 text-xl font-semibold text-[var(--foreground)]">Confirm before signing</h2>
-                <p className="mt-2 text-sm text-[var(--text-muted)]">SettleFlow will verify your active wallet before creating a release. You will then sign the USDC transfer in your browser wallet.</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">{resumeReleaseId ? "Continue existing release" : "Review payment"}</p>
+                <h2 className="mt-2 pr-8 text-xl font-semibold text-[var(--foreground)]">{resumeReleaseId ? "Ready for wallet signature" : "Confirm before signing"}</h2>
+                <p className="mt-2 text-sm text-[var(--text-muted)]">{resumeReleaseId ? "This continues the existing release attempt. SettleFlow will not create another release." : "SettleFlow will verify your active wallet before creating a release. You will then sign the USDC transfer in your browser wallet."}</p>
                 <dl className="mt-5 space-y-3 rounded-2xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-4 text-sm">
                   <div><dt className="text-xs text-[var(--text-muted)]">Milestone</dt><dd className="mt-1 font-medium text-[var(--foreground)]">{nextReleasableMilestone.title}</dd></div>
                   <div><dt className="text-xs text-[var(--text-muted)]">Amount</dt><dd className="mt-1 text-lg font-semibold text-[var(--foreground)]">{formatUsdc(nextReleasableMilestone.amount)} USDC</dd></div>
@@ -872,7 +879,7 @@ export function PayoutDetailReleaseShell({
                   <div><dt className="text-xs text-[var(--text-muted)]">Authenticated Web3 wallet</dt><dd className="mt-1 break-all font-mono text-xs text-[var(--foreground)]">{address ?? "Sign in with Web3 first"}</dd></div>
                 </dl>
                 <p className="mt-4 text-xs text-[var(--text-muted)]">If MetaMask has a different active account, SettleFlow will stop before creating a release and show you which account to switch.</p>
-                <div className="mt-6 flex justify-end gap-3"><Button variant="secondary" onClick={() => setReleaseModalMode(null)}>Cancel</Button><Button onClick={() => { setReleaseModalMode(null); void handleRelease(); }}>Verify wallet & sign</Button></div>
+                <div className="mt-6 flex justify-end gap-3"><Button variant="secondary" onClick={() => setReleaseModalMode(null)}>Cancel</Button><Button onClick={() => { const releaseId = resumeReleaseId; setReleaseModalMode(null); setResumeReleaseId(undefined); void handleRelease(releaseId); }}>{resumeReleaseId ? "Verify wallet & continue" : "Verify wallet & sign"}</Button></div>
               </>
             ) : (
               <>
