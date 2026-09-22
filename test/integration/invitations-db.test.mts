@@ -54,23 +54,35 @@ test("invitations enforce authorization, email binding, lifecycle, and one membe
     assert.equal(unauthorized.status, 403);
     assert.equal((await unauthorized.json()).code, "FORBIDDEN_INVITATION_CREATE");
 
-    for (const role of ["ops", "reviewer"]) {
+    for (const role of ["ops", "reviewer", "contributor"]) {
       const unavailableRole = await createInvitationRoute(request(
         `https://settleflow.local/api/v1/invitations?workspaceId=${workspace.id}`,
         await tokenFor(owner),
         { role },
       ));
       assert.equal(unavailableRole.status, 400);
-      assert.equal((await unavailableRole.json()).error, "Invitations support owner or contributor roles.");
+      assert.equal(
+        (await unavailableRole.json()).error,
+        "Contributor invitations must be created from the Contributor page to ensure proper record linking.",
+      );
     }
 
-    const created = await createInvitationRoute(request(
+    const ownerInvitation = await createInvitationRoute(request(
       `https://settleflow.local/api/v1/invitations?workspaceId=${workspace.id}`,
       await tokenFor(owner),
-      { role: "contributor", email: recipient.email!.toUpperCase(), expiresInDays: 7 },
+      { role: "owner", expiresInDays: 7 },
     ));
-    assert.equal(created.status, 200);
-    const createdBody = await created.json() as { invitation: { token: string; role: string; email: string; status: string } };
+    assert.equal(ownerInvitation.status, 200);
+    assert.equal((await ownerInvitation.json() as { invitation: { role: string } }).invitation.role, "owner");
+
+    const created = await createInvitation({
+      workspaceId: workspace.id,
+      createdByUserId: owner.id,
+      role: "contributor",
+      email: recipient.email!.toUpperCase(),
+      expiresInDays: 7,
+    });
+    const createdBody = { invitation: created };
     assert.equal(createdBody.invitation.role, "contributor");
     assert.equal(createdBody.invitation.email, recipient.email);
     assert.equal(createdBody.invitation.status, "pending");
