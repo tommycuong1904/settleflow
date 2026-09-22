@@ -38,11 +38,21 @@ export function AppHeader() {
       return;
     }
     let active = true;
-    void fetch("/api/v1/notifications", { cache: "no-store" })
-      .then(async (response) => response.ok ? await response.json() as { unreadCount?: number } : null)
-      .then((payload) => { if (active) setUnreadNotifications(payload?.unreadCount ?? 0); })
-      .catch(() => undefined);
-    return () => { active = false; };
+    const refreshUnreadNotifications = () => {
+      void fetch("/api/v1/notifications", { cache: "no-store" })
+        .then(async (response) => response.ok ? await response.json() as { unreadCount?: number } : null)
+        .then((payload) => { if (active) setUnreadNotifications(payload?.unreadCount ?? 0); })
+        .catch(() => undefined);
+    };
+    const handleServiceWorkerMessage = (event: MessageEvent<{ type?: string }>) => {
+      if (event.data?.type === "settleflow:notification") refreshUnreadNotifications();
+    };
+    refreshUnreadNotifications();
+    navigator.serviceWorker?.addEventListener("message", handleServiceWorkerMessage);
+    return () => {
+      active = false;
+      navigator.serviceWorker?.removeEventListener("message", handleServiceWorkerMessage);
+    };
   }, [isConnected, pathname]);
 
   const handleAddArcNetwork = async () => {
