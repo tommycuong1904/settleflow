@@ -121,7 +121,7 @@ export function PayoutDetailReleaseShell({
   const [confirmationTxHash, setConfirmationTxHash] = useState("");
   const [showTxHashEntry, setShowTxHashEntry] = useState(false);
   const [activeProof, setActiveProof] = useState<TransactionProof | undefined>(releaseProof);
-  const [releaseModalMode, setReleaseModalMode] = useState<"review" | "pending" | null>(null);
+  const [releaseModalMode, setReleaseModalMode] = useState<"review" | "pending" | "failed" | null>(null);
   const [resumeReleaseId, setResumeReleaseId] = useState<string | undefined>();
   useScrollLock(releaseModalMode !== null);
 
@@ -158,17 +158,17 @@ export function PayoutDetailReleaseShell({
     resolvedProof.executionMode === "browser_wallet" &&
     resolvedProof.releaseStatus === "pending",
   );
-  const releaseActionEnabled = effectiveReleaseStatus !== "failed";
+  const releaseActionEnabled = true;
   const releaseActionLabel = isCircleSettlementPending
     ? "Refresh Circle settlement"
     : needsCircleConfirmation
       ? "Continue Circle confirmation"
       : isBrowserReleasable
         ? "Continue Web3 release"
-        : isBrowserReconciliationPending
+      : isBrowserReconciliationPending
           ? "Resolve pending Web3 release"
       : effectiveReleaseStatus === "failed"
-      ? "Retry from proof panel"
+      ? "Resolve failed release"
       : undefined;
   const releaseProgressStep = resolvedProof?.status === "confirmed" ? 3 : resolvedProof?.status === "pending" ? 2 : 1;
 
@@ -551,9 +551,9 @@ export function PayoutDetailReleaseShell({
     }
   }
 
-  async function handleRetryRelease() {
+  async function handleRetryRelease(): Promise<string | null> {
     if (!isOwnerActor || !resolvedProof?.releaseId || retryingRelease) {
-      return;
+      return null;
     }
 
     setReleaseError(null);
@@ -588,6 +588,8 @@ export function PayoutDetailReleaseShell({
               status: "pending",
               txHash: "",
               explorerUrl: "",
+              executionMode: "browser_wallet",
+              releaseStatus: "queued",
               confirmedAt: undefined,
             }
           : current,
@@ -596,9 +598,11 @@ export function PayoutDetailReleaseShell({
       setShowTxHashEntry(false);
       setReleaseStatus("submitting");
       void onActivityChange?.();
+      return data.release?.id ?? null;
     } catch (err) {
       setReleaseError(err instanceof Error ? err.message : "Retry release request failed.");
       setReleaseStatus("failed");
+      return null;
     } finally {
       setRetryingRelease(false);
     }
@@ -791,6 +795,8 @@ export function PayoutDetailReleaseShell({
                 ? handleRefreshCircleSettlement()
                 : needsCircleConfirmation
                   ? handleContinueCircleRelease()
+                  : effectiveReleaseStatus === "failed"
+                    ? setReleaseModalMode("failed")
                   : isBrowserReleasable
                     ? openReleaseReview(resolvedProof?.releaseId)
                   : openReleaseReview());
@@ -813,16 +819,6 @@ export function PayoutDetailReleaseShell({
           <TransactionProofCard proof={resolvedProof} milestoneTitle={releaseMilestoneTitle} />
           {resolvedProof?.status === "pending" && resolvedProof.releaseId && isOwnerActor ? (
             <p className="mt-4 text-sm text-[var(--text-muted)]">This payment still needs an Owner decision. Use Resolve pending Web3 release above.</p>
-          ) : null}
-          {resolvedProof?.status === "failed" && resolvedProof.releaseId && isOwnerActor ? (
-            <div className="mt-4 flex flex-wrap items-center gap-3">
-              <Button variant="secondary" onClick={() => { void handleRetryRelease(); }} disabled={retryingRelease}>
-                {retryingRelease ? "Retrying..." : "Retry release"}
-              </Button>
-              <p className="text-sm text-[var(--text-muted)]">
-                Queue a fresh release attempt for this failed settlement.
-              </p>
-            </div>
           ) : null}
           {!isOwnerActor ? (
             <div className="mt-4 rounded-2xl border border-dashed border-[var(--border-soft)] px-4 py-3 text-sm text-[var(--text-muted)]">
@@ -881,7 +877,7 @@ export function PayoutDetailReleaseShell({
                 <p className="mt-4 text-xs text-[var(--text-muted)]">If MetaMask has a different active account, SettleFlow will stop before creating a release and show you which account to switch.</p>
                 <div className="mt-6 flex justify-end gap-3"><Button variant="secondary" onClick={() => setReleaseModalMode(null)}>Cancel</Button><Button onClick={() => { const releaseId = resumeReleaseId; setReleaseModalMode(null); setResumeReleaseId(undefined); void handleRelease(releaseId); }}>{resumeReleaseId ? "Verify wallet & continue" : "Verify wallet & sign"}</Button></div>
               </>
-            ) : (
+            ) : releaseModalMode === "pending" ? (
               <>
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">Payment needs a decision</p>
                 <h2 className="mt-2 pr-8 text-xl font-semibold text-[var(--foreground)]">Did MetaMask submit a transaction?</h2>
@@ -891,6 +887,15 @@ export function PayoutDetailReleaseShell({
                   {showTxHashEntry ? <div className="space-y-3"><Input value={confirmationTxHash} onChange={(event) => setConfirmationTxHash(event.target.value)} placeholder="0x..." /><Button variant="secondary" onClick={() => { void handleRefreshProof("confirmed").then((resolved) => { if (resolved) setReleaseModalMode(null); }); }} disabled={refreshingProof}>{refreshingProof ? "Verifying..." : "Verify transaction"}</Button></div> : null}
                   <Button variant="danger" onClick={() => { void handleRefreshProof("failed", "OWNER_CONFIRMED_NO_TRANSACTION: Owner confirmed that MetaMask did not submit a transaction.").then((resolved) => { if (resolved) setReleaseModalMode(null); }); }} disabled={refreshingProof}>No, unlock retry</Button>
                 </div>
+                {releaseError ? <p className="mt-3 text-sm text-rose-600">{releaseError}</p> : null}
+              </>
+            ) : (
+              <>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">Release did not complete</p>
+                <h2 className="mt-2 pr-8 text-xl font-semibold text-[var(--foreground)]">Start a new release attempt?</h2>
+                <p className="mt-2 text-sm text-[var(--text-muted)]">The prior release was recorded as failed. Retrying creates a new attempt; it does not resend the failed one.</p>
+                {resolvedProof?.failureReason ? <p className="mt-4 rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-3 text-sm text-[var(--text-muted)]">{resolvedProof.failureReason}</p> : null}
+                <div className="mt-6 flex justify-end gap-3"><Button variant="secondary" onClick={() => setReleaseModalMode(null)}>Cancel</Button><Button onClick={() => { void handleRetryRelease().then((releaseId) => { if (releaseId) openReleaseReview(releaseId); }); }} disabled={retryingRelease}>{retryingRelease ? "Creating retry..." : "Create retry"}</Button></div>
                 {releaseError ? <p className="mt-3 text-sm text-rose-600">{releaseError}</p> : null}
               </>
             )}
