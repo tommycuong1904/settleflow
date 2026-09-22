@@ -48,6 +48,7 @@ test("owner dashboard and contributor My Work are scoped to their workspace", as
 
     const contributorPage = await contributorContext.newPage();
     await contributorPage.goto("/my-work");
+    await expect(contributorPage.getByRole("link", { name: "My Work" })).toBeVisible();
     await expect(contributorPage.getByRole("heading", { name: "My work and payments" })).toBeVisible();
     await expect(contributorPage.getByText("Browser-scoped payout")).toBeVisible();
     await contributorPage.goto(`/payouts/${payout.id}`);

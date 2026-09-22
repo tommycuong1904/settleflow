@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { LayoutDashboard, ArrowRightLeft, Users, Activity, Settings, X, Droplets, ExternalLink, ListTodo, Bell } from "lucide-react";
 import { useResolvedProductContext } from "@/lib/runtime/product-context-client";
 import { hasRole } from "@/lib/runtime/role-utils";
+import type { ProductContext } from "@/lib/runtime/product-context";
 
 type NavItem = {
   label: string;
@@ -23,10 +24,10 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Settings", href: "/settings", icon: Settings },
 ];
 
-export function AppSidebar() {
+export function AppSidebar({ initialActor }: { initialActor?: ProductContext["actor"] }) {
   const pathname = usePathname();
   const productContext = useResolvedProductContext();
-  const actor = productContext.actor;
+  const actor = initialActor ?? productContext.actor;
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   useEffect(() => {
