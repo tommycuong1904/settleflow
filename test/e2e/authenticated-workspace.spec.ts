@@ -51,7 +51,14 @@ test("owner dashboard and contributor My Work are scoped to their workspace", as
     await expect(contributorPage.getByRole("heading", { name: "My work and payments" })).toBeVisible();
     await expect(contributorPage.getByText("Browser-scoped payout")).toBeVisible();
     await contributorPage.goto(`/payouts/${payout.id}`);
-    await expect(contributorPage.getByRole("button", { name: "Submit milestone" })).toBeVisible();
+    await contributorPage.getByRole("button", { name: "Submit milestone" }).click();
+    await contributorPage.getByPlaceholder(/Primary link/).fill("https://example.test/e2e-proof");
+    await contributorPage.getByPlaceholder(/Briefly describe/).fill("Browser evidence submitted by the assigned contributor.");
+    await contributorPage.getByRole("button", { name: "Submit for Review" }).click();
+    await expect(contributorPage.getByText("Submitted • Awaiting workspace owner review")).toBeVisible();
+
+    await ownerPage.reload();
+    await expect(ownerPage.getByRole("button", { name: "Approve Milestone" })).toBeVisible();
     await ownerContext.close();
     await contributorContext.close();
   } finally {
