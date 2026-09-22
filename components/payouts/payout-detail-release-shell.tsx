@@ -120,6 +120,7 @@ export function PayoutDetailReleaseShell({
   const [refreshingProof, setRefreshingProof] = useState(false);
   const [confirmationTxHash, setConfirmationTxHash] = useState("");
   const [showTxHashEntry, setShowTxHashEntry] = useState(false);
+  const [showAdvancedRecovery, setShowAdvancedRecovery] = useState(false);
   const [activeProof, setActiveProof] = useState<TransactionProof | undefined>(releaseProof);
   const [releaseModalMode, setReleaseModalMode] = useState<"review" | "pending" | "failed" | null>(null);
   const [resumeReleaseId, setResumeReleaseId] = useState<string | undefined>();
@@ -365,7 +366,7 @@ export function PayoutDetailReleaseShell({
           } else if (error instanceof BrowserWalletSubmissionUnknownError) {
             setActiveProof({
               id: data.proof?.id ?? `proof-${nextReleasableMilestone.id}-pending`,
-              releaseId: data.release.id,
+              releaseId: data.release!.id,
               milestoneId: nextReleasableMilestone.id,
               txHash: "",
               network: "Arc Testnet",
@@ -418,6 +419,24 @@ export function PayoutDetailReleaseShell({
         };
 
         if (!proofResponse.ok || proofData.error || !proofData.proof) {
+          if (proofData.error === "TX_SNAPSHOT_MISMATCH") {
+            setActiveProof({
+              id: data.proof?.id ?? `proof-${nextReleasableMilestone.id}-pending`,
+              releaseId: data.release.id,
+              milestoneId: nextReleasableMilestone.id,
+              txHash: walletResult!.txHash!,
+              network: "Arc Testnet",
+              status: "pending",
+              explorerUrl: walletResult!.explorerUrl ?? "",
+              executionMode: "browser_wallet",
+              releaseStatus: "pending",
+              failureReason: "Payment needs review. The submitted transaction could not be verified against this release.",
+            });
+            setReleaseError("Payment needs review. Do not retry until the submitted transaction is checked.");
+            setReleaseStatus("submitting");
+            focusPendingSettlementResolution();
+            return;
+          }
           throw new Error(proofData.error ?? "Unable to persist Arc settlement proof.");
         }
 
@@ -483,6 +502,7 @@ export function PayoutDetailReleaseShell({
 
   function focusPendingSettlementResolution() {
     setShowTxHashEntry(false);
+    setShowAdvancedRecovery(false);
     setReleaseModalMode("pending");
   }
 
@@ -879,14 +899,19 @@ export function PayoutDetailReleaseShell({
               </>
             ) : releaseModalMode === "pending" ? (
               <>
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">Payment needs a decision</p>
-                <h2 className="mt-2 pr-8 text-xl font-semibold text-[var(--foreground)]">Did MetaMask submit a transaction?</h2>
-                <p className="mt-2 text-sm text-[var(--text-muted)]">Choose one option. This prevents a duplicate payment while the earlier wallet result is uncertain.</p>
-                <div className="mt-5 space-y-3 rounded-2xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-4">
-                  <Button variant="secondary" onClick={() => setShowTxHashEntry(true)} disabled={refreshingProof}>Yes, I have the transaction hash</Button>
-                  {showTxHashEntry ? <div className="space-y-3"><Input value={confirmationTxHash} onChange={(event) => setConfirmationTxHash(event.target.value)} placeholder="0x..." /><Button variant="secondary" onClick={() => { void handleRefreshProof("confirmed").then((resolved) => { if (resolved) setReleaseModalMode(null); }); }} disabled={refreshingProof}>{refreshingProof ? "Verifying..." : "Verify transaction"}</Button></div> : null}
-                  <Button variant="danger" onClick={() => { void handleRefreshProof("failed", "OWNER_CONFIRMED_NO_TRANSACTION: Owner confirmed that MetaMask did not submit a transaction.").then((resolved) => { if (resolved) setReleaseModalMode(null); }); }} disabled={refreshingProof}>No, unlock retry</Button>
-                </div>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">Payment needs review</p>
+                <h2 className="mt-2 pr-8 text-xl font-semibold text-[var(--foreground)]">Do not retry this payment yet</h2>
+                <p className="mt-2 text-sm text-[var(--text-muted)]">SettleFlow received a wallet result but could not verify the payment details automatically. Check the transaction first to avoid paying twice.</p>
+                {resolvedProof?.txHash ? <a href={`${ARC_CONFIG.explorerUrl}/tx/${resolvedProof.txHash}`} target="_blank" rel="noreferrer" className="mt-5 inline-flex text-sm font-medium text-[var(--foreground)] underline underline-offset-4">View submitted transaction</a> : null}
+                <details className="mt-5 rounded-2xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-4" open={showAdvancedRecovery} onToggle={(event) => setShowAdvancedRecovery(event.currentTarget.open)}>
+                  <summary className="cursor-pointer text-sm font-medium text-[var(--foreground)]">Advanced recovery</summary>
+                  <p className="mt-2 text-sm text-[var(--text-muted)]">Use this only after checking MetaMask or the transaction link.</p>
+                  <div className="mt-4 space-y-3">
+                    <Button variant="secondary" onClick={() => setShowTxHashEntry(true)} disabled={refreshingProof}>I have a transaction hash</Button>
+                    {showTxHashEntry ? <div className="space-y-3"><Input value={confirmationTxHash} onChange={(event) => setConfirmationTxHash(event.target.value)} placeholder="0x..." /><Button variant="secondary" onClick={() => { void handleRefreshProof("confirmed").then((resolved) => { if (resolved) setReleaseModalMode(null); }); }} disabled={refreshingProof}>{refreshingProof ? "Verifying..." : "Verify transaction"}</Button></div> : null}
+                    <Button variant="danger" onClick={() => { void handleRefreshProof("failed", "OWNER_CONFIRMED_NO_TRANSACTION: Owner confirmed that MetaMask did not submit a transaction.").then((resolved) => { if (resolved) setReleaseModalMode(null); }); }} disabled={refreshingProof}>I confirm no transaction was sent</Button>
+                  </div>
+                </details>
                 {releaseError ? <p className="mt-3 text-sm text-rose-600">{releaseError}</p> : null}
               </>
             ) : (
