@@ -85,28 +85,26 @@ export function assertCanSubmitMilestone({ productContext, actorUserId }: Policy
 }
 
 export function assertCanApproveMilestone({ productContext, actorUserId }: PolicyInput) {
-  const actorViolation =
-    productContext.actor === "owner" || productContext.actor === "reviewer"
-      ? null
-      : forbid("FORBIDDEN_MILESTONE_APPROVE_ACTOR", "Only owners or reviewers can approve milestones in this flow.");
-  return actorViolation ?? assertActorUserAlignment(
-    productContext,
-    actorUserId,
-    "FORBIDDEN_MILESTONE_APPROVE_CONTEXT",
-    "Approve milestone context does not match the active reviewer.",
+  return (
+    assertActor(productContext, "owner", "FORBIDDEN_MILESTONE_APPROVE_ACTOR", "Only owners can approve milestones in this MVP flow.") ??
+    assertActorUserAlignment(
+      productContext,
+      actorUserId,
+      "FORBIDDEN_MILESTONE_APPROVE_CONTEXT",
+      "Approve milestone context does not match the active owner.",
+    )
   );
 }
 
 export function assertCanRejectMilestone({ productContext, actorUserId }: PolicyInput) {
-  const actorViolation =
-    productContext.actor === "owner" || productContext.actor === "reviewer"
-      ? null
-      : forbid("FORBIDDEN_MILESTONE_REJECT_ACTOR", "Only owners or reviewers can reject milestones in this flow.");
-  return actorViolation ?? assertActorUserAlignment(
-    productContext,
-    actorUserId,
-    "FORBIDDEN_MILESTONE_REJECT_CONTEXT",
-    "Reject milestone context does not match the active reviewer.",
+  return (
+    assertActor(productContext, "owner", "FORBIDDEN_MILESTONE_REJECT_ACTOR", "Only owners can request milestone revisions in this MVP flow.") ??
+    assertActorUserAlignment(
+      productContext,
+      actorUserId,
+      "FORBIDDEN_MILESTONE_REJECT_CONTEXT",
+      "Reject milestone context does not match the active owner.",
+    )
   );
 }
 
@@ -169,4 +167,3 @@ export function assertCanViewPayout({
     "You do not have permission to access this payout."
   );
 }
-

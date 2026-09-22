@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db/client";
 import { recordActivity } from "@/lib/repositories/activity-log";
+import { createInAppNotifications } from "@/lib/repositories/notifications";
 import {
   dispatchWorkspaceWebhookNotification,
   type WebhookPayload,
@@ -54,6 +55,7 @@ export async function submitMilestone(
         status: true,
         payout: {
           select: {
+            id: true,
             title: true,
             workspaceId: true,
             status: true,
@@ -114,6 +116,18 @@ export async function submitMilestone(
         summary: input.summary,
       },
     });
+    const owners = await tx.workspaceMember.findMany({
+      where: { workspaceId, role: "owner" },
+      select: { userId: true },
+    });
+    await createInAppNotifications(tx, {
+      workspaceId,
+      userIds: owners.map((owner) => owner.userId),
+      type: "milestone_submitted",
+      title: "Milestone ready for review",
+      body: `${milestone.title} was submitted for ${milestone.amountUsdc.toString()} USDC.`,
+      href: `/payouts/${milestone.payout.id}`,
+    });
     return {
       milestone: updatedMilestone,
       submission,
@@ -135,4 +149,3 @@ export async function submitMilestone(
 
   return { milestone: result.milestone, submission: result.submission };
 }
-

@@ -87,8 +87,7 @@ Workflow transitions are coordinated by repository modules including `payout-cre
 `lib/arc/` contains Arc configuration, browser-wallet integration, onchain helpers, and the release executor:
 
 - `browser_wallet` — signing is performed by a connected browser wallet; the server executor fails explicitly for this mode.
-- `circle_wallet` — the server derives an account from server-only `ARC_SERVER_PRIVATE_KEY` and sends the configured USDC transfer.
-- `circle_user_wallet` — a Google-authenticated Owner uses a Circle user-controlled Arc Testnet SCA. The server creates a release-bound Circle challenge, the Web SDK confirms it in-app, and the server retrieves and verifies the provider transaction before recording proof. This path is feature-flagged and requires separate Circle configuration.
+- `circle_wallet` and `circle_user_wallet` — retained implementation paths for future work. New releases using either mode are rejected by the active Owner/Contributor MVP route; release uses only `browser_wallet`.
 
 Release proof and source-wallet information are persisted through release/proof repositories. Production custody, funding, gas, compliance, and operational readiness are not asserted here; see `docs/CURRENT_STATE.md` and `docs/SECURITY_INVARIANTS.md`.
 

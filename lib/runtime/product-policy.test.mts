@@ -49,7 +49,7 @@ test("owner-only policy rejects actor mismatch for activate payout", () => {
   assert.equal(violation?.code, "FORBIDDEN_PAYOUT_ACTIVATE_ACTOR");
 });
 
-test("reviewer policy rejects active-user mismatch", () => {
+test("reviewer is disabled from review decisions in the Owner/Contributor MVP", () => {
   const violation = assertCanApproveMilestone({
     productContext: resolveProductContext({
       actor: "reviewer",
@@ -61,7 +61,7 @@ test("reviewer policy rejects active-user mismatch", () => {
     actorUserId: "reviewer-2",
   });
 
-  assert.equal(violation?.code, "FORBIDDEN_MILESTONE_APPROVE_CONTEXT");
+  assert.equal(violation?.code, "FORBIDDEN_MILESTONE_APPROVE_ACTOR");
 });
 
 test("contributor policy passes when actor and active user align", () => {
@@ -89,7 +89,7 @@ test("each membership role retains its current policy boundary", () => {
   assert.equal(assertCanReleaseMilestone({ productContext: contextFor("ops"), actorUserId: "user-1" })?.code, "FORBIDDEN_MILESTONE_RELEASE_ACTOR");
 
   assert.equal(assertCanCreatePayout({ productContext: contextFor("reviewer"), actorUserId: "user-1" })?.code, "FORBIDDEN_PAYOUT_CREATE_ACTOR");
-  assert.equal(assertCanApproveMilestone({ productContext: contextFor("reviewer"), actorUserId: "user-1" }), null);
+  assert.equal(assertCanApproveMilestone({ productContext: contextFor("reviewer"), actorUserId: "user-1" })?.code, "FORBIDDEN_MILESTONE_APPROVE_ACTOR");
   assert.equal(assertCanReleaseMilestone({ productContext: contextFor("reviewer"), actorUserId: "user-1" })?.code, "FORBIDDEN_MILESTONE_RELEASE_ACTOR");
 
   assert.equal(assertCanCreatePayout({ productContext: contextFor("contributor"), actorUserId: "user-1" })?.code, "FORBIDDEN_PAYOUT_CREATE_ACTOR");

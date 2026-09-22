@@ -303,11 +303,9 @@ export function PayoutDetailReleaseShell({
     setReleaseStatus("submitting");
 
     try {
-      const useCircleSmartWallet = authType === "web2_google";
-      if (!useCircleSmartWallet && authType !== "web3_wallet") {
+      if (authType !== "web3_wallet") {
         throw new Error("Connect an enabled Web3 wallet to release from a browser wallet.");
       }
-      if (useCircleSmartWallet) await ensureCircleSmartWallet();
       const response = resumeReleaseId
         ? null
         : await fetch(`/api/v1/milestones/${nextReleasableMilestone.id}/release`, {
@@ -318,7 +316,7 @@ export function PayoutDetailReleaseShell({
         },
         body: JSON.stringify({
           amountUsdc: String(nextReleasableMilestone.amount),
-          executionMode: useCircleSmartWallet ? "circle_user_wallet" : undefined,
+          executionMode: "browser_wallet",
         }),
       });
 
@@ -351,24 +349,7 @@ export function PayoutDetailReleaseShell({
         return;
       }
 
-      let circleProof: TransactionProof | undefined;
-      if (useCircleSmartWallet && data.release?.id) {
-        const completedPayload = await executeCircleRelease(data.release.id);
-        data.release = completedPayload.release ?? data.release;
-        data.proof = completedPayload.proof
-          ? { ...completedPayload.proof, milestoneId: completedPayload.proof.milestoneId ?? nextReleasableMilestone.id }
-          : data.proof;
-        circleProof = proofFromCirclePayload(completedPayload, {
-          id: data.proof?.id ?? `proof-${nextReleasableMilestone.id}-pending`,
-          releaseId: data.release?.id,
-          milestoneId: nextReleasableMilestone.id,
-          txHash: "",
-          network: "Arc Testnet",
-          status: "pending",
-          explorerUrl: "",
-          executionMode: "circle_user_wallet",
-        });
-      } else if (ARC_CONFIG.executionMode === "real" && data.release?.id) {
+      if (ARC_CONFIG.executionMode === "real" && data.release?.id) {
         const claimResponse = await fetch(`/api/v1/releases/${data.release.id}/claim`, {
           method: "POST",
           headers: { "Content-Type": "application/json", ...productContextHeaders },
@@ -485,7 +466,7 @@ export function PayoutDetailReleaseShell({
         }
       }
 
-      const result = circleProof ?? mapSendResultToProof(
+      const result = mapSendResultToProof(
         {
           result: {
             status:
@@ -512,7 +493,7 @@ export function PayoutDetailReleaseShell({
 
       setActiveProof(result);
       if (result.executionMode === undefined && data.release?.id && data.proof?.status) {
-        result.executionMode = useCircleSmartWallet ? "circle_user_wallet" : "browser_wallet";
+        result.executionMode = "browser_wallet";
         result.releaseStatus = data.release.status as TransactionProof["releaseStatus"];
       }
       if (result.status === "confirmed") {

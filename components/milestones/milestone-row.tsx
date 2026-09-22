@@ -69,9 +69,8 @@ export function MilestoneRow({
   const isReleased = status === "released";
   const isRejected = status === "rejected";
   const isContributorActor = isRole(currentActor, "contributor");
-  const isReviewerActor = isRole(currentActor, "reviewer");
   const isOwnerActor = isRole(currentActor, "owner");
-  const canApproveMilestone = isOwnerActor || isReviewerActor;
+  const canApproveMilestone = isOwnerActor;
   const isSubmittable = (status === "pending" || status === "rejected") && isContributorActor;
 
   const handleSubmissionSuccess = (meta?: { submittedAt?: string; summary?: string; artifactUrl?: string }) => {
@@ -243,15 +242,13 @@ export function MilestoneRow({
               <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-semibold">
                 <CheckCircle2 size={15} />
                 <span>
-                  {isOwnerActor ? "Ready for release" : isReviewerActor ? "Review complete" : "Waiting for release"}
+                  {isOwnerActor ? "Ready for release" : "Waiting for owner release"}
                 </span>
               </div>
               <span className="text-[11px] text-[var(--text-muted)]">
                 {isOwnerActor
                   ? "Approved work can now move to the Arc release step from the side panel."
-                  : isReviewerActor
-                    ? "Your review is complete. The owner can now release this approved milestone on Arc."
-                    : "This milestone has been approved and is now waiting for the owner to release it on Arc."}
+                  : "This milestone has been approved and is now waiting for the owner to release it on Arc."}
               </span>
             </div>
           ) : null}

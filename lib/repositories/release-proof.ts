@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db/client";
 import { recordActivity } from "@/lib/repositories/activity-log";
+import { createInAppNotifications } from "@/lib/repositories/notifications";
 import { hasWorkspaceRole } from "@/lib/repositories/permissions";
 import { recalculatePayoutStatus } from "@/lib/repositories/payout-status";
 
@@ -148,7 +149,7 @@ export async function refreshReleaseProof(
       tx,
       release.payout.workspaceId,
       refreshedByUserId,
-      ["owner", "ops"],
+      ["owner"],
     );
     if (!canRefresh) throw new Error("FORBIDDEN_PROOF_REFRESH");
 
@@ -275,6 +276,26 @@ export async function refreshReleaseProof(
         blockNumber: input.status === "confirmed" ? input.blockNumber : undefined,
         failureReason: input.status === "failed" ? input.failureReason : undefined,
       },
+    });
+
+    const notificationContext = await tx.release.findUnique({
+      where: { id: release.id },
+      select: {
+        triggeredByUserId: true,
+        payout: { select: { contributor: { select: { linkedUserId: true } } } },
+      },
+    });
+    await createInAppNotifications(tx, {
+      workspaceId,
+      userIds: input.status === "confirmed"
+        ? [notificationContext?.triggeredByUserId ?? refreshedByUserId, notificationContext?.payout.contributor.linkedUserId ?? ""]
+        : [notificationContext?.triggeredByUserId ?? refreshedByUserId],
+      type: input.status === "confirmed" ? "release_confirmed" : "release_failed",
+      title: input.status === "confirmed" ? "USDC payment confirmed" : "USDC payment needs attention",
+      body: input.status === "confirmed"
+        ? `${release.amountUsdc.toString()} USDC was confirmed on Arc.`
+        : `The release could not be confirmed. ${input.failureReason ?? "Review the payout before retrying."}`,
+      href: `/payouts/${release.payoutId}`,
     });
 
     await recordActivity(tx, {

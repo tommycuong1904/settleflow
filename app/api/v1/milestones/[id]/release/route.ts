@@ -34,6 +34,12 @@ export async function POST(
     }
 
     const executionMode = isReleaseExecutionMode(body.executionMode) ? body.executionMode : "browser_wallet";
+    if (executionMode !== "browser_wallet") {
+      return apiError("WEB3_RELEASE_ONLY", {
+        message: "Web3 browser-wallet releases are the only enabled release path in this MVP. Circle Smart Wallet is coming soon.",
+        status: 409,
+      });
+    }
     let sourceWalletAddress: string | null = null;
     let sourceWalletId: string | null = null;
     if (executionMode === "browser_wallet") {

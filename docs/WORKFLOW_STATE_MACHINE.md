@@ -27,8 +27,8 @@ States: `pending`, `submitted`, `approved`, `rejected`, `released`.
 ### Supported transitions
 
 - `pending -> submitted` and `rejected -> submitted`: `submitMilestone` requires the same workspace, a valid contributor user, a linked contributor relationship, an `active` or `partially_released` payout, and a submittable milestone status. Draft payouts are not contributor-visible or submittable. It creates a `MilestoneSubmission` and resets review/release timestamps (`lib/repositories/milestone-submission.ts`).
-- `submitted -> approved`: `reviewMilestone(..., "approved")` requires a submitted milestone with a submission and an owner/ops/reviewer workspace role (`lib/repositories/milestone-review.ts`).
-- `submitted -> rejected`: the same function requires a non-empty rejection comment and records a rejected review.
+- `submitted -> approved`: `reviewMilestone(..., "approved")` requires a submitted milestone with a submission and an Owner workspace role in the active Owner/Contributor MVP (`lib/repositories/milestone-review.ts`).
+- `submitted -> rejected`: the same function requires an Owner, a non-empty rejection comment, and records a rejected review.
 - `approved -> released`: `refreshReleaseProof` sets the milestone to `released` only when confirmation is recorded for an approved milestone (`lib/repositories/release-proof.ts`).
 
 No direct transition to `released` is supported by the queue operation. Release queuing requires `approved` first.
@@ -39,7 +39,7 @@ No direct transition to `released` is supported by the queue operation. Release 
 
 `ReleaseStatus` values are `queued`, `pending`, `confirmed`, `failed`, and `cancelled`.
 
-`queueMilestoneRelease` creates `queued` release and `pending` proof records only when the milestone is approved, the payout is `active` or `partially_released`, no release already exists, the destination exists, and the requested amount equals the milestone amount. It requires owner/ops workspace authorization (`lib/repositories/milestone-release.ts`).
+`queueMilestoneRelease` creates `queued` release and `pending` proof records only when the milestone is approved, the payout is `active` or `partially_released`, no release already exists, the destination exists, and the requested amount equals the milestone amount. The active MVP release route requires an Owner Web3 session and its enabled EOA source wallet.
 
 The executor may move execution through its mode-specific send path. `refreshReleaseProof` supports `queued`/`pending` releases becoming `confirmed` or `failed`; it rejects refresh of confirmed/cancelled releases, stale releases, missing proofs, missing transaction hash, or missing failure reason. Confirmation records proof data, marks the release confirmed, and releases the milestone. Failure records failure metadata without releasing the milestone (`lib/repositories/release-proof.ts`).
 
@@ -49,7 +49,7 @@ The executor may move execution through its mode-specific send path. `refreshRel
 
 - `browser_wallet`: server execution fails explicitly; browser signing is handled by the wallet boundary.
 - `circle_wallet`: `lib/arc/release-executor.ts` sends from the server-side key when configured, then proof refresh persists the result.
-- `circle_user_wallet`: a Google-authenticated owner confirms the persisted Circle challenge in the browser. The server then reconciles Circle's authoritative challenge and transaction states. A pending confirmation is resumed through the existing challenge; once Circle has a transaction request or hash, the UI refreshes settlement only and never creates a second release.
+- `circle_user_wallet`: retained for future Circle work. New Circle releases are disabled in the active MVP; the UI labels Circle Smart Wallet as Coming soon.
 
 Production settlement readiness is not asserted here.
 

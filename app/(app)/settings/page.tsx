@@ -296,7 +296,7 @@ export default function SettingsPage() {
               </p>
               <p className="text-sm font-semibold text-[var(--text-muted)]">
                 {authType === "web2_google"
-                  ? "Google Non-Custodial Smart Account"
+                  ? "Google account — Circle Smart Wallet coming soon"
                   : authType === "web2_email"
                   ? "Email Magic Link Smart Account"
                   : authType === "web3_wallet"
@@ -326,12 +326,12 @@ export default function SettingsPage() {
               <div key={wallet.id} className="flex flex-col gap-1 rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] px-3.5 py-3 text-xs sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p className="font-medium text-[var(--foreground)]">
-                    {wallet.kind === "circle_sca" ? "Circle Smart Wallet" : wallet.kind === "legacy_export_eoa" ? "Retired legacy EOA" : "Linked Web3 wallet"}
+                    {wallet.kind === "circle_sca" ? "Circle Smart Wallet — Coming soon" : wallet.kind === "legacy_export_eoa" ? "Retired legacy EOA" : "Linked Web3 wallet"}
                   </p>
                   <p className="font-mono text-[11px] text-[var(--text-muted)]">{wallet.address}</p>
                 </div>
                 <p className="text-[11px] text-[var(--text-muted)]">
-                  {wallet.kind === "circle_sca" ? `${wallet.circleWallet?.blockchain ?? "Arc"} • Circle confirmation` : wallet.authEnabled ? "Web3 sign-in enabled" : "Transaction source"}
+                  {wallet.kind === "circle_sca" ? "Unavailable for login or release in the Web3 MVP" : wallet.authEnabled ? "Web3 sign-in enabled" : "Transaction source"}
                 </p>
               </div>
             ))}

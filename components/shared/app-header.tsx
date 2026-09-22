@@ -206,7 +206,7 @@ export function AppHeader() {
                   )}
                   <p className="text-[11px] text-[var(--text-muted)]">
                     {authType === "web2_google"
-                      ? "Google Smart Account"
+                      ? "Google account · Circle coming soon"
                       : authType === "web2_email"
                       ? "Email Smart Account"
                       : "External Web3 Wallet"}

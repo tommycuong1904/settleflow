@@ -111,7 +111,7 @@ export async function retryFailedRelease(releaseId: string, ownerUserId: string,
         tx,
         previous.payout.workspaceId,
         ownerUserId,
-        ["owner", "ops"],
+        ["owner"],
       );
       if (!canRetryRelease) throw new Error("FORBIDDEN_RELEASE_RETRY");
 

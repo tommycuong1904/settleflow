@@ -6,7 +6,7 @@ import { db } from "@/lib/db/client";
 
 const wallet = "0x4444444444444444444444444444444444444444";
 
-test("pending execution result without errorMessage enters reconciliation (HTTP 202), never the success/201 path", async () => {
+test("disabled Circle execution mode is rejected before a release is created", async () => {
   process.env.NEXT_PUBLIC_ARC_EXECUTION_MODE = "mock";
   const moduleUrl =
     new URL("../../app/api/v1/milestones/[id]/release/route.ts", import.meta.url).href +
@@ -82,27 +82,9 @@ test("pending execution result without errorMessage enters reconciliation (HTTP 
       params(milestone.id),
     );
 
-    assert.equal(response.status, 202);
-    const body = (await response.json()) as {
-      releaseId: string;
-      proofId: string;
-      status: string;
-    };
-    assert.equal(body.status, "pending");
-
-    const release = await db.release.findUnique({
-      where: { id: body.releaseId },
-      select: { status: true, failureReason: true },
-    });
-    assert.equal(release?.status, "pending");
-    assert.ok(release?.failureReason);
-
-    const proof = await db.transactionProof.findFirst({
-      where: { releaseId: body.releaseId },
-      orderBy: { createdAt: "desc" },
-      select: { status: true },
-    });
-    assert.equal(proof?.status, "pending");
+    assert.equal(response.status, 409);
+    assert.equal((await response.json()).code, "WEB3_RELEASE_ONLY");
+    assert.equal(await db.release.count({ where: { milestoneId: milestone.id } }), 0);
   } finally {
     await db.transactionProof.deleteMany({
       where: { payoutId: payout.id },

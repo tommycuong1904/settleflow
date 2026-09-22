@@ -73,7 +73,8 @@ Implemented and DB integration-tested for the covered paths.
 
 ### Invariant
 A browser-wallet release can only be funded by the enabled EOA that established
-the current Web3 session. A Google session can only use its linked Circle SCA.
+the current Web3 session. Circle release modes are disabled for new releases in
+the active Owner/Contributor MVP.
 
 ### Enforcement
 The release route derives the source `UserWallet` from the signed session and

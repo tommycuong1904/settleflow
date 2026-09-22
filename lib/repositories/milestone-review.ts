@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db/client";
 import { recordActivity } from "@/lib/repositories/activity-log";
+import { createInAppNotifications } from "@/lib/repositories/notifications";
 import { hasWorkspaceRole } from "@/lib/repositories/permissions";
 import {
   dispatchWorkspaceWebhookNotification,
@@ -51,7 +52,14 @@ export async function reviewMilestone(
         title: true,
         amountUsdc: true,
         status: true,
-        payout: { select: { title: true, workspaceId: true } },
+        payout: {
+          select: {
+            id: true,
+            title: true,
+            workspaceId: true,
+            contributor: { select: { linkedUserId: true } },
+          },
+        },
         submissions: { orderBy: { submittedAt: "desc" }, take: 1, select: { id: true } },
       },
     });
@@ -66,13 +74,13 @@ export async function reviewMilestone(
     const reviewer = await tx.user.findUnique({ where: { id: reviewerUserId }, select: { id: true } });
     if (!reviewer) throw new Error("USER_NOT_FOUND");
 
-    const hasReviewerRole = await hasWorkspaceRole(
+    const hasOwnerRole = await hasWorkspaceRole(
       tx,
       milestone.payout.workspaceId,
       reviewerUserId,
-      ["owner", "reviewer"],
+      ["owner"],
     );
-    if (!hasReviewerRole) throw new Error("USER_NOT_ALLOWED_TO_REVIEW");
+    if (!hasOwnerRole) throw new Error("USER_NOT_ALLOWED_TO_REVIEW");
 
     const review = await tx.milestoneReview.create({
       data: {
@@ -107,6 +115,18 @@ export async function reviewMilestone(
         comment: comment ?? undefined,
       },
     });
+    const recipientIds = [milestone.payout.contributor.linkedUserId];
+    if (decision === "approved") recipientIds.push(reviewerUserId);
+    await createInAppNotifications(tx, {
+      workspaceId,
+      userIds: recipientIds.filter((id): id is string => Boolean(id)),
+      type: decision === "approved" ? "milestone_approved" : "milestone_rejected",
+      title: decision === "approved" ? "Milestone approved" : "Revision requested",
+      body: decision === "approved"
+        ? `${milestone.title} is approved and ready for Web3 release.`
+        : `${milestone.title} needs updates before it can be approved.${comment ? ` Feedback: ${comment}` : ""}`,
+      href: `/payouts/${milestone.payout.id}`,
+    });
     return {
       milestone: updatedMilestone,
       review,
@@ -127,4 +147,3 @@ export async function reviewMilestone(
 
   return { milestone: result.milestone, review: result.review };
 }
-

@@ -61,7 +61,7 @@ authorization = role + workspace scope + relationship + state + capability
 | Create payout | Owner | Target workspace | Owner membership | N/A | Create draft payout |
 | Edit/activate payout | Owner | Payout workspace | Payout belongs to workspace | `draft` | Update or activate after validation |
 | Submit/resubmit milestone | Contributor | Milestone/payout workspace | Linked contributor relationship | Active/partially released payout; `pending`, `rejected` milestone | Create submission; state → `submitted` |
-| Approve/reject milestone | Reviewer | Milestone/payout workspace | Submitted milestone in scope | `submitted` | Record review; state → `approved`/`rejected` |
+| Approve/reject milestone | Owner | Milestone/payout workspace | Submitted milestone in scope | `submitted` | Record review; state → `approved`/`rejected` |
 | Queue/release funds | Owner | Milestone/payout workspace | Approved milestone in scope | Approved milestone; active payout | Create/execute release |
 | Refresh/retry proof/release | Owner | Release/payout workspace | Release belongs to workspace | `queued`/`pending` or `failed` | Confirm/fail or create eligible retry |
 | View lifecycle data | Owner/Reviewer; Contributor relationship-scoped | Resource workspace | Contributor relationship where applicable | Existing resource | Return permitted data |
@@ -90,7 +90,7 @@ This is the approved policy baseline, not a claim that the current implementatio
 The centralized policy functions currently enforce:
 
 - `owner`: create contributors and payouts, activate and edit draft payouts, release milestones, refresh release proof, and retry failed releases; owners and reviewers can view all payouts.
-- `reviewer`: approve or reject milestones; reviewers can view all payouts.
+- `reviewer`: retained for historical memberships only; review decisions are disabled in the active Owner/Contributor MVP.
 - `contributor`: submit milestones and view only payouts matched to the active user through the linked contributor user, recipient wallet, or contributor email.
 - Contributor management requires the `owner` actor.
 

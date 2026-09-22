@@ -149,11 +149,11 @@ test("E2E Smoke: Login -> Dashboard -> Create Payout -> Activate -> Submit -> Ap
     const submitData = await submitRes.json();
     assert.equal(submitData.milestone.status, "submitted");
 
-    // 6. Review & Approve Milestone - Reviewer Action
+    // 6. Review & Approve Milestone - Owner Action
     const approveRes = await approveMilestone(
       new Request(`https://settleflow.local/api/v1/milestones/${milestoneId}/approve?workspaceId=${workspace.id}`, {
         method: "POST",
-        headers: reviewerHeaders,
+        headers: ownerHeaders,
       }),
       params(milestoneId),
     );

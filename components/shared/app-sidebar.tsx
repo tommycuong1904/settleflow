@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, ArrowRightLeft, Users, Activity, Settings, X, Droplets, ExternalLink } from "lucide-react";
+import { LayoutDashboard, ArrowRightLeft, Users, Activity, Settings, X, Droplets, ExternalLink, ListTodo, Bell } from "lucide-react";
 import { useResolvedProductContext } from "@/lib/runtime/product-context-client";
 import { hasRole } from "@/lib/runtime/role-utils";
 
@@ -19,6 +19,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Payouts", href: "/payouts", icon: ArrowRightLeft },
   { label: "Contributors", href: "/contributors", icon: Users },
   { label: "Activity", href: "/activity", icon: Activity },
+  { label: "Notifications", href: "/notifications", icon: Bell },
   { label: "Settings", href: "/settings", icon: Settings },
 ];
 
@@ -53,6 +54,12 @@ export function AppSidebar() {
     if (item.href === "/settings" || item.href === "/contributors") return false;
     return true;
   });
+  const roleAwareNavItems: NavItem[] = hasRole(actor, "owner")
+    ? visibleNavItems
+    : visibleNavItems.map((item) => item.href === "/payouts"
+      ? { label: "My Work", href: "/my-work", icon: ListTodo }
+      : item,
+    );
 
   const sidebarContent = (
     <>
@@ -75,7 +82,7 @@ export function AppSidebar() {
       <nav className="sf-sidebar-nav" aria-label="App navigation">
         <p className="sf-sidebar-section-label">WORKSPACE</p>
         <ul role="list">
-          {visibleNavItems.map(({ label, href, icon: Icon, soon }) => {
+          {roleAwareNavItems.map(({ label, href, icon: Icon, soon }) => {
             const isActive =
               href === "/dashboard"
                 ? pathname === "/dashboard" || pathname === "/app"

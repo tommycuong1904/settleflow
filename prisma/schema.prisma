@@ -95,6 +95,7 @@ model Workspace {
   payouts      Payout[]
   activityLogs ActivityLog[]
   invitations  Invitation[]
+  notifications Notification[]
 }
 
 model User {
@@ -116,6 +117,7 @@ model User {
   reviews                  MilestoneReview[]
   releases                 Release[]
   activityLogs             ActivityLog[]
+  notifications            Notification[]
   linkedContributors       Contributor[]             @relation("LinkedContributor")
   createdInvitations       Invitation[]              @relation("CreatedInvitations")
   wallets                  UserWallet[]
@@ -425,4 +427,24 @@ model ActivityLog {
   @@index([workspaceId, occurredAt])
   @@index([payoutId, occurredAt])
   @@index([entityType, entityId])
+}
+
+/// A workspace-scoped in-app notification. Delivery outside the product is
+/// intentionally out of scope; this record is the durable source of truth.
+model Notification {
+  id          String   @id @default(uuid())
+  workspaceId String
+  userId      String
+  type        String
+  title       String
+  body        String
+  href        String
+  readAt      DateTime?
+  createdAt   DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt, createdAt])
+  @@index([workspaceId, createdAt])
 }
