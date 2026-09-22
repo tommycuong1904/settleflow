@@ -154,7 +154,7 @@ export function PayoutDetailReleaseShell({
     resolvedProof.executionMode === "browser_wallet" &&
     resolvedProof.releaseStatus === "pending",
   );
-  const releaseActionEnabled = effectiveReleaseStatus !== "failed" && !isBrowserReconciliationPending;
+  const releaseActionEnabled = effectiveReleaseStatus !== "failed";
   const releaseActionLabel = isCircleSettlementPending
     ? "Refresh Circle settlement"
     : needsCircleConfirmation
@@ -162,7 +162,7 @@ export function PayoutDetailReleaseShell({
       : isBrowserReleasable
         ? "Continue Web3 release"
         : isBrowserReconciliationPending
-          ? "Await Web3 reconciliation"
+          ? "Resolve pending Web3 release"
       : effectiveReleaseStatus === "failed"
       ? "Retry from proof panel"
       : undefined;
@@ -476,6 +476,11 @@ export function PayoutDetailReleaseShell({
     }
   }
 
+  function focusPendingSettlementResolution() {
+    document.getElementById("settlement-proof-resolution")?.scrollIntoView({ behavior: "smooth", block: "center" });
+    window.setTimeout(() => document.getElementById("settlement-failure-reason")?.focus(), 350);
+  }
+
   async function handleContinueCircleRelease() {
     if (!isOwnerActor || !resolvedProof?.releaseId || !isPendingCircleRelease) return;
 
@@ -749,12 +754,14 @@ export function PayoutDetailReleaseShell({
             modeLabel="Web3 browser wallet"
             enabled={isOwnerActor && (Boolean(nextReleasableMilestone) || Boolean(resolvedProof))}
             actionEnabled={releaseActionEnabled}
-            allowWhileSubmitting={isPendingCircleRelease || isBrowserReleasable}
+            allowWhileSubmitting={isPendingCircleRelease || isBrowserReleasable || isBrowserReconciliationPending}
             actionLabel={releaseActionLabel}
             status={effectiveReleaseStatus}
             errorMessage={releaseError}
             onRelease={() => {
-              void (isCircleSettlementPending
+              void (isBrowserReconciliationPending
+                ? focusPendingSettlementResolution()
+                : isCircleSettlementPending
                 ? handleRefreshCircleSettlement()
                 : needsCircleConfirmation
                   ? handleContinueCircleRelease()
@@ -779,7 +786,7 @@ export function PayoutDetailReleaseShell({
         <CardContent>
           <TransactionProofCard proof={resolvedProof} milestoneTitle={releaseMilestoneTitle} />
           {resolvedProof?.status === "pending" && resolvedProof.releaseId && isOwnerActor ? (
-            <div className="mt-4 space-y-4 rounded-2xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-4">
+            <div id="settlement-proof-resolution" className="mt-4 space-y-4 rounded-2xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-4">
               <div>
                 <p className="text-sm font-semibold text-[var(--foreground)]">Refresh pending settlement</p>
                 <p className="mt-1 text-sm text-[var(--text-muted)]">
@@ -811,6 +818,7 @@ export function PayoutDetailReleaseShell({
                     Mark failed
                   </label>
                   <Textarea
+                    id="settlement-failure-reason"
                     value={failureReason}
                     onChange={(event) => setFailureReason(event.target.value)}
                     placeholder="Why did this settlement fail?"
