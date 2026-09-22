@@ -2,7 +2,6 @@ import { Suspense } from "react";
 import CreatePayoutPageContent from "@/components/payouts/CreatePayoutPageContent";
 import { PageHeader } from "@/components/shared/page-header";
 import { WalletGate } from "@/components/dashboard/wallet-gate";
-import { SectionCard } from "@/components/shared/section-card";
 
 export const dynamic = "force-dynamic";
 
@@ -12,19 +11,15 @@ export default function CreatePayoutPage() {
       <div className="sf-app-wrapper flex flex-col py-8 md:py-12 gap-8">
         {/* Header */}
         <PageHeader
-          eyebrow="Escrow Contracts"
-          title="Create New Payout"
-          description="Define milestone allocations, assign recipient wallet addresses on Arc Testnet, and setup approval rules."
+          eyebrow="Payouts"
+          title="Create a payout"
+          description="Choose a contributor, plan the milestones, then review the agreement."
         />
         {/* Wallet Gate */}
         <WalletGate />
-        {/* Form Section */}
-        <SectionCard title="">
-          <CreatePayoutPageContent />
-        </SectionCard>
+        <CreatePayoutPageContent />
       </div>
     </Suspense>
   );
 }
-
 
