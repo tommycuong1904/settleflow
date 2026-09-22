@@ -464,12 +464,6 @@ function CreatePayoutPageContent() {
                 </div>
               </div>
 
-              {errors.milestones ? (
-                <div className="mb-4 rounded-xl border border-rose-400/30 bg-rose-400/10 px-4 py-3 text-sm text-rose-700 font-medium">
-                  {errors.milestones}
-                </div>
-              ) : null}
-
               <div className="space-y-4">
                 {milestones.map((milestone, index) => {
                   const msErr = errors.milestoneErrors?.[milestone.id];
