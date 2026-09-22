@@ -11,7 +11,7 @@ const milestones = [
   ['Create', 'Contributor payout created'],
   ['Milestones', 'Two release checkpoints defined'],
   ['Submit', 'Work submitted for review'],
-  ['Review', 'Reviewer checks completion'],
+  ['Review', 'Owner checks completion'],
   ['Approve', 'Approval unlocks release'],
   ['Release', 'USDC release becomes available'],
   ['Proof', 'Settlement proof stays attached'],
@@ -501,7 +501,7 @@ export default function Home() {
               ],
               [
                 "Product state",
-                "Owner, reviewer, and contributor views keep workflow state synchronized.",
+                "Owner and contributor views keep workflow state synchronized.",
               ],
             ].map(([title, text]) => (
               <div key={title}>

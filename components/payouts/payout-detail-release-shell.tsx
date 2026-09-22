@@ -835,7 +835,7 @@ export function PayoutDetailReleaseShell({
           ) : null}
         <div className="mt-4 rounded-2xl border border-dashed border-[var(--border-soft)] px-4 py-3 text-sm text-[var(--text-muted)]">
           {ARC_CONFIG.executionMode === "real"
-            ? "Real USDC moves on Arc. Browser-wallet releases are signed in your wallet; Circle Wallets releases are executed server-side. The settlement proof is attached to the payout after the transfer settles."
+            ? "Real USDC moves on Arc after you sign in your connected browser wallet. The settlement proof is attached to the payout after the transfer settles."
             : ARC_CONFIG.executionMode === "demo"
               ? "This proof comes from the current staged Arc path while live settlement execution is still being completed."
               : "This proof comes from the current mock Arc path while live settlement execution is still being completed."}
@@ -851,7 +851,7 @@ export function PayoutDetailReleaseShell({
           <div className="space-y-3 text-sm text-[var(--text-primary)]">
           {[
             "Contributor submits work against a milestone.",
-            "Reviewer approves the milestone before release.",
+            "Owner approves the milestone before release.",
             "Approved funds move in USDC on Arc, then refresh the settlement proof attached to the payout.",
           ].map((item, index) => (
             <div

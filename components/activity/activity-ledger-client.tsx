@@ -228,7 +228,7 @@ export function ActivityLedgerClient({
           description={
             searchQuery || selectedFilter !== "all"
               ? "Try adjusting your search criteria or category filters."
-              : "Milestone submissions, reviewer decisions, and USDC releases will appear here in chronological order."
+              : "Milestone submissions, owner decisions, and USDC releases will appear here in chronological order."
           }
         />
       ) : (

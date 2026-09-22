@@ -654,7 +654,7 @@ const [reviewingMilestoneId, setReviewingMilestoneId] = useState<string | null>(
                   ? "This payout is still a draft. Save your draft changes before activating milestone submissions and reviews."
                   : "This payout is still a draft. Activate it to begin milestone submissions and reviews."
                 : effectivePayoutStatus === "active"
-                  ? "This payout is active. Contributors can submit milestones and reviewers can approve or reject work."
+                  ? "This payout is active. Contributors can submit milestones and the owner can approve or reject work."
                   : effectivePayoutStatus === "partially_released"
                     ? "This payout has partial settlement progress. Continue reviewing and releasing approved milestones."
                     : "This payout is fully settled and all milestone releases are complete."}

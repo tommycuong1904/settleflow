@@ -584,7 +584,7 @@ function CreatePayoutPageContent() {
               <CardContent>
                 <div className="space-y-3 text-sm text-[var(--text-primary)]">
                   {[{ title: "Submit work", description: "Contributors complete a milestone and submit work for review." },
-                    { title: "Reviewer checks milestone", description: "A milestone stays locked until the reviewer confirms completion." },
+                    { title: "Owner checks milestone", description: "A milestone stays locked until the owner confirms completion." },
                     { title: "Approve before release", description: "Approval is the one event that unlocks release on Arc." },
                     { title: "Release and attach proof", description: "Once released, settlement proof becomes part of the payout record." }]
                     .map((step, index) => (

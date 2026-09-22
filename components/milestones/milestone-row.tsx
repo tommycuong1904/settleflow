@@ -204,12 +204,12 @@ export function MilestoneRow({
                 </div>
               )}
 
-              {/* Reviewer Notes / Credentials if provided */}
+              {/* Owner notes / credentials if provided */}
               {lastNotes && (
                 <div className="flex items-start gap-2.5 rounded-xl bg-amber-500/10 border border-amber-500/25 p-3 text-amber-900 dark:text-amber-200">
                   <KeyRound size={15} className="shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
                   <div className="min-w-0 flex-1">
-                    <span className="font-semibold block text-[11px] mb-0.5">Reviewer Credentials / Notes:</span>
+                    <span className="font-semibold block text-[11px] mb-0.5">Owner Notes / Credentials:</span>
                     <p className="text-[11px] leading-relaxed select-all font-mono break-all">{lastNotes}</p>
                   </div>
                 </div>

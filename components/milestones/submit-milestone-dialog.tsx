@@ -334,7 +334,7 @@ export function SubmitMilestoneDialog({
               rows={3}
               value={summary}
               onChange={(e) => setSummary(e.target.value)}
-              placeholder="Briefly describe what has been completed, features built, or testing notes for the reviewer..."
+              placeholder="Briefly describe what has been completed, features built, or testing notes for the owner..."
               className="w-full rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-3 text-xs text-[var(--foreground)] placeholder-[var(--text-muted)] focus:border-[var(--primary)] focus:outline-none focus:ring-1 focus:ring-[var(--primary)]/20 transition-all resize-none leading-relaxed"
             />
           </div>
@@ -347,13 +347,13 @@ export function SubmitMilestoneDialog({
                 onClick={() => setShowExtraNotes(true)}
                 className="inline-flex items-center gap-1 text-[11px] text-[var(--text-muted)] hover:text-[var(--foreground)] transition-colors"
               >
-                <ChevronDown size={13} /> + Add private notes or credentials for reviewer (optional)
+                <ChevronDown size={13} /> + Add private notes or credentials for owner (optional)
               </button>
             ) : (
               <div className="space-y-1.5 animate-in fade-in duration-150">
                 <div className="flex items-center justify-between">
                   <label className="block uppercase tracking-wider font-semibold text-[var(--text-muted)] text-[10px]">
-                    Notes for Reviewer (Optional)
+                    Notes for Owner (Optional)
                   </label>
                   <button
                     type="button"
