@@ -4,7 +4,6 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { ActivityTimeline } from "@/components/payouts/activity-timeline";
-import { StatCard } from "@/components/dashboard/stat-card";
 import { MilestoneRow } from "@/components/milestones/milestone-row";
 import { PayoutDetailReleaseShell } from "@/components/payouts/payout-detail-release-shell";
 import { Button } from "@/components/shared/button";
@@ -195,28 +194,12 @@ const [reviewingMilestoneId, setReviewingMilestoneId] = useState<string | null>(
   const nextReleasableMilestone = milestones.find(
     (milestone) => milestone.status === "approved",
   );
-  const currentReleasableMilestoneId = nextReleasableMilestone?.id;
-  const releasePendingForCurrentMilestone =
-    releaseProof?.status === "pending" &&
-    Boolean(currentReleasableMilestoneId) &&
-    releaseProof.milestoneId === currentReleasableMilestoneId;
-  const releaseFailedForCurrentMilestone =
-    releaseProof?.status === "failed" &&
-    Boolean(currentReleasableMilestoneId) &&
-    releaseProof.milestoneId === currentReleasableMilestoneId;
-
   const releasedCount = milestones.filter(
     (milestone) => milestone.status === "released",
   ).length;
   const amountReleased = milestones
     .filter((milestone) => milestone.status === "released")
     .reduce((sum, milestone) => sum + milestone.amount, 0);
-  const submittedCount = milestones.filter(
-    (milestone) => milestone.status === "submitted",
-  ).length;
-  const readyToReleaseCount = milestones.filter(
-    (milestone) => milestone.status === "approved",
-  ).length;
 
   const effectivePayoutStatus =
     releasedCount === milestones.length && milestones.length > 0
@@ -233,20 +216,6 @@ const [reviewingMilestoneId, setReviewingMilestoneId] = useState<string | null>(
           ? "Partially released"
           : "In progress"
         : effectivePayoutStatus.replace("_", " ");
-
-  const nextActionText = releasePendingForCurrentMilestone
-    ? `Settlement proof for ${nextReleasableMilestone?.title ?? "the approved milestone"} is still pending. Confirm or fail the proof update before queuing another release.`
-    : releaseFailedForCurrentMilestone
-      ? `Settlement proof for ${nextReleasableMilestone?.title ?? "the approved milestone"} failed. Retry the release or refresh the proof status before moving on.`
-      : nextReleasableMilestone
-        ? `Release ${nextReleasableMilestone.title} to continue settlement.`
-        : submittedCount > 0
-          ? "Approve submitted milestones to unlock the next release."
-          : milestones.some((milestone) => milestone.status === "pending" || milestone.status === "rejected")
-            ? "Ask the contributor to submit the next milestone deliverable."
-            : effectivePayoutStatus === "completed"
-              ? "This payout is fully settled. Review the proof record or open another payout."
-              : "No immediate action is available yet on this payout.";
 
   const draftMilestonesDirty = JSON.stringify(normalizeDraftMilestones(draftMilestonesState)) !==
     JSON.stringify(normalizeDraftMilestones(draftMilestonesCommitted));
@@ -786,68 +755,40 @@ const [reviewingMilestoneId, setReviewingMilestoneId] = useState<string | null>(
           </>
         ) : null}
 
-        <section className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-            <StatCard label="Milestones" value={milestones.length} />
-            <StatCard label="Awaiting owner approval" value={submittedCount} />
-            <StatCard label="Ready to release" value={readyToReleaseCount} />
-            <StatCard
-              label="Released"
-              value={`${formatUsdc(amountReleased)} USDC`}
-              hint={`${releasedCount} milestone${releasedCount === 1 ? "" : "s"} already settled on Arc`}
-            />
-            <StatCard
-              label="Latest release"
-              value={latestReleasedMilestone ? latestReleasedMilestone.title : "Not released yet"}
-              hint={
-                releaseProof?.confirmedAt
-                  ? `Confirmed ${new Date(releaseProof.confirmedAt).toLocaleString()}`
-                  : releaseProof
-                    ? "Proof attached to latest payout event"
-                    : "Release the next approved milestone to attach proof"
-              }
-            />
-          </div>
-          <div className="rounded-2xl border border-dashed border-[var(--border-soft)] px-4 py-3 text-sm text-[var(--text-muted)]">
-            <span className="font-semibold text-[var(--foreground)]">Next action:</span> {nextActionText}
-          </div>
-        </section>
+        <PayoutDetailReleaseShell
+          payoutId={payout.id}
+          recipientAddress={contributor?.walletAddress}
+          nextReleasableMilestone={nextReleasableMilestone}
+          releaseMilestoneTitle={latestReleasedMilestone?.title}
+          releaseProof={releaseProof}
+          currentActor={currentActor}
+          onReleaseSuccess={handleReleaseSuccess}
+          onActivityChange={refreshActivity}
+        />
 
-        <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-          <Card className="sf-shell">
-            <CardHeader>
-              <CardTitle>Milestone Workflow</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {milestones.map((milestone) => (
-                  <MilestoneRow
-                    key={milestone.id}
-                    milestone={milestone}
-                    currentActor={currentActor}
-                    workspaceId={workspaceId}
-                    onApprove={canApproveMilestones ? () => handleApproveMilestone(milestone.id) : undefined}
-                    onReject={canApproveMilestones ? (_milestoneId, comment) => handleRejectMilestone(milestone.id, comment) : undefined}
-                    onStatusChange={handleMilestoneStatusChange}
-                  />
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+        <Card className="sf-shell">
+          <CardHeader>
+            <CardTitle>Milestones</CardTitle>
+            <p className="mt-2 text-sm text-[var(--text-muted)]">Track the work, review submissions, and see what unlocks payment next.</p>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {milestones.map((milestone) => (
+                <MilestoneRow
+                  key={milestone.id}
+                  milestone={milestone}
+                  currentActor={currentActor}
+                  workspaceId={workspaceId}
+                  onApprove={canApproveMilestones ? () => handleApproveMilestone(milestone.id) : undefined}
+                  onReject={canApproveMilestones ? (_milestoneId, comment) => handleRejectMilestone(milestone.id, comment) : undefined}
+                  onStatusChange={handleMilestoneStatusChange}
+                />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
 
-          <PayoutDetailReleaseShell
-            payoutId={payout.id}
-            recipientAddress={contributor?.walletAddress}
-            nextReleasableMilestone={nextReleasableMilestone}
-            releaseMilestoneTitle={latestReleasedMilestone?.title}
-            releaseProof={releaseProof}
-            currentActor={currentActor}
-            onReleaseSuccess={handleReleaseSuccess}
-            onActivityChange={refreshActivity}
-          />
-        </div>
-
-        <ActivityTimeline items={activityItems} />
+        <details className="sf-shell rounded-2xl p-6"><summary className="cursor-pointer text-lg font-semibold text-[var(--foreground)]">Activity</summary><div className="mt-4"><ActivityTimeline items={activityItems} /></div></details>
 
         {/* Export Receipt Modal */}
         <PayoutReceiptModal
