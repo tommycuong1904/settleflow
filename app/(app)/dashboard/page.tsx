@@ -1,20 +1,12 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { StatCard } from "@/components/dashboard/stat-card";
-import { MilestoneStatusBadge } from "@/components/milestones/milestone-status-badge";
 import { Button } from "@/components/shared/button";
 import { PageHeader } from "@/components/shared/page-header";
-import { EmptyState } from "@/components/shared/empty-state";
-import { SectionCard } from "@/components/shared/section-card";
-import DashboardTabs from "@/components/dashboard/DashboardTabs";
-import PendingReview from "@/components/dashboard/PendingReview";
-import ActivePayouts from "@/components/dashboard/ActivePayouts";
-import RecentProof from "@/components/dashboard/RecentProof";
 import { getDashboardData } from "@/lib/repositories/dashboard";
 import { resolveProductContextForServerPage } from "@/lib/auth/session-server";
 import { ServerAuthContextState } from "@/components/shared/server-auth-context-state";
 import { WalletGate } from "@/components/dashboard/wallet-gate";
-import { formatUsdc, shortenAddress } from "@/lib/utils/format";
+import { formatUsdc } from "@/lib/utils/format";
 
 export default async function DashboardPage() {
   const cookieStore = await cookies();
@@ -43,6 +35,7 @@ export default async function DashboardPage() {
     contributors = dashboardData.contributors;
     transactionProofs = dashboardData.transactionProofs;
   }
+  const isOwner = contextResult.kind === "authenticated" && contextResult.productContext.actor === "owner";
 
   const activePayouts = payouts.filter((payout) =>
     ["active", "partially_released"].includes(payout.status),
@@ -66,64 +59,68 @@ export default async function DashboardPage() {
   );
   const outstandingExposure = Math.max(totalScheduled - releasedValue, 0);
   const failedSettlementProof = transactionProofs.find((proof) => proof.status === "failed");
-  const pendingSettlementProof = transactionProofs.find((proof) => proof.status === "pending");
   const pendingSettlementProofs = transactionProofs.filter((proof) => proof.status === "pending");
   const failedSettlementMilestone = failedSettlementProof
     ? milestones.find((milestone) => milestone.id === failedSettlementProof.milestoneId)
-    : undefined;
-  const pendingSettlementMilestone = pendingSettlementProof
-    ? milestones.find((milestone) => milestone.id === pendingSettlementProof.milestoneId)
     : undefined;
   const inFlightSettlementValue = pendingSettlementProofs.reduce((sum, proof) => {
     const milestone = milestones.find((item) => item.id === proof.milestoneId);
     return sum + (milestone?.amount ?? 0);
   }, 0);
-  const nextActionPayoutId = pendingApprovals[0]?.payoutId
-    ?? failedSettlementMilestone?.payoutId
-    ?? pendingSettlementMilestone?.payoutId
-    ?? releaseReadyMilestones[0]?.payoutId
-    ?? activePayouts[0]?.id;
-  const nextActionLabel = pendingApprovals[0]
-    ? "Review next milestone"
-    : failedSettlementMilestone
-      ? "Retry failed settlement"
-      : pendingSettlementMilestone
-        ? "Update pending proof"
-        : releaseReadyMilestones[0]
-          ? "Release approved milestone"
-          : activePayouts[0]
-            ? "Resume active payout"
-            : null;
-  const priorityQueueTitle = pendingApprovals.length > 0
-    ? `${pendingApprovals.length} milestone${pendingApprovals.length === 1 ? "" : "s"} waiting for review`
-    : failedSettlementMilestone
-      ? `Retry settlement for ${failedSettlementMilestone.title}`
-      : pendingSettlementMilestone
-        ? `Update proof for ${pendingSettlementMilestone.title}`
-        : `${releaseReadyMilestones.length} milestone${releaseReadyMilestones.length === 1 ? "" : "s"} ready for release`;
-  const priorityQueueDescription = pendingApprovals.length > 0
-    ? "Review submitted work first so approved milestones can move into release-ready state without blocking the payout flow."
-    : failedSettlementMilestone
-      ? "A failed settlement is blocking payout progress. Retry the release or refresh proof state before moving on."
-      : pendingSettlementMilestone
-        ? "A release is already in flight. Confirm or fail the settlement proof before queuing more release work."
-        : releaseReadyMilestones.length > 0
-          ? "No review blockers remain. Move approved milestones into Arc settlement next."
-          : "No urgent payout blockers are open right now.";
+  const payoutFor = (payoutId: string) => payouts.find((payout) => payout.id === payoutId);
+  const contributorNameFor = (payoutId: string) => {
+    const payout = payoutFor(payoutId);
+    return contributors.find((contributor) => contributor.id === payout?.contributorId)?.name ?? "Contributor";
+  };
+  const workQueue = [
+    ...pendingSettlementProofs.map((proof) => {
+      const milestone = milestones.find((item) => item.id === proof.milestoneId);
+      return {
+        id: `pending-${proof.id}`,
+        href: milestone ? `/payouts/${milestone.payoutId}` : "/payouts",
+        title: isOwner ? "Verify a payment already sent" : "Payment is being verified",
+        description: `${milestone?.title ?? "A milestone"} for ${contributorNameFor(milestone?.payoutId ?? "")} ${isOwner ? "needs payment confirmation. Do not send it again." : "has been sent and is awaiting confirmation."}`,
+        action: isOwner ? "Verify payment" : "View payout",
+      };
+    }),
+    ...(failedSettlementProof ? [{
+      id: `failed-${failedSettlementProof.id}`,
+      href: failedSettlementMilestone ? `/payouts/${failedSettlementMilestone.payoutId}` : "/payouts",
+      title: isOwner ? "Review a payment issue" : "Payment needs owner attention",
+      description: `${failedSettlementMilestone?.title ?? "A milestone"} needs your decision before another payment attempt.`,
+      action: isOwner ? "Review issue" : "View payout",
+    }] : []),
+    ...pendingApprovals.map((milestone) => ({
+      id: `review-${milestone.id}`,
+      href: `/payouts/${milestone.payoutId}`,
+      title: isOwner ? `Review work from ${contributorNameFor(milestone.payoutId)}` : "Waiting for owner review",
+      description: isOwner ? `${milestone.title} · ${formatUsdc(milestone.amount)} USDC` : `${milestone.title} has been submitted.`,
+      action: isOwner ? "Review work" : "View payout",
+    })),
+    ...(isOwner ? releaseReadyMilestones.map((milestone) => ({
+      id: `pay-${milestone.id}`,
+      href: `/payouts/${milestone.payoutId}`,
+      title: `Pay ${formatUsdc(milestone.amount)} USDC to ${contributorNameFor(milestone.payoutId)}`,
+      description: `${milestone.title} is approved and ready for payment.`,
+      action: "Review & pay",
+    })) : []),
+  ].slice(0, 5);
+  const nextTask = workQueue[0];
+  const confirmedProofs = transactionProofs.filter((proof) => proof.status === "confirmed").slice(0, 3);
 
   return (
-    <div className="sf-app-wrapper flex flex-col py-8 md:py-12 gap-8">
+    <div className="sf-app-wrapper flex flex-col gap-8 py-8 md:py-12">
       <PageHeader
-        eyebrow="Payout operations"
-        title="Review queue, release readiness, and settlement proof in one place."
-        description="SettleFlow keeps contributor payouts visible from submitted work to approved release and onchain proof, so teams can move faster without losing control."
+        eyebrow="Workspace"
+        title="Today’s work"
+        description="Complete the next payout task, then move on."
       >
-        {nextActionPayoutId && nextActionLabel ? (
-          <Button href={`/payouts/${nextActionPayoutId}`} variant="secondary" size="sm">
-            {nextActionLabel}
+        {nextTask ? (
+          <Button href={nextTask.href} variant="primary" size="sm">
+            {nextTask.action}
           </Button>
         ) : null}
-        <Button href="/payouts/new" variant="primary" size="sm">
+        <Button href="/payouts/new" variant={nextTask ? "secondary" : "primary"} size="sm">
           New Payout
         </Button>
       </PageHeader>
@@ -131,104 +128,17 @@ export default async function DashboardPage() {
       {/* Inline Web3 wallet connection gate */}
       <WalletGate />
 
-      <section className="sf-shell rounded-xl p-6 md:p-7">
-        <div className="grid gap-6 xl:grid-cols-[1.25fr_0.75fr] xl:items-start">
-          <div className="space-y-4">
-            <div className="inline-flex rounded-full border border-[var(--border-soft)] bg-[var(--surface-muted)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">
-              Priority queue
-            </div>
-            <div className="space-y-2">
-              <h2 className="text-2xl font-semibold tracking-tight text-[var(--foreground)]">
-                {priorityQueueTitle}
-              </h2>
-              <p className="max-w-2xl text-sm leading-7 text-[var(--text-primary)]">
-                {priorityQueueDescription}
-              </p>
-            </div>
-          </div>
-
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-            <div className="rounded-xl border border-[var(--border-soft)] p-5">
-              <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                Ready to release
-              </p>
-              <p className="mt-3 text-2xl font-semibold tracking-tight text-[var(--foreground)]">
-                {formatUsdc(releaseReadyMilestones.reduce((sum, milestone) => sum + milestone.amount, 0))} USDC
-              </p>
-              <p className="mt-2 text-sm text-[var(--text-primary)]">
-                Approved milestone value that can move to Arc next.
-              </p>
-            </div>
-            <div className="rounded-xl border border-[var(--border-soft)] p-5">
-              <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                Released with proof
-              </p>
-              <p className="mt-3 text-2xl font-semibold tracking-tight text-[var(--foreground)]">
-                {formatUsdc(releasedValue)} USDC
-              </p>
-              <p className="mt-2 text-sm text-[var(--text-primary)]">
-                Already released and visible through Arc transaction proof.
-              </p>
-            </div>
-          </div>
-        </div>
+      <section className="sf-shell rounded-2xl p-6 md:p-7">
+        {nextTask ? (
+          <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-center"><div><p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">Up next</p><h2 className="mt-2 text-2xl font-semibold tracking-tight text-[var(--foreground)]">{nextTask.title}</h2><p className="mt-2 text-sm text-[var(--text-muted)]">{nextTask.description}</p></div><Button href={nextTask.href}>{nextTask.action}</Button></div>
+        ) : (
+          <div><p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">All caught up</p><h2 className="mt-2 text-2xl font-semibold tracking-tight text-[var(--foreground)]">No payout task needs you right now.</h2><p className="mt-2 text-sm text-[var(--text-muted)]">Create a payout or return when a contributor submits work.</p></div>
+        )}
       </section>
 
-      <section className="grid gap-4 md:grid-cols-4">
-        <StatCard label="Active payouts" value={activePayouts.length} />
-        <StatCard label="Milestones awaiting owner approval" value={pendingApprovals.length} />
-        <StatCard
-          label="Settlements in flight"
-          value={`${formatUsdc(inFlightSettlementValue)} USDC`}
-          hint={`${pendingSettlementProofs.length} milestone${pendingSettlementProofs.length === 1 ? "" : "s"} released and waiting for proof confirmation`}
-        />
-        <StatCard
-          label="Outstanding exposure"
-          value={`${formatUsdc(outstandingExposure)} USDC`}
-          hint="USDC still waiting on review, release, or proof confirmation across visible payouts"
-        />
-      </section>
-      <section className="sf-shell rounded-xl p-6 md:p-7">
-        <DashboardTabs
-          tabs={[
-            {
-              key: "pending",
-              label: "Pending Review",
-              count: pendingApprovals.length,
-              content: (
-                <PendingReview
-                  pendingApprovals={pendingApprovals}
-                  payouts={payouts}
-                  contributors={contributors}
-                  milestones={milestones}
-                />
-              ),
-            },
-            {
-              key: "active",
-              label: "Active Payouts",
-              count: activePayouts.length,
-              content: (
-                <ActivePayouts
-                  activePayouts={activePayouts}
-                  payouts={payouts}
-                  contributors={contributors}
-                  milestones={milestones}
-                  transactionProofs={transactionProofs}
-                />
-              ),
-            },
-            {
-              key: "proof",
-              label: "Recent Settlement Proofs",
-              count: transactionProofs.length,
-              content: (
-                <RecentProof transactionProofs={transactionProofs} milestones={milestones} />
-              ),
-            },
-          ]}
-        />
-      </section>
+      <section className="sf-shell rounded-2xl p-6 md:p-7"><div className="flex items-center justify-between gap-4"><div><h2 className="text-lg font-semibold text-[var(--foreground)]">Your work queue</h2><p className="mt-1 text-sm text-[var(--text-muted)]">Work is ordered so the next safe action is always clear.</p></div><Button href="/payouts" variant="ghost" size="sm">View all payouts</Button></div><div className="mt-5 divide-y divide-[var(--border-soft)]">{workQueue.length > 0 ? workQueue.map((task) => <div key={task.id} className="flex flex-col gap-3 py-4 first:pt-0 sm:flex-row sm:items-center sm:justify-between"><div><p className="font-medium text-[var(--foreground)]">{task.title}</p><p className="mt-1 text-sm text-[var(--text-muted)]">{task.description}</p></div><Button href={task.href} variant="secondary" size="sm">{task.action}</Button></div>) : <p className="py-4 text-sm text-[var(--text-muted)]">New review, payment, and verification tasks will appear here.</p>}</div></section>
+
+      <section className="grid gap-4 lg:grid-cols-[1.3fr_0.7fr]"><div className="sf-shell rounded-2xl p-6 md:p-7"><h2 className="text-lg font-semibold text-[var(--foreground)]">Recent payments</h2><div className="mt-4 divide-y divide-[var(--border-soft)]">{confirmedProofs.length > 0 ? confirmedProofs.map((proof) => { const milestone = milestones.find((item) => item.id === proof.milestoneId); return <a key={proof.id} href={milestone ? `/payouts/${milestone.payoutId}` : "/payouts"} className="block py-3 first:pt-0 hover:opacity-70"><p className="font-medium text-[var(--foreground)]">{milestone?.title ?? "Payment confirmed"}</p><p className="mt-1 text-sm text-[var(--text-muted)]">{formatUsdc(milestone?.amount ?? 0)} USDC · Confirmed</p></a>; }) : <p className="py-3 text-sm text-[var(--text-muted)]">Confirmed payments will appear here.</p>}</div></div><details className="sf-shell rounded-2xl p-6 md:p-7"><summary className="cursor-pointer text-lg font-semibold text-[var(--foreground)]">Workspace snapshot</summary><div className="mt-4 space-y-3 text-sm text-[var(--text-muted)]"><p>{activePayouts.length} active payouts</p><p>{formatUsdc(inFlightSettlementValue)} USDC awaiting payment confirmation</p><p>{formatUsdc(outstandingExposure)} USDC remains across active payouts</p><p>{formatUsdc(releasedValue)} USDC confirmed paid</p></div></details></section>
     </div>
 
 
