@@ -19,7 +19,6 @@ import { TransactionProofCard } from "@/components/payouts/transaction-proof-car
 import { Button } from "@/components/shared/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import type { Milestone } from "@/lib/models/milestone";
 import type { TransactionProof } from "@/lib/models/transaction-proof";
 import { useResolvedProductContext } from "@/lib/runtime/product-context-client";
@@ -120,7 +119,7 @@ export function PayoutDetailReleaseShell({
   const [retryingRelease, setRetryingRelease] = useState(false);
   const [refreshingProof, setRefreshingProof] = useState(false);
   const [confirmationTxHash, setConfirmationTxHash] = useState("");
-  const [failureReason, setFailureReason] = useState("");
+  const [showTxHashEntry, setShowTxHashEntry] = useState(false);
   const [activeProof, setActiveProof] = useState<TransactionProof | undefined>(releaseProof);
   const [isReleaseReviewOpen, setIsReleaseReviewOpen] = useState(false);
   useScrollLock(isReleaseReviewOpen);
@@ -483,7 +482,6 @@ export function PayoutDetailReleaseShell({
 
   function focusPendingSettlementResolution() {
     document.getElementById("settlement-proof-resolution")?.scrollIntoView({ behavior: "smooth", block: "center" });
-    window.setTimeout(() => document.getElementById("settlement-failure-reason")?.focus(), 350);
   }
 
   async function handleContinueCircleRelease() {
@@ -587,7 +585,7 @@ export function PayoutDetailReleaseShell({
           : current,
       );
       setConfirmationTxHash("");
-      setFailureReason("");
+      setShowTxHashEntry(false);
       setReleaseStatus("submitting");
       void onActivityChange?.();
     } catch (err) {
@@ -598,13 +596,13 @@ export function PayoutDetailReleaseShell({
     }
   }
 
-  async function handleRefreshProof(status: "confirmed" | "failed") {
+  async function handleRefreshProof(status: "confirmed" | "failed", failureReasonOverride?: string) {
     if (!isOwnerActor || !resolvedProof?.releaseId || refreshingProof) {
       return;
     }
 
     const txHash = confirmationTxHash.trim();
-    const reason = failureReason.trim();
+    const reason = failureReasonOverride ?? "";
 
     if (status === "confirmed" && txHash.length === 0) {
       setReleaseError("Tx hash is required to confirm settlement proof.");
@@ -690,7 +688,7 @@ export function PayoutDetailReleaseShell({
         setConfirmationTxHash("");
       }
       if (status === "failed") {
-        setFailureReason("");
+        setShowTxHashEntry(false);
         void onActivityChange?.();
       }
     } catch (err) {
@@ -813,47 +811,27 @@ export function PayoutDetailReleaseShell({
                     : "Confirm the proof when the Arc transfer lands, or mark it failed to unblock a retry."}
                 </p>
               </div>
-              <div className="grid gap-4 lg:grid-cols-2">
-                <div className="space-y-3">
-                  <label className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                    Transaction hash received
-                  </label>
-                  <Input
-                    value={confirmationTxHash}
-                    onChange={(event) => setConfirmationTxHash(event.target.value)}
-                    placeholder="0x..."
-                  />
+              <div className="space-y-3">
+                <p className="text-sm font-medium text-[var(--foreground)]">Did MetaMask show a submitted transaction?</p>
+                <div className="flex flex-wrap gap-3">
+                  <Button variant="secondary" onClick={() => setShowTxHashEntry(true)} disabled={refreshingProof}>Yes, I have the transaction hash</Button>
                   <Button
-                    variant="secondary"
-                    onClick={() => {
-                      void handleRefreshProof("confirmed");
-                    }}
+                    variant="danger"
+                    onClick={() => { void handleRefreshProof("failed", "OWNER_CONFIRMED_NO_TRANSACTION: Owner confirmed that MetaMask did not submit a transaction."); }}
                     disabled={refreshingProof}
                   >
-                    {refreshingProof ? "Updating..." : "Mark confirmed"}
+                    No, unlock retry
                   </Button>
                 </div>
-                <div className="space-y-3">
-                  <label className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                    No transaction was sent
-                  </label>
-                  <Textarea
-                    id="settlement-failure-reason"
-                    value={failureReason}
-                    onChange={(event) => setFailureReason(event.target.value)}
-                    placeholder="Example: Wallet account mismatch before transaction broadcast"
-                    className="min-h-24"
-                  />
-                  <Button
-                    variant="secondary"
-                    onClick={() => {
-                      void handleRefreshProof("failed");
-                    }}
-                    disabled={refreshingProof}
-                  >
-                    {refreshingProof ? "Updating..." : "Mark failed and unlock retry"}
-                  </Button>
-                </div>
+                {showTxHashEntry ? (
+                  <div className="space-y-3 rounded-xl border border-[var(--border-soft)] bg-[var(--surface)] p-3">
+                    <label className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">Transaction hash</label>
+                    <Input value={confirmationTxHash} onChange={(event) => setConfirmationTxHash(event.target.value)} placeholder="0x..." />
+                    <Button variant="secondary" onClick={() => { void handleRefreshProof("confirmed"); }} disabled={refreshingProof}>
+                      {refreshingProof ? "Verifying..." : "Verify transaction"}
+                    </Button>
+                  </div>
+                ) : null}
               </div>
             </div>
           ) : null}
