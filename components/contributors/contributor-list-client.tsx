@@ -138,9 +138,9 @@ export function ContributorListClient({
   return (
     <div className="space-y-6">
       {/* Controls: Search & Filter & CTA */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center">
         {/* Search */}
-        <div className="relative flex-1 max-w-md">
+        <div className="relative w-full min-w-0 md:flex-1 md:max-w-md">
           <Search
             size={16}
             className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]"
@@ -155,7 +155,7 @@ export function ContributorListClient({
         </div>
 
         {/* Status Filters & Add Button */}
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex w-full flex-wrap items-center gap-3 md:w-auto md:flex-nowrap md:shrink-0">
           <div className="flex rounded-full bg-[var(--surface)] p-1 border border-[var(--border-soft)] text-xs font-medium">
             <button
               onClick={() => setStatusFilter("all")}
