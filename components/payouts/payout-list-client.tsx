@@ -58,7 +58,7 @@ export function PayoutListClient({
             className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
           />
           <input
-            type="text"
+            type="search"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search payouts or contributors..."
