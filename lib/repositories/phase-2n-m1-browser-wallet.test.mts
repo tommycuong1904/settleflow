@@ -36,6 +36,14 @@ test("caller sourceWalletAddress is not used by browser confirmation", async () 
   assert.doesNotMatch(refreshBody, /sourceWalletAddress|connectedAddress/);
 });
 
+test("an uncertain browser submission cannot be unlocked from the payout UI", async () => {
+  const ui = await source("components/payouts/payout-detail-release-shell.tsx");
+  assert.match(ui, /Payment status unknown/);
+  assert.match(ui, /Retrying is intentionally locked to prevent a duplicate payment/);
+  assert.doesNotMatch(ui, /OWNER_CONFIRMED_NO_TRANSACTION/);
+  assert.doesNotMatch(ui, /handleRefreshProof\("failed"/);
+});
+
 test("verified tx.from must match the browser source snapshot", async () => {
   const verifier = await source("lib/arc/verify-release-transaction.ts");
   assert.match(verifier, /const sourceWalletAddress = tx\.from\.toLowerCase\(\)/);

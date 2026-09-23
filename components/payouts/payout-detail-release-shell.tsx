@@ -582,21 +582,14 @@ export function PayoutDetailReleaseShell({
     }
   }
 
-  async function handleRefreshProof(status: "confirmed" | "failed", failureReasonOverride?: string) {
+  async function handleRefreshProof() {
     if (!isOwnerActor || !resolvedProof?.releaseId || refreshingProof) {
       return false;
     }
 
     const txHash = confirmationTxHash.trim();
-    const reason = failureReasonOverride ?? "";
-
-    if (status === "confirmed" && txHash.length === 0) {
+    if (txHash.length === 0) {
       setReleaseError("Tx hash is required to confirm settlement proof.");
-      return false;
-    }
-
-    if (status === "failed" && reason.length === 0) {
-      setReleaseError("Failure reason is required to mark settlement proof as failed.");
       return false;
     }
 
@@ -611,10 +604,9 @@ export function PayoutDetailReleaseShell({
           ...productContextHeaders,
         },
         body: JSON.stringify({
-          status,
-          txHash: status === "confirmed" ? txHash : undefined,
-          network: status === "confirmed" ? "Arc Testnet" : undefined,
-          failureReason: status === "failed" ? reason : undefined,
+          status: "confirmed",
+          txHash,
+          network: "Arc Testnet",
         }),
       });
 
@@ -670,18 +662,13 @@ export function PayoutDetailReleaseShell({
       };
 
       setActiveProof(updatedProof);
-      setReleaseStatus(status === "failed" ? "failed" : "confirmed");
-      if (status === "confirmed") {
-        onReleaseSuccess?.({
-          milestoneId: resolvedMilestoneId,
-          proof: updatedProof,
-          releasedAt: proof.confirmedAt ?? new Date().toISOString(),
-        });
-        setConfirmationTxHash("");
-      }
-      if (status === "failed") {
-        void onActivityChange?.();
-      }
+      setReleaseStatus("confirmed");
+      onReleaseSuccess?.({
+        milestoneId: resolvedMilestoneId,
+        proof: updatedProof,
+        releasedAt: proof.confirmedAt ?? new Date().toISOString(),
+      });
+      setConfirmationTxHash("");
       return true;
     } catch (err) {
       const message = err instanceof Error ? err.message : "Settlement verification did not complete.";
@@ -759,16 +746,20 @@ export function PayoutDetailReleaseShell({
               </>
             ) : releaseModalMode === "pending" ? (
               <>
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">Verify payment</p>
-                <h2 className="mt-2 pr-8 text-xl font-semibold text-[var(--foreground)]">Did MetaMask send this payment?</h2>
-                <p className="mt-2 text-sm text-[var(--text-muted)]">Do not sign again. Verify the transaction already sent from your wallet, or confirm that MetaMask never submitted one.</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">Payment status unknown</p>
+                <h2 className="mt-2 pr-8 text-xl font-semibold text-[var(--foreground)]">We’re checking this payment</h2>
+                <p className="mt-2 text-sm text-[var(--text-muted)]">SettleFlow did not receive a transaction hash from your wallet. Do not sign or retry again while this payment is being reconciled.</p>
                 {resolvedProof?.txHash ? <a href={`${ARC_CONFIG.explorerUrl}/tx/${resolvedProof.txHash}`} target="_blank" rel="noreferrer" className="mt-5 inline-flex text-sm font-medium text-[var(--foreground)] underline underline-offset-4">View submitted transaction</a> : null}
                 <div className="mt-5 space-y-3 rounded-2xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-4">
-                  <label className="text-sm font-medium text-[var(--foreground)]" htmlFor="payment-transaction-hash">Transaction hash</label>
+                  <label className="text-sm font-medium text-[var(--foreground)]" htmlFor="payment-transaction-hash">Transaction hash, if you find it</label>
                   <Input id="payment-transaction-hash" value={confirmationTxHash} onChange={(event) => setConfirmationTxHash(event.target.value)} placeholder="Paste the 0x… hash from MetaMask" />
-                  <Button onClick={() => { void handleRefreshProof("confirmed").then((resolved) => { if (resolved) setReleaseModalMode(null); }); }} disabled={refreshingProof}>{refreshingProof ? "Verifying payment..." : "Verify payment"}</Button>
+                  <Button onClick={() => { void handleRefreshProof().then((resolved) => { if (resolved) setReleaseModalMode(null); }); }} disabled={refreshingProof}>{refreshingProof ? "Verifying payment..." : "Verify transaction"}</Button>
                 </div>
-                <Button className="mt-4" variant="secondary" onClick={() => { void handleRefreshProof("failed", "OWNER_CONFIRMED_NO_TRANSACTION: Owner confirmed that MetaMask did not submit a transaction.").then((resolved) => { if (resolved) setReleaseModalMode(null); }); }} disabled={refreshingProof}>MetaMask did not send a payment</Button>
+                <details className="mt-5 border-t border-[var(--border-soft)] pt-4 text-sm text-[var(--text-muted)]">
+                  <summary className="cursor-pointer font-medium text-[var(--foreground)]">Can’t find a transaction?</summary>
+                  <p className="mt-3 leading-6">Check the active wallet’s Activity on Arc Testnet for a USDC transfer with this milestone’s amount and recipient. If you are not certain which transaction is correct, leave this payment pending. Retrying is intentionally locked to prevent a duplicate payment.</p>
+                  <p className="mt-2 leading-6">A retry is available only when SettleFlow knows the wallet request was cancelled before a transaction was submitted.</p>
+                </details>
                 {releaseError ? <p className="mt-3 text-sm text-rose-600">{releaseError}</p> : null}
               </>
             ) : (
