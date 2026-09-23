@@ -175,7 +175,7 @@ export function MilestoneRow({
                     href={lastArtifactUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[var(--surface)] border border-[var(--border-strong)] text-[var(--foreground)] font-semibold text-xs hover:border-[var(--primary)] hover:text-[var(--primary)] hover:shadow-sm transition-all break-all"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[var(--surface)] border border-[var(--border-strong)] text-[var(--foreground)] font-semibold text-xs hover:border-[var(--primary)] hover:text-[var(--primary)] transition-all break-all"
                   >
                     <ExternalLink size={12} className="opacity-70 shrink-0" />
                     <span className="truncate max-w-md">{lastArtifactLabel || "View Primary Artifact"}</span>

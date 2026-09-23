@@ -161,7 +161,7 @@ export function ContributorListClient({
               onClick={() => setStatusFilter("all")}
               className={`rounded-full px-3 py-1.5 transition-all ${
                 statusFilter === "all"
-                  ? "bg-[var(--foreground)] text-[var(--background)] font-semibold shadow-sm"
+                  ? "bg-[var(--foreground)] text-[var(--background)] font-semibold"
                   : "text-[var(--text-muted)] hover:text-[var(--foreground)]"
               }`}
             >
@@ -171,7 +171,7 @@ export function ContributorListClient({
               onClick={() => setStatusFilter("active")}
               className={`rounded-full px-3 py-1.5 transition-all ${
                 statusFilter === "active"
-                  ? "bg-[var(--foreground)] text-[var(--background)] font-semibold shadow-sm"
+                  ? "bg-[var(--foreground)] text-[var(--background)] font-semibold"
                   : "text-[var(--text-muted)] hover:text-[var(--foreground)]"
               }`}
             >
@@ -182,7 +182,7 @@ export function ContributorListClient({
                 onClick={() => setStatusFilter("archived")}
                 className={`rounded-full px-3 py-1.5 transition-all ${
                   statusFilter === "archived"
-                    ? "bg-[var(--foreground)] text-[var(--background)] font-semibold shadow-sm"
+                    ? "bg-[var(--foreground)] text-[var(--background)] font-semibold"
                     : "text-[var(--text-muted)] hover:text-[var(--foreground)]"
               }`}
               >

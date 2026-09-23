@@ -177,7 +177,7 @@ export function AppHeader() {
         <div className="relative">
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="flex items-center gap-2 rounded-full border border-[var(--border-soft)] bg-[var(--surface)] px-3.5 py-1.5 text-xs text-[var(--foreground)] hover:border-[var(--border-strong)] hover:bg-[var(--surface-muted)] transition-all shadow-sm"
+            className="flex items-center gap-2 rounded-full border border-[var(--border-soft)] bg-[var(--surface)] px-3.5 py-1.5 text-xs text-[var(--foreground)] hover:border-[var(--border-strong)] hover:bg-[var(--surface-muted)] transition-all"
           >
             {userAvatar ? (
               // eslint-disable-next-line @next/next/no-img-element

@@ -28,9 +28,9 @@ const sizeClasses: Record<ButtonSize, string> = {
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary:
-    "border border-black !bg-black !text-white font-semibold hover:opacity-80 transition-opacity shadow-sm disabled:opacity-40",
+    "border border-black !bg-black !text-white font-semibold hover:opacity-80 transition-opacity disabled:opacity-40",
   secondary:
-    "border border-[var(--border-soft)] bg-[var(--surface-muted)] text-[var(--foreground)] hover:bg-[var(--surface-strong)] hover:border-[var(--border-strong)] shadow-sm disabled:opacity-40",
+    "border border-[var(--border-soft)] bg-[var(--surface-muted)] text-[var(--foreground)] hover:bg-[var(--surface-strong)] hover:border-[var(--border-strong)] disabled:opacity-40",
   ghost:
     "border border-transparent bg-transparent text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--foreground)] disabled:opacity-40",
   outline:
@@ -75,4 +75,3 @@ export function Button({
     </button>
   );
 }
-

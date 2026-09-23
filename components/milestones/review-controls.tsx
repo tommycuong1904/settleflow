@@ -40,7 +40,7 @@ export function ReviewControls({
           size="sm"
           onClick={onApprove}
           disabled={busy}
-          className="!bg-emerald-600 hover:!bg-emerald-700 !border-emerald-600 !text-white shadow-sm font-semibold"
+          className="!bg-emerald-600 hover:!bg-emerald-700 !border-emerald-600 !text-white font-semibold"
           icon={<CheckCircle2 size={14} />}
         >
           {busy ? "Approving..." : "Approve Milestone"}
