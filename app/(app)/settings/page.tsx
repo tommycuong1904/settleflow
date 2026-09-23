@@ -16,6 +16,7 @@ import {
   Cpu,
   Check,
   Copy,
+  ChevronDown,
   ExternalLink,
   UserPlus,
   Wallet,
@@ -136,38 +137,26 @@ export default function SettingsPage() {
       <PageHeader
         eyebrow="Settings"
         title="Workspace settings"
-        description="Manage your account, notifications, team access, and wallet connection."
+        description="Manage the active workspace, your account, notifications, and wallet connection."
       />
 
       <div className="space-y-8">
         {/* Team access */}
-        {isOwner && <div className="rounded-xl border border-[var(--border-soft)] p-6 sm:p-8 space-y-6 bg-[var(--surface-muted)]/30">
-          <div className="flex items-center gap-3 pb-4 border-b border-[var(--border-soft)]">
+        {isOwner && <details className="rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)]/30 p-6 sm:p-8">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--surface-muted)] border border-[var(--border-soft)] text-[var(--text-muted)]">
               <UserPlus size={20} />
             </div>
             <div>
               <h2 className="text-base font-semibold text-[var(--foreground)]">Invite an owner</h2>
-              <p className="text-xs text-[var(--text-muted)]">Give a trusted teammate full access to this workspace.</p>
+              <p className="text-xs text-[var(--text-muted)]">Give a trusted teammate full access to this workspace when needed.</p>
             </div>
-          </div>
-
-          <div className="space-y-4 text-xs">
-            {/* Contributor invite note */}
-            <div className="flex items-start gap-3 rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-3.5">
-              <UserPlus size={14} className="mt-0.5 shrink-0 text-[var(--text-muted)]" />
-              <p className="text-[var(--text-muted)] leading-relaxed">
-                To invite a <strong className="text-[var(--foreground)]">Contributor</strong>, use the{" "}
-                <a
-                  href="/contributors"
-                  className="underline underline-offset-2 text-[var(--foreground)] hover:opacity-70 transition-opacity"
-                >
-                  Contributors page
-                </a>
-                {" "}— each contributor must be linked to their workspace record first.
-              </p>
             </div>
+            <ChevronDown size={18} className="shrink-0 text-[var(--text-muted)]" />
+          </summary>
 
+          <div className="mt-6 space-y-4 text-xs">
             <div className="grid gap-4 md:grid-cols-3 items-end">
               <div className="space-y-2 md:col-span-1">
                 <label className="block font-semibold uppercase tracking-wider text-[var(--text-muted)]">
@@ -236,7 +225,7 @@ export default function SettingsPage() {
               </div>
             )}
           </div>
-        </div>}
+        </details>}
 
         {/* Active session */}
         <div className="rounded-xl border border-[var(--border-soft)] p-6 sm:p-8 space-y-6">
@@ -263,39 +252,26 @@ export default function SettingsPage() {
             )}
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2 text-xs">
-            <div className="p-4 rounded-xl bg-[var(--surface-muted)] border border-[var(--border-soft)] space-y-1.5">
-              <div className="flex items-center justify-between">
+          <div className="divide-y divide-[var(--border-soft)] rounded-xl border border-[var(--border-soft)] text-xs">
+            <div className="flex flex-col gap-2 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between">
+              <div>
                 <p className="text-[11px] uppercase tracking-wider text-[var(--text-muted)] font-semibold">
                   Signed-in account
                 </p>
-                {address && (
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      await navigator.clipboard.writeText(address);
-                      toast({
-                        variant: "success",
-                        title: "Address Copied",
-                        description: "Wallet address copied to clipboard!",
-                      });
-                    }}
-                    className="flex items-center gap-1 text-[11px] text-[var(--foreground)] hover:text-[var(--text-muted)] transition-colors"
-                  >
-                    <Copy size={12} /> Copy Address
-                  </button>
-                )}
+                <p className="mt-1 text-sm font-mono text-[var(--foreground)] font-medium break-all">
+                  {email ? `${email} (${address?.slice(0, 6)}...${address?.slice(-4)})` : address || "Guest / Not connected"}
+                </p>
               </div>
-              <p className="text-sm font-mono text-[var(--foreground)] font-medium break-all">
-                {email ? `${email} (${address?.slice(0, 6)}...${address?.slice(-4)})` : address || "Guest / Not connected"}
-              </p>
+              {address && <button type="button" onClick={async () => {
+                await navigator.clipboard.writeText(address);
+                toast({ variant: "success", title: "Address copied", description: "Wallet address copied to clipboard." });
+              }} className="inline-flex shrink-0 items-center gap-1 text-[11px] font-medium text-[var(--foreground)] hover:underline"><Copy size={12} /> Copy</button>}
             </div>
-
-            <div className="p-4 rounded-xl bg-[var(--surface-muted)] border border-[var(--border-soft)] space-y-1">
+            <div className="px-4 py-3.5">
               <p className="text-[11px] uppercase tracking-wider text-[var(--text-muted)] font-semibold">
                 Sign-in method
               </p>
-              <p className="text-sm font-semibold text-[var(--text-muted)]">
+              <p className="mt-1 text-sm font-medium text-[var(--foreground)]">
                 {authType === "web2_google"
                   ? "Google account — Circle Smart Wallet coming soon"
                   : authType === "web2_email"
@@ -312,16 +288,13 @@ export default function SettingsPage() {
         <div className="rounded-xl border border-[var(--border-soft)] p-6 sm:p-8 space-y-4">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <h2 className="text-base font-semibold text-[var(--foreground)]">Login Methods & Wallets</h2>
-              <p className="text-xs text-[var(--text-muted)]">Link a new browser-wallet address that has never been registered in SettleFlow.</p>
+              <h2 className="text-base font-semibold text-[var(--foreground)]">Connected wallets</h2>
+              <p className="text-xs text-[var(--text-muted)]">Use a browser wallet to sign in and approve payments.</p>
             </div>
             <Button type="button" variant="secondary" size="sm" onClick={handleLinkWallet} disabled={!isConnected || isLinkingWallet}>
               <Wallet size={13} className="mr-1.5" /> {isLinkingWallet ? "Waiting for signature..." : "Link wallet"}
             </Button>
           </div>
-          <p className="text-[11px] leading-relaxed text-[var(--text-muted)]">
-            Linking requires a fresh signature from the selected wallet. It never changes workspace roles, imports a private key, or merges an existing account.
-          </p>
           <div className="space-y-2 pt-1">
             {linkedWallets.map((wallet) => (
               <div key={wallet.id} className="flex flex-col gap-1 rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] px-3.5 py-3 text-xs sm:flex-row sm:items-center sm:justify-between">
@@ -351,18 +324,22 @@ export default function SettingsPage() {
         </div>
 
         {/* Advanced Arc tools */}
-        <div className="rounded-xl border border-[var(--border-soft)] p-6 sm:p-8 space-y-6">
-          <div className="flex items-center justify-between gap-4 pb-4 border-b border-[var(--border-soft)]">
+        <details className="rounded-xl border border-[var(--border-soft)] p-6 sm:p-8">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--surface-muted)] border border-[var(--border-soft)] text-[var(--text-muted)]">
                 <Cpu size={20} />
               </div>
               <div>
-                <h2 className="text-base font-semibold text-[var(--foreground)]">Advanced: Arc Network</h2>
-                <p className="text-xs text-[var(--text-muted)]">Connection details, node diagnostics, and wallet setup</p>
+                <h2 className="text-base font-semibold text-[var(--foreground)]">Advanced network details</h2>
+                <p className="text-xs text-[var(--text-muted)]">Arc Testnet connection and diagnostics.</p>
               </div>
             </div>
+            <ChevronDown size={18} className="shrink-0 text-[var(--text-muted)]" />
+          </summary>
 
+          <div className="mt-6 space-y-6">
+          <div className="flex flex-col gap-3 border-b border-[var(--border-soft)] pb-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-2">
               <Button
                 type="button"
@@ -428,8 +405,8 @@ export default function SettingsPage() {
               </div>
             </div>
           </div>
-
-        </div>
+          </div>
+        </details>
 
       </div>
     </div>
