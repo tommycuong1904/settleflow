@@ -301,7 +301,7 @@ export default function SettingsPage() {
                   : authType === "web2_email"
                   ? "Email account — Circle Smart Wallet coming soon"
                   : authType === "web3_wallet"
-                  ? "Direct Web3 Browser Wallet (MetaMask / Rabby)"
+                  ? "Direct Web3 browser wallet"
                   : "Guest Simulation Mode"}
               </p>
             </div>
@@ -313,10 +313,10 @@ export default function SettingsPage() {
           <div className="flex items-center justify-between gap-4">
             <div>
               <h2 className="text-base font-semibold text-[var(--foreground)]">Login Methods & Wallets</h2>
-              <p className="text-xs text-[var(--text-muted)]">Link only a new MetaMask or Rabby address that has never been registered in SettleFlow.</p>
+              <p className="text-xs text-[var(--text-muted)]">Link a new browser-wallet address that has never been registered in SettleFlow.</p>
             </div>
             <Button type="button" variant="secondary" size="sm" onClick={handleLinkWallet} disabled={!isConnected || isLinkingWallet}>
-              <Wallet size={13} className="mr-1.5" /> {isLinkingWallet ? "Waiting for signature..." : "Link MetaMask"}
+              <Wallet size={13} className="mr-1.5" /> {isLinkingWallet ? "Waiting for signature..." : "Link wallet"}
             </Button>
           </div>
           <p className="text-[11px] leading-relaxed text-[var(--text-muted)]">
@@ -387,7 +387,7 @@ export default function SettingsPage() {
                   } catch {}
                 }}
               >
-                Add to MetaMask
+                Add Arc Testnet
               </Button>
             </div>
           </div>
