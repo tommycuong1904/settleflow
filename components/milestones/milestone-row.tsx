@@ -18,7 +18,6 @@ import {
   AlertTriangle,
   Loader2,
   CheckCircle2,
-  Sparkles,
 } from "lucide-react";
 import { isRole } from "@/lib/runtime/role-utils";
 
@@ -57,10 +56,10 @@ export function MilestoneRow({
   const [lastArtifactUrl, setLastArtifactUrl] = useState<string | null>(
     milestone.latestSubmission?.artifactUrl || null,
   );
-  const [lastArtifactLabel, setLastArtifactLabel] = useState<string | null>(
+  const [lastArtifactLabel] = useState<string | null>(
     milestone.latestSubmission?.artifactLabel || null,
   );
-  const [lastNotes, setLastNotes] = useState<string | null>(
+  const [lastNotes] = useState<string | null>(
     milestone.latestSubmission?.notes || null,
   );
 
@@ -71,7 +70,6 @@ export function MilestoneRow({
   const isContributorActor = isRole(currentActor, "contributor");
   const isOwnerActor = isRole(currentActor, "owner");
   const canApproveMilestone = isOwnerActor;
-  const isSubmittable = (status === "pending" || status === "rejected") && isContributorActor;
 
   const handleSubmissionSuccess = (meta?: { submittedAt?: string; summary?: string; artifactUrl?: string }) => {
     setStatus("submitted");
@@ -96,13 +94,6 @@ export function MilestoneRow({
     setRejectComment("");
     setSubmissionError(null);
     setIsRejectModalOpen(true);
-  }
-
-  function handleFillDemoRejectReason() {
-    setRejectComment(
-      `Please revise the deliverables for "${milestone.title}": update test coverage, resolve PR feedback, and verify the staging preview credentials before resubmitting.`,
-    );
-    setSubmissionError(null);
   }
 
   async function handleConfirmReject() {
@@ -323,7 +314,7 @@ export function MilestoneRow({
           onClick={() => setIsRejectModalOpen(false)}
         >
           <div
-            className="relative w-full max-w-md rounded-3xl border border-[var(--border-strong)] bg-[var(--surface)] p-6 shadow-2xl text-[var(--foreground)]"
+            className="relative w-full max-w-md rounded-xl border border-[var(--border-strong)] bg-[var(--surface)] p-6 shadow-2xl text-[var(--foreground)]"
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -337,36 +328,27 @@ export function MilestoneRow({
 
             <div className="flex items-center gap-2 text-rose-500 mb-2">
               <AlertTriangle size={18} />
-              <span className="text-xs font-bold uppercase tracking-wider">Request Milestone Revision</span>
+              <span className="text-xs font-bold uppercase tracking-wider">Request changes</span>
             </div>
 
             <h3 className="text-lg font-bold text-[var(--foreground)]">
-              Reject &quot;{milestone.title}&quot;?
+              Request changes to &quot;{milestone.title}&quot;
             </h3>
             <p className="text-xs text-[var(--text-muted)] mt-1">
-              Provide feedback for the contributor explaining what needs to be revised before this milestone can be approved.
+              Explain what needs to change before this milestone can be approved.
             </p>
 
             <div className="mt-4 space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="block uppercase tracking-wider font-semibold text-xs text-[var(--foreground)]">
-                  Reason for Rejection <span className="text-rose-400">*</span>
-                </label>
-                <button
-                  type="button"
-                  onClick={handleFillDemoRejectReason}
-                  className="inline-flex items-center gap-1 text-[11px] text-[var(--primary)] hover:opacity-80 font-semibold transition-opacity"
-                >
-                  <Sparkles size={11} /> Auto-fill sample feedback
-                </button>
-              </div>
+              <label className="block uppercase tracking-wider font-semibold text-xs text-[var(--foreground)]">
+                Feedback <span className="text-rose-500">*</span>
+              </label>
               <textarea
                 required
                 rows={3}
                 value={rejectComment}
                 onChange={(e) => setRejectComment(e.target.value)}
-                placeholder="e.g. Please update the integration tests, address PR review comments, or fix staging credentials..."
-                className="w-full rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-3 text-xs text-[var(--foreground)] placeholder-[var(--text-muted)] focus:border-rose-500/50 focus:outline-none focus:ring-1 focus:ring-rose-500/50 transition-all resize-none leading-relaxed"
+                placeholder="Describe the changes needed so the contributor can revise and resubmit."
+                className="w-full rounded-xl border border-[var(--border-soft)] bg-[var(--input-background)] p-3 text-xs text-[var(--foreground)] placeholder:text-[var(--input-placeholder)] focus:border-rose-500/50 focus:bg-[var(--input-focus-background)] focus:outline-none focus:ring-1 focus:ring-rose-500/50 transition-all resize-none leading-relaxed"
               />
             </div>
 
