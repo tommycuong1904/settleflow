@@ -173,7 +173,7 @@ export default function SettingsPage() {
                 <label className="block font-semibold uppercase tracking-wider text-[var(--text-muted)]">
                   Invite Role
                 </label>
-                <div className="w-full rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] py-2.5 px-3.5 text-xs text-[var(--foreground)]">
+                <div className="w-full rounded-full border border-[var(--border-soft)] bg-[var(--surface-muted)] py-2.5 px-3.5 text-xs text-[var(--foreground)]">
                   Owner (Full Admin Access)
                 </div>
               </div>
