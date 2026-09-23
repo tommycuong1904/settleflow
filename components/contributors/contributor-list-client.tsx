@@ -23,7 +23,6 @@ import {
   Briefcase,
   Mail,
   Coins,
-  ArrowRight,
   ShieldCheck,
   Users,
   Pencil,
@@ -378,25 +377,29 @@ export function ContributorListClient({
                       {canManageContributor(contributor) && (
                         <Button
                           variant="outline"
-                          className="text-xs py-1.5 px-3 h-auto"
+                          className="h-8 w-8 !p-0"
+                          title="Edit contributor"
                           onClick={() => {
                             setEditingContributor(contributor);
                             setIsEditModalOpen(true);
                           }}
                         >
-                          <Pencil size={13} /> Edit
+                          <Pencil size={14} />
+                          <span className="sr-only">Edit contributor</span>
                         </Button>
                       )}
                       {canManageContributor(contributor) && (
                         <Button
                           variant="outline"
-                          className="text-xs py-1.5 px-3 h-auto text-red-400 border-red-400/40 hover:bg-red-500/10"
+                          className="h-8 w-8 !p-0 text-red-400 border-red-400/40 hover:bg-red-500/10"
+                          title="Delete contributor"
                           onClick={() => {
                             setDeletingContributor(contributor);
                             setIsDeleteModalOpen(true);
                           }}
                         >
-                          <Trash2 size={13} /> Delete
+                          <Trash2 size={14} />
+                          <span className="sr-only">Delete contributor</span>
                         </Button>
                       )}
                       <Button
@@ -404,7 +407,7 @@ export function ContributorListClient({
                         variant="ghost"
                         className="text-xs py-1.5 px-3 h-auto"
                       >
-                        New Payout <ArrowRight size={13} className="ml-1" />
+                        <Plus size={13} className="mr-1" /> New Payout
                       </Button>
                     </div>
                   </div>
