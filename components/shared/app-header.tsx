@@ -88,7 +88,9 @@ export function AppHeader() {
     }
   };
 
-  const displayIdentifier = userName
+  const displayIdentifier = authType === "web3_wallet" && address
+    ? `${address.slice(0, 6)}...${address.slice(-4)}`
+    : userName
     ? userName
     : email
     ? email.split("@")[0]
