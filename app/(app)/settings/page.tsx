@@ -340,10 +340,14 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-[var(--border-soft)] p-6 sm:p-8 space-y-3">
-          <h2 className="text-base font-semibold text-[var(--foreground)]">Browser notifications</h2>
-          <p className="text-xs text-[var(--text-muted)]">Receive payment and review updates when SettleFlow is not open.</p>
-          <BrowserPushToggle workspaceId={productContext.workspaceId} />
+        <div className="rounded-xl border border-[var(--border-soft)] p-6 sm:p-8">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
+            <div>
+              <h2 className="text-base font-semibold text-[var(--foreground)]">Browser notifications</h2>
+              <p className="mt-1 text-xs text-[var(--text-muted)]">Receive payment and review updates when SettleFlow is not open.</p>
+            </div>
+            <div className="shrink-0 self-start sm:self-auto"><BrowserPushToggle workspaceId={productContext.workspaceId} /></div>
+          </div>
         </div>
 
         {/* Advanced Arc tools */}
