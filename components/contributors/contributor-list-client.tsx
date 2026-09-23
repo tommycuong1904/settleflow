@@ -156,10 +156,10 @@ export function ContributorListClient({
 
         {/* Status Filters & Add Button */}
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex rounded-xl bg-[var(--surface)] p-1 border border-[var(--border-soft)] text-xs font-medium">
+          <div className="flex rounded-full bg-[var(--surface)] p-1 border border-[var(--border-soft)] text-xs font-medium">
             <button
               onClick={() => setStatusFilter("all")}
-              className={`rounded-lg px-3 py-1.5 transition-all ${
+              className={`rounded-full px-3 py-1.5 transition-all ${
                 statusFilter === "all"
                   ? "bg-[var(--foreground)] text-[var(--background)] font-semibold shadow-sm"
                   : "text-[var(--text-muted)] hover:text-[var(--foreground)]"
@@ -169,7 +169,7 @@ export function ContributorListClient({
             </button>
             <button
               onClick={() => setStatusFilter("active")}
-              className={`rounded-lg px-3 py-1.5 transition-all ${
+              className={`rounded-full px-3 py-1.5 transition-all ${
                 statusFilter === "active"
                   ? "bg-[var(--foreground)] text-[var(--background)] font-semibold shadow-sm"
                   : "text-[var(--text-muted)] hover:text-[var(--foreground)]"
@@ -180,7 +180,7 @@ export function ContributorListClient({
             {hasRole(actor, "owner") && (
               <button
                 onClick={() => setStatusFilter("archived")}
-                className={`rounded-lg px-3 py-1.5 transition-all ${
+                className={`rounded-full px-3 py-1.5 transition-all ${
                   statusFilter === "archived"
                     ? "bg-[var(--foreground)] text-[var(--background)] font-semibold shadow-sm"
                     : "text-[var(--text-muted)] hover:text-[var(--foreground)]"

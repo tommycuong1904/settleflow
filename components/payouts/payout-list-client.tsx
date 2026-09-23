@@ -66,10 +66,10 @@ export function PayoutListClient({
           />
         </div>
 
-        <div className="flex rounded-xl bg-[var(--surface)] p-1 border border-[var(--border-soft)] text-xs font-medium shrink-0">
+        <div className="flex rounded-full bg-[var(--surface)] p-1 border border-[var(--border-soft)] text-xs font-medium shrink-0">
           <button
             onClick={() => setStatusFilter("all")}
-            className={`rounded-lg px-3 py-1.5 transition-all ${
+            className={`rounded-full px-3 py-1.5 transition-all ${
               statusFilter === "all"
                 ? "bg-[var(--foreground)] text-[var(--background)] font-semibold shadow-sm"
                 : "text-[var(--text-muted)] hover:text-[var(--foreground)]"
@@ -79,7 +79,7 @@ export function PayoutListClient({
           </button>
           <button
             onClick={() => setStatusFilter("active")}
-            className={`rounded-lg px-3 py-1.5 transition-all ${
+            className={`rounded-full px-3 py-1.5 transition-all ${
               statusFilter === "active"
                 ? "bg-[var(--foreground)] text-[var(--background)] font-semibold shadow-sm"
                 : "text-[var(--text-muted)] hover:text-[var(--foreground)]"
@@ -89,7 +89,7 @@ export function PayoutListClient({
           </button>
           <button
             onClick={() => setStatusFilter("draft")}
-            className={`rounded-lg px-3 py-1.5 transition-all ${
+            className={`rounded-full px-3 py-1.5 transition-all ${
               statusFilter === "draft"
                 ? "bg-[var(--foreground)] text-[var(--background)] font-semibold shadow-sm"
                 : "text-[var(--text-muted)] hover:text-[var(--foreground)]"
@@ -99,7 +99,7 @@ export function PayoutListClient({
           </button>
           <button
             onClick={() => setStatusFilter("completed")}
-            className={`rounded-lg px-3 py-1.5 transition-all ${
+            className={`rounded-full px-3 py-1.5 transition-all ${
               statusFilter === "completed"
                 ? "bg-[var(--foreground)] text-[var(--background)] font-semibold shadow-sm"
                 : "text-[var(--text-muted)] hover:text-[var(--foreground)]"
