@@ -77,5 +77,5 @@ export function BrowserPushToggle({ workspaceId }: { workspaceId: string }) {
   if (state === "denied") return <p className="text-xs text-[var(--text-muted)]">Notifications are blocked by this browser. Enable them in browser settings to continue.</p>;
   if (state === "error") return <p className="text-xs text-red-600">Browser Push could not be updated: {errorMessage ?? "unknown error"}.</p>;
   if (state === "enabled") return <div className="flex items-center gap-2"><span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-600"><Check size={14} /> Browser push is on</span><Button type="button" variant="outline" size="sm" onClick={() => void disable()}>Turn off</Button></div>;
-  return <Button type="button" variant="primary" size="sm" onClick={() => void enable()} icon={<Bell size={14} />}>Turn on browser push</Button>;
+  return <Button type="button" variant="primary" size="sm" onClick={() => void enable()} icon={<Bell size={14} />}>Turn on</Button>;
 }
