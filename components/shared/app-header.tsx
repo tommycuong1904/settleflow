@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/shared/button";
 import { FaucetModal } from "@/components/shared/faucet-modal";
@@ -33,6 +33,7 @@ export function AppHeader() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isFaucetOpen, setIsFaucetOpen] = useState(false);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const notificationRequestRef = useRef(0);
 
   useEffect(() => {
     if (!isConnected) {
@@ -40,9 +41,14 @@ export function AppHeader() {
     }
     let active = true;
     const refreshUnreadNotifications = () => {
+      const requestId = ++notificationRequestRef.current;
       void fetch("/api/v1/notifications", { cache: "no-store" })
         .then(async (response) => response.ok ? await response.json() as { unreadCount?: number } : null)
-        .then((payload) => { if (active) setUnreadNotifications(payload?.unreadCount ?? 0); })
+        .then((payload) => {
+          if (active && requestId === notificationRequestRef.current) {
+            setUnreadNotifications(payload?.unreadCount ?? 0);
+          }
+        })
         .catch(() => undefined);
     };
     const handleServiceWorkerMessage = (event: MessageEvent<{ type?: string }>) => {
