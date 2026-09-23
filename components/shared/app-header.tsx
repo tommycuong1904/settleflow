@@ -49,13 +49,16 @@ export function AppHeader() {
       if (event.data?.type === "settleflow:notification") refreshUnreadNotifications();
     };
     const handleWorkflowUpdate = () => refreshUnreadNotifications();
+    const handleNotificationUpdate = () => refreshUnreadNotifications();
     refreshUnreadNotifications();
     navigator.serviceWorker?.addEventListener("message", handleServiceWorkerMessage);
     window.addEventListener(WORKFLOW_UPDATED_EVENT, handleWorkflowUpdate);
+    window.addEventListener("settleflow:notifications-updated", handleNotificationUpdate);
     return () => {
       active = false;
       navigator.serviceWorker?.removeEventListener("message", handleServiceWorkerMessage);
       window.removeEventListener(WORKFLOW_UPDATED_EVENT, handleWorkflowUpdate);
+      window.removeEventListener("settleflow:notifications-updated", handleNotificationUpdate);
     };
   }, [isConnected, pathname]);
 

@@ -3,7 +3,7 @@ import test from "node:test";
 
 import { createSessionToken } from "@/lib/auth/session";
 import { db } from "@/lib/db/client";
-import { GET as listNotifications } from "@/app/api/v1/notifications/route";
+import { GET as listNotifications, PATCH as markAllNotificationsRead } from "@/app/api/v1/notifications/route";
 import { PATCH as markNotificationRead } from "@/app/api/v1/notifications/[id]/route";
 
 test("notification routes enforce the active user and workspace boundary", async () => {
@@ -41,6 +41,13 @@ test("notification routes enforce the active user and workspace boundary", async
     const marked = await markNotificationRead(new Request(`https://settleflow.local/api/v1/notifications/${notification.id}?workspaceId=${workspace.id}`, { method: "PATCH", headers: headersFor(ownerToken) }), params);
     assert.equal(marked.status, 200);
     assert.notEqual((await db.notification.findUnique({ where: { id: notification.id } }))?.readAt, null);
+
+    const unreadNotification = await db.notification.create({
+      data: { workspaceId: workspace.id, userId: owner.id, type: "release_confirmed", title: "Payment confirmed", body: "Payment completed", href: "/payouts/payout-1" },
+    });
+    const markedAll = await markAllNotificationsRead(new Request(`https://settleflow.local/api/v1/notifications?workspaceId=${workspace.id}`, { method: "PATCH", headers: headersFor(ownerToken) }));
+    assert.equal(markedAll.status, 200);
+    assert.notEqual((await db.notification.findUnique({ where: { id: unreadNotification.id } }))?.readAt, null);
   } finally {
     await db.notification.deleteMany({ where: { workspaceId: workspace.id } });
     await db.workspaceMember.deleteMany({ where: { workspaceId: workspace.id } });
