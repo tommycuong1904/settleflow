@@ -358,7 +358,7 @@ export function ContributorListClient({
                       </div>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex w-full flex-nowrap items-center gap-2 lg:w-auto">
                       {canManageContributor(contributor) && (
                         <Button
                           variant="outline"
