@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useRef } from "react";
+import React from "react";
 import { useScrollLock } from "@/lib/hooks/use-scroll-lock";
 import { Button } from "@/components/shared/button";
 import type { Payout } from "@/lib/models/payout";
 import type { Milestone } from "@/lib/models/milestone";
 import type { Contributor } from "@/lib/models/contributor";
 import type { TransactionProof } from "@/lib/models/transaction-proof";
-import { formatUsdc, shortenAddress } from "@/lib/utils/format";
+import { formatUsdc } from "@/lib/utils/format";
 import {
   X,
   Printer,
@@ -15,10 +15,6 @@ import {
   FileCheck,
   ShieldCheck,
   ExternalLink,
-  Layers,
-  CheckCircle2,
-  Clock,
-  Sparkles,
 } from "lucide-react";
 
 type PayoutReceiptModalProps = {
@@ -118,14 +114,9 @@ export function PayoutReceiptModal({
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl border border-[var(--border-strong)] bg-[var(--surface)] p-6 sm:p-8 shadow-2xl text-[var(--foreground)] print:border-none print:shadow-none print:bg-white print:text-black"
+        className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl border border-[var(--border-strong)] bg-[var(--surface)] p-6 sm:p-8 shadow-2xl text-[var(--foreground)] print:border-none print:shadow-none print:bg-white print:text-black"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Glow */}
-        <div className="pointer-events-none absolute -right-20 -top-20 h-48 w-48 rounded-full bg-cyan-500/10 blur-3xl print:hidden" />
-        <div className="pointer-events-none absolute -left-20 -bottom-20 h-48 w-48 rounded-full bg-blue-600/10 blur-3xl print:hidden" />
-
-        {/* Close Button */}
         <button
           onClick={onClose}
           className="absolute right-5 top-5 rounded-full p-1.5 text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--foreground)] transition-colors print:hidden"
@@ -134,16 +125,15 @@ export function PayoutReceiptModal({
           <X size={18} />
         </button>
 
-        {/* Receipt Document Header */}
         <div className="border-b border-[var(--border-soft)] pb-6 print:border-slate-300">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--accent-cyan)]/10 border border-[var(--accent-cyan)]/30 text-[var(--accent-cyan)] print:border-slate-800 print:text-slate-900">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--surface-muted)] border border-[var(--border-soft)] text-[var(--foreground)] print:border-slate-800 print:text-slate-900">
                 <FileCheck size={20} />
               </div>
               <div>
-                <span className="text-xs uppercase tracking-[0.2em] text-[var(--accent-cyan)] font-semibold print:text-cyan-800">
-                  Official Settlement Receipt
+                <span className="text-xs uppercase tracking-[0.2em] text-[var(--text-muted)] font-semibold print:text-slate-700">
+                  Payment summary
                 </span>
                 <h2 className="text-xl font-bold tracking-tight text-[var(--foreground)] print:text-black">
                   {payout.title}
@@ -152,17 +142,16 @@ export function PayoutReceiptModal({
             </div>
 
             <div className="text-right text-xs text-slate-400 font-mono print:text-slate-600">
-              <p>ID: {payout.id.slice(0, 12)}</p>
+              <p>Receipt: {payout.id.slice(0, 12)}</p>
               <p>Date: {new Date().toLocaleDateString()}</p>
             </div>
           </div>
         </div>
 
-        {/* Recipient & Rail Meta */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-5 border-b border-[var(--border-soft)] text-xs print:border-slate-300">
           <div>
             <p className="text-[11px] uppercase tracking-wider text-[var(--text-muted)] font-medium">
-              Recipient Contributor
+              Contributor
             </p>
             <p className="mt-1 text-sm font-semibold text-[var(--foreground)] print:text-black">
               {contributor?.name ?? "Designated Contributor"}
@@ -178,10 +167,10 @@ export function PayoutReceiptModal({
 
           <div className="sm:text-right">
             <p className="text-[11px] uppercase tracking-wider text-[var(--text-muted)] font-medium">
-              Settlement Protocol
+              Payment method
             </p>
-            <p className="mt-1 text-sm font-semibold text-[var(--accent-cyan)] print:text-cyan-700">
-              Arc Testnet (Circle USDC)
+            <p className="mt-1 text-sm font-semibold text-[var(--foreground)] print:text-black">
+              USDC on Arc Testnet
             </p>
             <p className="mt-0.5 text-[var(--text-primary)] print:text-slate-700">
               Status:{" "}
@@ -192,10 +181,9 @@ export function PayoutReceiptModal({
           </div>
         </div>
 
-        {/* Milestone Breakdown Table */}
         <div className="py-5 border-b border-[var(--border-soft)] print:border-slate-300 space-y-3">
           <p className="text-xs font-semibold uppercase tracking-wider text-[var(--foreground)] print:text-slate-800">
-            Milestone Settlement Breakdown
+            Milestones
           </p>
 
           <div className="space-y-2.5">
@@ -221,7 +209,7 @@ export function PayoutReceiptModal({
                           isReleased
                             ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
                             : isApproved
-                            ? "bg-cyan-500/10 text-cyan-600 dark:text-cyan-300 border border-cyan-500/30"
+                            ? "bg-[var(--surface-strong)] text-[var(--foreground)] border border-[var(--border-soft)]"
                             : "bg-[var(--surface-strong)] text-[var(--text-muted)] border border-[var(--border-soft)]"
                         }`}
                       >
@@ -244,7 +232,6 @@ export function PayoutReceiptModal({
           </div>
         </div>
 
-        {/* Financial Summary */}
         <div className="py-5 border-b border-[var(--border-soft)] print:border-slate-300">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="space-y-1">
@@ -261,7 +248,7 @@ export function PayoutReceiptModal({
 
             <div className="sm:text-right space-y-1">
               <p className="text-xs uppercase tracking-wider text-[var(--text-muted)]">
-                Total Agreement Value
+                Total payout
               </p>
               <p className="text-2xl font-bold tracking-tight text-[var(--foreground)] print:text-black font-mono">
                 {formatUsdc(totalAmount)} USDC
@@ -273,13 +260,12 @@ export function PayoutReceiptModal({
           </div>
         </div>
 
-        {/* Latest Onchain Proof Verification */}
         {releaseProof?.txHash && (
           <div className="pt-4 pb-2 space-y-1.5">
-            <div className="flex items-center gap-2 text-xs text-[var(--accent-cyan)] print:text-cyan-800">
+            <div className="flex items-center gap-2 text-xs text-[var(--foreground)] print:text-slate-800">
               <ShieldCheck size={15} />
               <span className="font-semibold uppercase tracking-wider">
-                Cryptographic Settlement Proof
+                Transaction details
               </span>
             </div>
             <div className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-[var(--surface-muted)] border border-[var(--border-soft)] text-xs font-mono text-[var(--text-primary)] print:bg-slate-100 print:border-slate-300 print:text-black">
@@ -288,7 +274,7 @@ export function PayoutReceiptModal({
                 href={`https://testnet.arcscan.app/tx/${releaseProof.txHash}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-[var(--accent-cyan)] hover:underline flex items-center gap-1 shrink-0 print:hidden"
+              className="text-[var(--foreground)] hover:underline flex items-center gap-1 shrink-0 print:hidden"
               >
                 Arcscan <ExternalLink size={12} />
               </a>
