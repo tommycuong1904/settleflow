@@ -9,7 +9,6 @@ import { discoverBrowserWallets, type EIP6963ProviderDetail } from "@/lib/arc/br
 import {
   X,
   Mail,
-  Wallet,
   Sparkles,
   CheckCircle2,
 } from "lucide-react";
@@ -121,26 +120,19 @@ export function AuthModal() {
           <h2 className="text-2xl font-bold tracking-tight text-[var(--foreground)]">
             Sign in to SettleFlow
           </h2>
+          <p className="mt-2 text-sm text-[var(--text-muted)]">
+            Connect a browser wallet to manage and release payouts.
+          </p>
         </div>
 
-        <div className="mb-5 flex rounded-xl bg-[var(--surface-muted)] p-1 border border-[var(--border-soft)] text-xs font-medium">
-          <button
-            type="button"
-            disabled
-            aria-label="Web2 sign-in is coming soon"
-            className="flex-1 flex items-center justify-center gap-1.5 rounded-lg py-2 text-[var(--text-muted)] opacity-55 cursor-not-allowed"
-          >
-            <Mail size={14} /> Web2 Sign-in <span className="text-[10px]">Coming soon</span>
-          </button>
-          <button
-            type="button"
-            className="flex-1 flex items-center justify-center gap-1.5 rounded-lg bg-[var(--foreground)] py-2 font-semibold text-[var(--background)] shadow-sm"
-          >
-            <Wallet size={14} /> Connect Web3 Wallet
-          </button>
+        <div className="mb-5 flex items-center gap-2 rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] px-3.5 py-3 text-xs text-[var(--text-muted)]">
+          <Mail size={15} className="shrink-0" />
+          <span>Circle Smart Wallet</span>
+          <span className="ml-auto rounded-full border border-[var(--border-soft)] bg-[var(--surface)] px-2 py-0.5 text-[10px] font-semibold">Coming soon</span>
         </div>
 
         <div className="space-y-2.5">
+            <p className="text-xs font-semibold text-[var(--foreground)]">Choose a wallet</p>
             {allWalletItems.map((w) => (
               <button
                 key={w.id}
@@ -158,6 +150,8 @@ export function AuthModal() {
               >
                 <div className="flex items-center gap-3.5">
                   <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[var(--border-soft)] bg-[var(--surface)] p-1.5 text-[var(--foreground)] shadow-xs">
+                    {/* Wallet extension icons are runtime-provided data URLs. */}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={w.icon}
                       alt={w.label}
@@ -189,8 +183,10 @@ export function AuthModal() {
               </button>
             ))}
 
-            {/* Quick Add Network Helper */}
-            <div className="pt-2">
+            <details className="pt-2">
+              <summary className="cursor-pointer text-center text-[11px] font-medium text-[var(--text-muted)] hover:text-[var(--foreground)]">
+                Need to add Arc Testnet?
+              </summary>
               <button
                 type="button"
                 onClick={async () => {
@@ -199,11 +195,11 @@ export function AuthModal() {
                     await addArcNetworkToWallet();
                   } catch {}
                 }}
-                className="w-full py-2 px-3 rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] hover:bg-[var(--surface-strong)] text-[var(--text-muted)] hover:text-[var(--foreground)] text-[11px] font-medium transition-all text-center flex items-center justify-center gap-1.5"
+                className="mt-2 w-full py-2 px-3 rounded-full border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] hover:bg-[var(--surface-strong)] text-[var(--text-muted)] hover:text-[var(--foreground)] text-[11px] font-medium transition-all text-center flex items-center justify-center gap-1.5"
               >
                 <span>🌐 Add / Switch Arc Testnet RPC in MetaMask</span>
               </button>
-            </div>
+            </details>
         </div>
 
       </div>
