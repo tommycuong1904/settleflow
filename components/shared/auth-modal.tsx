@@ -22,7 +22,7 @@ export function AuthModal() {
   } = useWallet();
   const { toast } = useToast();
   const router = useRouter();
-  const [detectedWallets, setDetectedWallets] = useState<EIP6963ProviderDetail[]>([]);
+  const [detectedWallets, setDetectedWallets] = useState<EIP6963ProviderDetail[] | null>(null);
 
   useEffect(() => {
     if (!isAuthModalOpen) return;
@@ -58,40 +58,21 @@ export function AuthModal() {
     { id: "WalletConnect", label: "WalletConnect", icon: "/wallets/walletconnect.svg", desc: "Scan QR with 300+ mobile wallets", rdnsMatch: "walletconnect" },
   ];
 
-  // Merge detected EIP-6963 wallet extension app icons into list
-  const walletItems = defaultWalletList.map((w) => {
-    const detected = detectedWallets.find(
-      (d) =>
-        (d.info.rdns && w.rdnsMatch && d.info.rdns.toLowerCase().includes(w.rdnsMatch.toLowerCase())) ||
-        d.info.name.toLowerCase().includes(w.id.toLowerCase()) ||
-        w.id.toLowerCase().includes(d.info.name.toLowerCase())
+  const allWalletItems = (detectedWallets ?? []).map((detected) => {
+    const knownWallet = defaultWalletList.find(
+      (wallet) =>
+        (detected.info.rdns && wallet.rdnsMatch && detected.info.rdns.toLowerCase().includes(wallet.rdnsMatch.toLowerCase())) ||
+        detected.info.name.toLowerCase().includes(wallet.id.toLowerCase()) ||
+        wallet.id.toLowerCase().includes(detected.info.name.toLowerCase()),
     );
     return {
-      ...w,
-      icon: detected?.info.icon && detected.info.icon.trim().length > 0 ? detected.info.icon : w.icon,
-      isDetected: Boolean(detected),
+      id: detected.info.name,
+      label: knownWallet?.label ?? detected.info.name,
+      icon: detected.info.icon?.trim() || knownWallet?.icon || "/wallets/metamask.svg",
+      desc: knownWallet?.desc ?? "Detected browser extension",
+      isDetected: true,
     };
   });
-
-  const extraWallets = detectedWallets
-    .filter(
-      (d) =>
-        !defaultWalletList.some(
-          (w) =>
-            (d.info.rdns && w.rdnsMatch && d.info.rdns.toLowerCase().includes(w.rdnsMatch.toLowerCase())) ||
-            d.info.name.toLowerCase().includes(w.id.toLowerCase()) ||
-            w.id.toLowerCase().includes(d.info.name.toLowerCase())
-        )
-    )
-    .map((d) => ({
-      id: d.info.name,
-      label: d.info.name,
-      icon: d.info.icon || "/wallets/metamask.svg",
-      desc: "Detected browser extension",
-      isDetected: true,
-    }));
-
-  const allWalletItems = [...walletItems, ...extraWallets];
 
   return (
     <div
@@ -133,7 +114,11 @@ export function AuthModal() {
 
         <div className="space-y-2.5">
             <p className="text-xs font-semibold text-[var(--foreground)]">Choose a wallet</p>
-            {allWalletItems.map((w) => (
+            {detectedWallets === null ? (
+              <p className="rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] px-4 py-5 text-center text-xs text-[var(--text-muted)]">Looking for browser wallets…</p>
+            ) : allWalletItems.length === 0 ? (
+              <p className="rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] px-4 py-5 text-center text-xs leading-5 text-[var(--text-muted)]">No browser wallet was found. Install or unlock MetaMask, Rabby, or another EVM wallet, then reopen this dialog.</p>
+            ) : allWalletItems.map((w) => (
               <button
                 key={w.id}
                 onClick={async () => {
