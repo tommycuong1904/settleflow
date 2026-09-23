@@ -14,7 +14,6 @@ import {
   Clock,
   Layers,
   ExternalLink,
-  Filter,
 } from "lucide-react";
 
 type ActivityLedgerClientProps = {
@@ -144,8 +143,8 @@ export function ActivityLedgerClient({
               setSearchQuery(e.target.value);
               setCurrentPage(1);
             }}
-            placeholder="Search by title, actor, txHash, or details..."
-            className="w-full rounded-2xl border border-[var(--border-soft)] py-2.5 pl-10 pr-4 text-xs placeholder-slate-500 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400 transition-all"
+            placeholder="Search activity..."
+            className="w-full rounded-full border border-[var(--border-soft)] bg-[var(--input-background)] py-2.5 pl-10 pr-4 text-xs text-[var(--foreground)] placeholder:text-[var(--input-placeholder)] focus:border-[var(--border-strong)] focus:bg-[var(--input-focus-background)] focus:outline-none focus:ring-1 focus:ring-[var(--border-strong)] transition-all"
           />
         </div>
 
@@ -176,7 +175,7 @@ export function ActivityLedgerClient({
                   : "text-slate-400 hover:text-[var(--foreground)]"
               }`}
             >
-              Proofs & Releases
+              Payments
             </button>
             <button
               onClick={() => {
@@ -189,7 +188,7 @@ export function ActivityLedgerClient({
                   : "text-slate-400 hover:text-[var(--foreground)]"
               }`}
             >
-              Approvals
+              Reviews
             </button>
             <button
               onClick={() => {
@@ -202,14 +201,14 @@ export function ActivityLedgerClient({
                   : "text-slate-400 hover:text-[var(--foreground)]"
               }`}
             >
-              Submissions
+              Submitted work
             </button>
           </div>
 
           <button
             onClick={handleExportCsv}
             disabled={filteredActivities.length === 0}
-            className="flex items-center gap-1.5 rounded-xl border border-slate-700 bg-[var(--foreground)] text-[var(--background)] px-3.5 py-2 text-xs font-medium hover:bg-slate-700 hover:text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-sm shrink-0"
+            className="flex items-center gap-1.5 rounded-full border border-[var(--foreground)] bg-[var(--foreground)] text-[var(--background)] px-3.5 py-2 text-xs font-medium hover:opacity-80 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-sm shrink-0"
             title="Download CSV report"
           >
             <Download size={14} /> Export CSV
@@ -251,7 +250,7 @@ export function ActivityLedgerClient({
               return (
                 <div
                   key={item.id}
-                  className="rounded-2xl border border-[var(--border-soft)] p-5 hover:border-cyan-500/30 transition-all"
+                  className="rounded-xl border border-[var(--border-soft)] bg-[var(--surface)] p-5 hover:border-[var(--border-strong)] transition-all"
                 >
                   <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                     <div className="flex items-start gap-3.5">
@@ -265,11 +264,11 @@ export function ActivityLedgerClient({
                             <XCircle size={16} />
                           </div>
                         ) : isProof || isRelease ? (
-                          <div className="h-8 w-8 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center shadow-[0_0_15px_rgba(34,211,238,0.15)]">
+                          <div className="h-8 w-8 rounded-full bg-[var(--surface-muted)] border border-[var(--border-soft)] text-[var(--foreground)] flex items-center justify-center">
                             <ShieldCheck size={16} />
                           </div>
                         ) : (
-                          <div className="h-8 w-8 rounded-full border border-slate-700 text-slate-400 flex items-center justify-center">
+                          <div className="h-8 w-8 rounded-full border border-[var(--border-soft)] text-[var(--text-muted)] flex items-center justify-center">
                             <Clock size={16} />
                           </div>
                         )}
@@ -280,16 +279,13 @@ export function ActivityLedgerClient({
                           <span className="text-base font-semibold">
                             {item.title}
                           </span>
-                          <span className="inline-flex items-center rounded-full border border-slate-700 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider">
-                            {item.actorLabel}
-                          </span>
                           <span className="inline-flex items-center rounded-full border border-[var(--border-soft)] bg-[var(--surface-muted)] px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
-                            {item.workspaceName} · {item.membershipRole}
+                            {item.actorLabel}
                           </span>
                         </div>
 
                         {item.description ? (
-                          <p className="text-xs leading-relaxed font-mono">
+                          <p className="text-xs leading-relaxed text-[var(--text-muted)]">
                             {item.description}
                           </p>
                         ) : null}
@@ -300,7 +296,7 @@ export function ActivityLedgerClient({
                               href={explorerUrl}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1.5 text-xs text-cyan-300 hover:text-cyan-200 underline underline-offset-4 font-mono transition-colors"
+                              className="inline-flex items-center gap-1.5 text-xs text-[var(--foreground)] underline underline-offset-4 transition-colors hover:opacity-70"
                             >
                               <Layers size={13} /> Arcscan: {shortenAddress(txHash)}{" "}
                               <ExternalLink size={12} />
@@ -312,7 +308,7 @@ export function ActivityLedgerClient({
 
                     <time
                       dateTime={item.occurredAt}
-                      className="text-right sm:shrink-0 text-xs text-slate-400 font-mono"
+                      className="text-right sm:shrink-0 text-xs text-[var(--text-muted)]"
                     >
                       {hasHydrated
                         ? new Date(item.occurredAt).toLocaleString()
