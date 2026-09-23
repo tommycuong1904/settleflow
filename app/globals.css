@@ -175,16 +175,16 @@ h1 {
 }
 
 .sf-app-wrapper {
-  width: 100%;
+  width: min(1180px, calc(100% - 48px));
   margin: 0 auto;
-  padding: 20px 16px;
+  padding: 20px 0;
   min-height: 100dvh;
   overflow-y: auto;
 }
 
 @media (min-width: 768px) {
   .sf-app-wrapper {
-    padding: 32px 40px;
+    padding: 32px 0;
   }
 }
 
@@ -1626,7 +1626,8 @@ h1 {
 }
 
 @media (max-width: 640px) {
-  .sf-container {
+  .sf-container,
+  .sf-app-wrapper {
     width: min(100% - 32px, 1160px);
   }
 
