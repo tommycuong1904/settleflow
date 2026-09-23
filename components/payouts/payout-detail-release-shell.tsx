@@ -91,7 +91,6 @@ function releaseErrorMessage(error: unknown, fallback: string) {
 }
 
 export function PayoutDetailReleaseShell({
-  payoutId,
   recipientAddress,
   nextReleasableMilestone,
   releaseMilestoneTitle,
@@ -126,33 +125,36 @@ export function PayoutDetailReleaseShell({
     resolvedProof && nextReleasableMilestone
       ? resolvedProof.milestoneId === nextReleasableMilestone.id
       : Boolean(resolvedProof);
+  const proofForNextAction = proofMatchesCurrentMilestone ? resolvedProof : undefined;
   const effectiveReleaseStatus =
-    resolvedProof && proofMatchesCurrentMilestone
-      ? resolvedProof.status === "failed"
+    proofForNextAction
+      ? proofForNextAction.status === "failed"
         ? "failed"
-        : resolvedProof.status === "pending"
+        : proofForNextAction.status === "pending"
           ? "submitting"
           : "confirmed"
-      : releaseStatus;
+      : nextReleasableMilestone
+        ? "idle"
+        : releaseStatus;
   const isPendingCircleRelease = Boolean(
-    resolvedProof?.status === "pending" &&
-    resolvedProof.releaseId &&
-    resolvedProof.executionMode === "circle_user_wallet",
+    proofForNextAction?.status === "pending" &&
+    proofForNextAction.releaseId &&
+    proofForNextAction.executionMode === "circle_user_wallet",
   );
   const isCircleSettlementPending = Boolean(
-    isPendingCircleRelease && (resolvedProof?.releaseTxHash || resolvedProof?.releaseArcRequestId),
+    isPendingCircleRelease && (proofForNextAction?.releaseTxHash || proofForNextAction?.releaseArcRequestId),
   );
   const needsCircleConfirmation = isPendingCircleRelease && !isCircleSettlementPending;
   const isBrowserReleasable = Boolean(
-    resolvedProof?.status === "pending" &&
-    resolvedProof.releaseId &&
-    resolvedProof.executionMode === "browser_wallet" &&
-    resolvedProof.releaseStatus === "queued",
+    proofForNextAction?.status === "pending" &&
+    proofForNextAction.releaseId &&
+    proofForNextAction.executionMode === "browser_wallet" &&
+    proofForNextAction.releaseStatus === "queued",
   );
   const isBrowserReconciliationPending = Boolean(
-    resolvedProof?.status === "pending" &&
-    resolvedProof.executionMode === "browser_wallet" &&
-    resolvedProof.releaseStatus === "pending",
+    proofForNextAction?.status === "pending" &&
+    proofForNextAction.executionMode === "browser_wallet" &&
+    proofForNextAction.releaseStatus === "pending",
   );
   const productContextHeaders = useMemo(
     () => ({
