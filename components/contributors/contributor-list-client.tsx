@@ -138,7 +138,7 @@ export function ContributorListClient({
   return (
     <div className="space-y-6">
       {/* Controls: Search & Filter & CTA */}
-      <div className="flex flex-col gap-3 md:flex-row md:items-center">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         {/* Search */}
         <div className="relative w-full min-w-0 md:flex-1 md:max-w-md">
           <Search
@@ -155,7 +155,7 @@ export function ContributorListClient({
         </div>
 
         {/* Status Filters & Add Button */}
-        <div className="flex w-full flex-wrap items-center gap-3 md:w-auto md:flex-nowrap md:shrink-0">
+        <div className="flex w-full flex-wrap items-center gap-3 md:ml-auto md:w-auto md:flex-nowrap md:shrink-0">
           <div className="flex rounded-full bg-[var(--surface)] p-1 border border-[var(--border-soft)] text-xs font-medium">
             <button
               onClick={() => setStatusFilter("all")}
