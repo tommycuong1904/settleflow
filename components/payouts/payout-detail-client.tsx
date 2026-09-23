@@ -21,7 +21,7 @@ import type { ProductActor } from "@/lib/runtime/product-context";
 import { PRODUCT_CONTEXT_HEADER_NAMES } from "@/lib/runtime/product-context";
 import { PayoutReceiptModal } from "@/components/payouts/payout-receipt-modal";
 import { formatUsdc, shortenAddress } from "@/lib/utils/format";
-import { FileCheck, CheckCircle2, AlertCircle } from "lucide-react";
+import { FileCheck } from "lucide-react";
 import { hasRole, isRole } from "@/lib/runtime/role-utils";
 
 type PersistedReleaseState = {
@@ -93,7 +93,6 @@ export function PayoutDetailClient({
   const [payoutStatusState, setPayoutStatusState] = useState(payout.status);
   const [payoutTotalAmountState, setPayoutTotalAmountState] = useState(payout.totalAmount);
   const [payoutTitleCommitted, setPayoutTitleCommitted] = useState(payout.title);
-const [reviewingMilestoneId, setReviewingMilestoneId] = useState<string | null>(null);
 
   const [payoutTitleState, setPayoutTitleState] = useState(payout.title);
   const [payoutDescriptionCommitted, setPayoutDescriptionCommitted] = useState(payout.description ?? "");
@@ -124,7 +123,7 @@ const [reviewingMilestoneId, setReviewingMilestoneId] = useState<string | null>(
       return;
     }
 
-    if (persistedRelease.proof.id === initialReleaseProof.id) {
+    if (persistedRelease.proof.id !== initialReleaseProof.id) {
       return;
     }
 
@@ -158,7 +157,6 @@ const [reviewingMilestoneId, setReviewingMilestoneId] = useState<string | null>(
     );
     setActivityItems(initialActivity);
     setReviewError(null);
-    setReviewingMilestoneId(null);
     setActivatingPayout(false);
     setSavingDraftTitle(false);
   }, [initialActivity, initialMilestones, payout.description, payout.status, payout.title, payout.totalAmount]);
@@ -185,7 +183,7 @@ const [reviewingMilestoneId, setReviewingMilestoneId] = useState<string | null>(
     );
   }, [milestoneState, persistedRelease]);
 
-  const releaseProof = initialReleaseProof ?? persistedRelease?.proof;
+  const releaseProof = persistedRelease?.proof ?? initialReleaseProof;
 
   const latestReleasedMilestone = releaseProof
     ? milestones.find((milestone) => milestone.id === releaseProof.milestoneId)
@@ -469,7 +467,6 @@ const [reviewingMilestoneId, setReviewingMilestoneId] = useState<string | null>(
 
   async function reviewMilestone(milestoneId: string, decision: "approved" | "rejected", comment?: string) {
     setReviewError(null);
-    setReviewingMilestoneId(milestoneId);
     try {
       const response = await fetch(`/api/v1/milestones/${milestoneId}/${decision === "approved" ? "approve" : "reject"}`, {
         method: "POST",
@@ -517,7 +514,6 @@ const [reviewingMilestoneId, setReviewingMilestoneId] = useState<string | null>(
     } catch (error) {
       setReviewError(error instanceof Error ? error.message : "Review request failed.");
     } finally {
-      setReviewingMilestoneId(null);
     }
   }
 
@@ -774,8 +770,8 @@ const [reviewingMilestoneId, setReviewingMilestoneId] = useState<string | null>(
           <CardContent>
             <div className="space-y-4">
               {milestones.map((milestone) => (
-                <MilestoneRow
-                  key={milestone.id}
+              <MilestoneRow
+                key={`${milestone.id}:${milestone.status}`}
                   milestone={milestone}
                   currentActor={currentActor}
                   workspaceId={workspaceId}
