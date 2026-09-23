@@ -120,31 +120,25 @@ export function AddContributorDialog({
         className="relative w-full max-w-[500px] overflow-hidden rounded-2xl border border-[var(--border-strong)] bg-[var(--surface)] p-6 sm:p-8 shadow-2xl text-[var(--foreground)]"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Subtle background glow */}
-        <div className="pointer-events-none absolute -right-20 -top-20 h-48 w-48 rounded-full bg-cyan-500/10 blur-3xl" />
-        <div className="pointer-events-none absolute -left-20 -bottom-20 h-48 w-48 rounded-full bg-blue-600/10 blur-3xl" />
-
-        {/* Close Button */}
         <button
           onClick={onClose}
           disabled={isSubmitting}
-          className="absolute right-5 top-5 rounded-full p-1.5 hover:bg-slate-800 hover:text-white transition-colors"
+          className="absolute right-5 top-5 rounded-full p-1.5 text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--foreground)] transition-colors"
           aria-label="Close modal"
         >
           <X size={18} />
         </button>
 
-        {/* Header */}
         <div className="flex items-center gap-3.5 mb-6">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl border shrink-0">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] shrink-0">
             <UserPlus size={20} />
           </div>
           <div>
             <h2 className="text-xl font-bold tracking-tight">
-              Add New Contributor
+              Add contributor
             </h2>
             <p className="text-xs mt-0.5">
-              Register a recipient address for milestone escrows & Arc settlements.
+              Add the person and wallet that will receive milestone payouts.
             </p>
           </div>
         </div>
@@ -164,25 +158,23 @@ export function AddContributorDialog({
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Name */}
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5">
-              Display Name / Pseudonym <span className="text-cyan-400">*</span>
+              Name <span className="text-rose-500">*</span>
             </label>
             <input
               type="text"
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Alice Walker, zkBuilder"
-              className="w-full rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] py-2.5 px-3.5 text-sm text-[var(--foreground)] placeholder-[var(--text-muted)] focus:border-[var(--foreground)] focus:outline-none focus:ring-1 focus:ring-[var(--foreground)] transition-all"
+              placeholder="e.g. Alice Walker"
+              className="w-full rounded-full border border-[var(--border-soft)] bg-[var(--input-background)] py-2.5 px-3.5 text-sm text-[var(--foreground)] placeholder:text-[var(--input-placeholder)] focus:border-[var(--foreground)] focus:bg-[var(--input-focus-background)] focus:outline-none focus:ring-1 focus:ring-[var(--foreground)] transition-all"
             />
           </div>
 
-          {/* Wallet Address */}
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5">
-              Arc / EVM Wallet Address <span className="text-cyan-400">*</span>
+              Wallet address <span className="text-rose-500">*</span>
             </label>
             <div className="relative">
               <Wallet
@@ -195,13 +187,14 @@ export function AddContributorDialog({
                 value={walletAddress}
                 onChange={(e) => setWalletAddress(e.target.value)}
                 placeholder="0x..."
-                className="w-full font-mono text-xs rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] py-2.5 pl-10 pr-3.5 text-[var(--foreground)] placeholder-[var(--text-muted)] focus:border-[var(--foreground)] focus:outline-none focus:ring-1 focus:ring-[var(--foreground)] transition-all"
+                className="w-full font-mono text-xs rounded-full border border-[var(--border-soft)] bg-[var(--input-background)] py-2.5 pl-10 pr-3.5 text-[var(--foreground)] placeholder:text-[var(--input-placeholder)] focus:border-[var(--foreground)] focus:bg-[var(--input-focus-background)] focus:outline-none focus:ring-1 focus:ring-[var(--foreground)] transition-all"
               />
             </div>
           </div>
 
-          {/* Role & Email row */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <details className="group rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-4">
+            <summary className="cursor-pointer text-xs font-semibold text-[var(--foreground)] marker:text-[var(--text-muted)]">Add optional details</summary>
+            <div className="mt-4 grid grid-cols-1 gap-3.5 sm:grid-cols-2">
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5">
                 Role / Discipline
@@ -216,7 +209,7 @@ export function AddContributorDialog({
                   value={role}
                   onChange={(e) => setRole(e.target.value)}
                   placeholder="e.g. Smart Contract Eng"
-                  className="w-full rounded-xl border border-slate-700 bg-slate py-2.5 pl-10 pr-3.5 text-xs placeholder-slate-500 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400 transition-all"
+                  className="w-full rounded-full border border-[var(--border-soft)] bg-[var(--input-background)] py-2.5 pl-10 pr-3.5 text-xs text-[var(--foreground)] placeholder:text-[var(--input-placeholder)] focus:border-[var(--foreground)] focus:bg-[var(--input-focus-background)] focus:outline-none focus:ring-1 focus:ring-[var(--foreground)] transition-all"
                 />
               </div>
             </div>
@@ -235,14 +228,12 @@ export function AddContributorDialog({
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@example.com"
-                  className="w-full rounded-xl border border-slate-700 bg-slate py-2.5 pl-10 pr-3.5 text-xs placeholder-slate-500 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400 transition-all"
+                  className="w-full rounded-full border border-[var(--border-soft)] bg-[var(--input-background)] py-2.5 pl-10 pr-3.5 text-xs text-[var(--foreground)] placeholder:text-[var(--input-placeholder)] focus:border-[var(--foreground)] focus:bg-[var(--input-focus-background)] focus:outline-none focus:ring-1 focus:ring-[var(--foreground)] transition-all"
                 />
               </div>
             </div>
-          </div>
-
-          {/* Notes */}
-          <div>
+            </div>
+            <div className="mt-3.5">
             <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5">
               Internal Notes (Optional)
             </label>
@@ -256,10 +247,11 @@ export function AddContributorDialog({
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Key delivery agreements, Discord handle, Github profile..."
-                className="w-full rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] py-2.5 pl-10 pr-3.5 text-xs text-[var(--foreground)] placeholder-[var(--text-muted)] focus:border-[var(--foreground)] focus:outline-none focus:ring-1 focus:ring-[var(--foreground)] transition-all resize-none"
+                className="w-full rounded-xl border border-[var(--border-soft)] bg-[var(--input-background)] py-2.5 pl-10 pr-3.5 text-xs text-[var(--foreground)] placeholder:text-[var(--input-placeholder)] focus:border-[var(--foreground)] focus:bg-[var(--input-focus-background)] focus:outline-none focus:ring-1 focus:ring-[var(--foreground)] transition-all resize-none"
               />
             </div>
-          </div>
+            </div>
+          </details>
 
           {/* Action Buttons */}
           <div className="pt-2 flex items-center justify-end gap-3">
