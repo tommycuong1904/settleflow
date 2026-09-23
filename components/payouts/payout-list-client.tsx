@@ -149,7 +149,7 @@ export function PayoutListClient({
                 key={payout.id}
                 className="px-5 py-4 transition-colors hover:bg-[rgba(15,23,42,0.025)]"
               >
-                <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_8rem_11rem] sm:items-center sm:gap-6">
+                <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_8rem_13rem] sm:items-center sm:gap-6">
                   <div className="space-y-1.5">
                     <div className="flex flex-wrap items-center gap-2.5">
                       <span className="text-base font-semibold text-[var(--foreground)] transition-colors">
@@ -182,7 +182,7 @@ export function PayoutListClient({
                         {formatUsdc(Number(payout.totalAmount))} USDC
                       </p>
                     </div>
-                    <Button href={`/payouts/${payout.id}?workspaceId=${encodeURIComponent(payout.workspaceId)}`} variant={payout.nextAction === "Payment complete" ? "ghost" : "secondary"} size="sm" className="sm:w-44">
+                    <Button href={`/payouts/${payout.id}?workspaceId=${encodeURIComponent(payout.workspaceId)}`} variant={payout.nextAction === "Payment complete" ? "ghost" : "secondary"} size="sm" className="sm:w-52 whitespace-nowrap">
                       {payout.nextAction} <ArrowRight size={14} className="ml-1" />
                     </Button>
                   </div>
