@@ -7,9 +7,10 @@ test("visitor can open the Web3-first sign-in modal", async ({ page }) => {
   await page.getByRole("button", { name: "Sign in / Connect wallet" }).first().click();
 
   await expect(page.getByRole("heading", { name: "Sign in to SettleFlow" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Web2 sign-in is coming soon" })).toBeDisabled();
-  await expect(page.getByRole("button", { name: /connect web3 wallet/i })).toBeVisible();
-  await expect(page.getByRole("button", { name: /^MetaMask/ })).toBeVisible();
+  await expect(page.getByText("Circle Smart Wallet")).toBeVisible();
+  await expect(page.getByText("Coming soon")).toBeVisible();
+  await expect(page.getByText("Choose a wallet")).toBeVisible();
+  await expect(page.getByText(/No browser wallet was found/i)).toBeVisible();
 });
 
 test("protected-page sign-in boundary opens the same Web3-first modal", async ({ page }) => {
@@ -19,8 +20,9 @@ test("protected-page sign-in boundary opens the same Web3-first modal", async ({
   await page.locator("section").filter({ hasText: "Sign in to continue" }).getByRole("button", { name: "Sign in / Connect" }).click();
 
   await expect(page.getByRole("heading", { name: "Sign in to SettleFlow" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Web2 sign-in is coming soon" })).toBeDisabled();
-  await expect(page.getByRole("button", { name: /connect web3 wallet/i })).toBeVisible();
+  await expect(page.getByText("Circle Smart Wallet")).toBeVisible();
+  await expect(page.getByText("Choose a wallet")).toBeVisible();
+  await expect(page.getByText(/No browser wallet was found/i)).toBeVisible();
 });
 
 test("unauthenticated payout route renders the sign-in boundary", async ({ page }) => {

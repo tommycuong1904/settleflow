@@ -46,7 +46,7 @@ test("owner and contributor payout views are scoped to their workspace", async (
 
     const ownerPage = await ownerContext.newPage();
     await ownerPage.goto("/dashboard");
-    await expect(ownerPage.getByText("Payout operations", { exact: true })).toBeVisible();
+    await expect(ownerPage.getByRole("heading", { name: "Today’s work" })).toBeVisible();
     await ownerPage.goto(`/payouts/${payout.id}?workspaceId=${workspaceId}`);
     await expect(ownerPage.getByRole("button", { name: "Submit milestone" })).toHaveCount(0);
 
@@ -56,8 +56,8 @@ test("owner and contributor payout views are scoped to their workspace", async (
     await expect(contributorPage.getByText("Browser-scoped payout")).toBeVisible();
     await contributorPage.goto(`/payouts/${payout.id}?workspaceId=${workspaceId}`);
     await contributorPage.getByRole("button", { name: "Submit milestone" }).click();
-    await contributorPage.getByPlaceholder(/Primary link/).fill("https://example.test/e2e-proof");
-    await contributorPage.getByPlaceholder(/Briefly describe/).fill("Browser evidence submitted by the assigned contributor.");
+    await contributorPage.getByPlaceholder("https://github.com/org/repo/pull/123").fill("https://example.test/e2e-proof");
+    await contributorPage.getByLabel(/What did you complete/).fill("Browser evidence submitted by the assigned contributor.");
     await contributorPage.getByRole("button", { name: "Submit for Review" }).click();
     await expect(contributorPage.getByText("Submitted • Awaiting workspace owner review")).toBeVisible();
 
