@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { AppSidebar } from "@/components/shared/app-sidebar";
 import { AppHeader } from "@/components/shared/app-header";
 import { Footer } from "@/components/shared/footer";
+import { WorkflowStateSync } from "@/components/shared/workflow-state-sync";
 import { getSessionFromCookieStore, resolveProductContextForServerPage, resolveSessionMemberships } from "@/lib/auth/session-server";
 
 export const dynamic = "force-dynamic";
@@ -28,6 +29,7 @@ export default async function AppLayout({
         <Suspense fallback={null}>
           <AppHeader />
         </Suspense>
+        <WorkflowStateSync />
         <main className="sf-app-main">
           <Suspense fallback={null}>
             {children}

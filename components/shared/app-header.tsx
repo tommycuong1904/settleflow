@@ -7,6 +7,7 @@ import { FaucetModal } from "@/components/shared/faucet-modal";
 import { useWallet } from "@/lib/context/wallet-context";
 import { addArcNetworkToWallet } from "@/lib/arc/onchain";
 import { useToast } from "@/lib/context/toast-context";
+import { WORKFLOW_UPDATED_EVENT } from "@/lib/runtime/workflow-sync";
 import { ExternalLink, LogOut, Wallet, User, ChevronDown, RefreshCw, Droplets, Copy, Menu, Bell } from "lucide-react";
 
 export function AppHeader() {
@@ -47,11 +48,14 @@ export function AppHeader() {
     const handleServiceWorkerMessage = (event: MessageEvent<{ type?: string }>) => {
       if (event.data?.type === "settleflow:notification") refreshUnreadNotifications();
     };
+    const handleWorkflowUpdate = () => refreshUnreadNotifications();
     refreshUnreadNotifications();
     navigator.serviceWorker?.addEventListener("message", handleServiceWorkerMessage);
+    window.addEventListener(WORKFLOW_UPDATED_EVENT, handleWorkflowUpdate);
     return () => {
       active = false;
       navigator.serviceWorker?.removeEventListener("message", handleServiceWorkerMessage);
+      window.removeEventListener(WORKFLOW_UPDATED_EVENT, handleWorkflowUpdate);
     };
   }, [isConnected, pathname]);
 

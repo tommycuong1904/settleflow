@@ -23,6 +23,7 @@ import { PayoutReceiptModal } from "@/components/payouts/payout-receipt-modal";
 import { formatUsdc, shortenAddress } from "@/lib/utils/format";
 import { FileCheck } from "lucide-react";
 import { hasRole, isRole } from "@/lib/runtime/role-utils";
+import { notifyWorkflowUpdated } from "@/lib/runtime/workflow-sync";
 
 type PersistedReleaseState = {
   releasedMilestoneId: string;
@@ -252,6 +253,7 @@ export function PayoutDetailClient({
         title: "Payout Activated",
         description: "Draft is now active. Milestones can be submitted.",
       });
+      notifyWorkflowUpdated();
       await refreshActivity();
     } catch (error) {
       setReviewError(error instanceof Error ? error.message : "Unable to activate payout.");
@@ -462,6 +464,7 @@ export function PayoutDetailClient({
           : milestone,
       ),
     );
+    notifyWorkflowUpdated();
     void refreshActivity();
   }
 
@@ -550,6 +553,7 @@ export function PayoutDetailClient({
       title: "USDC Released on Arc",
       description: "Milestone funds settled onchain. Tx proof recorded.",
     });
+    notifyWorkflowUpdated();
     void refreshActivity();
   }
 
