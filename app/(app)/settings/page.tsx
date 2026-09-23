@@ -134,21 +134,21 @@ export default function SettingsPage() {
     <div className="sf-app-wrapper flex flex-col py-8 md:py-12 gap-8">
       {/* Header */}
       <PageHeader
-        eyebrow="Workspace Administration"
-        title="Workspace Settings"
-        description="Manage team access, your active session, and optional Arc wallet tools."
+        eyebrow="Settings"
+        title="Workspace settings"
+        description="Manage your account, notifications, team access, and wallet connection."
       />
 
       <div className="space-y-8">
         {/* Team access */}
         {isOwner && <div className="rounded-xl border border-[var(--border-soft)] p-6 sm:p-8 space-y-6 bg-[var(--surface-muted)]/30">
           <div className="flex items-center gap-3 pb-4 border-b border-[var(--border-soft)]">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--surface-muted)] border border-[var(--border-soft)] text-[var(--text-muted)]">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--surface-muted)] border border-[var(--border-soft)] text-[var(--text-muted)]">
               <UserPlus size={20} />
             </div>
             <div>
-              <h2 className="text-base font-semibold text-[var(--foreground)]">Team Access & Invitations</h2>
-              <p className="text-xs text-[var(--text-muted)]">Invite a team member with the role they need for this workspace</p>
+              <h2 className="text-base font-semibold text-[var(--foreground)]">Invite an owner</h2>
+              <p className="text-xs text-[var(--text-muted)]">Give a trusted teammate full access to this workspace.</p>
             </div>
           </div>
 
@@ -184,10 +184,10 @@ export default function SettingsPage() {
                 </label>
                 <input
                   type="email"
-                  placeholder="e.g. contributor@gmail.com"
+                  placeholder="name@company.com"
                   value={inviteEmail}
                   onChange={(e) => setInviteEmail(e.target.value)}
-                  className="w-full rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] py-2.5 px-3.5 text-xs text-[var(--foreground)] placeholder-[var(--text-muted)] focus:border-[var(--foreground)] focus:outline-none"
+                  className="w-full rounded-full border border-[var(--border-soft)] bg-[var(--input-background)] py-2.5 px-3.5 text-xs text-[var(--foreground)] placeholder:text-[var(--input-placeholder)] focus:border-[var(--foreground)] focus:bg-[var(--input-focus-background)] focus:outline-none"
                 />
               </div>
 
@@ -242,12 +242,12 @@ export default function SettingsPage() {
         <div className="rounded-xl border border-[var(--border-soft)] p-6 sm:p-8 space-y-6">
           <div className="flex items-center justify-between gap-4 pb-4 border-b border-[var(--border-soft)]">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--surface-muted)] border border-[var(--border-soft)] text-[var(--text-muted)]">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--surface-muted)] border border-[var(--border-soft)] text-[var(--text-muted)]">
                 <Shield size={20} />
               </div>
               <div>
-                <h2 className="text-base font-semibold text-[var(--foreground)]">Active Session</h2>
-                <p className="text-xs text-[var(--text-muted)]">Your signed-in account and authentication method</p>
+                <h2 className="text-base font-semibold text-[var(--foreground)]">Your account</h2>
+                <p className="text-xs text-[var(--text-muted)]">Your signed-in account and connected wallet.</p>
               </div>
             </div>
 
@@ -264,10 +264,10 @@ export default function SettingsPage() {
           </div>
 
           <div className="grid gap-4 md:grid-cols-2 text-xs">
-            <div className="p-4 rounded-2xl bg-[var(--surface-muted)] border border-[var(--border-soft)] space-y-1.5">
+            <div className="p-4 rounded-xl bg-[var(--surface-muted)] border border-[var(--border-soft)] space-y-1.5">
               <div className="flex items-center justify-between">
                 <p className="text-[11px] uppercase tracking-wider text-[var(--text-muted)] font-semibold">
-                  Active Account Principal
+                  Signed-in account
                 </p>
                 {address && (
                   <button
@@ -291,9 +291,9 @@ export default function SettingsPage() {
               </p>
             </div>
 
-            <div className="p-4 rounded-2xl bg-[var(--surface-muted)] border border-[var(--border-soft)] space-y-1">
+            <div className="p-4 rounded-xl bg-[var(--surface-muted)] border border-[var(--border-soft)] space-y-1">
               <p className="text-[11px] uppercase tracking-wider text-[var(--text-muted)] font-semibold">
-                Authentication Rail
+                Sign-in method
               </p>
               <p className="text-sm font-semibold text-[var(--text-muted)]">
                 {authType === "web2_google"
@@ -341,8 +341,8 @@ export default function SettingsPage() {
         </div>
 
         <div className="rounded-xl border border-[var(--border-soft)] p-6 sm:p-8 space-y-3">
-          <h2 className="text-base font-semibold text-[var(--foreground)]">Browser Push</h2>
-          <p className="text-xs text-[var(--text-muted)]">Receive workflow updates when SettleFlow is not open.</p>
+          <h2 className="text-base font-semibold text-[var(--foreground)]">Browser notifications</h2>
+          <p className="text-xs text-[var(--text-muted)]">Receive payment and review updates when SettleFlow is not open.</p>
           <BrowserPushToggle workspaceId={productContext.workspaceId} />
         </div>
 
@@ -350,7 +350,7 @@ export default function SettingsPage() {
         <div className="rounded-xl border border-[var(--border-soft)] p-6 sm:p-8 space-y-6">
           <div className="flex items-center justify-between gap-4 pb-4 border-b border-[var(--border-soft)]">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--surface-muted)] border border-[var(--border-soft)] text-[var(--text-muted)]">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--surface-muted)] border border-[var(--border-soft)] text-[var(--text-muted)]">
                 <Cpu size={20} />
               </div>
               <div>
