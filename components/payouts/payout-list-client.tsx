@@ -147,7 +147,7 @@ export function PayoutListClient({
             return (
               <div
                 key={payout.id}
-                className="px-5 py-4 transition-colors hover:bg-[var(--surface-muted)]"
+                className="px-5 py-4 transition-colors hover:bg-[rgba(15,23,42,0.025)]"
               >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="space-y-1.5">
