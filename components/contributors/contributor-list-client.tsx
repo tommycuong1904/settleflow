@@ -231,7 +231,7 @@ export function ContributorListClient({
           )}
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 xl:grid-cols-2">
           {filteredContributors.map((contributor) => {
             const isCopied = copiedId === contributor.id;
             const initials = contributor.displayName
@@ -338,7 +338,7 @@ export function ContributorListClient({
 
                 {/* Bottom Section: Metrics, Actions & Integrated Invite Link */}
                 <div className="pt-3.5 border-t border-[var(--border-soft)] space-y-3">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
                     <div className="flex items-center gap-4">
                       <div>
                         <p className="text-[10px] uppercase tracking-wider text-[var(--text-muted)]">
@@ -359,7 +359,7 @@ export function ContributorListClient({
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       {canManageContributor(contributor) && (
                         <Button
                           variant="outline"
