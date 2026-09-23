@@ -149,7 +149,7 @@ export function PayoutListClient({
                 key={payout.id}
                 className="px-5 py-4 transition-colors hover:bg-[rgba(15,23,42,0.025)]"
               >
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_8rem_11rem] sm:items-center sm:gap-6">
                   <div className="space-y-1.5">
                     <div className="flex flex-wrap items-center gap-2.5">
                       <span className="text-base font-semibold text-[var(--foreground)] transition-colors">
@@ -173,7 +173,7 @@ export function PayoutListClient({
                     </p>
                   </div>
 
-                  <div className="flex items-center justify-between sm:justify-end gap-6 shrink-0">
+                  <div className="flex items-center justify-between gap-6 sm:contents">
                     <div className="text-right">
                       <p className="text-[10px] uppercase tracking-wider text-[var(--text-muted)]">
                         Amount
@@ -182,7 +182,7 @@ export function PayoutListClient({
                         {formatUsdc(Number(payout.totalAmount))} USDC
                       </p>
                     </div>
-                    <Button href={`/payouts/${payout.id}?workspaceId=${encodeURIComponent(payout.workspaceId)}`} variant={payout.nextAction === "Payment complete" ? "ghost" : "secondary"} size="sm">
+                    <Button href={`/payouts/${payout.id}?workspaceId=${encodeURIComponent(payout.workspaceId)}`} variant={payout.nextAction === "Payment complete" ? "ghost" : "secondary"} size="sm" className="sm:w-44">
                       {payout.nextAction} <ArrowRight size={14} className="ml-1" />
                     </Button>
                   </div>
