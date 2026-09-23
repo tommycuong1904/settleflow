@@ -2,6 +2,8 @@ export type ActivityItem = {
   id: string;
   entityType: "payout" | "milestone" | "release" | "proof" | "system";
   entityId: string;
+  payoutId?: string;
+  milestoneId?: string;
   action: string;
   occurredAt: string;
   actorLabel: string;

@@ -1,6 +1,5 @@
 import { cookies } from "next/headers";
 import { PageHeader } from "@/components/shared/page-header";
-import { WalletGate } from "@/components/dashboard/wallet-gate";
 import { ActivityLedgerClient } from "@/components/activity/activity-ledger-client";
 import { getAccessibleActivity } from "@/lib/repositories/payout-activity";
 import { getSessionFromCookieStore, resolveSessionMemberships } from "@/lib/auth/session-server";
@@ -27,8 +26,6 @@ export default async function ActivityPage() {
         title="Activity"
         description="A complete history of work submitted, reviews, and payout releases."
       />
-
-      <WalletGate />
 
       <section>
         <h2 className="mb-4 text-lg font-semibold tracking-tight text-[var(--foreground)]">All activity</h2>
