@@ -228,7 +228,7 @@ export default function SettingsPage() {
                   type="text"
                   readOnly
                   value={generatedInviteUrl}
-                  className="w-full rounded-lg border border-[var(--border-soft)] bg-[var(--surface-muted)] py-2 px-3 text-xs font-mono text-[var(--foreground)] select-all"
+                  className="w-full rounded-full border border-[var(--border-soft)] bg-[var(--input-background)] py-2 px-3 text-xs font-mono text-[var(--foreground)] select-all"
                 />
                 <p className="text-[11px] text-[var(--text-muted)]">
                   Share this link with your team member. Upon opening, they will accept the invite and join this workspace as <strong className="uppercase text-[var(--foreground)]">Owner</strong>.
