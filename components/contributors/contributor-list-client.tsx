@@ -252,7 +252,7 @@ export function ContributorListClient({
                 {/* Top Section: Avatar & Info */}
                 <div>
                   <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-3.5">
+                      <div className="flex items-center gap-3.5">
                       <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--surface-muted)] border border-[var(--border-soft)] text-[var(--foreground)] font-bold text-base shrink-0">
                         {initials || "C"}
                       </div>
@@ -278,6 +278,24 @@ export function ContributorListClient({
                         ) : null}
                       </div>
                     </div>
+                    {canManageContributor(contributor) ? (
+                      <div className="flex shrink-0 items-center gap-2">
+                        <Button variant="outline" className="h-8 w-8 !p-0" title="Edit contributor" onClick={() => {
+                          setEditingContributor(contributor);
+                          setIsEditModalOpen(true);
+                        }}>
+                          <Pencil size={14} />
+                          <span className="sr-only">Edit contributor</span>
+                        </Button>
+                        <Button variant="outline" className="h-8 w-8 !p-0 text-red-400 border-red-400/40 hover:bg-red-500/10" title="Delete contributor" onClick={() => {
+                          setDeletingContributor(contributor);
+                          setIsDeleteModalOpen(true);
+                        }}>
+                          <Trash2 size={14} />
+                          <span className="sr-only">Delete contributor</span>
+                        </Button>
+                      </div>
+                    ) : null}
                   </div>
 
                   {/* Wallet & Email */}
@@ -372,34 +390,6 @@ export function ContributorListClient({
                             : activeInviteUrl
                             ? "Regenerate"
                             : "Invite Link"}
-                        </Button>
-                      )}
-                      {canManageContributor(contributor) && (
-                        <Button
-                          variant="outline"
-                          className="h-8 w-8 !p-0"
-                          title="Edit contributor"
-                          onClick={() => {
-                            setEditingContributor(contributor);
-                            setIsEditModalOpen(true);
-                          }}
-                        >
-                          <Pencil size={14} />
-                          <span className="sr-only">Edit contributor</span>
-                        </Button>
-                      )}
-                      {canManageContributor(contributor) && (
-                        <Button
-                          variant="outline"
-                          className="h-8 w-8 !p-0 text-red-400 border-red-400/40 hover:bg-red-500/10"
-                          title="Delete contributor"
-                          onClick={() => {
-                            setDeletingContributor(contributor);
-                            setIsDeleteModalOpen(true);
-                          }}
-                        >
-                          <Trash2 size={14} />
-                          <span className="sr-only">Delete contributor</span>
                         </Button>
                       )}
                       <Button
