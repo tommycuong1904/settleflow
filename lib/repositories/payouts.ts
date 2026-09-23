@@ -17,6 +17,7 @@ export type AccessiblePayoutListItem = PayoutListItem & {
   workspaceId: string;
   workspaceName: string;
   membershipRole: PayoutViewRole;
+  nextAction: string;
   contributor: {
     id: string;
     displayName: string;
@@ -90,18 +91,24 @@ export async function listPayouts(input: {
 export async function listAccessiblePayouts(input: {
   userId: string;
   memberships: Array<{ workspaceId: string; role: string }>;
+  workspaceId?: string;
 }): Promise<AccessiblePayoutListItem[]> {
+  const accessibleMemberships = input.memberships
+    .filter((membership) => !input.workspaceId || membership.workspaceId === input.workspaceId)
+    .filter((membership): membership is { workspaceId: string; role: PayoutViewRole } =>
+      membership.role === "owner" || membership.role === "reviewer" || membership.role === "contributor" || membership.role === "ops",
+    );
   const roleByWorkspace = new Map(
-    input.memberships
+    accessibleMemberships
       .filter((membership): membership is { workspaceId: string; role: PayoutViewRole } =>
         membership.role === "owner" || membership.role === "reviewer" || membership.role === "contributor" || membership.role === "ops",
       )
       .map((membership) => [membership.workspaceId, membership.role]),
   );
-  const privilegedWorkspaceIds = input.memberships
+  const privilegedWorkspaceIds = accessibleMemberships
     .filter((membership) => membership.role === "owner" || membership.role === "reviewer")
     .map((membership) => membership.workspaceId);
-  const contributorWorkspaceIds = input.memberships
+  const contributorWorkspaceIds = accessibleMemberships
     .filter((membership) => membership.role === "contributor")
     .map((membership) => membership.workspaceId);
 
@@ -132,20 +139,45 @@ export async function listAccessiblePayouts(input: {
       workspaceId: true,
       workspace: { select: { name: true } },
       contributor: { select: { id: true, name: true, walletAddress: true } },
+      milestones: { select: { status: true } },
     },
   });
 
-  return payouts.map((payout) => ({
-    ...toListItem(payout),
-    workspaceId: payout.workspaceId,
-    workspaceName: payout.workspace.name,
-    membershipRole: roleByWorkspace.get(payout.workspaceId)!,
-    contributor: {
-      id: payout.contributor.id,
-      displayName: payout.contributor.name,
-      walletAddress: payout.contributor.walletAddress,
-    },
-  }));
+  return payouts.map((payout) => {
+    const role = roleByWorkspace.get(payout.workspaceId)!;
+    const milestoneStatuses = payout.milestones.map((milestone) => milestone.status);
+    const nextAction = payout.status === "draft"
+      ? "Complete setup"
+      : role === "owner"
+      ? milestoneStatuses.includes("submitted")
+        ? "Review work"
+        : milestoneStatuses.includes("approved")
+        ? "Review & pay"
+        : payout.status === "completed"
+        ? "Payment complete"
+        : "Waiting for contributor"
+      : role === "contributor"
+      ? milestoneStatuses.some((status) => status === "pending" || status === "rejected")
+        ? "Submit work"
+        : milestoneStatuses.includes("submitted")
+        ? "Waiting for review"
+        : payout.status === "completed"
+        ? "Payment complete"
+        : "Waiting for payment"
+      : "View payout";
+    return {
+      ...toListItem(payout),
+      workspaceId: payout.workspaceId,
+      workspaceName: payout.workspace.name,
+      membershipRole: role,
+      nextAction,
+      contributor: {
+        id: payout.contributor.id,
+        displayName: payout.contributor.name,
+        walletAddress: payout.contributor.walletAddress,
+      },
+    };
+  });
 }
 
 export async function getPayoutById(

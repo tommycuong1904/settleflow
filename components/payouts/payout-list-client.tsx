@@ -51,8 +51,8 @@ export function PayoutListClient({
   return (
     <div className="space-y-5">
       {/* Controls: Search & Status Filter */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
-        <div className="relative flex-1 max-w-md">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div className="relative w-full min-w-0 md:flex-1 md:max-w-md">
           <Search
             size={16}
             className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
@@ -66,7 +66,7 @@ export function PayoutListClient({
           />
         </div>
 
-        <div className="flex rounded-full bg-[var(--surface)] p-1 border border-[var(--border-soft)] text-xs font-medium shrink-0">
+        <div className="flex self-center rounded-full bg-[var(--surface)] p-1 border border-[var(--border-soft)] text-xs font-medium md:ml-auto md:shrink-0">
           <button
             onClick={() => setStatusFilter("all")}
             className={`rounded-full px-3 py-1.5 transition-all ${
@@ -125,7 +125,7 @@ export function PayoutListClient({
           }
         />
       ) : ( <>
-        <div className="space-y-3.5">
+        <div className="overflow-hidden rounded-2xl border border-[var(--border-soft)] bg-[var(--surface)] divide-y divide-[var(--border-soft)]">
           {paginatedPayouts.map((payout) => {
             const contributor = payout.contributor;
             const statusLabel =
@@ -147,7 +147,7 @@ export function PayoutListClient({
             return (
               <div
                 key={payout.id}
-                className="rounded-xl border border-[var(--border-soft)] bg-[var(--surface)] p-5 hover:border-[var(--border-strong)] transition-all group"
+                className="px-5 py-4 transition-colors hover:bg-[var(--surface-muted)]"
               >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="space-y-1.5">
@@ -162,7 +162,6 @@ export function PayoutListClient({
                       </span>
                     </div>
                     <p className="text-xs text-[var(--text-muted)]">
-                      Contributor:{" "}
                       <strong className="text-[var(--foreground)] font-medium">
                         {contributor.displayName}
                       </strong>{" "}
@@ -183,8 +182,8 @@ export function PayoutListClient({
                         {formatUsdc(Number(payout.totalAmount))} USDC
                       </p>
                     </div>
-                    <Button href={`/payouts/${payout.id}?workspaceId=${encodeURIComponent(payout.workspaceId)}`} variant="ghost">
-                      Open payout <ArrowRight size={14} className="ml-1" />
+                    <Button href={`/payouts/${payout.id}?workspaceId=${encodeURIComponent(payout.workspaceId)}`} variant={payout.nextAction === "Payment complete" ? "ghost" : "secondary"} size="sm">
+                      {payout.nextAction} <ArrowRight size={14} className="ml-1" />
                     </Button>
                   </div>
                 </div>
