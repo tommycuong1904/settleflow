@@ -70,7 +70,7 @@ export function NotificationListClient({ notifications }: { notifications: Notif
           key={notification.id}
           type="button"
           onClick={() => { void openNotification(notification); }}
-          className={`relative block w-full px-5 py-4 text-left transition-colors hover:bg-[var(--surface-muted)] ${notification.readAt ? "" : "before:absolute before:inset-y-0 before:left-0 before:w-1 before:bg-[var(--foreground)]"}`}
+          className={`relative block w-full px-5 py-3 text-left transition-colors hover:bg-[var(--surface-muted)] ${notification.readAt ? "" : "before:absolute before:inset-y-0 before:left-0 before:w-1 before:bg-[var(--foreground)]"}`}
         >
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0 space-y-1">
@@ -79,9 +79,13 @@ export function NotificationListClient({ notifications }: { notifications: Notif
                 <p className="text-sm font-semibold text-[var(--foreground)]">{notification.title}</p>
               </div>
               <p className="text-xs leading-5 text-[var(--text-muted)]">{notification.body}</p>
-              <span className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--foreground)]">{actionLabel(notification.type)} <ArrowRight size={13} /></span>
+              <span className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--foreground)] sm:hidden">{actionLabel(notification.type)} <ArrowRight size={13} /></span>
             </div>
-            <time className="shrink-0 text-[11px] text-[var(--text-muted)]">{formatNotificationTime(notification.createdAt)}</time>
+            <div className="hidden shrink-0 flex-col items-end gap-2 sm:flex">
+              <span className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--foreground)]">{actionLabel(notification.type)} <ArrowRight size={13} /></span>
+              <time className="text-[11px] text-[var(--text-muted)]">{formatNotificationTime(notification.createdAt)}</time>
+            </div>
+            <time className="shrink-0 text-[11px] text-[var(--text-muted)] sm:hidden">{formatNotificationTime(notification.createdAt)}</time>
           </div>
         </button>
       ))}
