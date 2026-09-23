@@ -70,7 +70,7 @@ export function NotificationListClient({ notifications }: { notifications: Notif
           key={notification.id}
           type="button"
           onClick={() => { void openNotification(notification); }}
-          className={`relative block w-full px-5 py-3 text-left transition-colors hover:bg-[var(--surface-muted)] ${notification.readAt ? "" : "before:absolute before:inset-y-0 before:left-0 before:w-1 before:bg-[var(--foreground)]"}`}
+          className={`relative block w-full px-5 py-3 text-left transition-colors hover:bg-[rgba(15,23,42,0.025)] ${notification.readAt ? "" : "before:absolute before:inset-y-0 before:left-0 before:w-1 before:bg-[var(--foreground)]"}`}
         >
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0 space-y-1">
