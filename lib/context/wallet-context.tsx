@@ -86,7 +86,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const [authType, setAuthType] = useState<AuthType>(null);
   const [walletName, setWalletName] = useState<string | null>(null);
   const [network, setNetwork] = useState<string>("Arc Testnet");
-  const [usdcBalance, setUsdcBalance] = useState<string>("1,250.00");
+  const [usdcBalance, setUsdcBalance] = useState<string>("—");
   const [isRefreshingBalance, setIsRefreshingBalance] = useState<boolean>(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
 
@@ -107,7 +107,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
             setAuthType(session.authType);
             setWalletName(session.walletName);
             setNetwork(session.network || "Arc Testnet");
-            setUsdcBalance(session.usdcBalance || "1,250.00");
+            setUsdcBalance(session.usdcBalance || "—");
           }
         }
       } catch {
@@ -150,7 +150,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
           authType: session.authType,
           walletName: session.authType === "web2_google" ? "Google account" : "Web3 Wallet",
           network: "Arc Testnet",
-          usdcBalance: "1,250.00",
+          usdcBalance: "—",
         };
         setIsConnected(true);
         setAddress(next.address);
@@ -242,7 +242,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         setAuthType("web3_wallet");
         setWalletName(wName);
         setNetwork("Arc Testnet");
-        setUsdcBalance("2,450.00");
+        setUsdcBalance("—");
 
         saveSession({
           isConnected: true,
@@ -254,7 +254,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
           authType: "web3_wallet",
           walletName: wName,
           network: "Arc Testnet",
-          usdcBalance: "2,450.00",
+          usdcBalance: "—",
         });
 
         setIsAuthModalOpen(false);
@@ -320,7 +320,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         setAuthType("web2_google");
         setWalletName("Google account");
         setNetwork("Arc Testnet");
-        setUsdcBalance("1,000.00");
+        setUsdcBalance("—");
 
         saveSession({
           isConnected: true,
@@ -332,7 +332,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
           authType: "web2_google",
           walletName: "Google account",
           network: "Arc Testnet",
-          usdcBalance: "1,000.00",
+          usdcBalance: "—",
         });
 
         setIsAuthModalOpen(false);

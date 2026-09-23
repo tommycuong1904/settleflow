@@ -27,7 +27,7 @@ export async function fetchLiveArcBalances(
 ): Promise<{ usdc: string; native: string }> {
   try {
     if (!address || !/^0x[a-fA-F0-9]{40}$/.test(address)) {
-      return { usdc: "1,250.00", native: "0.05" };
+      return { usdc: "—", native: "—" };
     }
 
     const client = createPublicClient({
@@ -53,7 +53,7 @@ export async function fetchLiveArcBalances(
     }
 
     // 2. Fetch ERC-20 USDC balance
-    let usdcBalanceFormatted = "1,250.00";
+    let usdcBalanceFormatted = "—";
     try {
       if (
         ARC_CONFIG.usdcAddress &&
@@ -82,7 +82,7 @@ export async function fetchLiveArcBalances(
       native: nativeBalanceFormatted,
     };
   } catch {
-    return { usdc: "1,250.00", native: "0.05" };
+    return { usdc: "—", native: "—" };
   }
 }
 
