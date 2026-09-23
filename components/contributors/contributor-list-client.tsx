@@ -305,7 +305,7 @@ export function ContributorListClient({
                         Wallet
                       </span>
                       <div className="flex items-center gap-1.5">
-                        <span className="font-mono text-xs text-[var(--text-primary)] bg-[var(--surface-muted)] px-2 py-0.5 rounded-lg border border-[var(--border-soft)]">
+                        <span className="font-mono text-xs text-[var(--text-primary)]">
                           {shortenAddress(contributor.walletAddress)}
                         </span>
                         <button
