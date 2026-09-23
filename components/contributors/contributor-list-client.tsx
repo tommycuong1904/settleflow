@@ -156,7 +156,7 @@ export function ContributorListClient({
 
         {/* Status Filters & Add Button */}
         <div className="flex w-full flex-wrap items-center gap-3 md:ml-auto md:w-auto md:flex-nowrap md:shrink-0">
-          <div className="flex rounded-full bg-[var(--surface)] p-1 border border-[var(--border-soft)] text-xs font-medium">
+          <div className="self-center flex rounded-full bg-[var(--surface)] p-1 border border-[var(--border-soft)] text-xs font-medium">
             <button
               onClick={() => setStatusFilter("all")}
               className={`rounded-full px-3 py-1.5 transition-all ${
@@ -195,7 +195,7 @@ export function ContributorListClient({
           <Button
             variant="primary"
             onClick={() => setIsAddModalOpen(true)}
-            className="shrink-0"
+            className="shrink-0 self-center"
           >
             <UserPlus size={15} className="mr-1.5" /> Add Contributor
           </Button>
