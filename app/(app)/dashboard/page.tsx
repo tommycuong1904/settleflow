@@ -7,6 +7,7 @@ import { resolveProductContextForServerPage } from "@/lib/auth/session-server";
 import { ServerAuthContextState } from "@/components/shared/server-auth-context-state";
 import { WalletGate } from "@/components/dashboard/wallet-gate";
 import { formatUsdc } from "@/lib/utils/format";
+import { Plus } from "lucide-react";
 
 export default async function DashboardPage() {
   const cookieStore = await cookies();
@@ -121,7 +122,7 @@ export default async function DashboardPage() {
           </Button>
         ) : null}
         <Button href="/payouts/new" variant={nextTask ? "secondary" : "primary"} size="sm">
-          New Payout
+          <Plus size={15} className="mr-1.5" /> New Payout
         </Button>
       </PageHeader>
 
