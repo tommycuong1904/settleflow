@@ -4,12 +4,9 @@ import React from "react";
 import { Button } from "@/components/shared/button";
 import { useWallet } from "@/lib/context/wallet-context";
 import {
-  ShieldCheck,
   Sparkles,
   ArrowRight,
   Lock,
-  Layers,
-  Coins,
 } from "lucide-react";
 
 export function WalletGate() {
@@ -21,9 +18,6 @@ export function WalletGate() {
 
   return (
     <div className="relative overflow-hidden rounded-xl border border-[var(--border-soft)] bg-[var(--surface)] p-6 md:p-8">
-      {/* Subtle top ambient */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[var(--border-strong)] to-transparent" />
-
       <div className="relative flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
         <div className="space-y-3 max-w-2xl">
           <div className="inline-flex items-center gap-2 rounded-full border border-[var(--border-soft)] bg-[var(--surface-muted)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">
@@ -36,21 +30,8 @@ export function WalletGate() {
           </h2>
 
           <p className="text-sm leading-relaxed text-[var(--text-muted)]">
-            You are currently browsing in <strong className="text-[var(--foreground)]">Preview Mode</strong>. Connect a compatible Web3 wallet to create milestone payouts, sign USDC releases, and verify Arc onchain proofs.
+            Connect your wallet to create payouts, submit work, approve milestones, and release payments.
           </p>
-
-          {/* Value Badges */}
-          <div className="flex flex-wrap gap-3 pt-1 text-xs text-[var(--text-muted)]">
-            <span className="flex items-center gap-1.5 rounded-lg bg-[var(--surface-muted)] px-2.5 py-1 border border-[var(--border-soft)]">
-              <ShieldCheck size={14} className="text-[var(--text-muted)]" /> Non-custodial wallet
-            </span>
-            <span className="flex items-center gap-1.5 rounded-lg bg-[var(--surface-muted)] px-2.5 py-1 border border-[var(--border-soft)]">
-              <Coins size={14} className="text-[var(--text-muted)]" /> Circle Smart Wallet — Coming soon
-            </span>
-            <span className="flex items-center gap-1.5 rounded-lg bg-[var(--surface-muted)] px-2.5 py-1 border border-[var(--border-soft)]">
-              <Layers size={14} className="text-[var(--text-muted)]" /> Arc Testnet Settlements
-            </span>
-          </div>
         </div>
 
         <div className="flex flex-col sm:flex-row lg:flex-col gap-3 w-full sm:w-auto shrink-0">
