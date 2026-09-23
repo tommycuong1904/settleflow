@@ -1,6 +1,6 @@
 export function formatUsdc(amount: number) {
   return new Intl.NumberFormat("en-US", {
-    maximumFractionDigits: 0,
+    maximumFractionDigits: 6,
   }).format(amount);
 }
 
