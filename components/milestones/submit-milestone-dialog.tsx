@@ -104,21 +104,6 @@ export function SubmitMilestoneDialog({
     );
   };
 
-  const handleFillDemoData = () => {
-    setProofs([
-      "https://github.com/settleflow/settleflow/pull/42",
-      "https://loom.com/share/demo-walkthrough-preview",
-    ]);
-    setSummary(
-      `Completed deliverable for "${milestone.title}". Implemented core architecture, passing all integration test suites, and verified on testnet.`,
-    );
-    setNotes(
-      "Staging preview: https://staging.settleflow.app • Test credentials: demo@settleflow.app",
-    );
-    setShowExtraNotes(true);
-    setError(null);
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmedSummary = summary.trim();
@@ -189,7 +174,7 @@ export function SubmitMilestoneDialog({
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-3xl border border-[var(--border-strong)] bg-[var(--surface)] p-6 sm:p-7 shadow-2xl text-[var(--foreground)]"
+        className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-xl border border-[var(--border-strong)] bg-[var(--surface)] p-6 sm:p-7 shadow-2xl text-[var(--foreground)]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close Button */}
@@ -204,21 +189,11 @@ export function SubmitMilestoneDialog({
 
         {/* Header */}
         <div className="mb-5 pr-8">
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-[10px] uppercase tracking-[0.2em] text-[#091b33] font-bold">
-              Deliverable Submission
-            </span>
-            <button
-              type="button"
-              onClick={handleFillDemoData}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#091b33]/5 hover:bg-[#091b33]/10 text-[#091b33] border border-[#091b33]/15 text-[11px] font-semibold transition-all active:scale-95 cursor-pointer"
-              title="Populate demo links and summary for presentation"
-            >
-              <Sparkles size={12} /> Fill Demo Data
-            </button>
-          </div>
+          <span className="text-[10px] uppercase tracking-[0.2em] text-[var(--text-muted)] font-bold">
+            Submit for review
+          </span>
           <h2 className="text-lg sm:text-xl font-bold tracking-tight text-[var(--foreground)] mt-1 line-clamp-1">
-            Submit &quot;{milestone.title}&quot;
+            {milestone.title}
           </h2>
           <div className="mt-1 flex items-center gap-2 text-xs text-[var(--text-muted)]">
             <span>
@@ -228,7 +203,7 @@ export function SubmitMilestoneDialog({
               </strong>
             </span>
             <span>•</span>
-            <span className="text-emerald-500 font-medium">Releases upon approval</span>
+            <span className="text-emerald-600 dark:text-emerald-400 font-medium">Payment is released after approval</span>
           </div>
         </div>
 
@@ -239,13 +214,11 @@ export function SubmitMilestoneDialog({
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4 text-xs">
-          {/* Deliverable / Proof Links (Supports multiple) */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <label className="block uppercase tracking-wider font-semibold text-[var(--foreground)]">
-                Proof / Deliverable Links
+                Reference links <span className="normal-case font-normal text-[var(--text-muted)]">(optional)</span>
               </label>
-              <span className="text-[10px] text-[#091b33] font-semibold">Recommended</span>
             </div>
 
             <div className="space-y-2">
@@ -267,10 +240,10 @@ export function SubmitMilestoneDialog({
                           onChange={(e) => handleProofChange(index, e.target.value)}
                           placeholder={
                             index === 0
-                              ? "Primary link: https://github.com/org/repo/pull/123"
-                              : "Additional link: Figma, Loom video, or demo URL"
+                              ? "https://github.com/org/repo/pull/123"
+                              : "Add another link"
                           }
-                          className="w-full rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] py-2.5 pl-9 pr-3 text-xs text-[var(--foreground)] placeholder-[var(--text-muted)] focus:border-[var(--primary)] focus:outline-none focus:ring-1 focus:ring-[var(--primary)]/20 transition-all font-mono"
+                          className="w-full rounded-full border border-[var(--border-soft)] bg-[var(--input-background)] py-2.5 pl-9 pr-3 text-xs text-[var(--foreground)] placeholder:text-[var(--input-placeholder)] focus:border-[var(--border-strong)] focus:bg-[var(--input-focus-background)] focus:outline-none focus:ring-1 focus:ring-[var(--border-strong)] transition-all font-mono"
                         />
                       </div>
 
@@ -306,24 +279,23 @@ export function SubmitMilestoneDialog({
               <button
                 type="button"
                 onClick={handleAddProof}
-                className="inline-flex items-center gap-1 text-[11px] text-[var(--primary)] hover:opacity-80 font-semibold transition-opacity pt-1"
+                className="inline-flex items-center gap-1 text-[11px] text-[var(--foreground)] hover:opacity-70 font-semibold transition-opacity pt-1"
               >
                 <Plus size={13} /> Add another proof link
               </button>
             )}
           </div>
 
-          {/* Work Summary */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
               <label className="block uppercase tracking-wider font-semibold text-[var(--foreground)]">
-                Work Summary <span className="text-rose-400">*</span>
+                What did you complete? <span className="text-rose-500">*</span>
               </label>
               {!summary && (
                 <button
                   type="button"
                   onClick={handleFillTemplate}
-                  className="inline-flex items-center gap-1 text-[11px] text-[var(--primary)] hover:opacity-80 font-semibold transition-opacity"
+                className="inline-flex items-center gap-1 text-[11px] text-[var(--foreground)] hover:opacity-70 font-semibold transition-opacity"
                 >
                   <Sparkles size={11} /> Auto-fill template
                 </button>
@@ -334,12 +306,11 @@ export function SubmitMilestoneDialog({
               rows={3}
               value={summary}
               onChange={(e) => setSummary(e.target.value)}
-              placeholder="Briefly describe what has been completed, features built, or testing notes for the owner..."
-              className="w-full rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-3 text-xs text-[var(--foreground)] placeholder-[var(--text-muted)] focus:border-[var(--primary)] focus:outline-none focus:ring-1 focus:ring-[var(--primary)]/20 transition-all resize-none leading-relaxed"
+              placeholder="Briefly describe the completed work and anything the owner should review."
+              className="w-full rounded-xl border border-[var(--border-soft)] bg-[var(--input-background)] p-3 text-xs text-[var(--foreground)] placeholder:text-[var(--input-placeholder)] focus:border-[var(--border-strong)] focus:bg-[var(--input-focus-background)] focus:outline-none focus:ring-1 focus:ring-[var(--border-strong)] transition-all resize-none leading-relaxed"
             />
           </div>
 
-          {/* Optional Extra Notes / Credentials (Collapsible) */}
           <div className="pt-0.5">
             {!showExtraNotes && !notes ? (
               <button
@@ -347,7 +318,7 @@ export function SubmitMilestoneDialog({
                 onClick={() => setShowExtraNotes(true)}
                 className="inline-flex items-center gap-1 text-[11px] text-[var(--text-muted)] hover:text-[var(--foreground)] transition-colors"
               >
-                <ChevronDown size={13} /> + Add private notes or credentials for owner (optional)
+                <ChevronDown size={13} /> Add a note for the owner (optional)
               </button>
             ) : (
               <div className="space-y-1.5 animate-in fade-in duration-150">
@@ -368,7 +339,7 @@ export function SubmitMilestoneDialog({
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="e.g. Test login credentials, staging passwords, or specific tips"
-                  className="w-full rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] py-2 px-3 text-xs text-[var(--foreground)] placeholder-[var(--text-muted)] focus:border-[var(--primary)] focus:outline-none focus:ring-1 focus:ring-[var(--primary)]/20 transition-all"
+                  className="w-full rounded-full border border-[var(--border-soft)] bg-[var(--input-background)] py-2 px-3 text-xs text-[var(--foreground)] placeholder:text-[var(--input-placeholder)] focus:border-[var(--border-strong)] focus:bg-[var(--input-focus-background)] focus:outline-none focus:ring-1 focus:ring-[var(--border-strong)] transition-all"
                 />
               </div>
             )}
