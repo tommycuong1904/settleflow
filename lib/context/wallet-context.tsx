@@ -80,7 +80,6 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const [isConnecting, setIsConnecting] = useState<boolean>(false);
   const [address, setAddress] = useState<string | null>(null);
   const [email, setEmail] = useState<string | null>(null);
-  const [googleSub, setGoogleSub] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
   const [userAvatar, setUserAvatar] = useState<string | null>(null);
   const [authType, setAuthType] = useState<AuthType>(null);
@@ -101,7 +100,6 @@ export function WalletProvider({ children }: { children: ReactNode }) {
             setIsConnected(true);
             setAddress(session.address);
             setEmail(session.email);
-            setGoogleSub(session.googleSub || null);
             setUserName(session.userName || null);
             setUserAvatar(session.userAvatar || null);
             setAuthType(session.authType);
@@ -130,7 +128,6 @@ export function WalletProvider({ children }: { children: ReactNode }) {
           setIsConnected(false);
           setAddress(null);
           setEmail(null);
-          setGoogleSub(null);
           setUserName(null);
           setUserAvatar(null);
           setAuthType(null);
@@ -155,7 +152,6 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         setIsConnected(true);
         setAddress(next.address);
         setEmail(next.email);
-        setGoogleSub(next.googleSub);
         setUserName(next.userName);
         setUserAvatar(next.userAvatar);
         setAuthType(next.authType);
@@ -236,7 +232,6 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         setIsConnected(true);
         setAddress(connectedAddr);
         setEmail(null);
-        setGoogleSub(null);
         setUserName(null);
         setUserAvatar(null);
         setAuthType("web3_wallet");
@@ -314,7 +309,6 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         setIsConnected(true);
         setAddress(null);
         setEmail(profile.email);
-        setGoogleSub(profile.sub);
         setUserName(name);
         setUserAvatar(avatar);
         setAuthType("web2_google");
@@ -374,7 +368,6 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     setIsConnected(false);
     setAddress(null);
     setEmail(null);
-    setGoogleSub(null);
     setUserName(null);
     setUserAvatar(null);
     setAuthType(null);
