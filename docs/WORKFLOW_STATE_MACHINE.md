@@ -41,6 +41,8 @@ No direct transition to `released` is supported by the queue operation. Release 
 
 `queueMilestoneRelease` creates `queued` release and `pending` proof records only when the milestone is approved, the payout is `active` or `partially_released`, no release already exists, the destination exists, and the requested amount equals the milestone amount. The active MVP release route requires an Owner Web3 session and its enabled EOA source wallet.
 
+For a pending browser-wallet release whose wallet callback did not provide a hash, the owner may request a read-only reconciliation search. It considers only recent, confirmed Arc USDC `Transfer` logs from the snapshotted source to the snapshotted destination after the release request, then applies the same full transaction verifier. It never changes release state, selects an ambiguous result, or unlocks retry; confirmation still requires the normal proof-refresh verifier.
+
 The executor may move execution through its mode-specific send path. `refreshReleaseProof` supports `queued`/`pending` releases becoming `confirmed` or `failed`; it rejects refresh of confirmed/cancelled releases, stale releases, missing proofs, missing transaction hash, or missing failure reason. Confirmation records proof data, marks the release confirmed, and releases the milestone. Failure records failure metadata without releasing the milestone (`lib/repositories/release-proof.ts`).
 
 `retryFailedRelease` creates a new queued release for an eligible failed release when its repository checks pass (`lib/repositories/release-retry.ts`). Exact retry eligibility is repository-defined; no broader retry guarantee is claimed here.

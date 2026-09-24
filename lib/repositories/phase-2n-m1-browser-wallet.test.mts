@@ -26,7 +26,7 @@ test("browser claim does not accept or persist a source wallet", async () => {
   assert.match(route, /claimReleaseExecution\(id, context\.workspaceId\)/);
   assert.doesNotMatch(route, /sourceWalletAddress/);
   assert.match(repo, /data: \{ status: "pending" \}/);
-  assert.doesNotMatch(repo.slice(repo.indexOf("export async function claimReleaseExecution"), repo.indexOf("type ProofRefreshUpdate")), /sourceWalletAddress/);
+  assert.doesNotMatch(repo.slice(repo.indexOf("export async function claimReleaseExecution"), repo.indexOf("export async function getBrowserReleaseReconciliationSnapshot")), /sourceWalletAddress/);
 });
 
 test("caller sourceWalletAddress is not used by browser confirmation", async () => {

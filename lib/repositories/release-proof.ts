@@ -59,6 +59,35 @@ export async function claimReleaseExecution(releaseId: string, workspaceId: stri
   });
 }
 
+export async function getBrowserReleaseReconciliationSnapshot(releaseId: string, workspaceId: string) {
+  const release = await db.release.findFirst({
+    where: { id: releaseId, payout: { workspaceId } },
+    select: {
+      amountUsdc: true,
+      destinationWalletAddress: true,
+      sourceWalletAddress: true,
+      requestedAt: true,
+      status: true,
+      executionMode: true,
+    },
+  });
+  if (!release) throw new Error("RELEASE_NOT_FOUND");
+  if (
+    release.status !== "pending" ||
+    release.executionMode !== "browser_wallet" ||
+    !release.sourceWalletAddress
+  ) {
+    throw new Error("RELEASE_NOT_RECONCILABLE");
+  }
+  return {
+    amountUsdc: release.amountUsdc.toString(),
+    destinationWalletAddress: release.destinationWalletAddress,
+    sourceWalletAddress: release.sourceWalletAddress,
+    requestedAt: release.requestedAt,
+    executionMode: "browser_wallet" as const,
+  };
+}
+
 type ProofRefreshUpdate = {
   status: "confirmed" | "failed";
   txHash: string | null;

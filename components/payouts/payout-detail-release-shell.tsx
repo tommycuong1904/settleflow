@@ -114,7 +114,9 @@ export function PayoutDetailReleaseShell({
   const [releaseError, setReleaseError] = useState<string | null>(null);
   const [retryingRelease, setRetryingRelease] = useState(false);
   const [refreshingProof, setRefreshingProof] = useState(false);
+  const [findingTransaction, setFindingTransaction] = useState(false);
   const [confirmationTxHash, setConfirmationTxHash] = useState("");
+  const [foundTransaction, setFoundTransaction] = useState<{ txHash: string; explorerUrl: string } | null>(null);
   const [activeProof, setActiveProof] = useState<TransactionProof | undefined>(releaseProof);
   const [releaseModalMode, setReleaseModalMode] = useState<"review" | "pending" | "failed" | null>(null);
   const [resumeReleaseId, setResumeReleaseId] = useState<string | undefined>();
@@ -458,7 +460,43 @@ export function PayoutDetailReleaseShell({
 
   function focusPendingSettlementResolution() {
     setConfirmationTxHash(resolvedProof?.txHash ?? "");
+    setFoundTransaction(null);
     setReleaseModalMode("pending");
+  }
+
+  async function handleFindReleaseTransaction() {
+    if (!isOwnerActor || !resolvedProof?.releaseId || findingTransaction) return;
+    setReleaseError(null);
+    setFoundTransaction(null);
+    setFindingTransaction(true);
+    try {
+      const response = await fetch(`/api/v1/releases/${resolvedProof.releaseId}/browser-candidates`, {
+        method: "POST",
+        headers: productContextHeaders,
+      });
+      const data = (await response.json()) as {
+        error?: string;
+        candidates?: Array<{ txHash: string; explorerUrl: string }>;
+      };
+      if (!response.ok || data.error || !data.candidates) {
+        throw new Error(data.error ?? "Unable to check for a payment right now.");
+      }
+      if (data.candidates.length === 1) {
+        const candidate = data.candidates[0];
+        setConfirmationTxHash(candidate.txHash);
+        setFoundTransaction(candidate);
+        return;
+      }
+      if (data.candidates.length === 0) {
+        setReleaseError("No confirmed payment matching this release was found yet. This payment remains locked; check again later instead of retrying.");
+        return;
+      }
+      setReleaseError("More than one matching payment was found. This payment remains locked so a transaction cannot be selected automatically.");
+    } catch (error) {
+      setReleaseError(error instanceof Error ? error.message : "Unable to check for a payment right now.");
+    } finally {
+      setFindingTransaction(false);
+    }
   }
 
   function openReleaseReview(releaseId?: string) {
@@ -751,14 +789,18 @@ export function PayoutDetailReleaseShell({
                 <p className="mt-2 text-sm text-[var(--text-muted)]">SettleFlow did not receive a transaction hash from your wallet. Do not sign or retry again while this payment is being reconciled.</p>
                 {resolvedProof?.txHash ? <a href={`${ARC_CONFIG.explorerUrl}/tx/${resolvedProof.txHash}`} target="_blank" rel="noreferrer" className="mt-5 inline-flex text-sm font-medium text-[var(--foreground)] underline underline-offset-4">View submitted transaction</a> : null}
                 <div className="mt-5 space-y-3 rounded-2xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-4">
-                  <label className="text-sm font-medium text-[var(--foreground)]" htmlFor="payment-transaction-hash">Transaction hash, if you find it</label>
-                  <Input id="payment-transaction-hash" value={confirmationTxHash} onChange={(event) => setConfirmationTxHash(event.target.value)} placeholder="Paste the 0x… hash from MetaMask" />
-                  <Button onClick={() => { void handleRefreshProof().then((resolved) => { if (resolved) setReleaseModalMode(null); }); }} disabled={refreshingProof}>{refreshingProof ? "Verifying payment..." : "Verify transaction"}</Button>
+                  <p className="text-sm font-medium text-[var(--foreground)]">Find my payment</p>
+                  <p className="text-xs leading-5 text-[var(--text-muted)]">SettleFlow checks confirmed Arc USDC transfers from the release wallet to this contributor, for the exact milestone amount.</p>
+                  <Button onClick={() => { void handleFindReleaseTransaction(); }} disabled={findingTransaction}>{findingTransaction ? "Checking Arc..." : "Check for payment"}</Button>
+                  {foundTransaction ? <div className="rounded-xl border border-emerald-300/30 bg-emerald-400/10 p-3 text-sm text-emerald-800 dark:text-emerald-100"><p className="font-medium">We found one matching payment.</p><a href={foundTransaction.explorerUrl} target="_blank" rel="noreferrer" className="mt-1 inline-block underline underline-offset-2">View transaction</a><div className="mt-3"><Button onClick={() => { void handleRefreshProof().then((resolved) => { if (resolved) setReleaseModalMode(null); }); }} disabled={refreshingProof}>{refreshingProof ? "Confirming payment..." : "Confirm payment"}</Button></div></div> : null}
                 </div>
                 <details className="mt-5 border-t border-[var(--border-soft)] pt-4 text-sm text-[var(--text-muted)]">
                   <summary className="cursor-pointer font-medium text-[var(--foreground)]">Can’t find a transaction?</summary>
                   <p className="mt-3 leading-6">Check the active wallet’s Activity on Arc Testnet for a USDC transfer with this milestone’s amount and recipient. If you are not certain which transaction is correct, leave this payment pending. Retrying is intentionally locked to prevent a duplicate payment.</p>
                   <p className="mt-2 leading-6">A retry is available only when SettleFlow knows the wallet request was cancelled before a transaction was submitted.</p>
+                  <label className="mt-4 block text-sm font-medium text-[var(--foreground)]" htmlFor="payment-transaction-hash">Enter a transaction hash manually</label>
+                  <Input id="payment-transaction-hash" value={confirmationTxHash} onChange={(event) => { setConfirmationTxHash(event.target.value); setFoundTransaction(null); }} placeholder="Paste the 0x… hash from MetaMask" className="mt-2" />
+                  <Button className="mt-3" onClick={() => { void handleRefreshProof().then((resolved) => { if (resolved) setReleaseModalMode(null); }); }} disabled={refreshingProof}>{refreshingProof ? "Verifying payment..." : "Verify transaction"}</Button>
                 </details>
                 {releaseError ? <p className="mt-3 text-sm text-rose-600">{releaseError}</p> : null}
               </>
