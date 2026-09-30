@@ -799,7 +799,7 @@ export function PayoutDetailReleaseShell({
                   <p className="mt-3 leading-6">Check the active wallet’s Activity on Arc Testnet for a USDC transfer with this milestone’s amount and recipient. If you are not certain which transaction is correct, leave this payment pending. Retrying is intentionally locked to prevent a duplicate payment.</p>
                   <p className="mt-2 leading-6">A retry is available only when SettleFlow knows the wallet request was cancelled before a transaction was submitted.</p>
                   <label className="mt-4 block text-sm font-medium text-[var(--foreground)]" htmlFor="payment-transaction-hash">Enter a transaction hash manually</label>
-                  <Input id="payment-transaction-hash" value={confirmationTxHash} onChange={(event) => { setConfirmationTxHash(event.target.value); setFoundTransaction(null); }} placeholder="Paste the 0x… hash from MetaMask" className="mt-2" />
+                  <Input id="payment-transaction-hash" value={confirmationTxHash} onChange={(event) => { setConfirmationTxHash(event.target.value); setFoundTransaction(null); }} placeholder="Paste the 0x… hash from MetaMask" className="mt-2.5" />
                   <Button className="mt-3" onClick={() => { void handleRefreshProof().then((resolved) => { if (resolved) setReleaseModalMode(null); }); }} disabled={refreshingProof}>{refreshingProof ? "Verifying payment..." : "Verify transaction"}</Button>
                 </details>
                 {releaseError ? <p className="mt-3 text-sm text-rose-600">{releaseError}</p> : null}

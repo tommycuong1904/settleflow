@@ -660,7 +660,7 @@ export function PayoutDetailClient({
               </CardHeader>
               <CardContent>
                 <div className="space-y-6">
-                  <div className="space-y-3">
+                  <div className="space-y-2.5">
                     <div className="flex items-center justify-between gap-3">
                       <label className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
                         Draft title
@@ -673,7 +673,7 @@ export function PayoutDetailClient({
                       placeholder="Refine the payout title"
                     />
                   </div>
-                  <div className="space-y-3">
+                  <div className="space-y-2.5">
                     <div className="flex items-center justify-between gap-3">
                       <label className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
                         Draft description

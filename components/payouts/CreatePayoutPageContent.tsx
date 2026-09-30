@@ -370,8 +370,8 @@ function CreatePayoutPageContent() {
             </CardHeader>
             <CardContent>
               <div className="grid gap-5 md:grid-cols-2">
-                <label className="space-y-2 text-sm text-[var(--text-primary)]" data-error={Boolean(errors.title)}>
-                  <span>Payout title <span className="text-rose-500 font-semibold">*</span></span>
+                <label className="text-sm text-[var(--text-primary)]" data-error={Boolean(errors.title)}>
+                  <span className="mb-2.5 block">Payout title <span className="text-rose-500 font-semibold">*</span></span>
                   <Input
                     value={payoutTitle}
                     onChange={(event) => {
@@ -380,9 +380,9 @@ function CreatePayoutPageContent() {
                     }}
                     className={cn(errors.title && "border-rose-500 bg-rose-500/5 focus:border-rose-500")}
                   />
-                  {errors.title ? <p className="text-xs text-rose-600 font-medium">{errors.title}</p> : null}
+                  {errors.title ? <p className="mt-2 text-xs text-rose-600 font-medium">{errors.title}</p> : null}
                 </label>
-                <label className="space-y-2 text-sm text-[var(--text-primary)]" data-error={Boolean(errors.contributorId)}>
+                <label className="flex flex-col gap-2.5 text-sm text-[var(--text-primary)]" data-error={Boolean(errors.contributorId)}>
                   <span>Contributor <span className="text-rose-500 font-semibold">*</span></span>
                   <Select value={contributorId} onValueChange={handleContributorChange}>
                     <SelectTrigger className={cn(errors.contributorId && "border-rose-500 bg-rose-500/5")}>
@@ -400,7 +400,7 @@ function CreatePayoutPageContent() {
                     <p className="text-xs text-rose-600 font-medium">{errors.contributorId}</p>
                   ) : null}
                 </label>
-                <label className="space-y-2 text-sm text-[var(--text-primary)] md:col-span-2" data-error={Boolean(errors.walletAddress)}>
+                <label className="flex flex-col gap-2.5 text-sm text-[var(--text-primary)] md:col-span-2" data-error={Boolean(errors.walletAddress)}>
                   <span>Wallet address <span className="text-rose-500 font-semibold">*</span></span>
                   <Input
                     value={walletAddress}
@@ -472,7 +472,7 @@ function CreatePayoutPageContent() {
                           </div>
                         </div>
                         <div className="grid gap-4 md:grid-cols-[1fr_180px]">
-                          <label className="space-y-2 text-sm text-[var(--text-primary)]" data-error={Boolean(msErr?.title)}>
+                          <label className="flex flex-col gap-2.5 text-sm text-[var(--text-primary)]" data-error={Boolean(msErr?.title)}>
                             <span>Milestone title <span className="text-rose-500 font-semibold">*</span></span>
                             <Input
                               value={milestone.title}
@@ -483,7 +483,7 @@ function CreatePayoutPageContent() {
                             />
                             {msErr?.title ? <p className="text-xs text-rose-600 font-medium">{msErr.title}</p> : null}
                           </label>
-                          <label className="space-y-2 text-sm text-[var(--text-primary)]" data-error={Boolean(msErr?.amount)}>
+                          <label className="flex flex-col gap-2.5 text-sm text-[var(--text-primary)]" data-error={Boolean(msErr?.amount)}>
                             <span>Amount (USDC) <span className="text-rose-500 font-semibold">*</span></span>
                             <Input
                               type="number"
@@ -499,7 +499,7 @@ function CreatePayoutPageContent() {
                             {msErr?.amount ? <p className="text-xs text-rose-600 font-medium">{msErr.amount}</p> : null}
                           </label>
                         </div>
-                        <label className="mt-4 block space-y-2 text-sm text-[var(--text-primary)]" data-error={Boolean(msErr?.description)}>
+                        <label className="mt-4 flex flex-col gap-2.5 text-sm text-[var(--text-primary)]" data-error={Boolean(msErr?.description)}>
                           <span>Description <span className="text-rose-500 font-semibold">*</span></span>
                           <Textarea
                             className={cn("min-h-28 resize-none", msErr?.description && "border-rose-500 bg-rose-500/5 focus:border-rose-500")}

@@ -159,7 +159,7 @@ export function AddContributorDialog({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5">
+            <label className="mb-2.5 block text-xs font-semibold uppercase tracking-wider">
               Name <span className="text-rose-500">*</span>
             </label>
             <input
@@ -173,7 +173,7 @@ export function AddContributorDialog({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5">
+            <label className="mb-2.5 block text-xs font-semibold uppercase tracking-wider">
               Wallet address <span className="text-rose-500">*</span>
             </label>
             <div className="relative">
@@ -196,7 +196,7 @@ export function AddContributorDialog({
             <summary className="cursor-pointer text-xs font-semibold text-[var(--foreground)] marker:text-[var(--text-muted)]">Add optional details</summary>
             <div className="mt-4 grid grid-cols-1 gap-3.5 sm:grid-cols-2">
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5">
+              <label className="mb-2.5 block text-xs font-semibold uppercase tracking-wider">
                 Role / Discipline
               </label>
               <div className="relative">
@@ -215,7 +215,7 @@ export function AddContributorDialog({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5">
+              <label className="mb-2.5 block text-xs font-semibold uppercase tracking-wider">
                 Email (Optional)
               </label>
               <div className="relative">
@@ -234,7 +234,7 @@ export function AddContributorDialog({
             </div>
             </div>
             <div className="mt-3.5">
-            <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5">
+            <label className="mb-2.5 block text-xs font-semibold uppercase tracking-wider">
               Internal Notes (Optional)
             </label>
             <div className="relative">

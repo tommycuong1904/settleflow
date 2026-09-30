@@ -338,7 +338,7 @@ export function MilestoneRow({
               Explain what needs to change before this milestone can be approved.
             </p>
 
-            <div className="mt-4 space-y-2">
+            <div className="mt-4 space-y-2.5">
               <label className="block uppercase tracking-wider font-semibold text-xs text-[var(--foreground)]">
                 Feedback <span className="text-rose-500">*</span>
               </label>

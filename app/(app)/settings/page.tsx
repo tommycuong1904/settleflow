@@ -158,7 +158,7 @@ export default function SettingsPage() {
 
           <div className="mt-6 space-y-4 text-xs">
             <div className="grid gap-4 md:grid-cols-3 items-end">
-              <div className="space-y-2 md:col-span-1">
+              <div className="space-y-2.5 md:col-span-1">
                 <label className="block font-semibold uppercase tracking-wider text-[var(--text-muted)]">
                   Invite Role
                 </label>
@@ -167,7 +167,7 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              <div className="space-y-2 md:col-span-1">
+              <div className="space-y-2.5 md:col-span-1">
                 <label className="block font-semibold uppercase tracking-wider text-[var(--text-muted)]">
                   Target Email (Optional)
                 </label>

@@ -214,7 +214,7 @@ export function SubmitMilestoneDialog({
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4 text-xs">
-          <div className="space-y-2">
+          <div className="space-y-2.5">
             <div className="flex items-center justify-between">
               <label className="block uppercase tracking-wider font-semibold text-[var(--foreground)]">
                 Reference links <span className="normal-case font-normal text-[var(--text-muted)]">(optional)</span>
@@ -286,7 +286,7 @@ export function SubmitMilestoneDialog({
             )}
           </div>
 
-          <div className="space-y-1.5">
+          <div className="space-y-2.5">
             <div className="flex items-center justify-between">
               <label htmlFor="milestone-submission-summary" className="block uppercase tracking-wider font-semibold text-[var(--foreground)]">
                 What did you complete? <span className="text-rose-500">*</span>
@@ -322,7 +322,7 @@ export function SubmitMilestoneDialog({
                 <ChevronDown size={13} /> Add a note for the owner (optional)
               </button>
             ) : (
-              <div className="space-y-1.5 animate-in fade-in duration-150">
+              <div className="space-y-2.5 animate-in fade-in duration-150">
                 <div className="flex items-center justify-between">
                   <label className="block uppercase tracking-wider font-semibold text-[var(--text-muted)] text-[10px]">
                     Notes for Owner (Optional)
