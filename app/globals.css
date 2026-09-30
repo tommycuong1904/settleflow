@@ -758,6 +758,10 @@ h1 {
   max-width: 620px;
 }
 
+.sf-problem .sf-section-intro {
+  max-width: 900px;
+}
+
 .sf-section-intro h2 {
   margin-bottom: 18px;
   font-size: clamp(34px, 4vw, 55px);
