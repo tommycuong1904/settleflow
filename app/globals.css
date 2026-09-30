@@ -778,6 +778,10 @@ h1 {
   justify-content: center;
 }
 
+.sf-workflow-intro {
+  max-width: 1100px;
+}
+
 .sf-fragment-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

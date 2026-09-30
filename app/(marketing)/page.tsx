@@ -150,7 +150,7 @@ export default function Home() {
 
       <section id="workflow" className="sf-section sf-workflow">
         <div className="sf-container">
-          <div className="sf-section-intro sf-centered">
+          <div className="sf-section-intro sf-centered sf-workflow-intro">
             <SectionKicker>THE WORKFLOW</SectionKicker>
             <h2>From payout setup to payment confirmation.</h2>
             <p>Each payout moves through clear, visible stages, so everyone knows what happens next.</p>
