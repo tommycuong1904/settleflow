@@ -1105,6 +1105,10 @@ h1 {
   text-align: center;
 }
 
+.sf-final .sf-centered {
+  max-width: 1000px;
+}
+
 .sf-final-inner {
   padding: 125px 0 115px;
 }
