@@ -1141,14 +1141,6 @@ h1 {
   font-size: 11px;
 }
 
-.sf-footer > div > div {
-  display: flex;
-  gap: 17px;
-  margin-left: auto;
-  color: var(--text-muted);
-  font-size: 11px;
-}
-
 .sf-footer a:hover {
   color: var(--foreground);
 }
@@ -1210,10 +1202,6 @@ h1 {
     flex-wrap: wrap;
   }
 
-  .sf-footer > div > div {
-    margin-left: 0;
-    width: 100%;
-  }
 }
 
 @media (max-width: 640px) {
