@@ -768,7 +768,7 @@ h1 {
 
 .sf-section-intro h2 {
   margin-bottom: 18px;
-  font-size: clamp(34px, 4vw, 55px);
+  font-size: 55px;
   line-height: 1.03;
 }
 
@@ -1110,7 +1110,7 @@ h1 {
 
 .sf-final h2 {
   margin-bottom: 15px;
-  font-size: clamp(40px, 5vw, 67px);
+  font-size: 55px;
 }
 
 .sf-final p {
@@ -1234,6 +1234,11 @@ h1 {
 }
 
 @media (max-width: 640px) {
+  .sf-section-intro h2,
+  .sf-final h2 {
+    font-size: clamp(34px, 10vw, 55px);
+  }
+
   .sf-container,
   .sf-app-wrapper {
     width: min(100% - 32px, 1160px);
