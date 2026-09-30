@@ -288,7 +288,7 @@ export function SubmitMilestoneDialog({
 
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <label className="block uppercase tracking-wider font-semibold text-[var(--foreground)]">
+              <label htmlFor="milestone-submission-summary" className="block uppercase tracking-wider font-semibold text-[var(--foreground)]">
                 What did you complete? <span className="text-rose-500">*</span>
               </label>
               {!summary && (
@@ -302,6 +302,7 @@ export function SubmitMilestoneDialog({
               )}
             </div>
             <textarea
+              id="milestone-submission-summary"
               required
               rows={3}
               value={summary}
