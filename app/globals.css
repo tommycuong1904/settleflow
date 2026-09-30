@@ -549,10 +549,7 @@ h1 {
 
 .sf-card-top,
 .sf-card-meta,
-.sf-dash-head,
-.sf-dash-summary,
-.sf-dash-row,
-.sf-dash-proof {
+.sf-card-meta {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -560,8 +557,7 @@ h1 {
 }
 
 .sf-label,
-.sf-dashboard small,
-.sf-dash-summary small {
+.sf-label {
   color: var(--text-muted);
   font-family: var(--font-mono);
   font-size: 9px;
@@ -1097,189 +1093,6 @@ h1 {
   color: var(--foreground);
 }
 
-.sf-showcase {
-  background: var(--background);
-}
-
-.sf-dashboard {
-  display: grid;
-  grid-template-columns: 180px 1fr;
-  min-height: 465px;
-  margin-top: 65px;
-  overflow: hidden;
-  border: 1px solid var(--border-strong);
-  border-radius: 12px;
-  background: var(--surface);
-  box-shadow: var(--shadow);
-}
-
-.sf-dashboard aside {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 25px 17px;
-  border-right: 1px solid var(--border-soft);
-  background: var(--surface-muted);
-}
-
-.sf-dashboard aside .sf-wordmark {
-  margin-bottom: 35px;
-  font-size: 14px;
-}
-
-.sf-dashboard aside small {
-  margin: 0 9px 8px;
-}
-
-.sf-dashboard aside a:not(.sf-wordmark) {
-  padding: 9px;
-  color: var(--text-muted);
-  font-size: 11px;
-  border-radius: 4px;
-}
-
-.sf-dashboard aside a.current {
-  background: var(--surface-strong);
-  color: var(--foreground);
-  font-weight: 600;
-}
-
-.sf-aside-bottom {
-  display: grid;
-  gap: 9px;
-  margin-top: auto;
-  padding: 12px 9px;
-  border-top: 1px solid var(--border-soft);
-  color: var(--text-muted);
-  font-size: 10px;
-}
-
-.sf-dashboard-main {
-  padding: 35px;
-}
-
-.sf-dash-head h3 {
-  margin: 8px 0 0;
-  font-size: 21px;
-}
-
-.sf-approved-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 7px 9px;
-  border-radius: 4px;
-  background: var(--success-soft);
-  color: var(--accent-emerald);
-  font-size: 10px;
-}
-
-.sf-dash-summary {
-  align-items: stretch;
-  margin: 38px 0;
-  padding: 20px 0;
-  border-top: 1px solid var(--border-soft);
-  border-bottom: 1px solid var(--border-soft);
-}
-
-.sf-dash-summary > div {
-  flex: 1;
-  display: grid;
-  gap: 9px;
-}
-
-.sf-dash-summary strong {
-  font-size: 15px;
-}
-
-.sf-dash-summary i {
-  color: var(--foreground);
-  font-size: 10px;
-  font-style: normal;
-}
-
-.cyan {
-  color: var(--foreground);
-}
-
-.sf-dash-milestones {
-  display: grid;
-  gap: 10px;
-}
-
-.sf-dash-row {
-  padding: 15px;
-  border: 1px solid var(--border-soft);
-  border-radius: 8px;
-}
-
-.sf-row-icon {
-  display: grid;
-  place-items: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-}
-
-.sf-row-icon.done {
-  background: var(--foreground);
-  color: var(--background);
-}
-
-.sf-row-icon.review {
-  background: var(--surface-strong);
-  color: var(--foreground);
-}
-
-.sf-dash-row > div {
-  flex: 1;
-  display: grid;
-  gap: 5px;
-}
-
-.sf-dash-row small {
-  color: var(--text-muted);
-}
-
-.sf-dash-row strong {
-  font-size: 12px;
-}
-
-.sf-dash-row b,
-.sf-dash-row > span:last-child {
-  color: var(--text-muted);
-  font-size: 10px;
-  font-weight: 400;
-}
-
-.sf-dash-row .review-text {
-  color: var(--foreground);
-}
-
-.sf-dash-proof {
-  margin-top: 28px;
-  padding: 15px;
-  border: 1px solid var(--border-strong);
-  border-radius: 8px;
-  color: var(--foreground);
-}
-
-.sf-dash-proof div {
-  flex: 1;
-  display: grid;
-  gap: 5px;
-}
-
-.sf-dash-proof strong {
-  color: var(--foreground);
-  font-size: 12px;
-}
-
-.sf-dash-proof small {
-  color: var(--text-muted);
-  font-size: 10px;
-}
-
 .sf-state-section {
   background: var(--surface-muted);
 }
@@ -1607,14 +1420,6 @@ h1 {
     gap: 45px;
   }
 
-  .sf-dashboard {
-    grid-template-columns: 140px 1fr;
-  }
-
-  .sf-dash-row > span:last-child {
-    display: none;
-  }
-
   .sf-footer .sf-container {
     flex-wrap: wrap;
   }
@@ -1808,51 +1613,6 @@ h1 {
 
   .sf-gated h2 {
     font-size: 35px;
-  }
-
-  .sf-dashboard {
-    grid-template-columns: 1fr;
-    min-height: auto;
-  }
-
-  .sf-dashboard aside {
-    display: none;
-  }
-
-  .sf-dashboard-main {
-    padding: 20px;
-  }
-
-  .sf-dash-head {
-    align-items: start;
-  }
-
-  .sf-dash-head h3 {
-    font-size: 16px;
-  }
-
-  .sf-approved-pill {
-    max-width: 100px;
-    line-height: 1.4;
-  }
-
-  .sf-dash-summary {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-  }
-
-  .sf-dash-summary > div:last-child {
-    grid-column: 1 / -1;
-  }
-
-  .sf-dash-row {
-    align-items: start;
-  }
-
-  .sf-dash-row b {
-    margin-left: auto;
-    text-align: right;
   }
 
   .sf-proof-head {

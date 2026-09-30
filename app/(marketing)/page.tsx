@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/shared/button'
-import { ArrowRight, Check, ChevronRight, CircleCheck, CircleDot, FileCheck2, LockKeyhole, ShieldCheck, WalletCards, MessageSquare, Table2, ArrowRightLeft } from 'lucide-react'
+import { ArrowRight, Check, ChevronRight, CircleCheck, CircleDot, LockKeyhole, ShieldCheck, WalletCards, MessageSquare, Table2, ArrowRightLeft } from 'lucide-react'
 import { useWallet } from '@/lib/context/wallet-context'
 
 
@@ -278,97 +278,6 @@ export default function Home() {
                 <span>{text}</span>
               </div>
             ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="sf-section sf-showcase">
-        <div className="sf-container">
-          <div className="sf-section-intro">
-            <SectionKicker>PRODUCT VIEW</SectionKicker>
-            <h2>One payout. Every milestone. One clear state.</h2>
-            <p>
-              Track milestone progress, review submissions, approve releases,
-              and keep settlement proof attached to the payout.
-            </p>
-          </div>
-          <div className="sf-dashboard">
-            <aside>
-              <a className="sf-wordmark">
-                <span>Settle</span>Flow
-              </a>
-              <small>WORKSPACE</small>
-              <a className="current">Payouts</a>
-              <a>Contributors</a>
-              <a>Activity</a>
-              <div className="sf-aside-bottom">
-                <span>Arc Testnet</span>
-                <span className="sf-live">
-                  <span /> Connected
-                </span>
-              </div>
-            </aside>
-            <div className="sf-dashboard-main">
-              <div className="sf-dash-head">
-                <div>
-                  <small>PAYOUT / 024</small>
-                  <h3>Product design sprint</h3>
-                </div>
-                <span className="sf-approved-pill">
-                  <Check size={13} /> 1 of 2 approved
-                </span>
-              </div>
-              <div className="sf-dash-summary">
-                <div>
-                  <small>TOTAL PAYOUT</small>
-                  <strong>
-                    $2,400 <i>USDC</i>
-                  </strong>
-                </div>
-                <div>
-                  <small>CONTRIBUTOR</small>
-                  <strong>Contributor wallet</strong>
-                </div>
-                <div>
-                  <small>RELEASE STATE</small>
-                  <strong className="cyan">Awaiting approval</strong>
-                </div>
-              </div>
-              <div className="sf-dash-milestones">
-                <div className="sf-dash-row">
-                  <span className="sf-row-icon done">
-                    <Check size={15} />
-                  </span>
-                  <div>
-                    <small>MILESTONE 01</small>
-                    <strong>Research & direction</strong>
-                  </div>
-                  <b>Approved</b>
-                  <span>$1,200 USDC</span>
-                </div>
-                <div className="sf-dash-row">
-                  <span className="sf-row-icon review">
-                    <CircleDot size={15} />
-                  </span>
-                  <div>
-                    <small>MILESTONE 02</small>
-                    <strong>Design system implementation</strong>
-                  </div>
-                  <b className="review-text">Ready for review</b>
-                  <span>$1,200 USDC</span>
-                </div>
-              </div>
-              <div className="sf-dash-proof">
-                <FileCheck2 size={18} />
-                <div>
-                  <strong>Settlement proof</strong>
-                  <small>
-                    Attached once an approved release settles on Arc.
-                  </small>
-                </div>
-                <span>—</span>
-              </div>
-            </div>
           </div>
         </div>
       </section>
