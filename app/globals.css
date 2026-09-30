@@ -945,7 +945,7 @@ h1 {
 
 .sf-state-layout {
   display: grid;
-  grid-template-columns: 0.8fr 1.2fr;
+  grid-template-columns: 1.25fr 0.75fr;
   align-items: center;
   gap: 80px;
 }
