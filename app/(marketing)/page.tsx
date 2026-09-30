@@ -152,11 +152,8 @@ export default function Home() {
         <div className="sf-container">
           <div className="sf-section-intro sf-centered">
             <SectionKicker>THE WORKFLOW</SectionKicker>
-            <h2>From work completed to payment confirmed.</h2>
-            <p>
-              Every payout moves through a visible state, so the next action is
-              clear.
-            </p>
+            <h2>From payout setup to payment confirmation.</h2>
+            <p>Each payout moves through clear, visible stages, so everyone knows what happens next.</p>
           </div>
           <div className="sf-timeline">
             {milestones.map(([title, text], index) => (
