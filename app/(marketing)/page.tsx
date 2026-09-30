@@ -152,9 +152,7 @@ export default function Home() {
         <div className="sf-container">
           <div className="sf-section-intro sf-centered">
             <SectionKicker>THE WORKFLOW</SectionKicker>
-            <h2>
-              Create → Milestones → Submit → Review → Approve → Release → Proof
-            </h2>
+            <h2>From work completed to payment confirmed.</h2>
             <p>
               Every payout moves through a visible state, so the next action is
               clear.
