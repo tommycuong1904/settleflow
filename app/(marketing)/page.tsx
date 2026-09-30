@@ -19,18 +19,18 @@ const milestones = [
   ['Proof', 'Settlement proof stays attached'],
 ]
 
-function AuthEntryButton({ className = '' }: { className?: string }) {
+function AuthEntryButton() {
   const { isConnected, openAuthModal } = useWallet()
   const router = useRouter()
 
   return (
-    <button
-      type="button"
-      className={className}
+    <Button
+      variant="ghost"
+      size="lg"
       onClick={() => isConnected ? router.push('/dashboard') : openAuthModal()}
     >
       {isConnected ? 'Open dashboard' : 'Sign in / Connect wallet'}
-    </button>
+    </Button>
   )
 }
 
@@ -76,7 +76,7 @@ export default function Home() {
             <Button href="/payouts/new" variant="primary" size="lg">
               Create a payout <ArrowRight size={17} />
             </Button>
-            <AuthEntryButton className="sf-button sf-button-ghost" />
+            <AuthEntryButton />
           </div>
           <div className="sf-hero-note">
             <span className="sf-note-check">
@@ -544,7 +544,7 @@ export default function Home() {
             <Button href="/payouts/new" variant="primary" size="lg">
               Create a payout <ArrowRight size={17} />
             </Button>
-            <AuthEntryButton className="sf-button sf-button-ghost" />
+            <AuthEntryButton />
           </div>
           <div className="sf-final-flow">
             <span>APPROVAL</span>
