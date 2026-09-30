@@ -19,13 +19,13 @@ const milestones = [
   ['Proof', 'Settlement proof stays attached'],
 ]
 
-function AuthEntryButton() {
+function AuthEntryButton({ variant = 'ghost' }: { variant?: 'primary' | 'ghost' }) {
   const { isConnected, openAuthModal } = useWallet()
   const router = useRouter()
 
   return (
     <Button
-      variant="ghost"
+      variant={variant}
       size="lg"
       onClick={() => isConnected ? router.push('/dashboard') : openAuthModal()}
     >
@@ -73,10 +73,10 @@ export default function Home() {
             release USDC with settlement proof — all in one clear flow.
           </p>
           <div className="sf-cta-row">
-            <Button href="/payouts/new" variant="primary" size="lg">
+            <AuthEntryButton variant="primary" />
+            <Button href="/payouts/new" variant="ghost" size="lg">
               Create a payout <ArrowRight size={17} />
             </Button>
-            <AuthEntryButton />
           </div>
           <div className="sf-hero-note">
             <span className="sf-note-check">
@@ -176,30 +176,6 @@ export default function Home() {
         </div>
       </section>
 
-      <section id="product" className="sf-section sf-product">
-        <div className="sf-container">
-          <div className="sf-section-intro">
-            <SectionKicker>THE PRODUCT</SectionKicker>
-            <h2>From payout request to settlement proof.</h2>
-            <p>
-              SettleFlow turns contributor compensation into one clear
-              milestone-based approval-to-settlement workflow on Arc.
-            </p>
-          </div>
-          <div className="sf-product-grid">
-            {milestones.map(([title, text], index) => (
-              <div className="sf-product-step" key={title}>
-                <div className="sf-step-number">
-                  {String(index + 1).padStart(2, "0")}
-                </div>
-                <h3>{title}</h3>
-                <p>{text}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       <section id="workflow" className="sf-section sf-workflow">
         <div className="sf-container">
           <div className="sf-section-intro sf-centered">
@@ -242,40 +218,15 @@ export default function Home() {
                       <strong>Milestone 02</strong>
                       <p>Design system implementation</p>
                       <small>Submitted by Contributor</small>
-                      <div className="sf-approval-buttons">
-                        <button>Reject</button>
-                        <button>
+                      <div className="sf-approval-buttons" aria-label="Example approval actions">
+                        <span>Reject</span>
+                        <span>
                           Approve <Check size={14} />
-                        </button>
+                        </span>
                       </div>
                     </div>
                   )}
                 </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="sf-gated">
-        <div className="sf-container sf-gated-inner">
-          <div>
-            <SectionKicker>THE DIFFERENTIATOR</SectionKicker>
-            <h2>
-              Release becomes a gated product action, not an ad hoc wallet
-              transfer.
-            </h2>
-          </div>
-          <div className="sf-principles">
-            {[
-              "Milestone state determines payout readiness.",
-              "Approval controls release.",
-              "USDC settlement is explicit.",
-              "Settlement proof stays attached to the payout.",
-            ].map((text) => (
-              <div key={text}>
-                <Check size={16} />
-                <span>{text}</span>
               </div>
             ))}
           </div>
@@ -360,38 +311,6 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="sf-section sf-use-cases">
-        <div className="sf-container">
-          <div className="sf-section-intro">
-            <SectionKicker>USE CASES</SectionKicker>
-            <h2>Built for teams that pay contributors.</h2>
-          </div>
-          <div className="sf-use-grid">
-            {[
-              [
-                "DAOs & protocols",
-                "Manage contributor compensation without fragmented payout operations.",
-              ],
-              [
-                "Crypto teams",
-                "Turn recurring contributor payments into a repeatable workflow.",
-              ],
-              [
-                "Project owners",
-                "Keep milestone approval and payment decisions in one place.",
-              ],
-              ["Contributors", "See what was submitted, approved, and paid."],
-            ].map(([title, text]) => (
-              <div key={title}>
-                <span>↗</span>
-                <h3>{title}</h3>
-                <p>{text}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       <section id="proof" className="sf-section sf-proof">
         <div className="sf-container">
           <div className="sf-proof-head">
@@ -418,7 +337,7 @@ export default function Home() {
               ],
               [
                 "Wallet execution",
-                "Real browser-wallet release flow tested on Arc Testnet.",
+                "Browser-wallet releases are available on Arc Testnet.",
               ],
               [
                 "Settlement proof",
@@ -450,10 +369,10 @@ export default function Home() {
             proof.
           </p>
           <div className="sf-cta-row">
-            <Button href="/payouts/new" variant="primary" size="lg">
+            <AuthEntryButton variant="primary" />
+            <Button href="/payouts/new" variant="ghost" size="lg">
               Create a payout <ArrowRight size={17} />
             </Button>
-            <AuthEntryButton />
           </div>
           <div className="sf-final-flow">
             <span>APPROVAL</span>

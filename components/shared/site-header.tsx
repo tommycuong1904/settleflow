@@ -2,13 +2,16 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/shared/button";
 import { ArrowRight, Menu, X } from "lucide-react";
+import { useWallet } from "@/lib/context/wallet-context";
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
+  const { isConnected, openAuthModal } = useWallet();
   const isHome = pathname === "/";
   const navLinks = isHome
     ? [
@@ -60,8 +63,12 @@ export function SiteHeader() {
         {/* Right: CTA */}
         <div className="hidden md:flex items-center gap-3 z-10">
           {isHome ? (
-            <Button href="/dashboard" size="sm" variant="primary">
-              Launch App <ArrowRight size={14} />
+            <Button
+              size="sm"
+              variant="primary"
+              onClick={() => isConnected ? router.push("/dashboard") : openAuthModal()}
+            >
+              {isConnected ? "Launch App" : "Sign in / Connect wallet"} <ArrowRight size={14} />
             </Button>
           ) : (
             <Button href="/payouts/new" size="sm" variant="primary">

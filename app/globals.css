@@ -1051,7 +1051,7 @@ h1 {
   margin-top: 15px;
 }
 
-.sf-approval-buttons button {
+.sf-approval-buttons span {
   flex: 1;
   padding: 7px;
   border: 1px solid var(--border-soft);
@@ -1061,7 +1061,7 @@ h1 {
   font-size: 10px;
 }
 
-.sf-approval-buttons button:last-child {
+.sf-approval-buttons span:last-child {
   display: flex;
   align-items: center;
   justify-content: center;
