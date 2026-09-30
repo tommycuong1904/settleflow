@@ -12,9 +12,8 @@ import { useWallet } from '@/lib/context/wallet-context'
 const milestones = [
   ['Create', 'Contributor payout created'],
   ['Milestones', 'Two release checkpoints defined'],
-  ['Submit', 'Work submitted for review'],
-  ['Review', 'Owner checks completion'],
-  ['Approve', 'Approval unlocks release'],
+  ['Submit', 'Work submitted for owner approval'],
+  ['Approve', 'Owner verifies completion and unlocks release'],
   ['Release', 'USDC release becomes available'],
   ['Proof', 'Settlement proof stays attached'],
 ]
@@ -35,12 +34,12 @@ function AuthEntryButton({ variant = 'ghost' }: { variant?: 'primary' | 'ghost' 
 }
 
 function PayoutPreview() {
-  const [active, setActive] = useState(2)
+  const [active, setActive] = useState(1)
   useEffect(() => {
-    const timer = window.setInterval(() => setActive((current) => (current + 1) % 5), 2400)
+    const timer = window.setInterval(() => setActive((current) => (current + 1) % 4), 2400)
     return () => window.clearInterval(timer)
   }, [])
-  const states = ['SUBMIT', 'REVIEW', 'APPROVE', 'RELEASE', 'PROOF']
+  const states = ['SUBMIT', 'APPROVE', 'RELEASE', 'PROOF']
   return <div className="sf-preview-wrap" aria-label="Animated payout workflow preview">
     <div className="sf-orbit sf-orbit-one" /><div className="sf-orbit sf-orbit-two" />
     <div className="sf-payout-card">
@@ -48,7 +47,7 @@ function PayoutPreview() {
       <div className="sf-amount">$2,400 <small>USDC</small></div>
       <div className="sf-card-meta"><span>Contributor payout</span><span>SettleFlow / 024</span></div>
       <div className="sf-milestone"><div className="sf-milestone-icon"><Check size={15} /></div><div><strong>Milestone 01 — Approved</strong><small>Release available</small></div><CircleCheck size={18} className="sf-check" /></div>
-      <div className="sf-milestone"><div className="sf-milestone-icon muted"><CircleDot size={15} /></div><div><strong>Milestone 02 — Ready for review</strong><small>Submitted moments ago</small></div><ChevronRight size={18} className="sf-chevron" /></div>
+      <div className="sf-milestone"><div className="sf-milestone-icon muted"><CircleDot size={15} /></div><div><strong>Milestone 02 — Awaiting owner approval</strong><small>Submitted moments ago</small></div><ChevronRight size={18} className="sf-chevron" /></div>
       <div className="sf-release-bar"><LockKeyhole size={15} /> Release available after approval <span>→</span></div>
       <div className="sf-state-row">{states.map((state, index) => <div key={state} className={index <= active ? 'sf-state active' : 'sf-state'}><span>{index < active ? <Check size={10} /> : index === active ? <span className="sf-dot" /> : null}</span>{state}</div>)}</div>
     </div>
@@ -161,14 +160,14 @@ export default function Home() {
             {milestones.map(([title, text], index) => (
               <div
                 className={
-                  index === 4 ? "sf-timeline-item active" : "sf-timeline-item"
+                  index === 3 ? "sf-timeline-item active" : "sf-timeline-item"
                 }
                 key={title}
               >
                 <div className="sf-timeline-marker">
-                  {index < 4 ? (
+                  {index < 3 ? (
                     <Check size={14} />
-                  ) : index === 4 ? (
+                  ) : index === 3 ? (
                     <CircleDot size={14} />
                   ) : (
                     index + 1
@@ -200,20 +199,19 @@ export default function Home() {
             {[
               "DRAFT",
               "SUBMITTED",
-              "UNDER REVIEW",
               "APPROVED",
               "RELEASE READY",
               "SETTLED",
             ].map((state, index) => (
               <div
                 className={
-                  index >= 3 ? "sf-machine-state active" : "sf-machine-state"
+                  index >= 2 ? "sf-machine-state active" : "sf-machine-state"
                 }
                 key={state}
               >
-                <span>{index < 3 ? index + 1 : <Check size={14} />}</span>
+                <span>{index < 2 ? index + 1 : <Check size={14} />}</span>
                 <strong>{state}</strong>
-                {index < 5 && <i />}
+                {index < 4 && <i />}
               </div>
             ))}
           </div>
@@ -277,7 +275,7 @@ export default function Home() {
           </div>
           <div className="sf-proof-grid">
             {[
-              ["Contributor workflow", "Milestone submission and review flow."],
+              ["Contributor workflow", "Milestone submission and owner approval."],
               [
                 "Approval-gated release",
                 "USDC release happens after approval.",
