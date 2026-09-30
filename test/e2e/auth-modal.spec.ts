@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 test("visitor can open the Web3-first sign-in modal", async ({ page }) => {
-  await page.goto("/landing");
+  await page.goto("/");
 
   await expect(page.getByRole("heading", { name: /milestone-based usdc payouts/i })).toBeVisible();
   await page.getByRole("button", { name: "Sign in / Connect wallet" }).first().click();

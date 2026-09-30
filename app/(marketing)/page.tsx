@@ -1,8 +1,10 @@
 'use client'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/shared/button'
 import { ArrowRight, Check, ChevronRight, CircleCheck, CircleDot, FileCheck2, LockKeyhole, ShieldCheck, WalletCards, MessageSquare, Table2, ArrowRightLeft } from 'lucide-react'
+import { useWallet } from '@/lib/context/wallet-context'
 
 
 
@@ -16,6 +18,22 @@ const milestones = [
   ['Release', 'USDC release becomes available'],
   ['Proof', 'Settlement proof stays attached'],
 ]
+
+function AuthEntryButton({ className = '' }: { className?: string }) {
+  const { isConnected, openAuthModal } = useWallet()
+  const router = useRouter()
+
+  return (
+    <button
+      type="button"
+      className={className}
+      onClick={() => isConnected ? router.push('/dashboard') : openAuthModal()}
+    >
+      {isConnected ? 'Open dashboard' : 'Sign in / Connect wallet'}
+    </button>
+  )
+}
+
 function PayoutPreview() {
   const [active, setActive] = useState(2)
   useEffect(() => {
@@ -58,9 +76,7 @@ export default function Home() {
             <Button href="/payouts/new" variant="primary" size="lg">
               Create a payout <ArrowRight size={17} />
             </Button>
-            <Button href="/dashboard" variant="ghost" size="lg">
-              Open dashboard
-            </Button>
+            <AuthEntryButton className="sf-button sf-button-ghost" />
           </div>
           <div className="sf-hero-note">
             <span className="sf-note-check">
@@ -528,9 +544,7 @@ export default function Home() {
             <Button href="/payouts/new" variant="primary" size="lg">
               Create a payout <ArrowRight size={17} />
             </Button>
-            <Button href="/dashboard" variant="ghost" size="lg">
-              Open dashboard
-            </Button>
+            <AuthEntryButton className="sf-button sf-button-ghost" />
           </div>
           <div className="sf-final-flow">
             <span>APPROVAL</span>
