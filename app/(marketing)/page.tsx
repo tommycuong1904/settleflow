@@ -135,16 +135,18 @@ export default function Home() {
               );
             })}
           </div>
-          <div className="sf-transition">
-            <span>FRAGMENTED</span>
-            <i />
-            <strong>STRUCTURED</strong>
-            <ArrowRight size={18} />
+          <div className="sf-problem-result">
+            <div className="sf-transition">
+              <span>FRAGMENTED</span>
+              <i />
+              <strong>STRUCTURED</strong>
+              <ArrowRight size={18} />
+            </div>
+            <p className="sf-result">
+              The result: teams lose a clear view of what was approved, what is
+              ready to pay, and what was actually settled.
+            </p>
           </div>
-          <p className="sf-result">
-            The result: teams lose a clear view of what was approved, what is
-            ready to pay, and what was actually settled.
-          </p>
         </div>
       </section>
 
