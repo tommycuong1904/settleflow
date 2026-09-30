@@ -179,19 +179,6 @@ export default function Home() {
                   <span>0{index + 1}</span>
                   <h3>{title}</h3>
                   <p>{text}</p>
-                  {index === 4 && (
-                    <div className="sf-approval-card">
-                      <strong>Milestone 02</strong>
-                      <p>Design system implementation</p>
-                      <small>Submitted by Contributor</small>
-                      <div className="sf-approval-buttons" aria-label="Example approval actions">
-                        <span>Reject</span>
-                        <span>
-                          Approve <Check size={14} />
-                        </span>
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
             ))}

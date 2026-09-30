@@ -927,63 +927,6 @@ h1 {
   line-height: 1.55;
 }
 
-.sf-approval-card {
-  margin-top: 20px;
-  padding: 17px;
-  border: 1px solid var(--border-soft);
-  border-radius: 8px;
-  background: var(--surface);
-}
-
-.sf-approval-card strong,
-.sf-approval-card p,
-.sf-approval-card small {
-  display: block;
-}
-
-.sf-approval-card strong {
-  margin-top: 0;
-  font-size: 12px;
-}
-
-.sf-approval-card p {
-  margin: 5px 0;
-  font-size: 11px;
-  color: var(--foreground);
-}
-
-.sf-approval-card small {
-  color: var(--text-muted);
-  font-size: 10px;
-}
-
-.sf-approval-buttons {
-  display: flex;
-  gap: 7px;
-  margin-top: 15px;
-}
-
-.sf-approval-buttons span {
-  flex: 1;
-  padding: 7px;
-  border: 1px solid var(--border-soft);
-  border-radius: 4px;
-  background: transparent;
-  color: var(--text-muted);
-  font-size: 10px;
-}
-
-.sf-approval-buttons span:last-child {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  background: var(--foreground);
-  border-color: var(--foreground);
-  color: var(--background);
-  font-weight: 600;
-}
-
 .sf-state-section {
   background: var(--surface-muted);
 }
