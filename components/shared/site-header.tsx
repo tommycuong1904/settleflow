@@ -15,7 +15,6 @@ export function SiteHeader() {
   const isHome = pathname === "/";
   const navLinks = isHome
     ? [
-        ["Product", "#product"],
         ["How it works", "#workflow"],
         ["Why Arc", "#why-arc"],
         ["Proof", "#proof"],

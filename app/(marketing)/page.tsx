@@ -89,34 +89,6 @@ export default function Home() {
         <PayoutPreview />
       </section>
 
-      <section className="sf-thesis">
-        <div className="sf-container sf-thesis-inner">
-          <div>
-            <SectionKicker>THE CORE IDEA</SectionKicker>
-            <h2>Approval should control the release.</h2>
-            <p>
-              SettleFlow turns milestone completion into an explicit payout
-              decision — before funds move.
-            </p>
-          </div>
-          <div className="sf-vertical-flow">
-            {[
-              "WORK SUBMITTED",
-              "REVIEW",
-              "APPROVAL",
-              "USDC RELEASE",
-              "SETTLEMENT PROOF",
-            ].map((item, i) => (
-              <div key={item} className="sf-flow-step">
-                <span>{String(i + 1).padStart(2, "0")}</span>
-                <strong>{item}</strong>
-                {i < 4 && <i />}
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       <section className="sf-section sf-problem">
         <div className="sf-container">
           <div className="sf-section-intro">
