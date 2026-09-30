@@ -755,14 +755,6 @@ h1 {
 }
 
 .sf-section-intro {
-  max-width: 620px;
-}
-
-.sf-problem .sf-section-intro {
-  max-width: 900px;
-}
-
-.sf-proof .sf-section-intro {
   max-width: 900px;
 }
 
