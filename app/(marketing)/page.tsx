@@ -312,12 +312,14 @@ export default function Home() {
 
       <section className="sf-final">
         <div className="sf-container sf-final-inner">
-          <SectionKicker>THE CLEAR PATH</SectionKicker>
-          <h2>Make every payout decision clear.</h2>
-          <p>
-            Create the payout. Approve the milestone. Release the USDC. Keep the
-            proof.
-          </p>
+          <div className="sf-section-intro sf-centered">
+            <SectionKicker>THE CLEAR PATH</SectionKicker>
+            <h2>Make every payout decision clear.</h2>
+            <p>
+              Create the payout. Approve the milestone. Release the USDC. Keep the
+              proof.
+            </p>
+          </div>
           <div className="sf-cta-row">
             <AuthEntryButton variant="primary" />
             <Button href="/payouts/new" variant="ghost" size="lg">
