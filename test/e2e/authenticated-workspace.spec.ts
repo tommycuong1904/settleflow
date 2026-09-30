@@ -69,7 +69,7 @@ test("owner and contributor payout views are scoped to their workspace", async (
     await expect(ownerPage.getByText("Ready for release")).toBeVisible();
 
     await contributorPage.reload();
-    await expect(contributorPage.getByText("Waiting for owner release")).toBeVisible();
+    await expect(contributorPage.getByRole("main").getByText("Waiting for owner release")).toBeVisible();
     await expect(contributorPage.getByRole("button", { name: "Release Payout" })).toHaveCount(0);
     await contributorPage.goto(`/notifications?workspaceId=${workspaceId}`);
     await expect(contributorPage.getByText("Milestone approved")).toBeVisible();
