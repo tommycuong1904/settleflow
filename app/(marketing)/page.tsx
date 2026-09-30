@@ -181,10 +181,6 @@ export default function Home() {
                   <p>{text}</p>
                   {index === 4 && (
                     <div className="sf-approval-card">
-                      <div className="sf-card-top">
-                        <span className="sf-label">APPROVE</span>
-                        <span className="sf-status">READY FOR APPROVAL</span>
-                      </div>
                       <strong>Milestone 02</strong>
                       <p>Design system implementation</p>
                       <small>Submitted by Contributor</small>
