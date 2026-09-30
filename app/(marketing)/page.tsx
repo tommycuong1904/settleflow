@@ -274,11 +274,6 @@ export default function Home() {
                 milestone payout flow on Arc Testnet.
               </p>
             </div>
-            <div className="sf-proof-badge">
-              <span />
-              <strong>FUNCTIONAL MVP</strong>
-              <small>ARC TESTNET</small>
-            </div>
           </div>
           <div className="sf-proof-grid">
             {[

@@ -574,8 +574,7 @@ h1 {
   letter-spacing: 0.08em;
 }
 
-.sf-live span,
-.sf-proof-badge span {
+.sf-live span {
   width: 6px;
   height: 6px;
   border-radius: 50%;
@@ -1052,27 +1051,6 @@ h1 {
   gap: 30px;
 }
 
-.sf-proof-badge {
-  display: grid;
-  gap: 7px;
-  min-width: 150px;
-  padding: 18px;
-  border: 1px solid var(--border-strong);
-  border-radius: 8px;
-  background: var(--surface);
-}
-
-.sf-proof-badge strong {
-  font-size: 10px;
-  color: var(--foreground);
-}
-
-.sf-proof-badge small {
-  color: var(--text-muted);
-  font-family: var(--font-mono);
-  font-size: 9px;
-}
-
 .sf-proof-grid {
   grid-template-columns: repeat(3, 1fr);
 }
@@ -1409,10 +1387,6 @@ h1 {
 
   .sf-proof-head {
     display: grid;
-  }
-
-  .sf-proof-badge {
-    width: 170px;
   }
 
   .sf-final-inner {
