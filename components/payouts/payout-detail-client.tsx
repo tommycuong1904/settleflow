@@ -74,8 +74,7 @@ export function PayoutDetailClient({
   workspaceId,
 }: PayoutDetailClientProps) {
   const isOwnerActor = isRole(currentActor, "owner");
-  const isReviewerActor = isRole(currentActor, "reviewer");
-  const canApproveMilestones = isOwnerActor || isReviewerActor;
+  const canApproveMilestones = isOwnerActor;
   const [persistedRelease, setPersistedRelease] = useState<PersistedReleaseState | null>(() => {
     if (typeof window === "undefined" || initialReleaseProof) return null;
 

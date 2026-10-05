@@ -46,7 +46,7 @@ export async function POST(
     });
 
     const baseUrl = getAppBaseUrl(request);
-    const inviteUrl = `${baseUrl}/invite/${invitation.token}`;
+    const inviteUrl = `${baseUrl}/accept-invite?token=${invitation.token}`;
 
     return NextResponse.json({
       success: true,

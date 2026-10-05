@@ -9,6 +9,7 @@ import { acceptInvitation, createInvitation } from "@/lib/services/invitations";
 import { listPayouts } from "@/lib/repositories/payouts";
 import { POST as createInvitationRoute } from "@/app/api/v1/invitations/route";
 import { POST as acceptInvitationRoute } from "@/app/api/v1/invitations/[token]/accept/route";
+import { POST as createContributorInvitationRoute } from "@/app/api/v1/contributors/[id]/invite/route";
 
 function request(url: string, token: string, body?: unknown) {
   return new NextRequest(url, {
@@ -74,6 +75,30 @@ test("invitations enforce authorization, email binding, lifecycle, and one membe
     ));
     assert.equal(ownerInvitation.status, 200);
     assert.equal((await ownerInvitation.json() as { invitation: { role: string } }).invitation.role, "owner");
+
+    const invitedContributor = await db.contributor.create({
+      data: {
+        workspaceId: workspace.id,
+        name: "Invited Contributor",
+        email: recipient.email,
+        walletAddress: `0x${randomBytes(20).toString("hex")}`,
+      },
+    });
+    const contributorInvitation = await createContributorInvitationRoute(
+      request(
+        `https://settleflow.local/api/v1/contributors/${invitedContributor.id}/invite?workspaceId=${workspace.id}`,
+        await tokenFor(owner),
+      ),
+      { params: Promise.resolve({ id: invitedContributor.id }) },
+    );
+    assert.equal(contributorInvitation.status, 200);
+    const contributorInvitationBody = await contributorInvitation.json() as {
+      data: { token: string; inviteUrl: string };
+    };
+    assert.equal(
+      contributorInvitationBody.data.inviteUrl,
+      `https://settleflow.local/accept-invite?token=${contributorInvitationBody.data.token}`,
+    );
 
     const created = await createInvitation({
       workspaceId: workspace.id,
