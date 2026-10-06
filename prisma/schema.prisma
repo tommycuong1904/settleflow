@@ -214,11 +214,12 @@ model Invitation {
 }
 
 model WorkspaceMember {
-  id          String              @id @default(uuid())
-  workspaceId String
-  userId      String
-  role        WorkspaceMemberRole
-  createdAt   DateTime            @default(now())
+  id            String              @id @default(uuid())
+  workspaceId   String
+  userId        String
+  role          WorkspaceMemberRole
+  personalLabel String?
+  createdAt     DateTime            @default(now())
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)

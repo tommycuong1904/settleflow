@@ -7,6 +7,7 @@ import { LayoutDashboard, ArrowRightLeft, Users, Activity, Settings, X, Droplets
 import { useResolvedProductContext } from "@/lib/runtime/product-context-client";
 import { hasRole } from "@/lib/runtime/role-utils";
 import type { ProductContext } from "@/lib/runtime/product-context";
+import { WorkspaceSwitcher } from "@/components/shared/workspace-switcher";
 
 type NavItem = {
   label: string;
@@ -24,11 +25,11 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Settings", href: "/settings", icon: Settings },
 ];
 
-export function AppSidebar({ initialActor, initialRoles }: { initialActor?: ProductContext["actor"]; initialRoles?: ProductContext["actor"][] }) {
+export function AppSidebar({ initialActor, initialWorkspaceId }: { initialActor?: ProductContext["actor"]; initialWorkspaceId?: string }) {
   const pathname = usePathname();
   const productContext = useResolvedProductContext();
   const actor = initialActor ?? productContext.actor;
-  const isOwner = initialRoles ? initialRoles.includes("owner") : hasRole(actor, "owner");
+  const isOwner = hasRole(actor, "owner");
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   useEffect(() => {
@@ -75,9 +76,11 @@ export function AppSidebar({ initialActor, initialRoles }: { initialActor?: Prod
         </button>
       </div>
 
+      <WorkspaceSwitcher activeWorkspaceId={initialWorkspaceId ?? productContext.workspaceId} />
+
       {/* Navigation */}
       <nav className="sf-sidebar-nav" aria-label="App navigation">
-        <p className="sf-sidebar-section-label">WORKSPACE</p>
+        <p className="sf-sidebar-section-label">NAVIGATION</p>
         <ul role="list">
           {roleAwareNavItems.map(({ label, href, icon: Icon, soon }) => {
             const isActive =

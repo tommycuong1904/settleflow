@@ -26,7 +26,7 @@ test("owner and contributor payout views are scoped to their workspace", async (
     personalWorkspaceId = personalWorkspace.id;
     await db.workspaceMember.createMany({ data: [
       { workspaceId, userId: owner.id, role: "owner" },
-      { workspaceId, userId: contributorUser.id, role: "contributor" },
+      { workspaceId, userId: contributorUser.id, role: "contributor", personalLabel: "Client design work" },
       { workspaceId: personalWorkspaceId, userId: contributorUser.id, role: "owner" },
     ] });
     await db.userWallet.createMany({ data: [
@@ -42,7 +42,10 @@ test("owner and contributor payout views are scoped to their workspace", async (
     const ownerContext = await browser.newContext();
     const contributorContext = await browser.newContext();
     await ownerContext.addCookies([{ name: "sf_session", value: ownerToken, domain: "127.0.0.1", path: "/" }]);
-    await contributorContext.addCookies([{ name: "sf_session", value: contributorToken, domain: "127.0.0.1", path: "/" }]);
+    await contributorContext.addCookies([
+      { name: "sf_session", value: contributorToken, domain: "127.0.0.1", path: "/" },
+      { name: "sf_workspace_id", value: workspaceId, domain: "127.0.0.1", path: "/" },
+    ]);
 
     const ownerPage = await ownerContext.newPage();
     await ownerPage.goto("/dashboard");
@@ -73,6 +76,27 @@ test("owner and contributor payout views are scoped to their workspace", async (
     await expect(contributorPage.getByRole("button", { name: "Release Payout" })).toHaveCount(0);
     await contributorPage.goto(`/notifications?workspaceId=${workspaceId}`);
     await expect(contributorPage.getByText("Milestone approved")).toBeVisible();
+
+    await contributorPage.goto("/dashboard");
+    await expect(contributorPage.getByText("CURRENT WORKSPACE")).toBeVisible();
+    await expect(contributorPage.getByText("NAVIGATION")).toBeVisible();
+    await expect(contributorPage.getByRole("button", { name: /Client design work/i })).toBeVisible();
+    await expect(contributorPage.getByRole("link", { name: "Contributors" })).toHaveCount(0);
+    await contributorPage.getByRole("button", { name: /Client design work/i }).click();
+    await contributorPage.getByRole("button", { name: /Rename Client design work for me/i }).click();
+    await contributorPage.getByLabel("Label for you").fill("Acme delivery work");
+    await contributorPage.getByRole("button", { name: "Save label" }).click();
+    await expect(contributorPage.getByRole("button", { name: /^Acme delivery work contributor/i })).toBeVisible();
+    await contributorPage.getByRole("menuitem", { name: /E2E Personal Workspace/i }).click();
+    await expect(contributorPage).toHaveURL(/\/dashboard$/);
+    await expect(contributorPage.getByRole("button", { name: /E2E Personal Workspace/i })).toBeVisible();
+    await expect(contributorPage.getByRole("link", { name: "Contributors" })).toBeVisible();
+
+    await contributorPage.getByRole("button", { name: /E2E Personal Workspace/i }).click();
+    await contributorPage.getByRole("menuitem", { name: /Acme delivery work/i }).click();
+    await expect(contributorPage.getByRole("button", { name: /Acme delivery work/i })).toBeVisible();
+    await expect(contributorPage.getByRole("link", { name: "Contributors" })).toHaveCount(0);
+
     await ownerContext.close();
     await contributorContext.close();
   } finally {

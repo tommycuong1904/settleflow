@@ -96,7 +96,7 @@ export async function getVerifiedSessionUser(session: SessionPayload) {
  */
 export async function resolveSessionMemberships(
   session: SessionPayload,
-): Promise<{ user: SessionUserInfo; memberships: Array<{ workspaceId: string; role: string }> } | null> {
+): Promise<{ user: SessionUserInfo; memberships: Array<{ workspaceId: string; role: string; personalLabel: string | null }> } | null> {
   const email = readNonEmpty(session.email);
   const address = readNonEmpty(session.address);
   const user = await db.user.findFirst({ where: { id: session.userId } });
@@ -110,7 +110,7 @@ export async function resolveSessionMemberships(
   const memberships = await db.workspaceMember.findMany({
     where: { userId: user.id },
     orderBy: { createdAt: "asc" },
-    select: { workspaceId: true, role: true },
+    select: { workspaceId: true, role: true, personalLabel: true },
   });
 
   return {
