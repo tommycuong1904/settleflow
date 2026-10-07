@@ -22,7 +22,7 @@ function SelectTrigger({ className, children, ...props }: React.ComponentProps<t
   return (
     <SelectPrimitive.Trigger
       className={cn(
-        "flex h-11 w-full items-center justify-between rounded-full border border-[var(--border-soft)] bg-[var(--input-background)] px-4 py-3 text-sm text-[var(--foreground)] outline-none transition-colors data-[placeholder]:text-[var(--input-placeholder)] focus:border-[var(--border-strong)] focus:bg-[var(--input-focus-background)]",
+        "flex h-12 w-full items-center justify-between rounded-full border border-[var(--border-soft)] bg-[var(--input-background)] px-5 py-3 text-base text-[var(--foreground)] outline-none transition-colors data-[placeholder]:text-[var(--input-placeholder)] focus:border-[var(--border-strong)] focus:bg-[var(--input-focus-background)]",
         className,
       )}
       {...props}
@@ -65,7 +65,7 @@ function SelectItem({ className, children, ...props }: React.ComponentProps<type
   return (
     <SelectPrimitive.Item
       className={cn(
-        "relative flex w-full cursor-default select-none items-center rounded-xl py-2 pl-8 pr-2 text-sm outline-none focus:bg-[var(--surface-muted)] focus:text-[var(--foreground)] data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+        "relative flex w-full cursor-default select-none items-center rounded-xl py-3 pl-9 pr-3 text-sm outline-none focus:bg-[var(--surface-muted)] focus:text-[var(--foreground)] data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
         className,
       )}
       {...props}

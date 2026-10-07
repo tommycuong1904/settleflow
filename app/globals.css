@@ -16,6 +16,7 @@
   --text-muted: #6B7280;
   --border-soft: rgba(0, 0, 0, 0.08);
   --border-strong: rgba(0, 0, 0, 0.16);
+  --button-secondary-border: rgba(13, 13, 13, 0.22);
   --accent: #111111;
   --accent-strong: #000000;
   --accent-cyan: #0284C7;
@@ -42,6 +43,7 @@
   --text-muted: #8e9aa8;
   --border-soft: rgba(255, 255, 255, 0.08);
   --border-strong: rgba(255, 255, 255, 0.18);
+  --button-secondary-border: rgba(255, 255, 255, 0.28);
   --accent: #ffffff;
   --accent-strong: #f8fafc;
   --accent-cyan: #38bdf8;
@@ -63,6 +65,22 @@
   --color-primary-foreground: var(--background);
   --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-mono: "IBM Plex Mono", "Geist Mono", "JetBrains Mono", monospace;
+  --text-xs: 0.8125rem;
+  --text-xs--line-height: 1.25rem;
+  --text-sm: 0.9375rem;
+  --text-sm--line-height: 1.5rem;
+  --text-base: 1rem;
+  --text-base--line-height: 1.5rem;
+  --text-lg: 1.25rem;
+  --text-lg--line-height: 1.75rem;
+  --text-xl: 1.5rem;
+  --text-xl--line-height: 2rem;
+  --text-2xl: 1.75rem;
+  --text-2xl--line-height: 2.25rem;
+  --text-3xl: 2.125rem;
+  --text-3xl--line-height: 2.5rem;
+  --text-4xl: 2.5rem;
+  --text-4xl--line-height: 2.875rem;
 }
 
 * {
@@ -71,14 +89,14 @@
 }
 
 html {
-  font-size: 16px;
+  font-size: 17px;
   scroll-behavior: smooth;
   background: var(--background);
 }
 
 @media (min-width: 1024px) {
   html {
-    font-size: 17px;
+    font-size: 18px;
   }
 }
 
@@ -166,7 +184,7 @@ h1 {
 
 .sf-label {
   color: var(--text-muted);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -202,7 +220,7 @@ h1 {
 }
 
 .sf-sidebar {
-  width: 220px;
+  width: 240px;
   flex-shrink: 0;
   display: none;
   flex-direction: column;
@@ -234,7 +252,7 @@ h1 {
 }
 
 .sf-sidebar-section-label {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.14em;
   color: var(--text-muted);
@@ -255,9 +273,10 @@ h1 {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 8px 10px;
+  min-height: 44px;
+  padding: 10px 12px;
   border-radius: 8px;
-  font-size: 13px;
+  font-size: 16px;
   font-weight: 500;
   color: var(--text-muted);
   transition: background 0.15s, color 0.15s;
@@ -299,7 +318,7 @@ h1 {
 }
 
 .sf-sidebar-network-label {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--text-muted);
   margin: 0 0 6px;
@@ -309,7 +328,7 @@ h1 {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 500;
   color: var(--text-muted);
 }
@@ -357,7 +376,7 @@ h1 {
 /* Header button overrides – target both <button> and <a> rendered by Button component */
 .sf-app-header button,
 .sf-app-header a {
-  font-size: 0.75rem !important;
+  font-size: 0.875rem !important;
   font-weight: 400 !important;
 }
 
@@ -417,7 +436,7 @@ h1 {
   padding: 13px 24px;
   background: #000000;
   color: #ffffff;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 500;
   transition:
     transform 0.2s,
@@ -456,20 +475,26 @@ h1 {
 }
 
 .sf-hero {
-  min-height: 680px;
+  min-height: 740px;
   display: grid;
   grid-template-columns: 0.92fr 1.08fr;
   align-items: center;
-  gap: 70px;
-  padding-top: 82px;
-  padding-bottom: 105px;
+  gap: 50px;
+  padding-top: 96px;
+  padding-bottom: 124px;
+}
+
+.sf-hero h1 {
+  max-width: 760px;
+  font-size: 70px;
+  line-height: 1;
 }
 
 .sf-kicker {
-  margin: 0 0 20px;
+  margin: 0 0 24px;
   color: var(--text-muted);
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.16em;
 }
@@ -477,19 +502,19 @@ h1 {
 .sf-lede,
 .sf-section-intro > p {
   color: var(--text-primary);
-  font-size: 16px;
-  line-height: 1.75;
+  font-size: 18px;
+  line-height: 1.7;
 }
 
 .sf-lede {
   max-width: 570px;
-  margin-bottom: 31px;
+  margin-bottom: 36px;
 }
 
 .sf-cta-row {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   flex-wrap: wrap;
 }
 
@@ -497,9 +522,9 @@ h1 {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-top: 30px;
+  margin-top: 34px;
   color: var(--text-muted);
-  font-size: 11px;
+  font-size: 14px;
 }
 
 .sf-note-check {
@@ -521,7 +546,7 @@ h1 {
 
 .sf-preview-wrap {
   position: relative;
-  min-height: 500px;
+  min-height: 550px;
   display: grid;
   place-items: center;
 }
@@ -545,8 +570,8 @@ h1 {
 .sf-payout-card {
   position: relative;
   z-index: 1;
-  width: min(450px, 100%);
-  padding: 27px;
+  width: min(480px, 100%);
+  padding: 32px;
   border: 1px solid var(--border-strong);
   border-radius: 12px;
   background: var(--surface);
@@ -567,7 +592,7 @@ h1 {
 .sf-label {
   color: var(--text-muted);
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 0.12em;
 }
 
@@ -577,7 +602,7 @@ h1 {
   gap: 6px;
   color: var(--foreground);
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 0.08em;
 }
 
@@ -589,8 +614,8 @@ h1 {
 }
 
 .sf-amount {
-  margin: 25px 0 5px;
-  font-size: 47px;
+  margin: 28px 0 7px;
+  font-size: 52px;
   font-weight: 650;
   letter-spacing: -0.07em;
   color: var(--foreground);
@@ -598,29 +623,29 @@ h1 {
 
 .sf-amount small {
   color: var(--text-muted);
-  font-size: 14px;
+  font-size: 16px;
   letter-spacing: 0.02em;
 }
 
 .sf-card-meta {
-  padding-bottom: 22px;
+  padding-bottom: 26px;
   color: var(--text-muted);
-  font-size: 11px;
+  font-size: 13px;
 }
 
 .sf-milestone {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 15px 0;
+  gap: 14px;
+  padding: 18px 0;
   border-top: 1px solid var(--border-soft);
 }
 
 .sf-milestone-icon {
   display: grid;
   place-items: center;
-  width: 29px;
-  height: 29px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   background: var(--foreground);
   color: var(--background);
@@ -641,7 +666,7 @@ h1 {
 }
 
 .sf-milestone strong {
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--foreground);
 }
@@ -649,7 +674,7 @@ h1 {
 .sf-milestone small {
   margin-top: 4px;
   color: var(--text-muted);
-  font-size: 10px;
+  font-size: 12px;
 }
 
 .sf-check,
@@ -666,12 +691,12 @@ h1 {
   align-items: center;
   gap: 8px;
   margin-top: 13px;
-  padding: 11px;
+  padding: 13px;
   border: 1px solid var(--border-strong);
   border-radius: 6px;
   color: var(--foreground);
   background: var(--success-soft);
-  font-size: 10px;
+  font-size: 12px;
 }
 
 .sf-release-bar span {
@@ -691,14 +716,14 @@ h1 {
   justify-items: center;
   color: var(--text-muted);
   font-family: var(--font-mono);
-  font-size: 8px;
+  font-size: 10px;
 }
 
 .sf-state > span {
   display: grid;
   place-items: center;
-  width: 14px;
-  height: 14px;
+  width: 17px;
+  height: 17px;
   border: 1px solid var(--border-soft);
   border-radius: 50%;
 }
@@ -725,8 +750,8 @@ h1 {
   bottom: 32px;
   display: flex;
   align-items: center;
-  gap: 9px;
-  padding: 12px 15px;
+  gap: 10px;
+  padding: 14px 17px;
   border: 1px solid var(--border-strong);
   border-radius: 8px;
   background: var(--surface);
@@ -741,12 +766,12 @@ h1 {
 
 .sf-proof-chip b {
   color: var(--foreground);
-  font-size: 11px;
+  font-size: 13px;
 }
 
 .sf-proof-chip small {
   color: var(--text-muted);
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .sf-final {
@@ -756,7 +781,7 @@ h1 {
 }
 
 .sf-section {
-  padding: 125px 0;
+  padding: 140px 0;
   scroll-margin-top: 76px;
 }
 
@@ -791,13 +816,13 @@ h1 {
 .sf-fragment-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-  margin-top: 58px;
+  gap: 20px;
+  margin-top: 64px;
 }
 
 .sf-fragment {
-  min-height: 250px;
-  padding: 22px;
+  min-height: 280px;
+  padding: 28px;
   border: 1px solid var(--border-soft);
   border-radius: 12px;
   background: var(--surface);
@@ -831,24 +856,24 @@ h1 {
 }
 
 .sf-fragment h3 {
-  margin-bottom: 8px;
-  font-size: 13px;
+  margin-bottom: 10px;
+  font-size: 17px;
   letter-spacing: 0.08em;
 }
 
 .sf-fragment p {
   margin: 0;
   color: var(--text-muted);
-  font-size: 13px;
-  line-height: 1.65;
+  font-size: 16px;
+  line-height: 1.7;
 }
 
 .sf-problem-result {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 48px;
-  margin-top: 48px;
+  gap: 56px;
+  margin-top: 56px;
 }
 
 .sf-transition {
@@ -859,7 +884,7 @@ h1 {
   margin: 0;
   color: var(--text-muted);
   font-family: "JetBrains Mono", monospace;
-  font-size: 10px;
+  font-size: 12px;
 }
 
 .sf-transition i {
@@ -877,7 +902,7 @@ h1 {
   max-width: 620px;
   margin: 0 0 0 auto;
   color: var(--text-primary);
-  font-size: 14px;
+  font-size: 17px;
   line-height: 1.7;
 }
 
@@ -887,7 +912,7 @@ h1 {
 
 .sf-timeline {
   display: flex;
-  margin-top: 75px;
+  margin-top: 84px;
 }
 
 .sf-timeline-item {
@@ -911,15 +936,15 @@ h1 {
   z-index: 1;
   display: grid;
   place-items: center;
-  width: 31px;
-  height: 31px;
-  margin-bottom: 20px;
+  width: 36px;
+  height: 36px;
+  margin-bottom: 24px;
   border: 1px solid var(--border-soft);
   border-radius: 50%;
   background: var(--surface);
   color: var(--text-muted);
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 12px;
 }
 
 .sf-timeline-item.active .sf-timeline-marker {
@@ -932,18 +957,18 @@ h1 {
 .sf-timeline-content > span {
   color: var(--text-muted);
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .sf-timeline h3 {
-  margin: 10px 0 8px;
-  font-size: 14px;
+  margin: 12px 0 9px;
+  font-size: 16px;
 }
 
 .sf-timeline p {
   color: var(--text-muted);
-  font-size: 12px;
-  line-height: 1.55;
+  font-size: 14px;
+  line-height: 1.65;
 }
 
 .sf-state-section {
@@ -958,7 +983,7 @@ h1 {
 }
 
 .sf-state-machine {
-  padding: 22px;
+  padding: 28px;
   border: 1px solid var(--border-soft);
   border-radius: 12px;
   background: var(--surface);
@@ -968,34 +993,34 @@ h1 {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 13px;
-  min-height: 55px;
+  gap: 15px;
+  min-height: 64px;
   color: var(--text-muted);
 }
 
 .sf-machine-state span {
   display: grid;
   place-items: center;
-  width: 27px;
-  height: 27px;
+  width: 31px;
+  height: 31px;
   border: 1px solid var(--border-soft);
   border-radius: 50%;
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .sf-machine-state strong {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: 0.08em;
 }
 
 .sf-machine-state i {
   position: absolute;
-  left: 13px;
-  top: 41px;
+  left: 15px;
+  top: 47px;
   width: 1px;
-  height: 18px;
+  height: 20px;
   background: var(--border-soft);
 }
 
@@ -1012,12 +1037,12 @@ h1 {
 .sf-proof-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-  margin-top: 60px;
+  gap: 20px;
+  margin-top: 64px;
 }
 
 .sf-layer {
-  padding: 28px;
+  padding: 32px;
   border: 1px solid var(--border-soft);
   border-radius: 12px;
   background: var(--surface);
@@ -1025,26 +1050,26 @@ h1 {
 
 .sf-layer svg {
   color: var(--foreground);
-  margin-bottom: 32px;
+  margin-bottom: 36px;
 }
 
 .sf-layer small {
   display: block;
   color: var(--text-muted);
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 11px;
   text-transform: uppercase;
 }
 
 .sf-layer h3 {
-  margin: 10px 0;
-  font-size: 20px;
+  margin: 12px 0;
+  font-size: 22px;
 }
 
 .sf-layer p {
   color: var(--text-muted);
-  font-size: 13px;
-  line-height: 1.6;
+  font-size: 16px;
+  line-height: 1.7;
 }
 
 .sf-proof {
@@ -1064,8 +1089,8 @@ h1 {
 
 .sf-proof-grid > div {
   display: flex;
-  gap: 12px;
-  padding-top: 18px;
+  gap: 14px;
+  padding-top: 22px;
   border-top: 1px solid var(--border-soft);
 }
 
@@ -1075,15 +1100,15 @@ h1 {
 }
 
 .sf-proof-grid h3 {
-  margin: 0 0 7px;
-  font-size: 13px;
+  margin: 0 0 8px;
+  font-size: 16px;
 }
 
 .sf-proof-grid p {
   margin: 0;
   color: var(--text-muted);
-  font-size: 12px;
-  line-height: 1.6;
+  font-size: 14px;
+  line-height: 1.65;
 }
 
 .sf-final {
@@ -1095,7 +1120,7 @@ h1 {
 }
 
 .sf-final-inner {
-  padding: 125px 0 115px;
+  padding: 140px 0 130px;
 }
 
 .sf-final h2 {
@@ -1120,7 +1145,7 @@ h1 {
   margin-top: 65px;
   color: var(--foreground);
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: 0.13em;
 }
 
@@ -1166,8 +1191,8 @@ h1 {
 @media (max-width: 900px) {
   .sf-hero {
     grid-template-columns: 1fr;
-    gap: 20px;
-    padding-top: 70px;
+    gap: 36px;
+    padding-top: 80px;
   }
 
   .sf-hero-copy {
@@ -1214,7 +1239,7 @@ h1 {
 @media (max-width: 640px) {
   .sf-section-intro h2,
   .sf-final h2 {
-    font-size: clamp(34px, 10vw, 55px);
+    font-size: clamp(40px, 11vw, 55px);
   }
 
   .sf-container,
@@ -1259,16 +1284,16 @@ h1 {
 
   .sf-hero {
     min-height: auto;
-    padding-top: 65px;
-    padding-bottom: 75px;
+    padding-top: 76px;
+    padding-bottom: 92px;
   }
 
   .sf-hero h1 {
-    font-size: 44px;
+    font-size: 48px;
   }
 
   .sf-lede {
-    font-size: 14px;
+    font-size: 16px;
   }
 
   .sf-cta-row {
@@ -1286,15 +1311,15 @@ h1 {
   }
 
   .sf-preview-wrap {
-    min-height: 430px;
+    min-height: 460px;
   }
 
   .sf-payout-card {
-    padding: 20px;
+    padding: 24px;
   }
 
   .sf-amount {
-    font-size: 38px;
+    font-size: 42px;
   }
 
   .sf-orbit {
@@ -1309,20 +1334,20 @@ h1 {
 
   .sf-state-layout {
     grid-template-columns: 1fr;
-    gap: 50px;
-    padding: 75px 0;
+    gap: 56px;
+    padding: 96px 0;
   }
 
   .sf-section {
-    padding: 80px 0;
+    padding: 96px 0;
   }
 
   .sf-fragment-grid,
   .sf-layers,
   .sf-proof-grid {
     grid-template-columns: 1fr;
-    gap: 12px;
-    margin-top: 42px;
+    gap: 16px;
+    margin-top: 48px;
   }
 
   .sf-fragment {
@@ -1332,8 +1357,8 @@ h1 {
   .sf-problem-result {
     flex-direction: column;
     align-items: flex-start;
-    gap: 24px;
-    margin-top: 35px;
+    gap: 28px;
+    margin-top: 42px;
   }
 
   .sf-transition i {
@@ -1345,7 +1370,7 @@ h1 {
   }
 
   .sf-timeline {
-    margin-top: 50px;
+    margin-top: 60px;
     overflow: visible;
     display: grid;
     gap: 27px;
@@ -1385,13 +1410,13 @@ h1 {
   }
 
   .sf-final-inner {
-    padding: 80px 0;
+    padding: 96px 0;
   }
 
   .sf-final-flow {
     margin-top: 45px;
     gap: 9px;
-    font-size: 8px;
+    font-size: 10px;
   }
 
   .sf-final-flow i {

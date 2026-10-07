@@ -18,23 +18,23 @@ export type ButtonProps = {
 };
 
 const baseClasses =
-  "inline-flex items-center justify-center font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-strong)] disabled:cursor-not-allowed select-none active:scale-[0.98] rounded-full";
+  "inline-flex items-center justify-center font-medium transition-[background-color,border-color,color,transform,box-shadow] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-strong)] disabled:cursor-not-allowed select-none active:translate-y-0 active:scale-[0.98] rounded-full";
 
 const sizeClasses: Record<ButtonSize, string> = {
-  sm: "px-3.5 py-1.5 text-xs rounded-full gap-1.5",
-  md: "px-4.5 py-2 text-xs sm:text-sm rounded-full gap-2",
-  lg: "px-6 py-2.5 text-sm sm:text-base rounded-full gap-2.5",
+  sm: "min-h-9 px-4 py-2 text-xs rounded-full gap-1.5",
+  md: "min-h-11 px-5 py-2.5 text-sm rounded-full gap-2",
+  lg: "min-h-12 px-7 py-3 text-base rounded-full gap-2.5",
 };
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary:
-    "border border-black !bg-black !text-white font-semibold hover:opacity-80 transition-opacity disabled:opacity-40",
+    "border border-black !bg-black !text-white font-semibold hover:!bg-neutral-800 hover:-translate-y-px hover:shadow-[0_6px_16px_rgba(0,0,0,0.12)] disabled:opacity-40",
   secondary:
-    "border border-[var(--border-soft)] bg-[var(--surface-muted)] text-[var(--foreground)] hover:bg-[var(--surface-strong)] hover:border-[var(--border-strong)] disabled:opacity-40",
+    "border border-[var(--button-secondary-border)] bg-[var(--surface)] text-[var(--foreground)] hover:bg-[var(--surface-muted)] hover:border-[var(--foreground)] disabled:opacity-40",
   ghost:
     "border border-transparent bg-transparent text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--foreground)] disabled:opacity-40",
   outline:
-    "border border-[var(--border-strong)] bg-transparent text-[var(--foreground)] hover:bg-[var(--surface-muted)] disabled:opacity-40",
+    "border border-[var(--button-secondary-border)] bg-[var(--surface)] text-[var(--foreground)] hover:bg-[var(--surface-muted)] hover:border-[var(--foreground)] disabled:opacity-40",
   danger:
     "border border-rose-500/30 bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 hover:border-rose-500/50 disabled:opacity-40",
 };
