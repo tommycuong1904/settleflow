@@ -22,7 +22,7 @@ export default function AppError({ error, reset }: { error: Error & { digest?: s
         <section className="sf-shell w-full max-w-xl rounded-xl p-8 text-center">
           <p className="sf-eyebrow">Authentication required</p>
           <h1 className="mt-3 text-2xl font-semibold">Sign in to continue</h1>
-          <p className="mt-3 text-sm text-slate-500">Connect a wallet or use the available sign-in flow to access this page.</p>
+          <p className="mt-3 text-sm text-slate-500">Sign in with your account to access this page. Wallet setup is only needed when you choose Wallet payment.</p>
           <div className="mt-6 flex justify-center gap-3">
             <button className="sf-button sf-button-primary" onClick={openAuthModal}>Sign in</button>
             <button className="sf-button sf-button-ghost" onClick={() => reset()}>Retry</button>
