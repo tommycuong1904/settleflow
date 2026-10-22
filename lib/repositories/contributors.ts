@@ -4,7 +4,7 @@ import { db } from "@/lib/db/client";
 export type ContributorListItem = {
   id: string;
   displayName: string;
-  walletAddress: string;
+  walletAddress?: string;
   email?: string;
   role?: string;
   notes?: string;
@@ -19,7 +19,7 @@ export type ContributorListItem = {
 export type CreateContributorInput = {
   workspaceId: string;
   name: string;
-  walletAddress: string;
+  walletAddress?: string;
   email?: string;
   role?: string;
   notes?: string;
@@ -39,7 +39,7 @@ type ContributorRow = {
   id: string;
   name: string;
   email: string | null;
-  walletAddress: string;
+  walletAddress: string | null;
   role: string | null;
   notes: string | null;
   status: "active" | "archived";
@@ -68,7 +68,7 @@ function toContributorListItem(c: ContributorRow): ContributorListItem {
   return {
     id: c.id,
     displayName: c.name,
-    walletAddress: c.walletAddress,
+    walletAddress: c.walletAddress ?? undefined,
     email: c.email || undefined,
     role: c.role || undefined,
     notes: c.notes || undefined,
@@ -202,35 +202,32 @@ export async function createContributor(
   input: CreateContributorInput,
 ): Promise<ContributorListItem> {
   const name = input.name.trim();
-  const walletAddress = input.walletAddress.trim();
+  const walletAddress = input.walletAddress?.trim() || null;
 
   if (!name) {
     throw new Error("Contributor name is required.");
   }
 
-  if (!isValidEvmAddress(walletAddress)) {
+  if (walletAddress && !isValidEvmAddress(walletAddress)) {
     throw new Error("Invalid EVM wallet address. Must start with 0x and have 40 hexadecimal characters.");
   }
 
-  const existing = await db.contributor.findFirst({
+  const existing = walletAddress ? await db.contributor.findFirst({
     where: {
       workspaceId: input.workspaceId,
       walletAddress: { equals: walletAddress, mode: "insensitive" },
     },
-  });
+  }) : null;
 
   if (existing) {
     throw new Error("A contributor with this wallet address already exists in this workspace.");
   }
 
   const email = input.email?.trim() || null;
-  const normalizedWallet = walletAddress.toLowerCase();
+  const normalizedWallet = walletAddress?.toLowerCase();
 
   let matchedUserId: string | null = null;
-  const userWallet = await db.userWallet.findUnique({
-    where: { normalizedAddress: normalizedWallet },
-    select: { userId: true },
-  });
+  const userWallet = normalizedWallet ? await db.userWallet.findUnique({ where: { normalizedAddress: normalizedWallet }, select: { userId: true } }) : null;
   if (userWallet) {
     matchedUserId = userWallet.userId;
   } else if (email) {
@@ -294,18 +291,18 @@ export async function updateContributor(
   }
 
   if (input.walletAddress !== undefined) {
-    const walletAddress = input.walletAddress.trim();
-    if (!isValidEvmAddress(walletAddress)) {
+    const walletAddress = input.walletAddress.trim() || null;
+    if (walletAddress && !isValidEvmAddress(walletAddress)) {
       throw new Error("Invalid EVM wallet address. Must start with 0x and have 40 hexadecimal characters.");
     }
-    const duplicate = await db.contributor.findFirst({
+    const duplicate = walletAddress ? await db.contributor.findFirst({
       where: {
         workspaceId: existing.workspaceId,
         walletAddress: { equals: walletAddress, mode: "insensitive" },
         id: { not: contributorId },
       },
       select: { id: true },
-    });
+    }) : null;
     if (duplicate) {
       throw new Error("A contributor with this wallet address already exists in this workspace.");
     }
@@ -391,4 +388,3 @@ export async function deleteContributor(
   await db.contributor.delete({ where: { id: contributorId } });
   return { id: contributorId };
 }
-

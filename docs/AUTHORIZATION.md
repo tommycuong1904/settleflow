@@ -63,6 +63,7 @@ authorization = role + workspace scope + relationship + state + capability
 | Submit/resubmit milestone | Contributor | Milestone/payout workspace | Linked contributor relationship | Active/partially released payout; `pending`, `rejected` milestone | Create submission; state → `submitted` |
 | Approve/reject milestone | Owner | Milestone/payout workspace | Submitted milestone in scope | `submitted` | Record review; state → `approved`/`rejected` |
 | Queue/release funds | Owner | Milestone/payout workspace | Approved milestone in scope | Approved milestone; active payout | Create/execute release |
+| Record simulated payment | Owner | Milestone/payout workspace | Approved milestone in scope | Mock/demo execution only; no existing release/payment | Atomically record no-funds-moved payment; state → `released` |
 | Refresh/retry proof/release | Owner | Release/payout workspace | Release belongs to workspace | `queued`/`pending` or `failed` | Confirm/fail or create eligible retry |
 | View lifecycle data | Owner/Reviewer; Contributor relationship-scoped | Resource workspace | Contributor relationship where applicable | Existing resource | Return permitted data |
 | Mutate contributor/settings | Owner | Workspace | Resource belongs to workspace | Route-allowed state | Update if authorized |

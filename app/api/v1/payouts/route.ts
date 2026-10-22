@@ -18,12 +18,12 @@ export async function POST(request: Request) {
     const body = await request.json();
     const milestones = Array.isArray(body.milestones) ? body.milestones : [];
     const required = [productContext.workspaceId, productContext.ownerUserId, body.title, body.contributorId,
-      body.targetWalletAddress, body.totalAmountUsdc];
+      body.totalAmountUsdc];
 
     if (required.some((value) => !isNonEmptyString(value)) || milestones.length === 0) {
       return apiError("INVALID_PAYOUT_PAYLOAD", { message: "Invalid payout payload.", status: 400 });
     }
-    if (!isValidUsdcAmount(body.totalAmountUsdc) || !isValidEvmAddress(body.targetWalletAddress)) {
+    if (!isValidUsdcAmount(body.totalAmountUsdc) || (body.targetWalletAddress && !isValidEvmAddress(body.targetWalletAddress))) {
       return apiError("INVALID_PAYOUT_PAYLOAD", { message: "Invalid payout amount or target wallet.", status: 400 });
     }
 

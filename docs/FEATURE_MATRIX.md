@@ -2,7 +2,7 @@
 
 Status: current
 SSoT: Current implementation + canonical docs
-Last verified: 2026-08
+Last verified: 2026-10
 
 | Feature | Status | Evidence / boundary |
 | --- | --- | --- |
@@ -23,6 +23,8 @@ Last verified: 2026-08
 | Workspace webhook settings/test | Implemented | settings and webhook routes/repository |
 | Owner/Contributor MVP policy | Implemented | Owner-only review/release; Contributor submit/resubmit; Reviewer/Ops retained only for historical data |
 | Web3-only release | Implemented | `browser_wallet` is the sole enabled new-release mode; Circle Smart Wallet is Coming soon |
+| Web2-first payment experience | Planned | Audit and phased implementation plan: `docs/WEB2_FIRST_UX_AUDIT_AND_PLAN.md`; current UI still requires a wallet for new releases |
+| Simulated payment for safe testing | Implemented API foundation; UI planned | `PaymentAttempt` plus `POST /api/v1/milestones/[id]/simulated-payment`; only mock/demo, Owner-authorized, idempotent, no Release/TransactionProof/onchain claim |
 | In-app notifications | Implemented for MVP events | workspace/user-scoped submit, decision, and release-result notifications with read state |
 | Browser Push notifications | Implemented, configuration required | opt-in Settings control, service worker, scoped subscriptions, and VAPID delivery; requires environment VAPID keys and operational delivery verification |
 | Automated test coverage | Implemented, scope limited; operational verification not implied | Unit and DB-backed route integration are committed; Playwright smoke covers public Web3-first authentication boundaries; authenticated workflow E2E and deterministic concurrency remain deferred |

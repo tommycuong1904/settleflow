@@ -15,14 +15,14 @@ export function ReviewControls({
   busy = false,
 }: ReviewControlsProps) {
   return (
-    <div className="rounded-2xl border border-amber-500/25 bg-amber-500/5 p-4 text-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3.5">
+    <div className="flex flex-col gap-3.5 border-t border-[var(--border-soft)] pt-4 text-xs sm:flex-row sm:items-center sm:justify-between">
       <div className="space-y-1 min-w-0">
         <p className="font-semibold text-[var(--foreground)] flex items-center gap-1.5 text-xs">
           <Clock size={14} className="text-amber-500 shrink-0" />
           <span>Owner Review & Decision</span>
         </p>
         <p className="text-[11px] text-[var(--text-muted)] leading-relaxed">
-          Submitted {submittedAt ? new Date(submittedAt).toLocaleDateString() : "recently"}. Approving unlocks USDC release on Arc.
+          Submitted {submittedAt ? new Date(submittedAt).toLocaleDateString() : "recently"}. Approving makes this milestone ready for payment.
         </p>
       </div>
       <div className="flex items-center gap-2.5 shrink-0">

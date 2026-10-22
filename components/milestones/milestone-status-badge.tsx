@@ -13,16 +13,37 @@ const statusStyles: Record<MilestoneStatus, string> = {
     "border border-rose-400/30 bg-rose-400/10 text-rose-800 dark:text-rose-200",
 };
 
-type MilestoneStatusBadgeProps = {
-  status: MilestoneStatus;
+const textStatusStyles: Record<MilestoneStatus, string> = {
+  pending: "text-amber-700 dark:text-amber-300",
+  submitted: "text-sky-700 dark:text-sky-300",
+  approved: "text-[var(--text-muted)]",
+  released: "text-emerald-700 dark:text-emerald-200",
+  rejected: "text-rose-700 dark:text-rose-300",
 };
 
-export function MilestoneStatusBadge({ status }: MilestoneStatusBadgeProps) {
+const statusLabels: Record<MilestoneStatus, string> = {
+  pending: "Not started",
+  submitted: "Submitted",
+  approved: "Approved",
+  released: "Paid",
+  rejected: "Changes requested",
+};
+
+type MilestoneStatusBadgeProps = {
+  status: MilestoneStatus;
+  variant?: "badge" | "text";
+};
+
+export function MilestoneStatusBadge({ status, variant = "badge" }: MilestoneStatusBadgeProps) {
   return (
     <span
-      className={`rounded-full px-3 py-1 text-xs font-semibold capitalize tracking-[0.04em] ${statusStyles[status]}`}
+      className={
+        variant === "text"
+          ? `text-xs font-semibold capitalize ${textStatusStyles[status]}`
+          : `rounded-full px-3 py-1 text-xs font-semibold capitalize tracking-[0.04em] ${statusStyles[status]}`
+      }
     >
-      {status}
+      {statusLabels[status]}
     </span>
   );
 }

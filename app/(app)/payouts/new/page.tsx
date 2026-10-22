@@ -1,7 +1,6 @@
 import { Suspense } from "react";
 import CreatePayoutPageContent from "@/components/payouts/CreatePayoutPageContent";
 import { PageHeader } from "@/components/shared/page-header";
-import { WalletGate } from "@/components/dashboard/wallet-gate";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +14,6 @@ export default function CreatePayoutPage() {
           title="Create a payout"
           description="Choose a contributor, plan the milestones, then review the agreement."
         />
-        <div className="mt-8"><WalletGate /></div>
         <div className="mt-8"><CreatePayoutPageContent /></div>
       </div>
     </Suspense>

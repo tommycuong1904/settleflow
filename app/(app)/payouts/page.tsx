@@ -31,7 +31,7 @@ export default async function PayoutsPage() {
       <PageHeader
         eyebrow="Payments"
         title="Payouts"
-        description="Create, review, and release milestone payments for your contributors."
+        description="Organize milestone work, approvals, and payments for your contributors."
       >
         <Button href="/payouts/new" variant="primary" size="sm">
           <Plus size={15} className="mr-1.5" /> New Payout

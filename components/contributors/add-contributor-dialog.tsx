@@ -54,7 +54,7 @@ export function AddContributorDialog({
     setSuccessMessage(null);
 
     const cleanAddress = walletAddress.trim();
-    if (!/^0x[a-fA-F0-9]{40}$/.test(cleanAddress)) {
+    if (cleanAddress && !/^0x[a-fA-F0-9]{40}$/.test(cleanAddress)) {
       setError("Please enter a valid 42-character EVM wallet address (0x...)");
       return;
     }
@@ -70,7 +70,7 @@ export function AddContributorDialog({
         },
         body: JSON.stringify({
           name: name.trim(),
-          walletAddress: cleanAddress,
+          walletAddress: cleanAddress || undefined,
           role: role.trim() || undefined,
           email: email.trim() || undefined,
           notes: notes.trim() || undefined,
@@ -138,7 +138,7 @@ export function AddContributorDialog({
               Add contributor
             </h2>
             <p className="text-xs mt-0.5">
-              Add the person and wallet that will receive milestone payouts.
+              Start with their name and contact details. Payment setup can be added later.
             </p>
           </div>
         </div>
@@ -174,26 +174,25 @@ export function AddContributorDialog({
 
           <div>
             <label className="mb-2.5 block text-xs font-semibold uppercase tracking-wider">
-              Wallet address <span className="text-rose-500">*</span>
+              Email <span className="normal-case font-normal tracking-normal text-[var(--text-muted)]">(optional)</span>
             </label>
             <div className="relative">
-              <Wallet
-                size={16}
+              <Mail
+                size={15}
                 className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
               />
               <input
-                type="text"
-                required
-                value={walletAddress}
-                onChange={(e) => setWalletAddress(e.target.value)}
-                placeholder="0x..."
-                className="w-full font-mono text-xs rounded-full border border-[var(--border-soft)] bg-[var(--input-background)] py-2.5 pl-10 pr-3.5 text-[var(--foreground)] placeholder:text-[var(--input-placeholder)] focus:border-[var(--foreground)] focus:bg-[var(--input-focus-background)] focus:outline-none focus:ring-1 focus:ring-[var(--foreground)] transition-all"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="name@example.com"
+                className="w-full rounded-full border border-[var(--border-soft)] bg-[var(--input-background)] py-2.5 pl-10 pr-3.5 text-sm text-[var(--foreground)] placeholder:text-[var(--input-placeholder)] focus:border-[var(--foreground)] focus:bg-[var(--input-focus-background)] focus:outline-none focus:ring-1 focus:ring-[var(--foreground)] transition-all"
               />
             </div>
           </div>
 
           <details className="group rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-4">
-            <summary className="cursor-pointer text-xs font-semibold text-[var(--foreground)] marker:text-[var(--text-muted)]">Add optional details</summary>
+            <summary className="cursor-pointer text-xs font-semibold text-[var(--foreground)] marker:text-[var(--text-muted)]">Add optional details or payment setup</summary>
             <div className="mt-4 grid grid-cols-1 gap-3.5 sm:grid-cols-2">
             <div>
               <label className="mb-2.5 block text-xs font-semibold uppercase tracking-wider">
@@ -215,20 +214,18 @@ export function AddContributorDialog({
             </div>
 
             <div>
-              <label className="mb-2.5 block text-xs font-semibold uppercase tracking-wider">
-                Email (Optional)
-              </label>
+              <label className="mb-2.5 block text-xs font-semibold uppercase tracking-wider">Wallet address <span className="normal-case font-normal tracking-normal text-[var(--text-muted)]">(advanced wallet payment only)</span></label>
               <div className="relative">
-                <Mail
+                <Wallet
                   size={15}
                   className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
                 />
                 <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@example.com"
-                  className="w-full rounded-full border border-[var(--border-soft)] bg-[var(--input-background)] py-2.5 pl-10 pr-3.5 text-xs text-[var(--foreground)] placeholder:text-[var(--input-placeholder)] focus:border-[var(--foreground)] focus:bg-[var(--input-focus-background)] focus:outline-none focus:ring-1 focus:ring-[var(--foreground)] transition-all"
+                  type="text"
+                  value={walletAddress}
+                  onChange={(e) => setWalletAddress(e.target.value)}
+                  placeholder="Add only for Wallet payment"
+                  className="w-full font-mono text-xs rounded-full border border-[var(--border-soft)] bg-[var(--input-background)] py-2.5 pl-10 pr-3.5 text-[var(--foreground)] placeholder:text-[var(--input-placeholder)] focus:border-[var(--foreground)] focus:bg-[var(--input-focus-background)] focus:outline-none focus:ring-1 focus:ring-[var(--foreground)] transition-all"
                 />
               </div>
             </div>
@@ -268,7 +265,7 @@ export function AddContributorDialog({
               type="submit"
               variant="primary"
               size="sm"
-              disabled={isSubmitting || !name.trim() || !walletAddress.trim()}
+              disabled={isSubmitting || !name.trim()}
             >
               {isSubmitting ? (
                 <>

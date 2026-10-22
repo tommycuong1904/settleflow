@@ -21,7 +21,7 @@ export type AccessiblePayoutListItem = PayoutListItem & {
   contributor: {
     id: string;
     displayName: string;
-    walletAddress: string;
+    walletAddress?: string;
   };
 };
 
@@ -174,7 +174,7 @@ export async function listAccessiblePayouts(input: {
       contributor: {
         id: payout.contributor.id,
         displayName: payout.contributor.name,
-        walletAddress: payout.contributor.walletAddress,
+        walletAddress: payout.contributor.walletAddress ?? undefined,
       },
     };
   });
@@ -271,7 +271,7 @@ export type PayoutDetailData = {
   contributor?: {
     id: string;
     name: string;
-    walletAddress: string;
+    walletAddress?: string;
     linkedUserId?: string | null;
     role?: string;
   };
@@ -311,6 +311,17 @@ export type PayoutDetailData = {
     releaseArcRequestId?: string;
     releaseStatus?: "queued" | "pending" | "confirmed" | "failed" | "cancelled";
   };
+  paymentAttempts: {
+    id: string;
+    milestoneId: string;
+    method: "simulated" | "crypto_wallet";
+    status: "pending" | "completed" | "failed" | "cancelled";
+    evidenceType: "none" | "transaction";
+    amount: number;
+    currency: string;
+    recipientLabel: string;
+    completedAt?: string;
+  }[];
 };
 
 /**
@@ -397,6 +408,20 @@ export async function getPayoutDetail(
           release: { select: { executionMode: true, status: true, txHash: true, arcRequestId: true } },
         },
       },
+      paymentAttempts: {
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          milestoneId: true,
+          method: true,
+          status: true,
+          evidenceType: true,
+          amountUsdc: true,
+          currency: true,
+          recipientLabel: true,
+          completedAt: true,
+        },
+      },
     },
   });
 
@@ -421,7 +446,7 @@ export async function getPayoutDetail(
       ? {
           id: payout.contributor.id,
           name: payout.contributor.name,
-          walletAddress: payout.contributor.walletAddress,
+          walletAddress: payout.contributor.walletAddress ?? undefined,
           linkedUserId: payout.contributor.linkedUserId ?? null,
           role: payout.contributor.role ?? undefined,
         }
@@ -472,6 +497,17 @@ export async function getPayoutDetail(
           releaseStatus: payout.transactionProofs[0].release?.status,
         }
       : undefined,
+    paymentAttempts: payout.paymentAttempts.map((payment) => ({
+      id: payment.id,
+      milestoneId: payment.milestoneId,
+      method: payment.method,
+      status: payment.status,
+      evidenceType: payment.evidenceType,
+      amount: Number(payment.amountUsdc.toString()),
+      currency: payment.currency,
+      recipientLabel: payment.recipientLabel,
+      completedAt: payment.completedAt?.toISOString(),
+    })),
   };
 
   return detail;

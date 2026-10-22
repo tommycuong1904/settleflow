@@ -2,7 +2,8 @@
 
 import { AppKit, type SendParams } from "@circle-fin/app-kit";
 import { createViemAdapterFromProvider } from "@circle-fin/adapter-viem-v2";
-import { getAddress, type EIP1193Provider } from "viem";
+import { createPublicClient, getAddress, http, type EIP1193Provider } from "viem";
+import { ARC_CONFIG } from "@/lib/arc/config";
 import { addArcNetworkToWallet } from "@/lib/arc/onchain";
 
 export class BrowserWalletPreBroadcastError extends Error {}
@@ -110,6 +111,14 @@ export async function connectBrowserWallet(preferredWallet?: string) {
 
   const adapter = await createViemAdapterFromProvider({
     provider: selectedWallet.provider,
+    // AppKit's default public-client factory may choose an RPC that differs
+    // from the Arc endpoint configured for SettleFlow. Keep estimation and
+    // preflight reads on the same verified RPC that we register in the wallet.
+    getPublicClient: ({ chain }) =>
+      createPublicClient({
+        chain,
+        transport: http(ARC_CONFIG.rpcUrl, { timeout: 10_000, retryCount: 1 }),
+      }),
   });
 
   return {
@@ -148,7 +157,7 @@ export async function sendUsdcWithBrowserWallet(input: {
   try {
     connection = await withTimeout(
       connectBrowserWallet(),
-      "Wallet connection timed out. Open MetaMask or disable other wallet extensions, then try again.",
+      "Wallet connection timed out. Open your wallet or disable conflicting wallet extensions, then try again.",
     );
   } catch (error) {
     throw new BrowserWalletPreBroadcastError(error instanceof Error ? error.message : "Wallet connection was not completed.");
@@ -182,7 +191,7 @@ export async function sendUsdcWithBrowserWallet(input: {
   try {
     await withTimeout(
       kit.estimateSend(sendParams),
-      "Arc send estimate timed out. Confirm Arc Testnet is selected in MetaMask.",
+      "Arc send estimate timed out. Confirm Arc Testnet is selected in your wallet.",
     );
   } catch (error) {
     throw new BrowserWalletPreBroadcastError(error instanceof Error ? error.message : "Arc transaction could not be prepared.");

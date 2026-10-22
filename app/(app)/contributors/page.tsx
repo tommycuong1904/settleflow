@@ -1,6 +1,5 @@
 import { cookies } from "next/headers";
 import { PageHeader } from "@/components/shared/page-header";
-import { WalletGate } from "@/components/dashboard/wallet-gate";
 import { ContributorListClient } from "@/components/contributors/contributor-list-client";
 import { listContributors } from "@/lib/repositories/contributors";
 import {
@@ -51,8 +50,6 @@ export default async function ContributorsPage({ searchParams }: ContributorsPag
         title="Contributors"
         description="Manage the people who receive milestone payouts from this workspace."
       />
-
-      <WalletGate />
 
       <div className="flex-1">
         <ContributorListClient

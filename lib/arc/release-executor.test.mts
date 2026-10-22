@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { decodeFunctionData, parseUnits, erc20Abi, type Hex } from "viem";
+import { decodeFunctionData, parseGwei, parseUnits, erc20Abi, type Hex } from "viem";
 
 import {
   createReleaseExecutor,
@@ -88,12 +88,12 @@ test("circle_wallet mode with an invalid private key fails explicitly", async ()
 test("circle_wallet mode sends Arc USDC as an ERC-20 transfer and returns a confirmed proof", async () => {
   const original = process.env.ARC_SERVER_PRIVATE_KEY;
   process.env.ARC_SERVER_PRIVATE_KEY = VALID_TEST_KEY;
-  const captured: Array<{ to: string; value: bigint; data?: Hex }> = [];
+  const captured: Array<{ to: string; value: bigint; data?: Hex; maxFeePerGas?: bigint }> = [];
   try {
     const executor = createReleaseExecutor("circle_wallet", {
       circleWallet: makeDeps({
         sendTransaction: async (args) => {
-          captured.push({ to: args.to, value: args.value, data: args.data });
+          captured.push({ to: args.to, value: args.value, data: args.data, maxFeePerGas: args.maxFeePerGas });
           return TX_HASH;
         },
       }),
@@ -110,10 +110,35 @@ test("circle_wallet mode sends Arc USDC as an ERC-20 transfer and returns a conf
     assert.equal(captured.length, 1);
     assert.equal(captured[0].to.toLowerCase(), NATIVE_USDC_ADDRESS.toLowerCase());
     assert.equal(captured[0].value, BigInt(0));
+    assert.equal(captured[0].maxFeePerGas, parseGwei("20"));
     const decoded = decodeFunctionData({ abi: erc20Abi, data: captured[0].data! });
     assert.equal(decoded.functionName, "transfer");
     assert.equal(String(decoded.args?.[0]).toLowerCase(), RECIPIENT.toLowerCase());
     assert.equal(decoded.args?.[1], parseUnits("25.5", 6));
+  } finally {
+    if (original === undefined) delete process.env.ARC_SERVER_PRIVATE_KEY;
+    else process.env.ARC_SERVER_PRIVATE_KEY = original;
+  }
+});
+
+test("circle_wallet mode keeps a higher Arc RPC gas quote", async () => {
+  const original = process.env.ARC_SERVER_PRIVATE_KEY;
+  process.env.ARC_SERVER_PRIVATE_KEY = VALID_TEST_KEY;
+  let maxFeePerGas: bigint | undefined;
+  try {
+    const executor = createReleaseExecutor("circle_wallet", {
+      circleWallet: makeDeps({
+        getGasPrice: async () => parseGwei("35"),
+        sendTransaction: async (args) => {
+          maxFeePerGas = args.maxFeePerGas;
+          return TX_HASH;
+        },
+      }),
+    });
+    const result = await executor(makeRequest());
+
+    assert.equal(result.status, "confirmed");
+    assert.equal(maxFeePerGas, parseGwei("35"));
   } finally {
     if (original === undefined) delete process.env.ARC_SERVER_PRIVATE_KEY;
     else process.env.ARC_SERVER_PRIVATE_KEY = original;

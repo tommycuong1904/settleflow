@@ -16,25 +16,33 @@ const statusStyles: Record<TransactionProof["status"], string> = {
 };
 
 const statusTitles: Record<Exclude<TransactionProof["status"], "pending">, string> = {
-  confirmed: "Settlement confirmed",
-  failed: "Settlement failed",
+  confirmed: "Payment confirmed",
+  failed: "Payment needs attention",
 };
 
 const statusDescriptions: Record<Exclude<TransactionProof["status"], "pending">, string> = {
   confirmed:
-    "The Arc settlement proof is confirmed and attached to this payout release.",
+    "This payment has been confirmed and recorded for this milestone.",
   failed:
-    "The release attempt returned an error and needs a retry or proof refresh before settlement can continue.",
+    "Review the payment issue before starting another attempt.",
 };
+
+function formatFailureReason(reason: string) {
+  if (reason.startsWith("BROWSER_WALLET_PRE_BROADCAST:")) {
+    return "No payment was sent. Check that your wallet is connected to Arc Testnet, then you can safely try again.";
+  }
+
+  return "This payment attempt was not completed. Review the next steps before starting another attempt.";
+}
 
 export function TransactionProofCard({ proof, milestoneTitle }: TransactionProofCardProps) {
   if (!proof) {
     return (
       <div className="space-y-4 text-sm text-[var(--text-primary)]">
         <div className="rounded-2xl border border-dashed border-[var(--border-soft)] bg-[var(--surface)]/46 p-4">
-          <p className="font-semibold text-[var(--foreground)]">No settlement proof yet</p>
+          <p className="font-semibold text-[var(--foreground)]">No payment details yet</p>
           <p className="mt-1">
-            Proof appears here after the payout is released on-chain.
+            Details appear after a wallet payment has been sent.
           </p>
         </div>
       </div>
@@ -56,7 +64,7 @@ export function TransactionProofCard({ proof, milestoneTitle }: TransactionProof
       <div className="flex flex-wrap items-start justify-between gap-3 rounded-2xl border border-[var(--border-soft)] bg-[var(--surface)]/56 p-4">
         <div className="space-y-1.5">
           <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
-            Settlement status
+            Payment status
           </p>
           <p className="text-base font-semibold text-[var(--foreground)]">{statusTitle}</p>
           <p>{statusDescription}</p>
@@ -64,78 +72,64 @@ export function TransactionProofCard({ proof, milestoneTitle }: TransactionProof
         <span
           className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] ${statusStyles[proof.status]}`}
         >
-          {proof.status === "pending" ? "Action needed" : proof.status}
+          {proof.status === "pending"
+            ? "Pending confirmation"
+            : proof.status === "confirmed"
+              ? "Paid"
+              : "Needs attention"}
         </span>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2">
         <div className="rounded-2xl border border-[var(--border-soft)] bg-[var(--surface)]/60 p-4">
           <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
-            Network
-          </p>
-          <p className="mt-2 font-semibold text-[var(--foreground)]">{proof.network}</p>
-        </div>
-        <div className="rounded-2xl border border-[var(--border-soft)] bg-[var(--surface)]/60 p-4">
-          <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
-            Milestone proof
+            Milestone
           </p>
           <p className="mt-2 font-semibold text-[var(--foreground)]">{milestoneTitle ?? proof.milestoneId}</p>
         </div>
         <div className="rounded-2xl border border-[var(--border-soft)] bg-[var(--surface)]/60 p-4">
           <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
-            Confirmed at
+            {proof.status === "failed" ? "Last updated" : "Confirmed at"}
           </p>
           <p className="mt-2 font-semibold text-[var(--foreground)]">
             {proof.confirmedAt
               ? new Date(proof.confirmedAt).toLocaleString()
+              : proof.failedAt
+                ? new Date(proof.failedAt).toLocaleString()
               : proof.status === "failed"
-                ? "Not confirmed"
+                ? "Not available"
                 : "Awaiting confirmation"}
           </p>
-        </div>
-        <div className="rounded-2xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-4">
-          <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
-            Failed at
-          </p>
-          <p className="mt-2 font-semibold text-[var(--foreground)]">
-            {proof.failedAt
-              ? new Date(proof.failedAt).toLocaleString()
-              : proof.status === "failed"
-                ? "Failure time unavailable"
-                : "—"}
-          </p>
-        </div>
-        <div className="rounded-2xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-4">
-          <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
-            Block number
-          </p>
-          <p className="mt-2 font-semibold text-[var(--foreground)]">{proof.blockNumber ?? "Pending / unavailable"}</p>
         </div>
       </div>
 
       {proof.failureReason ? (
         <div className="rounded-3xl border border-rose-300/20 bg-rose-400/10 p-4 text-sm text-rose-800 dark:text-rose-50">
           <p className="text-xs uppercase tracking-[0.18em] text-rose-800/80 dark:text-rose-200/80">
-            Failure reason
+            What happened
           </p>
-          <p className="mt-2 leading-6">{proof.failureReason}</p>
+          <p className="mt-2 leading-6">{formatFailureReason(proof.failureReason)}</p>
+          <details className="mt-3 border-t border-rose-300/20 pt-3 text-xs">
+            <summary className="cursor-pointer font-medium">Show technical details</summary>
+            <p className="mt-2 break-all font-mono">{proof.failureReason}</p>
+          </details>
         </div>
       ) : null}
 
-      <div className="rounded-3xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+      <details className="rounded-2xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-4">
+        <summary className="cursor-pointer text-sm font-medium text-[var(--foreground)]">Technical details</summary>
+        <div className="mt-4 space-y-4 text-sm text-[var(--text-muted)]">
+          <p>Network: <span className="font-medium text-[var(--foreground)]">{proof.network}</span></p>
+          <p>Block number: <span className="font-medium text-[var(--foreground)]">{proof.blockNumber ?? "Pending / unavailable"}</span></p>
           <div>
-            <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
-              Transaction hash
-            </p>
-            <p className="mt-1 text-xs text-[var(--text-muted)]">
+            <p className="text-xs uppercase tracking-[0.18em]">Transaction hash</p>
+            <p className="mt-1 text-xs">
               {proof.txHash
                 ? `Short view: ${shortenAddress(proof.txHash)}`
-                : proof.status === "failed"
-                  ? "No confirmed transaction hash is available for this failed settlement attempt."
-                  : proof.status === "pending"
-                    ? "No transaction hash was recorded. Check wallet activity before taking any further action."
-                    : "Confirmed settlement hash unavailable."}
+                : "No transaction hash is available yet."}
+            </p>
+            <p className="mt-3 break-all rounded-xl border border-[var(--border-soft)] bg-[var(--surface)] px-3 py-2 font-mono text-xs leading-6 text-[var(--text-primary)]">
+              {proof.txHash || "Pending / unavailable"}
             </p>
           </div>
           {proof.explorerUrl ? (
@@ -143,16 +137,13 @@ export function TransactionProofCard({ proof, milestoneTitle }: TransactionProof
               href={proof.explorerUrl}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center rounded-xl border border-cyan-300/25 bg-cyan-400/10 px-3 py-2 text-sm font-semibold text-cyan-500 hover:text-[var(--accent-cyan)] transition hover:bg-cyan-400/15"
+              className="inline-flex items-center text-sm font-semibold text-[var(--foreground)] underline underline-offset-4"
             >
-              View on Arc explorer
+              View transaction
             </a>
           ) : null}
         </div>
-        <p className="mt-4 break-all rounded-2xl border border-[var(--border-soft)] bg-[var(--surface)] px-4 py-3 font-mono text-xs leading-6 text-[var(--text-primary)]">
-          {proof.txHash || "Pending / unavailable"}
-        </p>
-      </div>
+      </details>
     </div>
   );
 }

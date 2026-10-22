@@ -1,14 +1,14 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useWallet } from "@/lib/context/wallet-context";
 import { useToast } from "@/lib/context/toast-context";
 import { useScrollLock } from "@/lib/hooks/use-scroll-lock";
 import { discoverBrowserWallets, type EIP6963ProviderDetail } from "@/lib/arc/browser-wallet";
+import { decodeGoogleJwt, loadGoogleGsiScript } from "@/lib/auth/google";
 import {
   X,
-  Mail,
   Sparkles,
   CheckCircle2,
 } from "lucide-react";
@@ -18,11 +18,15 @@ export function AuthModal() {
     isAuthModalOpen,
     closeAuthModal,
     connectWeb3,
+    connectGoogle,
     isConnecting,
   } = useWallet();
   const { toast } = useToast();
   const router = useRouter();
   const [detectedWallets, setDetectedWallets] = useState<EIP6963ProviderDetail[] | null>(null);
+  const [googleError, setGoogleError] = useState<string | null>(null);
+  const googleButtonRef = useRef<HTMLDivElement>(null);
+  const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
   useEffect(() => {
     if (!isAuthModalOpen) return;
@@ -37,14 +41,61 @@ export function AuthModal() {
     };
   }, [isAuthModalOpen]);
 
-  const refreshCurrentPage = () => {
+  const refreshCurrentPage = useCallback(() => {
     closeAuthModal();
     const next = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("next") : null;
     const destination = next && next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard";
     // `/auth-required` is a static sign-in boundary. Refreshing it after a
     // successful wallet session leaves the user on the same sign-in screen.
     router.replace(destination);
-  };
+  }, [closeAuthModal, router]);
+
+  useEffect(() => {
+    if (!isAuthModalOpen || !googleButtonRef.current) return;
+    if (!googleClientId) return;
+
+    let active = true;
+    void loadGoogleGsiScript()
+      .then(() => {
+        if (!active || !window.google?.accounts || !googleButtonRef.current) return;
+        setGoogleError(null);
+        window.google.accounts.id.initialize({
+          client_id: googleClientId,
+          callback: (response) => {
+            void (async () => {
+              const profile = decodeGoogleJwt(response.credential);
+              if (!profile || profile.emailVerified === false) {
+                setGoogleError("Google could not verify this account. Try another account.");
+                return;
+              }
+              try {
+                await connectGoogle({ ...profile, idToken: response.credential });
+                refreshCurrentPage();
+              } catch (error) {
+                const message = error instanceof Error ? error.message : "Google sign-in failed. Please try again.";
+                setGoogleError(message);
+              }
+            })();
+          },
+          auto_select: false,
+          cancel_on_tap_outside: true,
+        });
+        googleButtonRef.current.replaceChildren();
+        window.google.accounts.id.renderButton(googleButtonRef.current, {
+          theme: "outline",
+          size: "large",
+          text: "continue_with",
+          width: 360,
+        });
+      })
+      .catch(() => {
+        if (active) setGoogleError("Google sign-in is temporarily unavailable. Please try again later.");
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [connectGoogle, googleClientId, isAuthModalOpen, refreshCurrentPage]);
 
   useScrollLock(isAuthModalOpen);
 
@@ -102,22 +153,23 @@ export function AuthModal() {
             Sign in to SettleFlow
           </h2>
           <p className="mt-2 text-sm text-[var(--text-muted)]">
-            Connect a browser wallet to manage and release payouts.
+            Use your Google account to access your workspace. A browser wallet is only needed for Wallet payment.
           </p>
         </div>
 
-        <div className="mb-5 flex items-center gap-2 rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] px-3.5 py-3 text-xs text-[var(--text-muted)]">
-          <Mail size={15} className="shrink-0" />
-          <span>Circle Smart Wallet</span>
-          <span className="ml-auto rounded-full border border-[var(--border-soft)] bg-[var(--surface)] px-2 py-0.5 text-[10px] font-semibold">Coming soon</span>
-        </div>
+        <section className="space-y-2.5">
+          <p className="text-xs font-semibold text-[var(--foreground)]">Continue with Google</p>
+          <div ref={googleButtonRef} className="flex min-h-10 justify-center" aria-label="Google sign-in" />
+          {googleError || !googleClientId ? <p role="alert" className="text-center text-xs text-rose-600">{googleError ?? "Google sign-in is not configured for this environment."}</p> : null}
+        </section>
 
-        <div className="space-y-2.5">
-            <p className="text-xs font-semibold text-[var(--foreground)]">Choose a wallet</p>
+        <details className="mt-6 border-t border-[var(--border-soft)] pt-5">
+          <summary className="cursor-pointer text-xs font-semibold text-[var(--text-muted)] hover:text-[var(--foreground)]">Use a browser wallet instead</summary>
+          <div className="mt-4 space-y-2.5">
             {detectedWallets === null ? (
               <p className="rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] px-4 py-5 text-center text-xs text-[var(--text-muted)]">Looking for browser wallets…</p>
             ) : allWalletItems.length === 0 ? (
-              <p className="rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] px-4 py-5 text-center text-xs leading-5 text-[var(--text-muted)]">No browser wallet was found. Install or unlock MetaMask, Rabby, or another EVM wallet, then reopen this dialog.</p>
+              <p className="rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] px-4 py-5 text-center text-xs leading-5 text-[var(--text-muted)]">No browser wallet was found. Install or unlock an EVM-compatible browser wallet, then reopen this dialog.</p>
             ) : allWalletItems.map((w) => (
               <button
                 key={w.id}
@@ -182,10 +234,11 @@ export function AuthModal() {
                 }}
                 className="mt-2 w-full py-2 px-3 rounded-full border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] hover:bg-[var(--surface-strong)] text-[var(--text-muted)] hover:text-[var(--foreground)] text-[11px] font-medium transition-all text-center flex items-center justify-center gap-1.5"
               >
-                <span>🌐 Add / Switch Arc Testnet RPC in MetaMask</span>
+                <span>🌐 Add or switch to Arc Testnet</span>
               </button>
             </details>
-        </div>
+          </div>
+        </details>
 
       </div>
     </div>

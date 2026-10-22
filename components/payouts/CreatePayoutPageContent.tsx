@@ -24,7 +24,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useResolvedProductContext } from "@/lib/runtime/product-context-client";
 import { useWallet } from "@/lib/context/wallet-context";
-import { formatUsdc, shortenAddress } from "@/lib/utils/format";
+import { formatUsdc } from "@/lib/utils/format";
 import { cn } from "@/lib/utils";
 import { AlertCircle, ArrowLeft } from "lucide-react";
 
@@ -39,7 +39,7 @@ type MilestoneDraft = {
 type ContributorOption = {
   id: string;
   displayName: string;
-  walletAddress: string;
+  walletAddress?: string;
   status?: string;
 };
 
@@ -109,7 +109,7 @@ function CreatePayoutPageContent() {
           const initial = target || nextContributors[0];
           if (initial) {
             setContributorId(initial.id);
-            setWalletAddress(initial.walletAddress);
+            setWalletAddress(initial.walletAddress ?? "");
           }
         }
       })
@@ -133,7 +133,7 @@ function CreatePayoutPageContent() {
     if (errors.contributorId) setErrors((prev) => ({ ...prev, contributorId: undefined }));
     const contributor = contributors.find((item) => item.id === nextContributorId);
     if (contributor) {
-      setWalletAddress(contributor.walletAddress);
+      setWalletAddress(contributor.walletAddress ?? "");
       if (errors.walletAddress) setErrors((prev) => ({ ...prev, walletAddress: undefined }));
     }
   }
@@ -193,9 +193,7 @@ function CreatePayoutPageContent() {
     if (!contributorId) {
       nextErrors.contributorId = "Contributor selection is required.";
     }
-    if (!walletAddress.trim()) {
-      nextErrors.walletAddress = "Wallet address is required.";
-    } else if (!isLikelyWalletAddress(walletAddress)) {
+    if (walletAddress.trim() && !isLikelyWalletAddress(walletAddress)) {
       nextErrors.walletAddress = "Wallet address must be a valid EVM address (e.g. 0x...).";
     }
     if (!milestones.length) {
@@ -250,7 +248,7 @@ function CreatePayoutPageContent() {
     const nextErrors: FormErrors = {};
     if (!payoutTitle.trim()) nextErrors.title = "Payout title is required.";
     if (!contributorId) nextErrors.contributorId = "Contributor selection is required.";
-    if (!walletAddress.trim() || !isLikelyWalletAddress(walletAddress)) nextErrors.walletAddress = "Choose a contributor with a valid wallet address.";
+    if (walletAddress.trim() && !isLikelyWalletAddress(walletAddress)) nextErrors.walletAddress = "Wallet address must be a valid EVM address when provided.";
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length === 0) setCreationStep(2);
   }
@@ -286,7 +284,7 @@ function CreatePayoutPageContent() {
         body: JSON.stringify({
           title: payoutTitle.trim(),
           contributorId,
-          targetWalletAddress: walletAddress.trim(),
+          targetWalletAddress: walletAddress.trim() || undefined,
           totalAmountUsdc: String(totalAmount),
           currency: "USDC",
           milestones: milestones.map((milestone, index) => ({
@@ -358,8 +356,8 @@ function CreatePayoutPageContent() {
                 <p className="mt-2 text-2xl font-semibold tracking-tight text-[var(--foreground)]">{milestones.length}</p>
               </div>
               <div className="rounded-xl border border-[var(--border-soft)] bg-[var(--surface)] px-5 py-4">
-                <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">Release rule</p>
-                <p className="mt-2 text-lg font-semibold tracking-tight text-[var(--foreground)]">Release after approval</p>
+                <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">Payment rule</p>
+                <p className="mt-2 text-lg font-semibold tracking-tight text-[var(--foreground)]">Pay after approval</p>
               </div>
             </div>
           </div>
@@ -373,6 +371,7 @@ function CreatePayoutPageContent() {
                 <label className="text-sm text-[var(--text-primary)]" data-error={Boolean(errors.title)}>
                   <span className="mb-2.5 block">Payout title <span className="text-rose-500 font-semibold">*</span></span>
                   <Input
+                    aria-label="Payout title"
                     value={payoutTitle}
                     onChange={(event) => {
                       setPayoutTitle(event.target.value);
@@ -400,20 +399,25 @@ function CreatePayoutPageContent() {
                     <p className="text-xs text-rose-600 font-medium">{errors.contributorId}</p>
                   ) : null}
                 </label>
-                <label className="flex flex-col gap-2.5 text-sm text-[var(--text-primary)] md:col-span-2" data-error={Boolean(errors.walletAddress)}>
-                  <span>Wallet address <span className="text-rose-500 font-semibold">*</span></span>
-                  <Input
-                    value={walletAddress}
-                    onChange={(event) => {
-                      setWalletAddress(event.target.value);
-                      if (errors.walletAddress) setErrors((prev) => ({ ...prev, walletAddress: undefined }));
-                    }}
-                    className={cn(errors.walletAddress && "border-rose-500 bg-rose-500/5 focus:border-rose-500")}
-                  />
-                  {errors.walletAddress ? (
-                    <p className="text-xs text-rose-600 font-medium">{errors.walletAddress}</p>
-                  ) : null}
-                </label>
+                <details className="md:col-span-2 rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-4">
+                  <summary className="cursor-pointer text-sm font-medium text-[var(--foreground)]">Add wallet payment details (advanced)</summary>
+                  <label className="mt-4 flex flex-col gap-2.5 text-sm text-[var(--text-primary)]" data-error={Boolean(errors.walletAddress)}>
+                    <span>Recipient wallet address <span className="text-[var(--text-muted)]">(only needed for Wallet payment)</span></span>
+                    <Input
+                      aria-label="Wallet address"
+                      value={walletAddress}
+                      placeholder="Add only when using Wallet payment"
+                      onChange={(event) => {
+                        setWalletAddress(event.target.value);
+                        if (errors.walletAddress) setErrors((prev) => ({ ...prev, walletAddress: undefined }));
+                      }}
+                      className={cn(errors.walletAddress && "border-rose-500 bg-rose-500/5 focus:border-rose-500")}
+                    />
+                    {errors.walletAddress ? (
+                      <p className="text-xs text-rose-600 font-medium">{errors.walletAddress}</p>
+                    ) : null}
+                  </label>
+                </details>
               </div>
               <div className="mt-6 flex justify-end"><Button onClick={continueFromContributor}>Continue to payment plan</Button></div>
             </CardContent>
@@ -425,18 +429,14 @@ function CreatePayoutPageContent() {
             </CardHeader>
             <CardContent>
               <div className="mb-5 rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-5">
-                <div className="grid gap-4 md:grid-cols-3">
+                <div className="grid gap-4 md:grid-cols-2">
                   <div>
                     <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">Review step</p>
                     <p className="mt-2 font-semibold text-[var(--foreground)]">Submit → review → approve</p>
                   </div>
                   <div>
-                    <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">Release rule</p>
-                    <p className="mt-2 font-semibold text-[var(--foreground)]">Only approved milestones can release</p>
-                  </div>
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">Settlement rail</p>
-                    <p className="mt-2 font-semibold text-[var(--foreground)]">USDC on Arc Testnet</p>
+                    <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">Payment rule</p>
+                    <p className="mt-2 font-semibold text-[var(--foreground)]">Only approved milestones are ready to pay</p>
                   </div>
                 </div>
               </div>
@@ -532,7 +532,7 @@ function CreatePayoutPageContent() {
               <p className="font-semibold text-[var(--foreground)]">Payout draft created</p>
               <p className="mt-2 leading-6">
                 <span className="font-semibold text-[var(--foreground)]">{createdSummary.title}</span> is now
-                framed as a {formatUsdc(createdSummary.totalAmount)} USDC payout for {" "}
+                created as a {formatUsdc(createdSummary.totalAmount)} USDC payout for {" "}
                 <span className="font-semibold text-[var(--foreground)]">{createdSummary.contributorName}</span>
                 across {createdSummary.milestoneCount} milestone(s).
               </p>
@@ -554,8 +554,8 @@ function CreatePayoutPageContent() {
                 <div className="space-y-3 text-sm text-[var(--text-primary)]">
                   {[{ title: "Submit work", description: "Contributors complete a milestone and submit work for review." },
                     { title: "Owner checks milestone", description: "A milestone stays locked until the owner confirms completion." },
-                    { title: "Approve before release", description: "Approval is the one event that unlocks release on Arc." },
-                    { title: "Release and attach proof", description: "Once released, settlement proof becomes part of the payout record." }]
+                    { title: "Approve work", description: "Approval makes the milestone ready for payment." },
+                    { title: "Record payment", description: "Choose a payment method when the approved work is ready to pay." }]
                     .map((step, index) => (
                       <div key={step.title} className="rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-4">
                         <div className="flex gap-3">
@@ -575,8 +575,8 @@ function CreatePayoutPageContent() {
 
           <Card className="sf-shell">
             <CardHeader>
-              <CardTitle>Settlement Preview</CardTitle>
-                <CardDescription>Review the final payout story before creating the draft.</CardDescription>
+              <CardTitle>Review payout</CardTitle>
+                <CardDescription>Check the contributor, work, milestones, and amount before creating the draft.</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-5 text-sm text-[var(--text-primary)]">
@@ -586,14 +586,11 @@ function CreatePayoutPageContent() {
                       <p className="mt-2 text-lg font-semibold text-[var(--foreground)]">
                         {payoutTitle.trim() || "Untitled payout draft"}
                       </p>
-                      <p className="mt-4 text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">Recipient</p>
+                      <p className="mt-4 text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">Contributor</p>
                       <p className="mt-2 text-lg font-semibold text-[var(--foreground)]">
                         {selectedContributor?.displayName ?? "No contributor selected"}
                       </p>
                       <p className="mt-1 text-[var(--text-muted)]">{selectedContributor?.status ?? ""}</p>
-                      <p className="mt-3 font-mono text-xs text-cyan-700">
-                        {shortenAddress(walletAddress || selectedContributor?.walletAddress || "")}
-                      </p>
                     </CardContent>
                   </Card>
 
@@ -642,9 +639,8 @@ function CreatePayoutPageContent() {
 
                   <Card className="border-dashed bg-transparent">
                     <CardContent className="px-4 py-4 text-sm leading-6 text-[var(--text-muted)]">
-                      Once the payout is created, the team can move into milestone review,
-                      approval, release, and settlement proof on Arc without changing the
-                      contributor context.
+                      After you create the payout, the contributor can submit work. You can
+                      review it, approve it, and choose a payment method when it is ready.
                     </CardContent>
                   </Card>
                   <div className="flex flex-wrap gap-3"><Button variant="secondary" icon={<ArrowLeft size={16} />} onClick={() => setCreationStep(2)}>Back to payment plan</Button><Button disabled={submitState === "creating"} onClick={() => void handleCreatePayout()}>{submitState === "creating" ? "Creating payout..." : "Create payout"}</Button></div>

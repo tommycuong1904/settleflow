@@ -7,6 +7,7 @@ import type { Payout } from "@/lib/models/payout";
 import type { Milestone } from "@/lib/models/milestone";
 import type { Contributor } from "@/lib/models/contributor";
 import type { TransactionProof } from "@/lib/models/transaction-proof";
+import type { PaymentAttempt } from "@/lib/models/payment-attempt";
 import { formatUsdc } from "@/lib/utils/format";
 import {
   X,
@@ -24,6 +25,7 @@ type PayoutReceiptModalProps = {
   contributor?: Contributor;
   milestones: Milestone[];
   releaseProof?: TransactionProof;
+  paymentAttempts: PaymentAttempt[];
 };
 
 export function PayoutReceiptModal({
@@ -33,11 +35,22 @@ export function PayoutReceiptModal({
   contributor,
   milestones,
   releaseProof,
+  paymentAttempts,
 }: PayoutReceiptModalProps) {
   useScrollLock(isOpen);
 
   if (!isOpen) return null;
 
+  const isSettlementReceipt = releaseProof?.status === "confirmed";
+  const completedSimulatedPayments = paymentAttempts.filter(
+    (payment) => payment.method === "simulated" && payment.status === "completed" && payment.evidenceType === "none",
+  );
+  const hasSimulatedPayment = completedSimulatedPayments.length > 0;
+  const paymentMethodLabel = isSettlementReceipt
+    ? "USDC on Arc Testnet"
+    : hasSimulatedPayment
+      ? "Simulated payment (test)"
+      : "Not selected";
   const releasedMilestones = milestones.filter((m) => m.status === "released");
   const totalAmount = Number(payout.totalAmount);
   const totalSettled = releasedMilestones.reduce(
@@ -56,7 +69,7 @@ export function PayoutReceiptModal({
       title: payout.title,
       description: payout.description,
       status: payout.status,
-      network: "Arc Testnet",
+      paymentMethod: paymentMethodLabel,
       recipient: {
         name: contributor?.name ?? "Contributor",
         walletAddress: contributor?.walletAddress ?? "",
@@ -91,6 +104,14 @@ export function PayoutReceiptModal({
             confirmedAt: releaseProof.confirmedAt,
           }
         : null,
+      payments: paymentAttempts.map((payment) => ({
+        milestoneId: payment.milestoneId,
+        method: payment.method,
+        status: payment.status,
+        evidenceType: payment.evidenceType,
+        amountUsdc: payment.amount,
+        completedAt: payment.completedAt,
+      })),
       generatedAt: new Date().toISOString(),
     };
 
@@ -157,10 +178,10 @@ export function PayoutReceiptModal({
               {contributor?.name ?? "Designated Contributor"}
             </p>
             <p className="mt-0.5 font-mono text-[var(--text-primary)] print:text-slate-700 break-all">
-              {contributor?.walletAddress ? (
+              {isSettlementReceipt && contributor?.walletAddress ? (
                 <span>Address: {contributor.walletAddress}</span>
               ) : (
-                "No wallet address"
+                hasSimulatedPayment ? "Payment recorded for testing" : "Payment details not recorded"
               )}
             </p>
           </div>
@@ -170,7 +191,7 @@ export function PayoutReceiptModal({
               Payment method
             </p>
             <p className="mt-1 text-sm font-semibold text-[var(--foreground)] print:text-black">
-              USDC on Arc Testnet
+              {paymentMethodLabel}
             </p>
             <p className="mt-0.5 text-[var(--text-primary)] print:text-slate-700">
               Status:{" "}
@@ -236,13 +257,13 @@ export function PayoutReceiptModal({
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="space-y-1">
               <p className="text-xs uppercase tracking-wider text-[var(--text-muted)]">
-                Settled Amount
+                Paid amount
               </p>
               <p className="text-2xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400 print:text-emerald-700 font-mono">
                 {formatUsdc(totalSettled)} USDC
               </p>
               <p className="text-[11px] text-[var(--text-muted)]">
-                {releasedMilestones.length} of {milestones.length} milestones disbursed
+                {releasedMilestones.length} of {milestones.length} milestones paid
               </p>
             </div>
 

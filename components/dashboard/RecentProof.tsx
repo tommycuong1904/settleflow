@@ -12,28 +12,28 @@ type RecentProofProps = {
 
 export default function RecentProof({ transactionProofs, milestones }: RecentProofProps) {
   return (
-    <SectionCard title="Recent Settlement Proof">
+    <SectionCard title="Recent payments">
       <div className="space-y-4">
         {transactionProofs.length === 0 ? (
           <EmptyState
-            title="No releases yet"
-            description="Release proof events will surface here as milestones move through settlement."
+            title="No payments yet"
+            description="Payment updates will appear here as milestones are paid."
           />
         ) : (
           transactionProofs.slice(0, 2).map((proof) => {
             const milestone = milestones.find((item) => item.id === proof.milestoneId);
             const proofActionLabel =
               proof.status === "failed"
-                ? "Retry payout flow"
+                ? "Review payment issue"
                 : proof.status === "pending"
-                ? "Track settlement"
-                : "Open payout proof";
+                ? "Check payment status"
+                : "View payment record";
             const proofActionHint =
               proof.status === "failed"
-                ? "Open the payout to inspect the failed release and decide whether to retry."
+                ? "Open the payout to review the issue and decide whether to retry."
                 : proof.status === "pending"
-                ? "Open the payout to monitor confirmation and refresh proof state."
-                : "Open the payout detail to review the full settlement record.";
+                ? "Open the payout to check confirmation status."
+                : "Open the payout detail to review the payment record.";
 
             return (
               <div
@@ -43,7 +43,7 @@ export default function RecentProof({ transactionProofs, milestones }: RecentPro
                 <div className="space-y-3">
                   <div className="flex flex-wrap items-center gap-3">
                     <p className="text-lg font-semibold text-[var(--foreground)]">
-                      {milestone?.title ?? "Settlement event"}
+                      {milestone?.title ?? "Payment update"}
                     </p>
                     <MilestoneStatusBadge
                       status={
@@ -65,7 +65,7 @@ export default function RecentProof({ transactionProofs, milestones }: RecentPro
                       ? "Hash pending / unavailable"
                       : proof.status === "failed"
                       ? "No confirmed transaction hash"
-                      : "Proof pending"}
+                      : "Payment pending"}
                   </p>
                   {milestone?.payoutId ? (
                     <div className="space-y-3 pt-1">

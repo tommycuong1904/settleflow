@@ -56,17 +56,19 @@ function getLogTitle(action: string, milestoneTitle?: string) {
     case "milestone_rejected":
       return `Rejected ${milestoneTitle ?? "milestone"}`;
     case "release_queued":
-      return `Queued release for ${milestoneTitle ?? "milestone"}`;
+      return `Payment started for ${milestoneTitle ?? "milestone"}`;
     case "release_retried":
-      return `Retried release for ${milestoneTitle ?? "milestone"}`;
+      return `Payment retry started for ${milestoneTitle ?? "milestone"}`;
     case "release_failed":
-      return `Release failed for ${milestoneTitle ?? "milestone"}`;
+      return `Payment could not be completed for ${milestoneTitle ?? "milestone"}`;
     case "release_confirmed":
-      return `Confirmed release for ${milestoneTitle ?? "milestone"}`;
+      return `Payment completed for ${milestoneTitle ?? "milestone"}`;
     case "proof_failed":
-      return `Settlement proof failed for ${milestoneTitle ?? "milestone"}`;
+      return `Payment confirmation failed for ${milestoneTitle ?? "milestone"}`;
     case "proof_confirmed":
-      return `Settlement proof confirmed for ${milestoneTitle ?? "milestone"}`;
+      return `Payment confirmed for ${milestoneTitle ?? "milestone"}`;
+    case "payment_simulated_completed":
+      return `Payment recorded for ${milestoneTitle ?? "milestone"}`;
     default:
       return action.replaceAll("_", " ");
   }
@@ -104,16 +106,18 @@ function getLogDescription(action: string, metadata?: Record<string, unknown>) {
     case "milestone_rejected":
       return undefined;
     case "release_queued": {
-      return "Release was queued.";
+      return "Payment is being processed.";
     }
     case "release_retried": {
-      return "Release retry was queued.";
+      return "A payment retry was started.";
     }
     case "release_failed":
     case "proof_failed":
-      return "Execution failed.";
+      return "The payment could not be completed.";
     case "proof_confirmed":
-      return "Settlement proof confirmed.";
+      return "Payment confirmation was received.";
+    case "payment_simulated_completed":
+      return "Simulated payment recorded. No funds moved.";
     default:
       return undefined;
   }
@@ -164,7 +168,7 @@ async function getLoggedPayoutActivity(payoutId: string, workspaceId: string, sc
 
     return {
       id: `log:${log.id}`,
-      entityType: ["payout", "milestone", "release", "proof"].includes(log.entityType)
+      entityType: ["payout", "milestone", "release", "proof", "payment"].includes(log.entityType)
         ? (log.entityType as ActivityItem["entityType"])
         : "system",
       entityId: log.entityId,
@@ -331,8 +335,8 @@ async function getDerivedPayoutActivity(payoutId: string, workspaceId: string, s
       action: "release_queued",
       occurredAt: release.createdAt.toISOString(),
       actorLabel: labelForUser(release.triggeredBy),
-      title: `Queued release for ${milestone?.title ?? "milestone"}`,
-      description: `Requested ${release.amountUsdc.toString()} USDC via ${release.status} release flow.`,
+      title: `Payment started for ${milestone?.title ?? "milestone"}`,
+      description: `${release.amountUsdc.toString()} USDC payment is being processed.`,
     });
 
     if (release.executedAt) {
@@ -345,8 +349,8 @@ async function getDerivedPayoutActivity(payoutId: string, workspaceId: string, s
         action: "release_confirmed",
         occurredAt: release.executedAt.toISOString(),
         actorLabel: labelForUser(release.triggeredBy),
-        title: `Confirmed release for ${milestone?.title ?? "milestone"}`,
-        description: "Release execution reached confirmed state.",
+        title: `Payment completed for ${milestone?.title ?? "milestone"}`,
+        description: "Payment was confirmed.",
       });
     }
 
@@ -360,8 +364,8 @@ async function getDerivedPayoutActivity(payoutId: string, workspaceId: string, s
         action: "release_failed",
         occurredAt: release.failedAt.toISOString(),
         actorLabel: labelForUser(release.triggeredBy),
-        title: `Release failed for ${milestone?.title ?? "milestone"}`,
-        description: release.failureReason || "Release execution failed.",
+        title: `Payment needs attention for ${milestone?.title ?? "milestone"}`,
+        description: "The payment could not be completed.",
       });
     }
 
@@ -376,8 +380,8 @@ async function getDerivedPayoutActivity(payoutId: string, workspaceId: string, s
         action: "proof_confirmed",
         occurredAt: proof.confirmedAt.toISOString(),
         actorLabel: "System",
-        title: `Settlement proof confirmed for ${milestone?.title ?? "milestone"}`,
-        description: proof.txHash || undefined,
+        title: `Payment confirmed for ${milestone?.title ?? "milestone"}`,
+        description: undefined,
       });
     }
 
@@ -391,8 +395,8 @@ async function getDerivedPayoutActivity(payoutId: string, workspaceId: string, s
         action: "proof_failed",
         occurredAt: proof.failedAt.toISOString(),
         actorLabel: "System",
-        title: `Settlement proof failed for ${milestone?.title ?? "milestone"}`,
-        description: proof.failureReason || "Settlement proof marked as failed.",
+        title: `Payment confirmation needs attention for ${milestone?.title ?? "milestone"}`,
+        description: "The payment could not be confirmed.",
       });
     }
   }
@@ -542,8 +546,8 @@ export async function getWorkspaceActivity(workspaceId: string, role: ActivityVi
         action: "proof_confirmed",
         occurredAt: proof.confirmedAt.toISOString(),
         actorLabel: "System",
-        title: `Settlement proof confirmed for ${proof.milestone?.title ?? "milestone"}`,
-        description: proof.txHash || "Confirmed on Arc Testnet",
+        title: `Payment confirmed for ${proof.milestone?.title ?? "milestone"}`,
+        description: undefined,
         metadata: {
           txHash: proof.txHash || undefined,
           network: proof.network || undefined,
@@ -560,8 +564,8 @@ export async function getWorkspaceActivity(workspaceId: string, role: ActivityVi
         action: "proof_failed",
         occurredAt: proof.failedAt.toISOString(),
         actorLabel: "System",
-        title: `Settlement proof failed for ${proof.milestone?.title ?? "milestone"}`,
-        description: "Failed on Arc Testnet",
+        title: `Payment confirmation needs attention for ${proof.milestone?.title ?? "milestone"}`,
+        description: "The payment could not be confirmed.",
       });
     }
   }

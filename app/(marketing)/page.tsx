@@ -1,6 +1,5 @@
 'use client'
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/shared/button'
 import { ArrowRight, Check, ChevronRight, CircleCheck, CircleDot, LockKeyhole, ShieldCheck, WalletCards, MessageSquare, Table2, ArrowRightLeft } from 'lucide-react'
@@ -10,12 +9,12 @@ import { useWallet } from '@/lib/context/wallet-context'
 
 
 const milestones = [
-  ['Create', 'Contributor payout created'],
-  ['Milestones', 'Two release checkpoints defined'],
+  ['Create', 'Payment plan created'],
+  ['Milestones', 'Work checkpoints defined'],
   ['Submit', 'Work submitted for owner approval'],
-  ['Approve', 'Owner verifies completion and unlocks release'],
-  ['Release', 'USDC release becomes available'],
-  ['Proof', 'Settlement proof stays attached'],
+  ['Approve', 'Owner verifies completion and unlocks payment'],
+  ['Pay', 'Payment becomes available'],
+  ['Record', 'Payment record stays attached'],
 ]
 
 function AuthEntryButton({ variant = 'ghost' }: { variant?: 'primary' | 'ghost' }) {
@@ -28,7 +27,7 @@ function AuthEntryButton({ variant = 'ghost' }: { variant?: 'primary' | 'ghost' 
       size="lg"
       onClick={() => isConnected ? router.push('/dashboard') : openAuthModal()}
     >
-      {isConnected ? 'Open dashboard' : 'Sign in / Connect wallet'}
+      {isConnected ? 'Open dashboard' : 'Sign in'}
     </Button>
   )
 }
@@ -39,37 +38,35 @@ function PayoutPreview() {
     const timer = window.setInterval(() => setActive((current) => (current + 1) % 4), 2400)
     return () => window.clearInterval(timer)
   }, [])
-  const states = ['SUBMIT', 'APPROVE', 'RELEASE', 'PROOF']
+  const states = ['SUBMIT', 'APPROVE', 'PAY', 'RECORD']
   return <div className="sf-preview-wrap" aria-label="Animated payout workflow preview">
     <div className="sf-orbit sf-orbit-one" /><div className="sf-orbit sf-orbit-two" />
     <div className="sf-payout-card">
       <div className="sf-card-top"><span className="sf-label">PAYOUT</span><span className="sf-live"><span /> LIVE FLOW</span></div>
       <div className="sf-amount">$2,400 <small>USDC</small></div>
       <div className="sf-card-meta"><span>Contributor payout</span><span>SettleFlow / 024</span></div>
-      <div className="sf-milestone"><div className="sf-milestone-icon"><Check size={15} /></div><div><strong>Milestone 01 — Approved</strong><small>Release available</small></div><CircleCheck size={18} className="sf-check" /></div>
+      <div className="sf-milestone"><div className="sf-milestone-icon"><Check size={15} /></div><div><strong>Milestone 01 — Approved</strong><small>Ready for payment</small></div><CircleCheck size={18} className="sf-check" /></div>
       <div className="sf-milestone"><div className="sf-milestone-icon muted"><CircleDot size={15} /></div><div><strong>Milestone 02 — Awaiting owner approval</strong><small>Submitted moments ago</small></div><ChevronRight size={18} className="sf-chevron" /></div>
-      <div className="sf-release-bar"><LockKeyhole size={15} /> Release available after approval <span>→</span></div>
+      <div className="sf-release-bar"><LockKeyhole size={15} /> Payment available after approval <span>→</span></div>
       <div className="sf-state-row">{states.map((state, index) => <div key={state} className={index <= active ? 'sf-state active' : 'sf-state'}><span>{index < active ? <Check size={10} /> : index === active ? <span className="sf-dot" /> : null}</span>{state}</div>)}</div>
     </div>
-    <div className="sf-proof-chip"><ShieldCheck size={16} /><span><b>Settlement proof</b><small>Attached after release</small></span></div>
+    <div className="sf-proof-chip"><ShieldCheck size={16} /><span><b>Payment record</b><small>Attached after payment</small></span></div>
   </div>
 }
 
 function SectionKicker({ children }: { children: React.ReactNode }) { return <p className="sf-kicker">{children}</p> }
-function ArrowLink({ href, children }: { href: string; children: React.ReactNode }) { return <a className="sf-text-link" href={href}>{children} <ArrowRight size={16} /></a> }
 export default function Home() {
   return (
     <main id="top">
       <section className="sf-hero sf-container">
         <div className="sf-hero-copy">
-          <SectionKicker>ARC-NATIVE USDC PAYOUT WORKFLOW</SectionKicker>
+          <SectionKicker>MILESTONE PAYMENT WORKFLOW</SectionKicker>
           <h1>
-            Milestone-based USDC payouts, <em>with approval built in.</em>
+            Pay for approved work, <em>without losing the context.</em>
           </h1>
           <p className="sf-lede">
-            SettleFlow is an Arc-native payout workflow for crypto teams. Create
-            contributor payouts, manage milestones, approve completed work, and
-            release USDC with settlement proof — all in one clear flow.
+            SettleFlow keeps work, approval, payment, and the payment record in one
+            shared workflow. Everyone can see what is ready, what needs review, and what was paid.
           </p>
           <div className="sf-cta-row">
             <AuthEntryButton variant="primary" />
@@ -81,8 +78,8 @@ export default function Home() {
             <span className="sf-note-check">
               <Check size={13} />
             </span>{" "}
-            Approval controls release <span className="sf-note-line" />{" "}
-            Settlement proof attached
+            Approval unlocks payment <span className="sf-note-line" />{" "}
+            Payment record attached
           </div>
         </div>
         <PayoutPreview />
@@ -94,8 +91,8 @@ export default function Home() {
             <SectionKicker>THE PROBLEM</SectionKicker>
             <h2>Payout operations are scattered.</h2>
             <p>
-              Crypto teams still manage contributor payouts across chats,
-              spreadsheets, and manual wallet transfers.
+              Teams still manage contractor payments across chats,
+              spreadsheets, and manual transfers.
             </p>
           </div>
           <div className="sf-fragment-grid">
@@ -103,8 +100,8 @@ export default function Home() {
               ["CHATS", "Approvals get buried in conversations.", "01", MessageSquare],
               ["SPREADSHEETS", "Payout status is hard to keep in sync.", "02", Table2],
               [
-                "WALLET TRANSFERS",
-                "Funds are released manually, outside the workflow.",
+                "MANUAL PAYMENTS",
+                "Payments happen outside the approval workflow.",
                 "03",
                 ArrowRightLeft,
               ],
@@ -188,11 +185,10 @@ export default function Home() {
         <div className="sf-container sf-state-layout">
           <div className="sf-section-intro">
             <SectionKicker>VISIBLE STATE</SectionKicker>
-            <h2>Release is earned by state.</h2>
+            <h2>Payment readiness follows approval.</h2>
             <p>
-              A payout does not become ready because someone clicked a wallet.
-              It becomes ready when the milestone reaches the right approval
-              state.
+              A payment becomes ready only when the milestone reaches the right
+              approval state. The next action is clear for everyone involved.
             </p>
           </div>
           <div className="sf-state-machine">
@@ -200,8 +196,8 @@ export default function Home() {
               "DRAFT",
               "SUBMITTED",
               "APPROVED",
-              "RELEASE READY",
-              "SETTLED",
+              "PAYMENT READY",
+              "PAID",
             ].map((state, index) => (
               <div
                 className={
@@ -221,12 +217,11 @@ export default function Home() {
       <section id="why-arc" className="sf-section sf-why-arc">
         <div className="sf-container">
           <div className="sf-section-intro sf-centered">
-            <SectionKicker>WHY ARC</SectionKicker>
-            <h2>Built on Arc. Settled in USDC.</h2>
+            <SectionKicker>PAYMENT INFRASTRUCTURE</SectionKicker>
+            <h2>Technical settlement when you need it.</h2>
             <p>
-              SettleFlow is not just deployed on Arc — Arc is the settlement
-              layer that makes milestone-based USDC release legible inside the
-              product workflow.
+              SettleFlow keeps payment operations simple by default. Arc and USDC
+              support the advanced wallet-payment path when your team chooses it.
             </p>
           </div>
           <div className="sf-layers">
@@ -234,19 +229,19 @@ export default function Home() {
               [
                 "SettleFlow",
                 "Workflow layer",
-                "Connects contributor work, milestone state, approval, release, and proof.",
+                "Connects contributor work, milestone state, approval, payment, and records.",
                 WalletCards,
               ],
               [
                 "USDC",
                 "Money layer",
-                "Defines the payout asset for each approved release.",
+                "Defines the payment asset for an advanced wallet payment.",
                 CircleCheck,
               ],
               [
                 "Arc",
                 "Settlement rail",
-                "Powers the settlement path for the approved USDC release.",
+                "Powers the advanced settlement path for approved USDC payments.",
                 ShieldCheck,
               ],
             ].map(([title, label, text, Icon]) => (
@@ -265,11 +260,11 @@ export default function Home() {
         <div className="sf-container">
           <div className="sf-proof-head">
             <div className="sf-section-intro">
-              <SectionKicker>ARC TESTNET · FUNCTIONAL MVP</SectionKicker>
-              <h2>Working on Arc Testnet.</h2>
+              <SectionKicker>SAFE TESTING</SectionKicker>
+              <h2>Test the workflow before moving money.</h2>
               <p>
-                SettleFlow currently demonstrates a functional end-to-end
-                milestone payout flow on Arc Testnet.
+                Simulated payments let a team test the full workflow without funds,
+                wallets, or a transaction. Wallet payment remains an advanced Arc Testnet option.
               </p>
             </div>
           </div>
@@ -277,16 +272,16 @@ export default function Home() {
             {[
               ["Contributor workflow", "Milestone submission and owner approval."],
               [
-                "Approval-gated release",
-                "USDC release happens after approval.",
+                "Approval-gated payment",
+                "A payment becomes available only after approval.",
               ],
               [
-                "Wallet execution",
-                "Browser-wallet releases are available on Arc Testnet.",
+                "Simulated payment",
+                "Record a test payment safely — no funds move.",
               ],
               [
-                "Settlement proof",
-                "Transaction hash and settlement proof are attached after release.",
+                "Advanced wallet payment",
+                "Use a browser wallet on Arc Testnet when that method is selected.",
               ],
               [
                 "Product state",
@@ -311,8 +306,8 @@ export default function Home() {
             <SectionKicker>THE CLEAR PATH</SectionKicker>
             <h2>Make every payout decision clear.</h2>
             <p>
-              Create the payout. Approve the milestone. Release the USDC. Keep the
-              proof.
+              Create the payment plan. Approve the milestone. Pay. Keep the
+              record.
             </p>
           </div>
           <div className="sf-cta-row">
@@ -324,9 +319,9 @@ export default function Home() {
           <div className="sf-final-flow">
             <span>APPROVAL</span>
             <i />
-            <span>RELEASE</span>
+            <span>PAY</span>
             <i />
-            <span>PROOF</span>
+            <span>RECORD</span>
           </div>
         </div>
       </section>

@@ -51,7 +51,7 @@ export default function PendingReview({ pendingApprovals, payouts, contributors,
                       Review & approve
                     </Button>
                     <div className="rounded-xl border border-dashed border-[var(--border-soft)] px-4 py-3 text-sm text-[var(--text-muted)]">
-                      Approving this milestone unlocks the next release step.
+                      Approving this milestone makes it ready for payment.
                     </div>
                   </div>
                 </div>

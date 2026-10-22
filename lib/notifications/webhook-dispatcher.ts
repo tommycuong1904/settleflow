@@ -76,7 +76,6 @@ export function buildDiscordEmbed(payload: WebhookPayload) {
     case "milestone_submitted":
       return {
         username: "SettleFlow Bot",
-        avatar_url: "https://arcscan.app/favicon.ico",
         embeds: [
           {
             title: "📥 Milestone Deliverable Submitted",
@@ -93,7 +92,7 @@ export function buildDiscordEmbed(payload: WebhookPayload) {
                 ? [{ name: "Summary", value: payload.summary, inline: false }]
                 : []),
             ],
-            footer: { text: "SettleFlow • Arc Milestone Escrow" },
+            footer: { text: "SettleFlow • Workspace update" },
             timestamp: ts,
           },
         ],
@@ -109,11 +108,11 @@ export function buildDiscordEmbed(payload: WebhookPayload) {
             color: 0x34d399, // Emerald
             fields: [
               ...(payload.amountUsdc
-                ? [{ name: "Release Amount", value: `${payload.amountUsdc} USDC`, inline: true }]
+                ? [{ name: "Payment amount", value: `${payload.amountUsdc} USDC`, inline: true }]
                 : []),
-              { name: "Status", value: "Ready for Owner Arc Release", inline: true },
+              { name: "Status", value: "Ready for payment", inline: true },
             ],
-            footer: { text: "SettleFlow • Arc Milestone Escrow" },
+            footer: { text: "SettleFlow • Workspace update" },
             timestamp: ts,
           },
         ],
@@ -132,7 +131,7 @@ export function buildDiscordEmbed(payload: WebhookPayload) {
                 ? [{ name: "Reviewer Feedback", value: payload.comment, inline: false }]
                 : []),
             ],
-            footer: { text: "SettleFlow • Arc Milestone Escrow" },
+            footer: { text: "SettleFlow • Workspace update" },
             timestamp: ts,
           },
         ],
@@ -143,27 +142,21 @@ export function buildDiscordEmbed(payload: WebhookPayload) {
         username: "SettleFlow Bot",
         embeds: [
           {
-            title: "💸 USDC Released on Arc Testnet",
-            description: `Payout lead released **${payload.amountUsdc} USDC** for **${payload.milestoneTitle}**!`,
+            title: "💸 Payment confirmed",
+            description: `A payment of **${payload.amountUsdc} USDC** was confirmed for **${payload.milestoneTitle}**.`,
             color: 0x06b6d4, // Cyan
             fields: [
-              ...(payload.recipientAddress
-                ? [{ name: "Recipient Wallet", value: `\`${payload.recipientAddress}\``, inline: true }]
-                : []),
-              ...(payload.txHash
-                ? [{ name: "Tx Hash", value: `\`${payload.txHash.slice(0, 16)}...\``, inline: true }]
-                : []),
-              ...(payload.explorerUrl || payload.txHash
+              ...(payload.explorerUrl
                 ? [
                     {
-                      name: "Settlement Proof",
-                      value: `[View on Arcscan](${payload.explorerUrl || `https://testnet.arcscan.app/tx/${payload.txHash}`})`,
+                      name: "Transaction details",
+                      value: `[View transaction](${payload.explorerUrl})`,
                       inline: false,
                     },
                   ]
                 : []),
             ],
-            footer: { text: "SettleFlow • Arc Milestone Escrow" },
+            footer: { text: "SettleFlow • Workspace update" },
             timestamp: ts,
           },
         ],
@@ -178,10 +171,7 @@ export function buildDiscordEmbed(payload: WebhookPayload) {
             title: "🔔 SettleFlow Webhook Test",
             description: "Your notification webhook is connected and working properly!",
             color: 0x22d3ee,
-            fields: [
-              { name: "Network", value: "Arc Testnet (Chain ID 5042002)", inline: true },
-              { name: "Settlement Token", value: "USDC (Native)", inline: true },
-            ],
+            fields: [],
             footer: { text: "SettleFlow • Workspace Notifications" },
             timestamp: ts,
           },

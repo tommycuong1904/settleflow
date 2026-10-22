@@ -177,7 +177,7 @@ export function FaucetModal({ isOpen, onClose, userAddress }: FaucetModalProps) 
           >
             {addingNetwork
               ? "Adding to Wallet..."
-              : "Add Arc Testnet to MetaMask / Rabby"}
+              : "Add Arc Testnet to wallet"}
           </Button>
 
           {/* Network Parameter Reference */}

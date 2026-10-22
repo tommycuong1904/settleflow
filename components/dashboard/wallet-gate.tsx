@@ -4,9 +4,8 @@ import React from "react";
 import { Button } from "@/components/shared/button";
 import { useWallet } from "@/lib/context/wallet-context";
 import {
-  Sparkles,
+  LogIn,
   ArrowRight,
-  Lock,
 } from "lucide-react";
 
 export function WalletGate() {
@@ -21,16 +20,16 @@ export function WalletGate() {
       <div className="relative flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
         <div className="space-y-3 max-w-2xl">
           <div className="inline-flex items-center gap-2 rounded-full border border-[var(--border-soft)] bg-[var(--surface-muted)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">
-            <Sparkles size={13} className="text-[var(--text-muted)]" />
-            Web3 milestone payouts
+            <LogIn size={13} className="text-[var(--text-muted)]" />
+            Workspace access
           </div>
 
           <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--foreground)]">
-            Connect your Web3 wallet to unlock payout operations.
+            Sign in to manage your payout workspace.
           </h2>
 
           <p className="text-sm leading-relaxed text-[var(--text-muted)]">
-            Connect your wallet to create payouts, submit work, approve milestones, and release payments.
+            Sign in with your account to create payouts, submit work, review milestones, and record test payments.
           </p>
         </div>
 
@@ -41,9 +40,9 @@ export function WalletGate() {
             size="lg"
             onClick={openAuthModal}
             className="w-full sm:w-auto"
-            icon={<Lock size={16} />}
+            icon={<LogIn size={16} />}
           >
-            Sign In / Connect Wallet <ArrowRight size={16} className="ml-1" />
+            Sign in <ArrowRight size={16} className="ml-1" />
           </Button>
         </div>
       </div>

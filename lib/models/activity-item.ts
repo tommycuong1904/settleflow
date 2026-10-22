@@ -1,6 +1,6 @@
 export type ActivityItem = {
   id: string;
-  entityType: "payout" | "milestone" | "release" | "proof" | "system";
+  entityType: "payout" | "milestone" | "release" | "proof" | "payment" | "system";
   entityId: string;
   payoutId?: string;
   milestoneId?: string;

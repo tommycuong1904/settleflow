@@ -17,7 +17,7 @@ export type CreatePayoutInput = {
   title: string;
   description?: string;
   contributorId: string;
-  targetWalletAddress: string;
+  targetWalletAddress?: string;
   totalAmountUsdc: string;
   currency?: string;
   milestones: Array<CreatePayoutMilestoneInput>;
@@ -35,7 +35,7 @@ export function deriveCreatePayoutMilestonePayloads(
 }
 
 export async function createPayout(input: CreatePayoutInput) {
-  if (!isValidUsdcAmount(input.totalAmountUsdc) || !isValidEvmAddress(input.targetWalletAddress) || input.milestones.some((milestone) => !isValidUsdcAmount(milestone.amountUsdc))) {
+  if (!isValidUsdcAmount(input.totalAmountUsdc) || (input.targetWalletAddress && !isValidEvmAddress(input.targetWalletAddress)) || input.milestones.some((milestone) => !isValidUsdcAmount(milestone.amountUsdc))) {
     throw new Error("INVALID_PAYOUT_PAYLOAD");
   }
   return db.$transaction(async (tx: Prisma.TransactionClient) => {
@@ -61,7 +61,7 @@ export async function createPayout(input: CreatePayoutInput) {
         contributorId: input.contributorId,
         title: input.title,
         description: input.description,
-        targetWalletAddress: input.targetWalletAddress,
+        targetWalletAddress: input.targetWalletAddress?.trim() || null,
         totalAmountUsdc: input.totalAmountUsdc,
         currency: "USDC",
         status: "draft",

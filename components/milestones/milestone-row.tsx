@@ -27,6 +27,8 @@ type MilestoneRowProps = {
   workspaceId: string;
   onApprove?: (milestoneId: string) => void | Promise<void>;
   onReject?: (milestoneId: string, comment?: string) => void | Promise<void>;
+  canStartPayment?: boolean;
+  onReviewPayment?: () => void;
   onStatusChange?: (
     milestoneId: string,
     status: Milestone["status"],
@@ -40,6 +42,8 @@ export function MilestoneRow({
   workspaceId,
   onApprove,
   onReject,
+  canStartPayment = false,
+  onReviewPayment,
   onStatusChange,
 }: MilestoneRowProps) {
   const [status, setStatus] = useState(milestone.status);
@@ -120,9 +124,9 @@ export function MilestoneRow({
   return (
     <>
       <div
-        className={`sf-shell rounded-2xl p-5 transition-all ${
+        className={`sf-shell rounded-2xl p-4 md:p-5 transition-all ${
           isSubmitted && canApproveMilestone
-            ? "border-amber-500/35 bg-amber-500/[0.02] shadow-sm ring-1 ring-amber-500/10 dark:border-amber-500/30"
+            ? "border-amber-500/35 shadow-sm dark:border-amber-500/30"
             : ""
         }`}
       >
@@ -134,9 +138,9 @@ export function MilestoneRow({
                 <p className="font-semibold text-base text-[var(--foreground)] leading-snug">
                   {milestone.title}
                 </p>
-                <MilestoneStatusBadge status={status} />
+                <MilestoneStatusBadge status={status} variant="text" />
                 {isSubmitted && canApproveMilestone && (
-                  <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+                  <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
                     <Clock size={11} /> Review Needed
                   </span>
                 )}
@@ -154,15 +158,24 @@ export function MilestoneRow({
 
           {/* Submitted deliverable review section */}
           {(lastArtifactUrl || lastSubmissionSummary || lastNotes) && (
-            <div className="rounded-2xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-4 text-xs space-y-3">
-              <div className="flex items-center justify-between gap-2 border-b border-[var(--border-soft)] pb-2.5">
+            <div className="border-t border-[var(--border-soft)] pt-4 text-xs space-y-3">
+              <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-1.5 font-bold uppercase tracking-wider text-[11px] text-[var(--foreground)]">
                   <FileCode size={13} className="text-sky-500 dark:text-sky-400" />
                   <span>Submitted Deliverable Details</span>
                 </div>
                 {milestone.submittedAt && (
-                  <span className="text-[10px] text-[var(--text-muted)] font-mono">
-                    {new Date(milestone.submittedAt).toLocaleString()}
+                  <span
+                    className="text-[11px] text-[var(--text-muted)]"
+                    title={new Date(milestone.submittedAt).toLocaleString()}
+                  >
+                    {new Intl.DateTimeFormat(undefined, {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                      hour: "numeric",
+                      minute: "2-digit",
+                    }).format(new Date(milestone.submittedAt))}
                   </span>
                 )}
               </div>
@@ -170,7 +183,7 @@ export function MilestoneRow({
               {/* Primary Deliverable Link */}
               {lastArtifactUrl && (
                 <div className="flex items-center gap-2 flex-wrap pt-0.5">
-                  <span className="text-[11px] font-semibold text-[var(--text-muted)]">Proof Link:</span>
+                  <span className="text-[11px] font-semibold text-[var(--text-muted)]">Work link:</span>
                   <a
                     href={lastArtifactUrl}
                     target="_blank"
@@ -189,9 +202,9 @@ export function MilestoneRow({
                   <span className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] font-semibold">
                     Work Summary
                   </span>
-                  <div className="rounded-xl border border-[var(--border-soft)] bg-[var(--surface)] p-3 text-[var(--text-primary)] leading-relaxed whitespace-pre-line break-words text-xs">
+                  <p className="text-[var(--text-primary)] leading-relaxed whitespace-pre-line break-words text-sm">
                     {lastSubmissionSummary}
-                  </div>
+                  </p>
                 </div>
               )}
 
@@ -217,7 +230,7 @@ export function MilestoneRow({
               busy={reviewBusy}
             />
           ) : isSubmitted ? (
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-xl border border-amber-500/20 bg-amber-500/5 p-3.5 text-xs">
+            <div className="flex flex-col gap-2 border-t border-[var(--border-soft)] pt-4 text-xs sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 font-medium">
                 <Clock size={13} />
                 <span>Submitted • Awaiting workspace owner review</span>
@@ -229,35 +242,41 @@ export function MilestoneRow({
           ) : null}
 
           {isApproved ? (
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3.5 text-xs">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-t border-[var(--border-soft)] pt-4 text-xs">
               <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-semibold">
                 <CheckCircle2 size={15} />
                 <span>
-                  {isOwnerActor ? "Ready for release" : "Waiting for owner release"}
+                  {isOwnerActor && canStartPayment ? "Ready to pay" : isOwnerActor ? "Payment queued" : "Waiting for payment"}
                 </span>
               </div>
-              <span className="text-[11px] text-[var(--text-muted)]">
-                {isOwnerActor
-                  ? "Approved work can now move to the Arc release step from the side panel."
-                  : "This milestone has been approved and is now waiting for the owner to release it on Arc."}
-              </span>
+              {isOwnerActor && canStartPayment ? (
+                <Button size="sm" onClick={onReviewPayment}>
+                  Pay {formatUsdc(milestone.amount)} USDC
+                </Button>
+              ) : (
+                <span className="text-[11px] text-[var(--text-muted)]">
+                  {isOwnerActor
+                    ? "An earlier approved milestone must be paid first."
+                    : "This milestone has been approved and is waiting for payment."}
+                </span>
+              )}
             </div>
           ) : null}
 
           {isReleased ? (
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-xl border border-sky-500/20 bg-sky-500/5 p-3.5 text-xs">
+            <div className="flex flex-col gap-2 border-t border-[var(--border-soft)] pt-4 text-xs sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-1.5 text-sky-600 dark:text-sky-400 font-semibold">
                 <CheckCircle2 size={15} />
-                <span>Released in USDC on Arc</span>
+                <span>Payment complete</span>
               </div>
               <span className="text-[11px] text-[var(--text-muted)]">
-                Released {milestone.releasedAt ? milestone.releasedAt.slice(0, 10) : "recently"} • Settlement proof in side panel
+                Paid {milestone.releasedAt ? milestone.releasedAt.slice(0, 10) : "recently"} • Transaction details are available below
               </span>
             </div>
           ) : null}
 
           {isRejected ? (
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-xl border border-rose-500/20 bg-rose-500/5 p-3.5 text-xs">
+            <div className="flex flex-col gap-3 border-t border-[var(--border-soft)] pt-4 text-xs sm:flex-row sm:items-center sm:justify-between">
               <div className="space-y-1">
                 <p className="font-semibold text-rose-500 flex items-center gap-1.5">
                   <AlertTriangle size={15} /> Revision requested
@@ -280,7 +299,7 @@ export function MilestoneRow({
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-3 border-t border-[var(--border-soft)] text-xs">
               <div className="space-y-0.5">
                 <p className="font-semibold text-[var(--foreground)]">Waiting for contributor submission</p>
-                <p className="text-xs text-[var(--text-muted)]">Owner approval and release actions will unlock after work is submitted.</p>
+                <p className="text-xs text-[var(--text-muted)]">Owner approval and payment become available after work is submitted.</p>
               </div>
               {isContributorActor ? (
                 <Button onClick={() => setIsSubmitModalOpen(true)} variant="secondary" size="sm">

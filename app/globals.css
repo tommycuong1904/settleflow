@@ -173,6 +173,48 @@ h1 {
   box-shadow: var(--shadow);
 }
 
+.sf-accordion-content {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition: grid-template-rows 260ms cubic-bezier(0.22, 1, 0.36, 1), opacity 180ms ease;
+}
+
+.sf-accordion-content-inner {
+  min-height: 0;
+  overflow: hidden;
+  transform: translateY(-4px);
+  transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.sf-activity-accordion[open] > .sf-accordion-content {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.sf-activity-accordion[open] > .sf-accordion-content > .sf-accordion-content-inner {
+  transform: translateY(0);
+}
+
+.sf-accordion-open {
+  display: none;
+}
+
+.sf-activity-accordion[open] .sf-accordion-closed {
+  display: none;
+}
+
+.sf-activity-accordion[open] .sf-accordion-open {
+  display: inline;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sf-accordion-content,
+  .sf-accordion-content-inner {
+    transition: none;
+  }
+}
+
 /* Hide h2 headings inside tab panels */
 .tab-panel h2 { display: none; }
 

@@ -34,7 +34,7 @@ and references the corresponding `UserWallet` link.
 
 ### Contributor
 
-`Contributor` is a workspace-scoped recipient profile with a wallet address, optional linked user, optional creator, contact fields, role/notes, and `active` or `archived` status. Contributor creation and update validate the EVM wallet and prevent duplicate wallet addresses within a workspace.
+`Contributor` is a workspace-scoped recipient profile with an optional wallet address, optional linked user, optional creator, contact fields, role/notes, and `active` or `archived` status. Contributor creation and update validate an EVM wallet when one is provided and prevent duplicate wallet addresses within a workspace.
 
 ### Payout
 
@@ -62,6 +62,10 @@ A review attaches a reviewer and decision (`approved` or `rejected`) to a submis
 
 `TransactionProof` records settlement evidence associated with a payout and optionally a milestone/release: status (`pending`, `confirmed`, `failed`), transaction hash, network, explorer URL, block number, timestamps, and failure reason. Transaction hashes are unique when present.
 
+### PaymentAttempt
+
+`PaymentAttempt` is the method-neutral business record for one milestone payment. It snapshots method, status, evidence type, amount, currency, recipient label, actor and timestamps. The initial `simulated` method is test-only, completes with `evidenceType = none`, and never creates a `TransactionProof`, transaction hash, explorer URL, or onchain settlement claim. The unique milestone relation prevents a second payment attempt from being created for the same milestone.
+
 ### ActivityLog
 
 `ActivityLog` records workspace-scoped domain events with actor, entity, optional payout/milestone/release references, action, metadata, and occurrence time.
@@ -75,8 +79,11 @@ A review attaches a reviewer and decision (`approved` or `rejected`) to a submis
 - `ReleaseExecutionMode`: `browser_wallet`, `circle_wallet`.
 - `ReleaseStatus`: `queued`, `pending`, `confirmed`, `failed`, `cancelled`.
 - `TransactionProofStatus`: `pending`, `confirmed`, `failed`.
+- `PaymentMethod`: `simulated`, `crypto_wallet`.
+- `PaymentStatus`: `pending`, `completed`, `failed`, `cancelled`.
+- `PaymentEvidenceType`: `none`, `transaction`.
 
-USDC amounts use Prisma `Decimal(30, 6)`. Payout activation requires a target wallet, at least one milestone, and milestone amounts equal to the payout total. Milestones are unique by sequence within a payout.
+USDC amounts use Prisma `Decimal(30, 6)`. Payout activation requires at least one milestone and milestone amounts equal to the payout total; a target wallet is optional for method-neutral and simulated flows. A wallet release still requires a valid destination wallet and fails closed without one. Milestones are unique by sequence within a payout.
 
 ## Persistence and runtime distinction
 

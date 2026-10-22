@@ -24,7 +24,7 @@ export default async function ActivityPage() {
       <PageHeader
         eyebrow="Updates"
         title="Activity"
-        description="A complete history of work submitted, reviews, and payout releases."
+        description="A complete history of submitted work, decisions, and payments."
       />
 
       <section>

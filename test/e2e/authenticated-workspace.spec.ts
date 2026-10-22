@@ -34,6 +34,7 @@ test("owner and contributor payout views are scoped to their workspace", async (
       { userId: contributorUser.id, address: contributorAddress, normalizedAddress: contributorAddress, kind: "web3_eoa", authEnabled: true },
     ] });
     const contributor = await db.contributor.create({ data: { workspaceId, linkedUserId: contributorUser.id, createdByUserId: owner.id, name: "E2E Contributor", walletAddress: contributorAddress } });
+    const noWalletContributor = await db.contributor.create({ data: { workspaceId, createdByUserId: owner.id, name: "No-wallet Contributor", walletAddress: null } });
     const payout = await db.payout.create({ data: { workspaceId, contributorId: contributor.id, createdByUserId: owner.id, title: "Browser-scoped payout", totalAmountUsdc: "100", status: "active" } });
     await db.milestone.create({ data: { payoutId: payout.id, title: "Browser milestone", description: "Visible to the assigned contributor", amountUsdc: "100", sequence: 1 } });
 
@@ -50,6 +51,20 @@ test("owner and contributor payout views are scoped to their workspace", async (
     const ownerPage = await ownerContext.newPage();
     await ownerPage.goto("/dashboard");
     await expect(ownerPage.getByRole("heading", { name: "Today’s work" })).toBeVisible();
+    await ownerPage.goto(`/payouts/new?workspaceId=${workspaceId}`);
+    await ownerPage.getByLabel("Payout title").fill("No-wallet browser payout");
+    await ownerPage.getByRole("combobox").click();
+    await ownerPage.getByText("No-wallet Contributor · active").click();
+    await expect(ownerPage.getByLabel("Wallet address")).toHaveValue("");
+    await ownerPage.getByRole("button", { name: "Continue to payment plan" }).click();
+    await ownerPage.getByRole("button", { name: "Review payout" }).click();
+    await ownerPage.getByRole("button", { name: "Create payout" }).click();
+    await expect(ownerPage).toHaveURL(/\/payouts\//);
+    await expect(ownerPage.getByText("Choose a method when paying")).toBeVisible();
+    await ownerPage.getByRole("button", { name: "Activate payout" }).click();
+    await expect(ownerPage.getByText("In progress")).toBeVisible();
+    const noWalletPayout = await db.payout.findFirst({ where: { workspaceId, contributorId: noWalletContributor.id }, select: { targetWalletAddress: true, status: true } });
+    expect(noWalletPayout).toEqual({ targetWalletAddress: null, status: "active" });
     await ownerPage.goto(`/payouts/${payout.id}?workspaceId=${workspaceId}`);
     await expect(ownerPage.getByRole("button", { name: "Submit milestone" })).toHaveCount(0);
 
@@ -68,11 +83,31 @@ test("owner and contributor payout views are scoped to their workspace", async (
     await ownerPage.goto(`/notifications?workspaceId=${workspaceId}`);
     await expect(ownerPage.getByText("Milestone ready for review")).toBeVisible();
     await ownerPage.goto(`/payouts/${payout.id}?workspaceId=${workspaceId}`);
+    await expect(ownerPage.getByText("1 milestone awaiting your review.")).toBeVisible();
+    await expect(ownerPage.getByRole("heading", { name: "Payment action" })).toHaveCount(0);
+    await expect(ownerPage.getByText("No payment action needed")).toHaveCount(0);
     await ownerPage.getByRole("button", { name: "Approve Milestone" }).click();
-    await expect(ownerPage.getByText("Ready for release")).toBeVisible();
+    await expect(ownerPage.getByText("Ready to pay")).toBeVisible();
+    await expect(ownerPage.getByRole("heading", { name: "Payment action" })).toHaveCount(0);
+    await expect(ownerPage.getByRole("button", { name: "Pay 100 USDC" })).toBeVisible();
+    await ownerPage.setViewportSize({ width: 390, height: 844 });
+    await ownerPage.getByRole("button", { name: "Pay 100 USDC" }).first().click();
+    await expect(ownerPage.getByRole("heading", { name: "Choose how to record this payment" })).toBeVisible();
+    await ownerPage.getByRole("button", { name: "Simulated payment" }).click();
+    await expect(ownerPage.getByRole("heading", { name: "Mark this milestone as paid?" })).toBeVisible();
+    await expect(ownerPage.getByText("No funds will move")).toBeVisible();
+    await ownerPage.getByRole("button", { name: "Mark as paid (demo)" }).click();
+    await expect(ownerPage.getByLabel("Notifications").getByText("Payment recorded for testing")).toBeVisible();
+    await ownerPage.getByRole("button", { name: "Export Payout Summary" }).click();
+    await expect(ownerPage.getByText("Payment summary")).toBeVisible();
+    await expect(ownerPage.getByText("Simulated payment (test)")).toBeVisible();
+    await expect(ownerPage.getByRole("main").getByText("Payment recorded for testing")).toBeVisible();
+    await expect(ownerPage.getByText("USDC on Arc Testnet")).toHaveCount(0);
+    await ownerPage.getByLabel("Close modal").click();
 
     await contributorPage.reload();
-    await expect(contributorPage.getByRole("main").getByText("Waiting for owner release")).toBeVisible();
+    await expect(contributorPage.getByRole("main").getByText("1 of 1 paid")).toBeVisible();
+    await expect(contributorPage.getByRole("heading", { name: "Payment action" })).toHaveCount(0);
     await expect(contributorPage.getByRole("button", { name: "Release Payout" })).toHaveCount(0);
     await contributorPage.goto(`/notifications?workspaceId=${workspaceId}`);
     await expect(contributorPage.getByText("Milestone approved")).toBeVisible();
@@ -101,6 +136,7 @@ test("owner and contributor payout views are scoped to their workspace", async (
     await contributorContext.close();
   } finally {
     if (workspaceId) {
+      await db.paymentAttempt.deleteMany({ where: { payout: { workspaceId } } });
       await db.payout.deleteMany({ where: { workspaceId } });
       await db.contributor.deleteMany({ where: { workspaceId } });
       await db.workspaceMember.deleteMany({ where: { workspaceId } });

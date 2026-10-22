@@ -1,7 +1,7 @@
 export type Contributor = {
   id: string;
   name: string;
-  walletAddress: string;
+  walletAddress?: string;
   email?: string;
   linkedUserId?: string | null;
   role?: string;

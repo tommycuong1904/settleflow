@@ -18,6 +18,7 @@ import {
   Copy,
   ChevronDown,
   ExternalLink,
+  Droplets,
   UserPlus,
   Wallet,
 } from "lucide-react";
@@ -52,7 +53,7 @@ export default function SettingsPage() {
       const linkedAddress = await linkWeb3();
       const response = await fetch("/api/v1/auth/wallet/link", { cache: "no-store" });
       if (response.ok) setLinkedWallets((await response.json() as { wallets: typeof linkedWallets }).wallets);
-      toast({ variant: "success", title: "Wallet linked", description: `${linkedAddress.slice(0, 6)}…${linkedAddress.slice(-4)} can now sign in to this account.` });
+      toast({ variant: "success", title: "Wallet linked", description: `${linkedAddress.slice(0, 6)}…${linkedAddress.slice(-4)} is ready for Wallet payment.` });
     } catch (error) {
       toast({ variant: "error", title: "Wallet link failed", description: error instanceof Error ? error.message : "Try again." });
     } finally {
@@ -114,8 +115,8 @@ export default function SettingsPage() {
         setRpcStatus("healthy");
         toast({
           variant: "success",
-          title: "RPC Healthy",
-          description: `Arc Testnet node responded in ${Math.round(end - start)}ms.`,
+          title: "Testnet connection is available",
+          description: `The testnet node responded in ${Math.round(end - start)}ms.`,
         });
       } else {
         throw new Error("RPC status error");
@@ -125,8 +126,8 @@ export default function SettingsPage() {
       setRpcStatus("idle");
       toast({
         variant: "warning",
-        title: "RPC Check",
-        description: "Arc Testnet public RPC is reachable with fallback node.",
+        title: "Testnet connection check",
+        description: "The public testnet node could not be reached. Try again later.",
       });
     }
   };
@@ -137,7 +138,7 @@ export default function SettingsPage() {
       <PageHeader
         eyebrow="Settings"
         title="Workspace settings"
-        description="Manage the active workspace, your account, notifications, and wallet connection."
+        description="Manage your workspace, account, and notifications. Advanced payment and testnet tools are optional."
       />
 
       <div className="space-y-8">
@@ -149,7 +150,7 @@ export default function SettingsPage() {
               <UserPlus size={20} />
             </div>
             <div>
-              <h2 className="text-base font-semibold text-[var(--foreground)]">Invite an owner</h2>
+                <h2 className="text-base font-semibold text-[var(--foreground)]">Invite a workspace owner</h2>
               <p className="text-xs text-[var(--text-muted)]">Give a trusted teammate full access to this workspace when needed.</p>
             </div>
             </div>
@@ -236,7 +237,7 @@ export default function SettingsPage() {
               </div>
               <div>
                 <h2 className="text-base font-semibold text-[var(--foreground)]">Your account</h2>
-                <p className="text-xs text-[var(--text-muted)]">Your signed-in account and connected wallet.</p>
+                <p className="text-xs text-[var(--text-muted)]">Your signed-in account and workspace access.</p>
               </div>
             </div>
 
@@ -247,7 +248,7 @@ export default function SettingsPage() {
                 size="sm"
                 onClick={handleDisconnect}
               >
-                Disconnect Session
+                Sign out
               </Button>
             )}
           </div>
@@ -259,7 +260,7 @@ export default function SettingsPage() {
                   Signed-in account
                 </p>
                 <p className="mt-1 text-sm font-mono text-[var(--foreground)] font-medium break-all">
-                  {email ? `${email} (${address?.slice(0, 6)}...${address?.slice(-4)})` : address || "Guest / Not connected"}
+                  {email || address || "Guest / Not connected"}
                 </p>
               </div>
               {address && <button type="button" onClick={async () => {
@@ -273,11 +274,11 @@ export default function SettingsPage() {
               </p>
               <p className="mt-1 text-sm font-medium text-[var(--foreground)]">
                 {authType === "web2_google"
-                  ? "Google account — Circle Smart Wallet coming soon"
+                  ? "Google account"
                   : authType === "web2_email"
-                  ? "Email account — Circle Smart Wallet coming soon"
+                  ? "Email account"
                   : authType === "web3_wallet"
-                  ? "Direct Web3 browser wallet"
+                  ? "Browser wallet"
                   : "Guest Simulation Mode"}
               </p>
             </div>
@@ -285,33 +286,47 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-[var(--border-soft)] p-6 sm:p-8 space-y-4">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <h2 className="text-base font-semibold text-[var(--foreground)]">Connected wallets</h2>
-              <p className="text-xs text-[var(--text-muted)]">Use a browser wallet to sign in and approve payments.</p>
+        <details className="rounded-xl border border-[var(--border-soft)] p-6 sm:p-8">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] text-[var(--text-muted)]">
+                <Wallet size={20} />
+              </div>
+              <div>
+                <h2 className="text-base font-semibold text-[var(--foreground)]">Advanced payment methods</h2>
+                <p className="text-xs text-[var(--text-muted)]">Optional. Only set this up if you choose Wallet payment for a milestone.</p>
+              </div>
             </div>
-            <Button type="button" variant="secondary" size="sm" onClick={handleLinkWallet} disabled={!isConnected || isLinkingWallet}>
-              <Wallet size={13} className="mr-1.5" /> {isLinkingWallet ? "Waiting for signature..." : "Link wallet"}
-            </Button>
-          </div>
-          <div className="space-y-2 pt-1">
+            <ChevronDown size={18} className="shrink-0 text-[var(--text-muted)]" />
+          </summary>
+          <div className="mt-6 space-y-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h3 className="text-sm font-semibold text-[var(--foreground)]">Browser wallet</h3>
+                <p className="text-xs text-[var(--text-muted)]">Not needed to create payouts, review work, or record simulated payments.</p>
+              </div>
+              <Button type="button" variant="secondary" size="sm" onClick={handleLinkWallet} disabled={!isConnected || isLinkingWallet}>
+                <Wallet size={13} className="mr-1.5" /> {isLinkingWallet ? "Waiting for signature..." : "Link wallet"}
+              </Button>
+            </div>
+            <div className="space-y-2 pt-1">
             {linkedWallets.map((wallet) => (
               <div key={wallet.id} className="flex flex-col gap-1 rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] px-3.5 py-3 text-xs sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p className="font-medium text-[var(--foreground)]">
-                    {wallet.kind === "circle_sca" ? "Circle Smart Wallet — Coming soon" : wallet.kind === "legacy_export_eoa" ? "Retired legacy EOA" : "Linked Web3 wallet"}
+                    {wallet.kind === "circle_sca" ? "Circle Smart Wallet — Coming soon" : wallet.kind === "legacy_export_eoa" ? "Retired legacy EOA" : "Wallet payment address"}
                   </p>
                   <p className="font-mono text-[11px] text-[var(--text-muted)]">{wallet.address}</p>
                 </div>
                 <p className="text-[11px] text-[var(--text-muted)]">
-                  {wallet.kind === "circle_sca" ? "Unavailable for login or release in the Web3 MVP" : wallet.authEnabled ? "Web3 sign-in enabled" : "Transaction source"}
+                  {wallet.kind === "circle_sca" ? "Unavailable for Wallet payment" : wallet.authEnabled ? "Available for Wallet payment" : "Payment source"}
                 </p>
               </div>
             ))}
-            {isConnected && linkedWallets.length === 0 ? <p className="text-xs text-[var(--text-muted)]">No linked wallets are available yet.</p> : null}
+            {isConnected && linkedWallets.length === 0 ? <p className="text-xs text-[var(--text-muted)]">No browser wallet is linked. You only need one for Wallet payment.</p> : null}
+            </div>
           </div>
-        </div>
+        </details>
 
         <div className="rounded-xl border border-[var(--border-soft)] p-6 sm:p-8">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
@@ -331,8 +346,8 @@ export default function SettingsPage() {
                 <Cpu size={20} />
               </div>
               <div>
-                <h2 className="text-base font-semibold text-[var(--foreground)]">Advanced network details</h2>
-                <p className="text-xs text-[var(--text-muted)]">Arc Testnet connection and diagnostics.</p>
+                <h2 className="text-base font-semibold text-[var(--foreground)]">Developer tools</h2>
+                <p className="text-xs text-[var(--text-muted)]">Testnet diagnostics for advanced Wallet payment troubleshooting. Not required for normal use.</p>
               </div>
             </div>
             <ChevronDown size={18} className="shrink-0 text-[var(--text-muted)]" />
@@ -352,7 +367,7 @@ export default function SettingsPage() {
                   ? "Pinging node..."
                   : rpcStatus === "healthy"
                   ? `✓ Online (${latencyMs}ms)`
-                  : "Test Node Health"}
+                  : "Test testnet connection"}
               </Button>
               <Button
                 type="button"
@@ -366,6 +381,14 @@ export default function SettingsPage() {
               >
                 Add Arc Testnet
               </Button>
+              <a
+                href="https://faucet.circle.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[var(--border-soft)] px-3 text-xs font-medium text-[var(--foreground)] hover:bg-[var(--surface-muted)]"
+              >
+                <Droplets size={13} /> Get test USDC <ExternalLink size={12} />
+              </a>
             </div>
           </div>
 

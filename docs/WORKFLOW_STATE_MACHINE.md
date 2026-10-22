@@ -16,7 +16,7 @@ States: `draft`, `active`, `partially_released`, `completed`.
 
 - Creation creates a `draft` payout through `lib/repositories/payout-creation.ts` and `app/api/v1/payouts/route.ts`.
 - `draft -> active` is performed by `activatePayout` after workspace/owner-role authorization, target-wallet presence, at least one milestone, and exact milestone-total validation (`lib/repositories/payout-activation.ts`).
-- After release proof confirmation, `recalculatePayoutStatus` derives `active`, `partially_released`, or `completed` from milestone statuses (`lib/repositories/payout-status.ts`). All milestones released yields `completed` and `completedAt`; some released yields `partially_released`.
+- After a confirmed Arc release proof or a completed simulated payment, `recalculatePayoutStatus` derives `active`, `partially_released`, or `completed` from milestone statuses (`lib/repositories/payout-status.ts`). All milestones released yields `completed` and `completedAt`; some released yields `partially_released`.
 
 There is no separately verified pause, cancel, or formal transition table beyond these repository rules. A payout with no milestones is derived as `draft`.
 
@@ -29,9 +29,9 @@ States: `pending`, `submitted`, `approved`, `rejected`, `released`.
 - `pending -> submitted` and `rejected -> submitted`: `submitMilestone` requires the same workspace, a valid contributor user, a linked contributor relationship, an `active` or `partially_released` payout, and a submittable milestone status. Draft payouts are not contributor-visible or submittable. It creates a `MilestoneSubmission` and resets review/release timestamps (`lib/repositories/milestone-submission.ts`).
 - `submitted -> approved`: `reviewMilestone(..., "approved")` requires a submitted milestone with a submission and an Owner workspace role in the active Owner/Contributor MVP (`lib/repositories/milestone-review.ts`).
 - `submitted -> rejected`: the same function requires an Owner, a non-empty rejection comment, and records a rejected review.
-- `approved -> released`: `refreshReleaseProof` sets the milestone to `released` only when confirmation is recorded for an approved milestone (`lib/repositories/release-proof.ts`).
+- `approved -> released`: `refreshReleaseProof` sets the milestone to `released` when confirmation is recorded for an approved Arc release. In mock/demo execution modes, `completeSimulatedPayment` may atomically create a completed simulated `PaymentAttempt` with no evidence and set an approved milestone to `released` (`lib/repositories/simulated-payment.ts`).
 
-No direct transition to `released` is supported by the queue operation. Release queuing requires `approved` first.
+No direct transition to `released` is supported by the queue operation. Release queuing and simulated payment both require `approved` first.
 
 ## Release and proof
 

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, ArrowRightLeft, Users, Activity, Settings, X, Droplets, ExternalLink, Bell } from "lucide-react";
+import { LayoutDashboard, ArrowRightLeft, Users, Activity, Settings, X, Bell } from "lucide-react";
 import { useResolvedProductContext } from "@/lib/runtime/product-context-client";
 import { hasRole } from "@/lib/runtime/role-utils";
 import type { ProductContext } from "@/lib/runtime/product-context";
@@ -105,36 +105,6 @@ export function AppSidebar({ initialActor, initialWorkspaceId }: { initialActor?
         </ul>
       </nav>
 
-      {/* Mobile secondary utilities */}
-      <div className="md:hidden px-4 py-3 border-t border-[var(--border-soft)] space-y-3 mt-auto">
-        <div>
-          <p className="sf-sidebar-section-label text-[10px] mb-2">PREFERENCES & TOOLS</p>
-
-        {/* Circle Faucet */}
-        <a
-          href="https://faucet.circle.com"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs text-[var(--text-muted)] hover:text-[var(--foreground)] hover:bg-[var(--surface-muted)] transition-colors"
-        >
-          <span className="flex items-center gap-2">
-            <Droplets size={15} />
-            <span>Get Testnet USDC</span>
-          </span>
-          <ExternalLink size={12} className="opacity-60" />
-        </a>
-
-        </div>
-      </div>
-
-      {/* Network status */}
-      <div className="sf-sidebar-footer">
-        <p className="sf-sidebar-network-label">Arc Testnet</p>
-        <span className="sf-sidebar-network-status">
-          <span className="sf-net-dot" aria-hidden="true" />
-          Connected
-        </span>
-      </div>
     </>
   );
 

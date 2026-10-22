@@ -11,7 +11,7 @@ export const arcChain = {
   },
   rpcUrls: {
     default: {
-      http: [ARC_CONFIG.rpcUrl, "https://rpc.testnet.arc.network"],
+      http: [ARC_CONFIG.rpcUrl, "https://rpc.testnet.arc.io"],
     },
   },
   blockExplorers: {
@@ -91,7 +91,7 @@ export async function addArcNetworkToWallet(provider?: { request: (args: unknown
   const ethereum = provider ?? (window as unknown as { ethereum?: { request: (args: unknown) => Promise<unknown> } }).ethereum;
 
   if (!ethereum) {
-    throw new Error("No Web3 wallet extension found (MetaMask / Rabby).");
+    throw new Error("No compatible browser wallet extension was found.");
   }
 
   try {

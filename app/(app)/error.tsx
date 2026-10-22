@@ -24,7 +24,7 @@ export default function AppError({ error, reset }: { error: Error & { digest?: s
           <h1 className="mt-3 text-2xl font-semibold">Sign in to continue</h1>
           <p className="mt-3 text-sm text-slate-500">Connect a wallet or use the available sign-in flow to access this page.</p>
           <div className="mt-6 flex justify-center gap-3">
-            <button className="sf-button sf-button-primary" onClick={openAuthModal}>Sign in / Connect</button>
+            <button className="sf-button sf-button-primary" onClick={openAuthModal}>Sign in</button>
             <button className="sf-button sf-button-ghost" onClick={() => reset()}>Retry</button>
           </div>
         </section>

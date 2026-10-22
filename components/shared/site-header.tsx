@@ -16,8 +16,8 @@ export function SiteHeader() {
   const navLinks = isHome
     ? [
         ["How it works", "#workflow"],
-        ["Why Arc", "#why-arc"],
-        ["Proof", "#proof"],
+        ["Payment infrastructure", "#why-arc"],
+        ["Test mode", "#proof"],
       ]
     : [
         ["Home", "/"],
@@ -67,7 +67,7 @@ export function SiteHeader() {
               variant="primary"
               onClick={() => isConnected ? router.push("/dashboard") : openAuthModal()}
             >
-              {isConnected ? "Launch App" : "Sign in / Connect wallet"} <ArrowRight size={14} />
+              {isConnected ? "Launch App" : "Sign in"} <ArrowRight size={14} />
             </Button>
           ) : (
             <Button href="/payouts/new" size="sm" variant="primary">

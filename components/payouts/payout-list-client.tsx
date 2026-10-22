@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { formatUsdc, shortenAddress } from "@/lib/utils/format";
+import { formatUsdc } from "@/lib/utils/format";
 import { Button } from "@/components/shared/button";
 import { EmptyState } from "@/components/shared/empty-state";
 import type { AccessiblePayoutListItem } from "@/lib/repositories/payouts";
@@ -37,7 +37,7 @@ export function PayoutListClient({
 
     const matchesTitle = payout.title.toLowerCase().includes(query);
     const matchesContributor = contributor.displayName.toLowerCase().includes(query);
-    const matchesWallet = contributor.walletAddress.toLowerCase().includes(query);
+    const matchesWallet = contributor.walletAddress?.toLowerCase().includes(query) ?? false;
     const matchesWorkspace = payout.workspaceName.toLowerCase().includes(query);
 
     return matchesTitle || matchesContributor || matchesWallet || matchesWorkspace;
@@ -61,7 +61,7 @@ export function PayoutListClient({
             type="search"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search payouts or contributors..."
+            placeholder="Search payouts or people..."
             className="w-full rounded-full border border-[var(--border-soft)] bg-[var(--input-background)] py-2.5 pl-10 pr-4 text-xs text-[var(--foreground)] placeholder:text-[var(--input-placeholder)] focus:border-[var(--border-strong)] focus:bg-[var(--input-focus-background)] focus:outline-none focus:ring-1 focus:ring-[var(--border-strong)] transition-all"
           />
         </div>
@@ -121,7 +121,7 @@ export function PayoutListClient({
           description={
             searchQuery || statusFilter !== "all"
               ? "Try adjusting your search query or status filter."
-              : "Create your first milestone payout agreement to get started with Arc settlements."
+              : "Create your first payout to organize work, approvals, and payments."
           }
         />
       ) : ( <>
@@ -130,11 +130,11 @@ export function PayoutListClient({
             const contributor = payout.contributor;
             const statusLabel =
               payout.status === "completed"
-                ? "Completed"
+                ? "Paid"
                 : payout.status === "partially_released"
-                ? "Partially Released"
+                ? "Partially paid"
                 : payout.status === "active"
-                ? "Active"
+                ? "In progress"
                 : "Draft";
 
             const statusBg =
@@ -164,12 +164,7 @@ export function PayoutListClient({
                     <p className="text-xs text-[var(--text-muted)]">
                       <strong className="text-[var(--foreground)] font-medium">
                         {contributor.displayName}
-                      </strong>{" "}
-                      {contributor.walletAddress ? (
-                        <span className="font-mono opacity-70">
-                          ({shortenAddress(contributor.walletAddress)})
-                        </span>
-                      ) : null}
+                      </strong>
                     </p>
                   </div>
 

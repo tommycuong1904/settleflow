@@ -14,7 +14,7 @@ Vercel invokes `prisma migrate deploy && prisma generate && npm run build`. Migr
 - `NEXT_PUBLIC_ARC_EXECUTION_MODE`: `mock` | `demo` | `real` (default: `demo`). *Must remain `demo` or `mock` for staging verification.*
 - `NEXT_PUBLIC_ARC_CHAIN_ID`: Arc Testnet Chain ID (default: `5042002`).
 - `NEXT_PUBLIC_ARC_RPC_URL`: Arc Testnet RPC endpoint (default: `https://rpc.testnet.arc.io`).
-- `NEXT_PUBLIC_ARC_EXPLORER_URL`: Block explorer URL (default: `https://testnet.arcscan.app`).
+- `NEXT_PUBLIC_ARC_EXPLORER_URL`: Block explorer URL (default: `https://explorer.testnet.arc.io`).
 - `NEXT_PUBLIC_USDC_ADDRESS`: Native/Bridged USDC contract address on Arc Testnet (default: `0x3600000000000000000000000000000000000000`).
 
 ### Safety & Execution Authorization Gates

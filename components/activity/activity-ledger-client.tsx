@@ -4,7 +4,7 @@ import React, { useMemo, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import type { AccessibleActivityItem } from "@/lib/models/activity-item";
 import { EmptyState } from "@/components/shared/empty-state";
-import { Search, Download, CheckCircle2, XCircle, ShieldCheck, Clock, ExternalLink } from "lucide-react";
+import { Search, Download, CheckCircle2, XCircle, ShieldCheck, Clock } from "lucide-react";
 
 type ActivityFilter = "all" | "payments" | "reviews";
 
@@ -47,9 +47,9 @@ function simplifyPaymentEvents(items: AccessibleActivityItem[]) {
     const key = paymentKey(item);
     if (item.action === "proof_confirmed" && key && releases.has(key)) return [];
     if (item.action === "release_confirmed" && key && proofs.has(key)) {
-      return [{ ...item, action: "payment_confirmed", title: "Payment confirmed on Arc", description: undefined, metadata: proofs.get(key)!.metadata }];
+      return [{ ...item, action: "payment_confirmed", title: "Payment confirmed", description: undefined, metadata: proofs.get(key)!.metadata }];
     }
-    if (item.action === "proof_confirmed") return [{ ...item, action: "payment_confirmed", title: "Payment confirmed on Arc", description: undefined }];
+    if (item.action === "proof_confirmed") return [{ ...item, action: "payment_confirmed", title: "Payment confirmed", description: undefined }];
     return [item];
   });
 }
@@ -61,7 +61,7 @@ export function ActivityLedgerClient({ initialActivities }: { initialActivities:
   const [selectedFilter, setSelectedFilter] = useState<ActivityFilter>("all");
   const activities = useMemo(() => simplifyPaymentEvents(initialActivities), [initialActivities]);
   const filteredActivities = activities.filter((item) => {
-    const isPayment = item.action === "payment_confirmed" || item.action.includes("proof") || item.action.includes("release");
+    const isPayment = item.action.startsWith("payment_") || item.action.includes("proof") || item.action.includes("release");
     const isReview = item.action.includes("approve") || item.action.includes("reject");
     if (selectedFilter === "payments" && !isPayment) return false;
     if (selectedFilter === "reviews" && !isReview) return false;
@@ -91,11 +91,10 @@ export function ActivityLedgerClient({ initialActivities }: { initialActivities:
       <div className="flex items-center justify-between gap-3 sm:justify-end"><div className="flex rounded-full border border-[var(--border-soft)] bg-[var(--surface)] p-1 text-xs font-medium">{(["all", "payments", "reviews"] as ActivityFilter[]).map((filter) => <button key={filter} type="button" onClick={() => setSelectedFilter(filter)} className={`rounded-full px-3 py-1.5 transition-colors ${selectedFilter === filter ? "bg-[var(--foreground)] font-semibold text-[var(--background)]" : "text-[var(--text-muted)] hover:text-[var(--foreground)]"}`}>{filter === "all" ? "All" : filter === "payments" ? "Payments" : "Reviews"}</button>)}</div><details className="relative shrink-0"><summary className="cursor-pointer list-none rounded-full border border-[var(--border-soft)] px-3 py-2 text-xs font-medium text-[var(--text-muted)] hover:text-[var(--foreground)]">More</summary><div className="absolute right-0 z-10 mt-2 w-36 rounded-xl border border-[var(--border-soft)] bg-[var(--surface)] p-1 shadow-lg"><button type="button" onClick={handleExportCsv} disabled={!filteredActivities.length} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-[var(--foreground)] hover:bg-[var(--surface-muted)] disabled:cursor-not-allowed disabled:opacity-40"><Download size={13} /> Export CSV</button></div></details></div>
     </div>
     {filteredActivities.length === 0 ? <EmptyState title={searchQuery || selectedFilter !== "all" ? "No matching activity" : "No activity yet"} description={searchQuery || selectedFilter !== "all" ? "Try a different search or filter." : "Work submissions, owner decisions, and payments will appear here."} /> : <div className="overflow-hidden rounded-2xl border border-[var(--border-soft)] bg-[var(--surface)]">{groups.map((group, groupIndex) => <section key={group.label} className={groupIndex ? "border-t border-[var(--border-soft)]" : ""}><h2 className="bg-[var(--surface-muted)] px-5 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">{group.label}</h2><div className="divide-y divide-[var(--border-soft)]">{group.items.map((item) => {
-      const isPayment = item.action === "payment_confirmed" || item.action.includes("proof") || item.action.includes("release");
+      const isPayment = item.action.startsWith("payment_") || item.action.includes("proof") || item.action.includes("release");
       const isApproved = item.action.includes("approve");
       const isIssue = item.action.includes("reject") || item.action.includes("failed");
-      const explorerUrl = item.metadata?.explorerUrl || (item.metadata?.txHash ? `https://testnet.arcscan.app/tx/${item.metadata.txHash}` : undefined);
-      return <div key={item.id} className="relative flex items-start gap-3 px-5 py-3.5 hover:bg-[rgba(15,23,42,0.025)]">{item.payoutId ? <button type="button" onClick={() => router.push(`/payouts/${item.payoutId}`)} aria-label={`View payout for ${item.title}`} className="absolute inset-0" /> : null}<div className={`relative z-[1] mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border ${isApproved ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-500" : isIssue ? "border-rose-500/30 bg-rose-500/10 text-rose-500" : isPayment ? "border-[var(--border-soft)] bg-[var(--surface-muted)] text-[var(--foreground)]" : "border-[var(--border-soft)] text-[var(--text-muted)]"}`}>{isApproved ? <CheckCircle2 size={14} /> : isIssue ? <XCircle size={14} /> : isPayment ? <ShieldCheck size={14} /> : <Clock size={14} />}</div><div className="min-w-0 flex-1"><div className="flex flex-wrap items-baseline gap-x-2 gap-y-1"><p className="text-sm font-semibold text-[var(--foreground)]">{item.title}</p><span className="text-xs text-[var(--text-muted)]">by {item.actorLabel}</span></div>{item.description ? <p className="mt-1 truncate text-xs text-[var(--text-muted)]">{item.description}</p> : null}</div><div className="relative z-[1] flex shrink-0 flex-col items-end gap-1.5"><time dateTime={item.occurredAt} className="text-[11px] text-[var(--text-muted)]">{hasHydrated ? new Date(item.occurredAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) : formatServerTimestamp(item.occurredAt)}</time>{explorerUrl ? <a href={explorerUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--foreground)] hover:opacity-70">Proof <ExternalLink size={11} /></a> : null}</div></div>;
+      return <div key={item.id} className="relative flex items-start gap-3 px-5 py-3.5 hover:bg-[rgba(15,23,42,0.025)]">{item.payoutId ? <button type="button" onClick={() => router.push(`/payouts/${item.payoutId}`)} aria-label={`View payout for ${item.title}`} className="absolute inset-0" /> : null}<div className={`relative z-[1] mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border ${isApproved ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-500" : isIssue ? "border-rose-500/30 bg-rose-500/10 text-rose-500" : isPayment ? "border-[var(--border-soft)] bg-[var(--surface-muted)] text-[var(--foreground)]" : "border-[var(--border-soft)] text-[var(--text-muted)]"}`}>{isApproved ? <CheckCircle2 size={14} /> : isIssue ? <XCircle size={14} /> : isPayment ? <ShieldCheck size={14} /> : <Clock size={14} />}</div><div className="min-w-0 flex-1"><div className="flex flex-wrap items-baseline gap-x-2 gap-y-1"><p className="text-sm font-semibold text-[var(--foreground)]">{item.title}</p><span className="text-xs text-[var(--text-muted)]">by {item.actorLabel}</span></div>{item.description ? <p className="mt-1 truncate text-xs text-[var(--text-muted)]">{item.description}</p> : null}</div><time dateTime={item.occurredAt} className="relative z-[1] shrink-0 text-[11px] text-[var(--text-muted)]">{hasHydrated ? new Date(item.occurredAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) : formatServerTimestamp(item.occurredAt)}</time></div>;
     })}</div></section>)}</div>}
   </div>;
 }

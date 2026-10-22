@@ -13,7 +13,7 @@ type ActivationSnapshot = {
 export function derivePayoutActivationInvariantError(
   payout: ActivationSnapshot,
 ): "PAYOUT_INCOMPLETE" | "MILESTONE_TOTAL_MISMATCH" | null {
-  if (!payout.targetWalletAddress || payout.milestones.length === 0 ||
+  if (payout.milestones.length === 0 ||
       !payout.totalAmountUsdc.isFinite() || !payout.totalAmountUsdc.gt(0) ||
       payout.milestones.some((milestone) => !milestone.amountUsdc.isFinite() || !milestone.amountUsdc.gt(0) || milestone.amountUsdc.decimalPlaces() > 6)) {
     return "PAYOUT_INCOMPLETE";

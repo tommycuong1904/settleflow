@@ -66,6 +66,23 @@ enum TransactionProofStatus {
   failed
 }
 
+enum PaymentMethod {
+  simulated
+  crypto_wallet
+}
+
+enum PaymentStatus {
+  pending
+  completed
+  failed
+  cancelled
+}
+
+enum PaymentEvidenceType {
+  none
+  transaction
+}
+
 /// The provenance and supported capabilities of a verified EVM wallet that
 /// belongs to a persisted product user. A user may have several wallets, but
 /// one normalized address can belong to only one user.
@@ -117,6 +134,7 @@ model User {
   submissions              MilestoneSubmission[]
   reviews                  MilestoneReview[]
   releases                 Release[]
+  markedPaymentAttempts    PaymentAttempt[]        @relation("PaymentAttemptMarker")
   activityLogs             ActivityLog[]
   notifications            Notification[]
   pushSubscriptions         PushSubscription[]
@@ -235,7 +253,7 @@ model Contributor {
   createdByUserId String?
   name            String
   email           String?
-  walletAddress   String
+  walletAddress   String?
   role            String?
   notes           String?
   status          ContributorStatus @default(active)
@@ -276,6 +294,7 @@ model Payout {
   milestones        Milestone[]
   releases          Release[]
   transactionProofs TransactionProof[]
+  paymentAttempts  PaymentAttempt[]
   activityLogs      ActivityLog[]
 
   @@index([workspaceId, status])
@@ -305,6 +324,7 @@ model Milestone {
   reviews           MilestoneReview[]
   releases          Release[]
   transactionProofs TransactionProof[]
+  paymentAttempts  PaymentAttempt[]
   activityLogs      ActivityLog[]
 
   @@unique([payoutId, sequence])
@@ -406,6 +426,31 @@ model TransactionProof {
   @@unique([txHash])
   @@index([payoutId, status])
   @@index([releaseId])
+}
+
+/// Method-neutral payment state. Chain-specific evidence stays in
+/// TransactionProof and is never manufactured for simulated payments.
+model PaymentAttempt {
+  id             String              @id @default(uuid())
+  payoutId       String
+  milestoneId    String              @unique
+  markedByUserId String
+  method         PaymentMethod
+  status         PaymentStatus       @default(pending)
+  evidenceType   PaymentEvidenceType @default(none)
+  amountUsdc     Decimal             @db.Decimal(30, 6)
+  currency       String              @default("USDC")
+  recipientLabel String
+  completedAt    DateTime?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  payout       Payout    @relation(fields: [payoutId], references: [id], onDelete: Restrict)
+  milestone    Milestone @relation(fields: [milestoneId], references: [id], onDelete: Restrict)
+  markedByUser User      @relation("PaymentAttemptMarker", fields: [markedByUserId], references: [id], onDelete: Restrict)
+
+  @@index([payoutId, status])
+  @@index([markedByUserId])
 }
 
 model ActivityLog {

@@ -86,6 +86,24 @@ a transaction whose `from` differs from that snapshot.
 `lib/repositories/release-proof.ts`, and
 `lib/arc/verify-release-transaction.ts`.
 
+## Simulated payment separation
+
+### Invariant
+
+A simulated payment is available only when execution mode is `mock` or `demo`, is Owner-authorized and workspace-scoped, and must never produce an Arc `Release`, `TransactionProof`, transaction hash, explorer URL, or onchain settlement claim.
+
+### Enforcement
+
+`completeSimulatedPayment` locks the milestone, requires it to be approved with no existing release/payment, records a completed `PaymentAttempt` with `method = simulated` and `evidenceType = none`, then atomically releases the milestone and recalculates the payout. Its unique milestone relation and locked state make repeated requests idempotent.
+
+### Evidence
+
+`app/api/v1/milestones/[id]/simulated-payment/route.ts`; `lib/repositories/simulated-payment.ts`; `prisma/schema.prisma`.
+
+### Status
+
+Implemented and DB integration-tested for the simulated-payment route's covered Owner, idempotency, and no-proof path.
+
 ## Circle user-controlled wallet boundary
 
 ### Invariant

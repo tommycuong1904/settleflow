@@ -14,7 +14,7 @@ export const ARC_CONFIG = {
   rpcUrl:
     process.env.NEXT_PUBLIC_ARC_RPC_URL ?? "https://rpc.testnet.arc.io",
   explorerUrl:
-    process.env.NEXT_PUBLIC_ARC_EXPLORER_URL ?? "https://testnet.arcscan.app",
+    process.env.NEXT_PUBLIC_ARC_EXPLORER_URL ?? "https://explorer.testnet.arc.io",
   usdcAddress:
     process.env.NEXT_PUBLIC_USDC_ADDRESS ??
     "0x3600000000000000000000000000000000000000",

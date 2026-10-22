@@ -35,7 +35,7 @@ export default function ActivePayouts({ activePayouts, payouts, contributors, mi
 
           const payoutStatusLabel =
             payout.status === "partially_released"
-              ? "Partially released"
+              ? "Partially paid"
               : payout.status === "completed"
               ? "Completed"
               : payout.status === "active"
@@ -44,22 +44,22 @@ export default function ActivePayouts({ activePayouts, payouts, contributors, mi
           const payoutActionLabel = nextPendingReview
             ? "Review milestone"
             : nextReleaseReady && currentReleaseProof?.status === "failed"
-            ? "Retry settlement"
+            ? "Review payment issue"
             : nextReleaseReady && currentReleaseProof?.status === "pending"
-            ? "Update proof"
+            ? "Check payment status"
             : nextReleaseReady
-            ? "Release milestone"
+            ? "Pay milestone"
             : "View payout detail";
           const payoutActionHint = nextPendingReview
             ? `${nextPendingReview.title} is waiting for review.`
             : nextReleaseReady && currentReleaseProof?.status === "pending"
-            ? `${nextReleaseReady.title} is waiting for settlement proof confirmation.`
+            ? `${nextReleaseReady.title} is waiting for payment confirmation.`
             : nextReleaseReady && currentReleaseProof?.status === "failed"
-            ? `${nextReleaseReady.title} needs a retry or proof refresh before payout progress can continue.`
+            ? `${nextReleaseReady.title} needs attention before payment can continue.`
             : nextReleaseReady
-            ? `${nextReleaseReady.title} is approved and ready for release.`
+            ? `${nextReleaseReady.title} is approved and ready for payment.`
             : payout.status === "completed"
-            ? "This payout is fully settled. Open the detail view to review final proof history."
+            ? "This payout is complete. Open the detail view to review its payment history."
             : "Open the payout to continue milestone progress.";
 
           return (
@@ -82,7 +82,7 @@ export default function ActivePayouts({ activePayouts, payouts, contributors, mi
                     <p className="mt-1 font-semibold text-[var(--foreground)]">{formatUsdc(payout.totalAmount)} USDC</p>
                   </div>
                   <div>
-                    <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">Released so far</p>
+                    <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">Paid so far</p>
                     <p className="mt-1 font-semibold text-[var(--foreground)]">{formatUsdc(releasedAmount)} / {formatUsdc(payout.totalAmount)} USDC</p>
                   </div>
                 </div>

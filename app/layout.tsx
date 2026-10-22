@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "SettleFlow",
-  description: "Arc-native USDC payout workflow for crypto teams.",
+  description: "Milestone payments with approval and a clear payment record.",
 };
 
 import { WalletProvider } from "@/lib/context/wallet-context";

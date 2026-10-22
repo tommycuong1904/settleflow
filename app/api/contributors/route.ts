@@ -70,14 +70,10 @@ export async function POST(request: Request) {
       });
     }
 
-    if (
-      !walletAddress ||
-      typeof walletAddress !== "string" ||
-      !/^0x[a-fA-F0-9]{40}$/.test(walletAddress.trim())
-    ) {
+    if (walletAddress !== undefined && (typeof walletAddress !== "string" || (walletAddress.trim() && !/^0x[a-fA-F0-9]{40}$/.test(walletAddress.trim())))) {
       return apiError("INVALID_WALLET_ADDRESS", {
         message:
-          "A valid EVM wallet address (0x followed by 40 hex characters) is required.",
+          "Wallet address must be a valid EVM address when provided.",
         status: 400,
       });
     }
@@ -85,7 +81,7 @@ export async function POST(request: Request) {
     const contributor = await createContributor({
       workspaceId: productContext.workspaceId,
       name: name.trim(),
-      walletAddress: walletAddress.trim(),
+      walletAddress: typeof walletAddress === "string" ? walletAddress.trim() : undefined,
       email: typeof email === "string" ? email.trim() : undefined,
       role: typeof role === "string" ? role.trim() : undefined,
       notes: typeof notes === "string" ? notes.trim() : undefined,

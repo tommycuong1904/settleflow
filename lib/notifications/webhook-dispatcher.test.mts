@@ -27,7 +27,7 @@ test("buildDiscordEmbed milestone_rejected returns correct title", () => {
 
 test("buildDiscordEmbed milestone_released returns correct title", () => {
   const embed = buildDiscordEmbed({ event: "milestone_released", payoutTitle: "P", milestoneTitle: "M" });
-  assert.equal(embed.embeds[0].title, "💸 USDC Released on Arc Testnet");
+  assert.equal(embed.embeds[0].title, "💸 Payment confirmed");
   assert.equal(embed.embeds[0].color, 0x06b6d4);
 });
 
@@ -37,7 +37,7 @@ test("buildDiscordEmbed test_event returns correct title", () => {
   assert.equal(embed.embeds[0].color, 0x22d3ee);
 });
 
-test("buildDiscordEmbed milestone_released includes recipientAddress, txHash, and proof fields", () => {
+test("buildDiscordEmbed milestone_released includes transaction details only when an explorer link is available", () => {
   const embed = buildDiscordEmbed({
     event: "milestone_released",
     payoutTitle: "Test Payout",
@@ -47,9 +47,9 @@ test("buildDiscordEmbed milestone_released includes recipientAddress, txHash, an
     explorerUrl: "https://explorer.example.com/tx/0x1234",
   });
   const fieldNames = embed.embeds[0].fields.map((f: { name: string }) => f.name);
-  assert.ok(fieldNames.includes("Recipient Wallet"));
-  assert.ok(fieldNames.includes("Tx Hash"));
-  assert.ok(fieldNames.includes("Settlement Proof"));
+  assert.ok(fieldNames.includes("Transaction details"));
+  assert.ok(!fieldNames.includes("Recipient Wallet"));
+  assert.ok(!fieldNames.includes("Tx Hash"));
 });
 
 // ─── dispatchWebhookNotification ─────────────────────────────────────────────

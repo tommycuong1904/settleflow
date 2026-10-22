@@ -58,6 +58,7 @@ export default async function PayoutDetailPage({
         contributor={undefined}
         initialMilestones={projectedDetail.milestones as never}
         initialReleaseProof={undefined}
+        initialPaymentAttempts={[]}
         initialActivity={[]}
         currentActor={productContext.actor}
         workspaceId={productContext.workspaceId}
@@ -73,6 +74,7 @@ export default async function PayoutDetailPage({
       contributor={detail.contributor}
       initialMilestones={detail.milestones}
       initialReleaseProof={detail.releaseProof}
+      initialPaymentAttempts={detail.paymentAttempts}
       initialActivity={activity as unknown as import("@/lib/models/activity-item").ActivityItem[]}
       currentActor={productContext.actor}
       workspaceId={productContext.workspaceId}

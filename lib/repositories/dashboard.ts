@@ -52,7 +52,7 @@ export type DashboardMilestone = {
 export type DashboardContributor = {
   id: string;
   name: string;
-  walletAddress: string;
+  walletAddress?: string;
   role?: string;
 };
 
@@ -66,11 +66,23 @@ export type DashboardTransactionProof = {
   confirmedAt?: string;
 };
 
+export type DashboardPaymentAttempt = {
+  id: string;
+  payoutId: string;
+  milestoneId: string;
+  method: "simulated" | "crypto_wallet";
+  status: "pending" | "completed" | "failed" | "cancelled";
+  amount: number;
+  currency: string;
+  completedAt?: string;
+};
+
 export type DashboardData = {
   payouts: DashboardPayout[];
   milestones: DashboardMilestone[];
   contributors: DashboardContributor[];
   transactionProofs: DashboardTransactionProof[];
+  paymentAttempts: DashboardPaymentAttempt[];
 };
 
 function mapPayout(row: {
@@ -120,13 +132,13 @@ function mapMilestone(row: {
 function mapContributor(row: {
   id: string;
   name: string;
-  walletAddress: string;
+  walletAddress: string | null;
   role: string | null;
 }): DashboardContributor {
   return {
     id: row.id,
     name: row.name,
-    walletAddress: row.walletAddress,
+    walletAddress: row.walletAddress ?? undefined,
     role: row.role ?? undefined,
   };
 }
@@ -151,6 +163,28 @@ function mapProof(row: {
   };
 }
 
+function mapPaymentAttempt(row: {
+  id: string;
+  payoutId: string;
+  milestoneId: string;
+  method: string;
+  status: string;
+  amountUsdc: { toString(): string };
+  currency: string;
+  completedAt: Date | null;
+}): DashboardPaymentAttempt {
+  return {
+    id: row.id,
+    payoutId: row.payoutId,
+    milestoneId: row.milestoneId,
+    method: row.method as DashboardPaymentAttempt["method"],
+    status: row.status as DashboardPaymentAttempt["status"],
+    amount: Number(row.amountUsdc.toString()),
+    currency: row.currency,
+    completedAt: row.completedAt?.toISOString() ?? undefined,
+  };
+}
+
 /**
  * Full dashboard read model.
  * Returns all payouts, milestones, contributors, and proofs for a workspace
@@ -170,7 +204,7 @@ export async function getDashboardData(input: {
     : {};
   const payoutWhere = { workspaceId: input.workspaceId, ...contributorScope };
 
-  const [payoutRows, milestoneRows, contributorRows, proofRows] =
+  const [payoutRows, milestoneRows, contributorRows, proofRows, paymentAttemptRows] =
     await Promise.all([
       db.payout.findMany({
         where: payoutWhere,
@@ -223,6 +257,20 @@ export async function getDashboardData(input: {
           confirmedAt: true,
         },
       }),
+      db.paymentAttempt.findMany({
+        where: { payout: payoutWhere },
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          payoutId: true,
+          milestoneId: true,
+          method: true,
+          status: true,
+          amountUsdc: true,
+          currency: true,
+          completedAt: true,
+        },
+      }),
     ]);
 
   return {
@@ -230,5 +278,6 @@ export async function getDashboardData(input: {
     milestones: milestoneRows.map(mapMilestone),
     contributors: contributorRows.map(mapContributor),
     transactionProofs: proofRows.map(mapProof),
+    paymentAttempts: paymentAttemptRows.map(mapPaymentAttempt),
   };
 }

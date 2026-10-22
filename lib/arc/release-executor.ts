@@ -4,6 +4,7 @@ import {
   encodeFunctionData,
   erc20Abi,
   http,
+  parseGwei,
   parseUnits,
   type Address,
   type Hex,
@@ -26,14 +27,20 @@ export type ReleaseExecutor = (
 /** USDC transfers use the ERC-20 contract and six decimal places on Arc Testnet. */
 const ERC20_USDC_DECIMALS = 6;
 const RECEIPT_TIMEOUT_MS = 90_000;
+// Arc requires maxFeePerGas to be at least 20 Gwei. This is a gas-price
+// quantity in native USDC (18 decimals), independent from the six-decimal
+// ERC-20 USDC amount used for the transfer itself.
+const ARC_MIN_MAX_FEE_PER_GAS = parseGwei("20");
 
 export type CircleWalletExecutorDeps = {
   sendTransaction: (args: {
     to: Address;
     value: bigint;
     data?: Hex;
+    maxFeePerGas?: bigint;
   }) => Promise<Hex>;
   waitForReceipt: (txHash: Hex) => Promise<{ status: "success" | "reverted" | undefined }>;
+  getGasPrice?: () => Promise<bigint>;
   sourceAddress: Address;
 };
 
@@ -67,6 +74,7 @@ function buildCircleWalletDeps(privateKey: string): CircleWalletExecutorDeps {
       });
       return { status: receipt.status };
     },
+    getGasPrice: () => publicClient.getGasPrice(),
   };
 }
 
@@ -106,9 +114,14 @@ async function executeCircleWallet(
   const destination = request.recipient.trim() as Address;
 
   try {
+    const suggestedGasPrice = await resolvedDeps.getGasPrice?.().catch(() => BigInt(0)) ?? BigInt(0);
+    const maxFeePerGas = suggestedGasPrice > ARC_MIN_MAX_FEE_PER_GAS
+      ? suggestedGasPrice
+      : ARC_MIN_MAX_FEE_PER_GAS;
     const txHash = await resolvedDeps.sendTransaction({
       to: request.tokenAddress.trim() as Address,
       value: BigInt(0),
+      maxFeePerGas,
       data: encodeFunctionData({
         abi: erc20Abi,
         functionName: "transfer",

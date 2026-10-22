@@ -1,12 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { hasRole } from "@/lib/runtime/role-utils";
 import type { ProductActor } from "@/lib/runtime/product-context";
 import type { ContributorListItem } from "@/lib/repositories/contributors";
-import { formatUsdc, shortenAddress } from "@/lib/utils/format";
+import { formatUsdc } from "@/lib/utils/format";
 import { AddContributorDialog } from "./add-contributor-dialog";
 import { EditContributorDialog } from "./edit-contributor-dialog";
 import { DeleteContributorDialog } from "./delete-contributor-dialog";
@@ -18,13 +17,9 @@ import {
   UserPlus,
   Copy,
   Check,
-  ExternalLink,
   Plus,
   Briefcase,
   Mail,
-  Coins,
-  ShieldCheck,
-  Users,
   Pencil,
   Trash2,
   X,
@@ -53,26 +48,9 @@ export function ContributorListClient({
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [deletingContributor, setDeletingContributor] = useState<ContributorListItem | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [copiedId, setCopiedId] = useState<string | null>(null);
-
-  /**
-   * A contributor can be edited/deleted by its creator (the wallet that added it)
-   * or by any owner (ops maps to owner via the role hierarchy).
-   */
+  /** A contributor can be edited/deleted by its creator or any owner. */
   const canManageContributor = (c: ContributorListItem) =>
     hasRole(actor, "owner") || (Boolean(activeUserId) && c.createdByUserId === activeUserId);
-
-  const handleCopy = (id: string, text: string, name?: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedId(id);
-    toast({
-      variant: "success",
-      title: "Address Copied",
-      description: `Copied ${name ? `${name}'s` : ""} wallet address to clipboard.`,
-      durationMs: 2500,
-    });
-    setTimeout(() => setCopiedId(null), 2000);
-  };
 
   const [invitingId, setInvitingId] = useState<string | null>(null);
   const [inviteLinks, setInviteLinks] = useState<Record<string, string>>({});
@@ -128,7 +106,7 @@ export function ContributorListClient({
     if (!query) return matchesStatus;
 
     const matchesName = c.displayName.toLowerCase().includes(query);
-    const matchesWallet = c.walletAddress.toLowerCase().includes(query);
+    const matchesWallet = c.walletAddress?.toLowerCase().includes(query) ?? false;
     const matchesRole = c.role?.toLowerCase().includes(query);
     const matchesEmail = c.email?.toLowerCase().includes(query);
 
@@ -149,7 +127,7 @@ export function ContributorListClient({
             type="search"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search by name, email, or wallet..."
+            placeholder="Search by name or email..."
             className="w-full rounded-full border border-[var(--border-soft)] bg-[var(--input-background)] py-2.5 pl-10 pr-4 text-xs text-[var(--foreground)] placeholder:text-[var(--input-placeholder)] focus:border-[var(--border-strong)] focus:bg-[var(--input-focus-background)] focus:outline-none focus:ring-1 focus:ring-[var(--border-strong)] transition-all"
           />
         </div>
@@ -210,12 +188,12 @@ export function ContributorListClient({
             title={
               searchQuery || statusFilter !== "all"
                 ? "No matching contributors"
-                : "No contributors registered yet"
+                : "Add your first contributor"
             }
             description={
               searchQuery || statusFilter !== "all"
                 ? "Try adjusting your search criteria or filters."
-                : "Add your team members and external contributors to begin assigning milestone payouts."
+                : "Start with a name and email. Payment details are only needed when you choose a payment method."
             }
           />
           {!searchQuery && statusFilter === "all" && (
@@ -224,7 +202,7 @@ export function ContributorListClient({
                 variant="primary"
                 onClick={() => setIsAddModalOpen(true)}
               >
-                <Plus size={15} className="mr-1.5" /> Add First Contributor
+                <Plus size={15} className="mr-1.5" /> Add contributor
               </Button>
             </div>
           )}
@@ -232,15 +210,12 @@ export function ContributorListClient({
       ) : (
         <div className="grid gap-4 xl:grid-cols-2">
           {filteredContributors.map((contributor) => {
-            const isCopied = copiedId === contributor.id;
             const initials = contributor.displayName
               .split(" ")
               .map((n) => n[0])
               .join("")
               .substring(0, 2)
               .toUpperCase();
-
-            const explorerUrl = `https://testnet.arcscan.app/address/${contributor.walletAddress}`;
 
             const activeInviteUrl = inviteLinks[contributor.id];
 
@@ -298,41 +273,8 @@ export function ContributorListClient({
                     ) : null}
                   </div>
 
-                  {/* Wallet & Email */}
-                  <div className="mt-4 space-y-2 pt-3 border-t border-[var(--border-soft)]">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-[11px] uppercase tracking-wider text-[var(--text-muted)] font-mono">
-                        Wallet
-                      </span>
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-mono text-xs text-[var(--text-primary)]">
-                          {shortenAddress(contributor.walletAddress)}
-                        </span>
-                        <button
-                          onClick={() =>
-                            handleCopy(`wallet-${contributor.id}`, contributor.walletAddress, contributor.displayName)
-                          }
-                          className="inline-flex items-center gap-1.5 font-mono text-[var(--text-muted)] hover:text-[var(--foreground)] transition-colors"
-                          title="Copy wallet address"
-                        >
-                          {isCopied ? (
-                            <Check size={13} className="text-emerald-500" />
-                          ) : (
-                            <Copy size={13} />
-                          )}
-                        </button>
-                        <a
-                          href={explorerUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          title="View on Arcscan"
-                          className="rounded-lg p-1.5 text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--foreground)] transition-colors"
-                        >
-                          <ExternalLink size={13} />
-                        </a>
-                      </div>
-                    </div>
-
+                  {(contributor.email || contributor.notes) ? (
+                    <div className="mt-4 space-y-2 pt-3 border-t border-[var(--border-soft)]">
                     {contributor.email && (
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-[11px] uppercase tracking-wider text-[var(--text-muted)] font-mono">
@@ -350,7 +292,8 @@ export function ContributorListClient({
                         &quot;{contributor.notes}&quot;
                       </p>
                     )}
-                  </div>
+                    </div>
+                  ) : null}
                 </div>
 
                 {/* Bottom Section: Metrics, Actions & Integrated Invite Link */}
@@ -359,7 +302,7 @@ export function ContributorListClient({
                     <div className="flex items-center gap-4">
                       <div>
                         <p className="text-[10px] uppercase tracking-wider text-[var(--text-muted)]">
-                          Settled
+                          Paid
                         </p>
                         <p className="text-xs font-semibold text-[var(--foreground)] font-mono">
                           {formatUsdc(contributor.totalSettledUsdc)} USDC

@@ -17,10 +17,11 @@ import type { Contributor } from "@/lib/models/contributor";
 import type { Milestone } from "@/lib/models/milestone";
 import type { Payout } from "@/lib/models/payout";
 import type { TransactionProof } from "@/lib/models/transaction-proof";
+import type { PaymentAttempt } from "@/lib/models/payment-attempt";
 import type { ProductActor } from "@/lib/runtime/product-context";
 import { PRODUCT_CONTEXT_HEADER_NAMES } from "@/lib/runtime/product-context";
 import { PayoutReceiptModal } from "@/components/payouts/payout-receipt-modal";
-import { formatUsdc, shortenAddress } from "@/lib/utils/format";
+import { formatUsdc } from "@/lib/utils/format";
 import { FileCheck } from "lucide-react";
 import { hasRole, isRole } from "@/lib/runtime/role-utils";
 import { notifyWorkflowUpdated } from "@/lib/runtime/workflow-sync";
@@ -36,6 +37,7 @@ type PayoutDetailClientProps = {
   contributor?: Contributor;
   initialMilestones: Milestone[];
   initialReleaseProof?: TransactionProof;
+  initialPaymentAttempts: PaymentAttempt[];
   initialActivity: ActivityItem[];
   currentActor: ProductActor;
   workspaceId: string;
@@ -69,6 +71,7 @@ export function PayoutDetailClient({
   contributor,
   initialMilestones,
   initialReleaseProof,
+  initialPaymentAttempts,
   initialActivity,
   currentActor,
   workspaceId,
@@ -91,6 +94,7 @@ export function PayoutDetailClient({
   });
   const [milestoneState, setMilestoneState] = useState(() => initialMilestones);
   const [payoutStatusState, setPayoutStatusState] = useState(payout.status);
+  const [paymentAttempts, setPaymentAttempts] = useState(initialPaymentAttempts);
   const [payoutTotalAmountState, setPayoutTotalAmountState] = useState(payout.totalAmount);
   const [payoutTitleCommitted, setPayoutTitleCommitted] = useState(payout.title);
 
@@ -113,6 +117,7 @@ export function PayoutDetailClient({
   const [draftSaveNotice, setDraftSaveNotice] = useState<string | null>(null);
   const [reviewError, setReviewError] = useState<string | null>(null);
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
+  const [releaseReviewRequest, setReleaseReviewRequest] = useState(0);
   const { toast } = useToast();
 
   const [activatingPayout, setActivatingPayout] = useState(false);
@@ -134,6 +139,7 @@ export function PayoutDetailClient({
   useEffect(() => {
     setMilestoneState(initialMilestones);
     setPayoutStatusState(payout.status);
+    setPaymentAttempts(initialPaymentAttempts);
     setPayoutTotalAmountState(payout.totalAmount);
     setPayoutTitleCommitted(payout.title);
     setPayoutTitleState(payout.title);
@@ -159,7 +165,7 @@ export function PayoutDetailClient({
     setReviewError(null);
     setActivatingPayout(false);
     setSavingDraftTitle(false);
-  }, [initialActivity, initialMilestones, payout.description, payout.status, payout.title, payout.totalAmount]);
+  }, [initialActivity, initialMilestones, initialPaymentAttempts, payout.description, payout.status, payout.title, payout.totalAmount]);
 
   useEffect(() => {
     if (!draftSaveNotice) return;
@@ -184,7 +190,6 @@ export function PayoutDetailClient({
   }, [milestoneState, persistedRelease]);
 
   const releaseProof = persistedRelease?.proof ?? initialReleaseProof;
-
   const latestReleasedMilestone = releaseProof
     ? milestones.find((milestone) => milestone.id === releaseProof.milestoneId)
     : milestones.findLast((milestone) => milestone.status === "released");
@@ -192,6 +197,9 @@ export function PayoutDetailClient({
   const nextReleasableMilestone = milestones.find(
     (milestone) => milestone.status === "approved",
   );
+  const submittedMilestoneCount = milestones.filter(
+    (milestone) => milestone.status === "submitted",
+  ).length;
   const releasedCount = milestones.filter(
     (milestone) => milestone.status === "released",
   ).length;
@@ -208,12 +216,23 @@ export function PayoutDetailClient({
 
   const payoutStatusLabel =
     effectivePayoutStatus === "partially_released"
-      ? "Partially released"
+      ? "Partially paid"
       : effectivePayoutStatus === "active"
         ? amountReleased > 0
-          ? "Partially released"
+          ? "Partially paid"
           : "In progress"
-        : effectivePayoutStatus.replace("_", " ");
+        : effectivePayoutStatus === "completed"
+          ? "Completed"
+          : "Draft";
+
+  const payoutStatusTone =
+    effectivePayoutStatus === "completed"
+      ? "bg-emerald-500"
+      : payoutStatusLabel === "Partially paid"
+        ? "bg-sky-500"
+        : effectivePayoutStatus === "active"
+          ? "bg-cyan-500"
+          : "bg-[var(--text-muted)]";
 
   const draftMilestonesDirty = JSON.stringify(normalizeDraftMilestones(draftMilestonesState)) !==
     JSON.stringify(normalizeDraftMilestones(draftMilestonesCommitted));
@@ -509,7 +528,7 @@ export function PayoutDetailClient({
         variant: decision === "approved" ? "success" : "warning",
         title: `Milestone ${decision === "approved" ? "Approved" : "Rejected"}`,
         description: decision === "approved" 
-          ? "Deliverable accepted. Ready for USDC release." 
+          ? "Deliverable accepted. Ready for payment."
           : "Revisions requested. Contributor notified.",
       });
       await refreshActivity();
@@ -549,9 +568,18 @@ export function PayoutDetailClient({
     window.sessionStorage.setItem(getStorageKey(payout.id), JSON.stringify(nextState));
     toast({
       variant: "success",
-      title: "USDC Released on Arc",
-      description: "Milestone funds settled onchain. Tx proof recorded.",
+      title: "Payment confirmed",
+      description: "The milestone is marked as paid. Transaction details are available in Payment details.",
     });
+    notifyWorkflowUpdated();
+    void refreshActivity();
+  }
+
+  function handleSimulatedPaymentSuccess(payload: { milestoneId: string; completedAt: string; payoutStatus?: "active" | "partially_released" | "completed"; payment: PaymentAttempt }) {
+    setMilestoneState((current) => current.map((milestone) => milestone.id === payload.milestoneId ? { ...milestone, status: "released" as const, releasedAt: payload.completedAt } : milestone));
+    if (payload.payoutStatus) setPayoutStatusState(payload.payoutStatus);
+    setPaymentAttempts((current) => current.some((payment) => payment.id === payload.payment.id) ? current : [payload.payment, ...current]);
+    toast({ variant: "success", title: "Payment recorded for testing", description: "No funds moved." });
     notifyWorkflowUpdated();
     void refreshActivity();
   }
@@ -566,23 +594,25 @@ export function PayoutDetailClient({
           description={
             payoutDescriptionState.trim().length > 0
               ? payoutDescriptionState
-              : "Review milestone submissions, approve release in sequence, and keep Arc settlement proof attached to the payout flow."
+              : "Review milestone submissions, approve work in sequence, and keep payment records together."
           }
         >
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            onClick={() => setIsReceiptModalOpen(true)}
-            icon={<FileCheck size={15} className="text-[var(--accent-cyan)]" />}
-          >
-            Export Settlement Receipt
-          </Button>
+          {effectivePayoutStatus !== "draft" ? (
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => setIsReceiptModalOpen(true)}
+              icon={<FileCheck size={15} className="text-[var(--accent-cyan)]" />}
+            >
+              Export Payout Summary
+            </Button>
+          ) : null}
         </PageHeader>
 
-        <Card className="sf-shell">
-          <CardHeader className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <CardTitle>Payout Summary</CardTitle>
+        <section className="px-1">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <h2 className="text-lg font-semibold tracking-tight text-[var(--foreground)]">Payout overview</h2>
             {payoutStatusState === "draft" && hasRole(currentActor, "owner") ? (
               <Button
                 onClick={() => { void activatePayout(); }}
@@ -591,44 +621,42 @@ export function PayoutDetailClient({
                 {activatingPayout ? "Activating..." : "Activate payout"}
               </Button>
             ) : null}
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              {[
-                { label: "Contributor", value: contributor?.name ?? payout.contributorId },
-                {
-                  label: "Wallet",
-                  value: contributor ? shortenAddress(contributor.walletAddress) : "Unknown",
-                },
-                { label: "Total amount", value: `${formatUsdc(payoutTotalAmountState)} USDC` },
-                {
-                  label: "Payout status",
-                  value: payoutStatusLabel,
-                },
-              ].map((item) => (
-                <div key={item.label} className="rounded-2xl border border-[var(--border-soft)] bg-[var(--surface)]/60 p-4">
-                  <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                    {item.label}
-                  </p>
-                  <p className="mt-2 break-all text-sm font-semibold text-[var(--foreground)]">
-                    {item.value}
-                  </p>
-                </div>
-              ))}
+          </div>
+          <div className="mt-4 grid gap-y-5 border-y border-[var(--border-soft)] py-4 sm:grid-cols-2 xl:grid-cols-4 xl:divide-x xl:divide-[var(--border-soft)]">
+            <div className="xl:pr-4">
+              <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">Contributor</p>
+              <p className="mt-2 break-all text-sm font-semibold text-[var(--foreground)]">{contributor?.name ?? payout.contributorId}</p>
             </div>
-            <p className="mt-4 text-sm text-[var(--text-secondary)]">
+            <div className="xl:px-4">
+              <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">Payment setup</p>
+              <p className="mt-2 text-sm font-semibold text-[var(--foreground)]">
+                {contributor?.walletAddress ? "Wallet payment available" : "Choose a method when paying"}
+              </p>
+            </div>
+            <div className="xl:px-4">
+              <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">Total amount</p>
+              <p className="mt-2 text-sm font-semibold text-[var(--foreground)]">{formatUsdc(payoutTotalAmountState)} USDC</p>
+            </div>
+            <div className="xl:pl-4">
+              <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">Payout status</p>
+              <p className="mt-2 inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--foreground)]">
+                <span className={`h-1.5 w-1.5 rounded-full ${payoutStatusTone}`} aria-hidden="true" />
+                {payoutStatusLabel}
+              </p>
+            </div>
+          </div>
+          {effectivePayoutStatus !== "active" ? (
+            <p className="mt-3 text-sm text-[var(--text-secondary)]">
               {effectivePayoutStatus === "draft"
                 ? hasUnsavedDraftChanges
-                  ? "This payout is still a draft. Save your draft changes before activating milestone submissions and reviews."
-                  : "This payout is still a draft. Activate it to begin milestone submissions and reviews."
-                : effectivePayoutStatus === "active"
-                  ? "This payout is active. Contributors can submit milestones and the owner can approve or reject work."
-                  : effectivePayoutStatus === "partially_released"
-                    ? "This payout has partial settlement progress. Continue reviewing and releasing approved milestones."
-                    : "This payout is fully settled and all milestone releases are complete."}
+                  ? "Save your draft changes before activating milestone submissions and reviews."
+                  : "Activate this payout to begin milestone submissions and reviews."
+                : effectivePayoutStatus === "partially_released"
+                  ? "Some milestones have been paid. Continue reviewing approved milestones."
+                  : "All milestones in this payout have been paid."}
             </p>
-          </CardContent>
-        </Card>
+          ) : null}
+        </section>
 
         {payoutStatusState === "draft" && isOwnerActor ? (
           <>
@@ -701,7 +729,7 @@ export function PayoutDetailClient({
                 <div>
                   <CardTitle>Milestone plan</CardTitle>
                   <p className="mt-2 text-sm text-[var(--text-secondary)]">
-                    Finalize milestone titles, scope, and amounts before this payout moves into active review and release work.
+                    Finalize milestone titles, scope, and amounts before this payout moves into active review and payment work.
                   </p>
                 </div>
                 <Button onClick={() => { void saveDraftMilestones(); }} disabled={savingDraftTitle || !draftMilestonesDirty || hasMilestoneAmountError}>
@@ -754,25 +782,24 @@ export function PayoutDetailClient({
           </>
         ) : null}
 
-        <PayoutDetailReleaseShell
-          payoutId={payout.id}
-          recipientAddress={contributor?.walletAddress}
-          nextReleasableMilestone={nextReleasableMilestone}
-          releaseMilestoneTitle={latestReleasedMilestone?.title}
-          releaseProof={releaseProof}
-          currentActor={currentActor}
-          onReleaseSuccess={handleReleaseSuccess}
-          onActivityChange={refreshActivity}
-        />
-
-        <Card className="sf-shell">
-          <CardHeader>
-            <CardTitle>Milestones</CardTitle>
-            <p className="mt-2 text-sm text-[var(--text-muted)]">Track the work, review submissions, and see what unlocks payment next.</p>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {milestones.map((milestone) => (
+        <section>
+          <div className="mb-4 px-1">
+            <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+              <h2 className="text-lg font-semibold tracking-tight text-[var(--foreground)]">Milestones</h2>
+              {effectivePayoutStatus !== "draft" && milestones.length > 0 ? (
+                <p className="text-sm text-[var(--text-muted)]">
+                  {releasedCount} of {milestones.length} paid · {formatUsdc(amountReleased)} / {formatUsdc(payoutTotalAmountState)} USDC
+                </p>
+              ) : null}
+            </div>
+            <p className="mt-2 text-sm text-[var(--text-muted)]">
+              {isOwnerActor && submittedMilestoneCount > 0
+                ? `${submittedMilestoneCount} milestone${submittedMilestoneCount === 1 ? "" : "s"} awaiting your review.`
+                : "Track the work, review submissions, and see what unlocks payment next."}
+            </p>
+          </div>
+          <div className="space-y-3">
+            {milestones.map((milestone) => (
               <MilestoneRow
                 key={`${milestone.id}:${milestone.status}`}
                   milestone={milestone}
@@ -780,14 +807,40 @@ export function PayoutDetailClient({
                   workspaceId={workspaceId}
                   onApprove={canApproveMilestones ? () => handleApproveMilestone(milestone.id) : undefined}
                   onReject={canApproveMilestones ? (_milestoneId, comment) => handleRejectMilestone(milestone.id, comment) : undefined}
-                  onStatusChange={handleMilestoneStatusChange}
-                />
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+                  canStartPayment={isOwnerActor && nextReleasableMilestone?.id === milestone.id}
+                  onReviewPayment={() => setReleaseReviewRequest((current) => current + 1)}
+                onStatusChange={handleMilestoneStatusChange}
+              />
+            ))}
+          </div>
+        </section>
 
-        <details className="sf-shell rounded-2xl p-6"><summary className="cursor-pointer text-lg font-semibold text-[var(--foreground)]">Activity</summary><div className="mt-4"><ActivityTimeline items={activityItems} /></div></details>
+        <PayoutDetailReleaseShell
+          payoutId={payout.id}
+          recipientName={contributor?.name}
+          recipientAddress={contributor?.walletAddress}
+          nextReleasableMilestone={nextReleasableMilestone}
+          releaseMilestoneTitle={latestReleasedMilestone?.title}
+          releaseProof={releaseProof}
+          currentActor={currentActor}
+          reviewRequest={releaseReviewRequest}
+          onReleaseSuccess={handleReleaseSuccess}
+          onSimulatedPaymentSuccess={handleSimulatedPaymentSuccess}
+          onActivityChange={refreshActivity}
+        />
+
+        <details className="sf-activity-accordion px-1">
+          <summary className="flex cursor-pointer list-none items-baseline gap-2 text-lg font-semibold tracking-tight text-[var(--foreground)] [&::-webkit-details-marker]:hidden">
+            <span>Activity</span>
+            <span className="ml-auto text-sm font-normal text-[var(--text-muted)] underline decoration-[var(--border-strong)] underline-offset-4 transition-colors hover:text-[var(--foreground)]">
+              <span className="sf-accordion-closed">View activity ({activityItems.length})</span>
+              <span className="sf-accordion-open">Hide activity</span>
+            </span>
+          </summary>
+          <div className="sf-accordion-content">
+            <div className="sf-accordion-content-inner pt-5"><ActivityTimeline items={activityItems} /></div>
+          </div>
+        </details>
 
         {/* Export Receipt Modal */}
         <PayoutReceiptModal
@@ -797,6 +850,7 @@ export function PayoutDetailClient({
           contributor={contributor}
           milestones={milestones}
           releaseProof={releaseProof}
+          paymentAttempts={paymentAttempts}
         />
       </div>
     </div>

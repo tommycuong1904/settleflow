@@ -2,12 +2,16 @@
 
 Status: current
 SSoT: Current repository implementation and verification
-Last verified: 2026-09
+Last verified: 2026-10
 
 > **TL;DR** — Core auth, workspace membership, invitation, release-safety, Prisma migration, unit, DB integration, production-build checks, and limited browser smoke coverage are verified on the current working tree. Real Arc settlement and browser E2E that requires a wallet remain deferred; repository verification does not authorize production payments.
 
 ## Summary
 This repository is now a full-stack Next.js application for SettleFlow, an Arc-native milestone-based USDC payout workflow for crypto teams. The current implementation has moved beyond a frontend-only demo: it now includes a PostgreSQL + Prisma data layer, repository-backed server reads/writes, and API routes for payout, milestone, and release actions. Real Arc release execution is wired through `createReleaseExecutor` (Phase 6): `circle_wallet` mode sends real USDC from a server-side EOA, while `browser_wallet` fails explicitly on the server. Session auth (Phase 4), contributor management + settings/productization (Phase 5), a minimalist black/white theme refactor, and the `6004b05` Reliability Hardening test coverage are merged into `main`.
+
+> **2026-10 product-direction update** — The product is moving toward a **Web2-first UX**: payment language is product-oriented, wallet/network/proof detail is progressively disclosed, and simulation provides a safe test path. The implemented foundation includes method-aware payment selection, wallet-optional contributor/payout creation, dashboard payment history that includes simulated payments, and Google-first sign-in with advanced browser-wallet sign-in. Broader landing, onboarding, and terminology changes remain planned. The scoped audit, decisions, dependencies, and delivery order are in [`WEB2_FIRST_UX_AUDIT_AND_PLAN.md`](./WEB2_FIRST_UX_AUDIT_AND_PLAN.md). Arc-provider changes remain gated on review of the updated Arc material.
+
+> **2026-10 simulated-payment foundation** — In `mock` and `demo` execution modes, an Owner can record a simulated payment for an approved milestone from the payout-detail **Pay** flow. It persists a method-neutral `PaymentAttempt`, atomically releases the milestone/recalculates the payout, is idempotent, and deliberately creates no `Release`, `TransactionProof`, hash, explorer URL, or onchain claim. The method selector presents simulation first and browser-wallet Arc payment as Advanced; payment summaries derive their method/evidence copy from the persisted attempt. Broader Web2-first creation, dashboard, and onboarding changes remain planned.
 
 ## Fact vs Assumption Legend
 - **Confirmed**: directly verified from repository files or command output.

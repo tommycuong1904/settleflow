@@ -123,7 +123,7 @@ export async function reviewMilestone(
       type: decision === "approved" ? "milestone_approved" : "milestone_rejected",
       title: decision === "approved" ? "Milestone approved" : "Revision requested",
       body: decision === "approved"
-        ? `${milestone.title} is approved and ready for Web3 release.`
+        ? `${milestone.title} is approved and ready for payment.`
         : `${milestone.title} needs updates before it can be approved.${comment ? ` Feedback: ${comment}` : ""}`,
       href: `/payouts/${milestone.payout.id}`,
     });

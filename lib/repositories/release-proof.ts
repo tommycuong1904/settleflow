@@ -322,10 +322,10 @@ export async function refreshReleaseProof(
         ? [notificationContext?.triggeredByUserId ?? refreshedByUserId, notificationContext?.payout.contributor.linkedUserId ?? ""]
         : [notificationContext?.triggeredByUserId ?? refreshedByUserId],
       type: input.status === "confirmed" ? "release_confirmed" : "release_failed",
-      title: input.status === "confirmed" ? "USDC payment confirmed" : "USDC payment needs attention",
+      title: input.status === "confirmed" ? "Payment confirmed" : "Payment needs attention",
       body: input.status === "confirmed"
-        ? `${release.amountUsdc.toString()} USDC was confirmed on Arc.`
-        : `The release could not be confirmed. ${input.failureReason ?? "Review the payout before retrying."}`,
+        ? `${release.amountUsdc.toString()} USDC was confirmed for this milestone.`
+        : "This payment could not be confirmed. Review the payout before retrying.",
       href: `/payouts/${release.payoutId}`,
     });
 

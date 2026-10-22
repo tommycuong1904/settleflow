@@ -3,12 +3,10 @@
 import React, { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/shared/button";
-import { FaucetModal } from "@/components/shared/faucet-modal";
 import { useWallet } from "@/lib/context/wallet-context";
-import { addArcNetworkToWallet } from "@/lib/arc/onchain";
 import { useToast } from "@/lib/context/toast-context";
 import { WORKFLOW_UPDATED_EVENT } from "@/lib/runtime/workflow-sync";
-import { ExternalLink, LogOut, Wallet, User, ChevronDown, RefreshCw, Droplets, Copy, Menu, Bell } from "lucide-react";
+import { LogOut, Wallet, User, ChevronDown, RefreshCw, Copy, Menu, Bell } from "lucide-react";
 
 export function AppHeader() {
   const router = useRouter();
@@ -21,7 +19,6 @@ export function AppHeader() {
     userName,
     userAvatar,
     authType,
-    network,
     usdcBalance,
     isRefreshingBalance,
     openAuthModal,
@@ -31,7 +28,6 @@ export function AppHeader() {
 
   const { toast } = useToast();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [isFaucetOpen, setIsFaucetOpen] = useState(false);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const notificationRequestRef = useRef(0);
 
@@ -68,26 +64,6 @@ export function AppHeader() {
     };
   }, [isConnected, pathname]);
 
-  const handleAddArcNetwork = async () => {
-    try {
-      await addArcNetworkToWallet();
-      toast({
-        variant: "success",
-        title: "Arc Testnet Active",
-        description: "Arc Testnet was successfully added/selected in your wallet.",
-      });
-    } catch (err: unknown) {
-      const errorObj = err as { code?: number; message?: string } | undefined;
-      if (errorObj?.code !== 4001) {
-        toast({
-          variant: "warning",
-          title: "Network Switch",
-          description: errorObj?.message || "Please make sure your Web3 wallet extension is unlocked.",
-        });
-      }
-    }
-  };
-
   const displayIdentifier = authType === "web3_wallet" && address
     ? `${address.slice(0, 6)}...${address.slice(-4)}`
     : userName
@@ -96,7 +72,8 @@ export function AppHeader() {
     ? email.split("@")[0]
     : address
     ? `${address.slice(0, 6)}...${address.slice(-4)}`
-    : "Connected";
+    : "Signed in";
+  const hasBrowserWallet = authType === "web3_wallet";
 
   const handleOpenMobileSidebar = () => {
     window.dispatchEvent(new CustomEvent("toggle-mobile-sidebar"));
@@ -142,36 +119,10 @@ export function AppHeader() {
             ) : null}
           </a>
         ) : null}
-        {/* Get test USDC on Desktop */}
-        <a
-          href="https://faucet.circle.com"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="hidden lg:inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium text-[var(--text-muted)] hover:text-[var(--foreground)] hover:bg-[var(--surface-muted)] transition-colors border border-transparent hover:border-[var(--border-soft)]"
-          title="Open Circle Arc Testnet Faucet in a new tab"
-        >
-          <Droplets size={13} className="text-[var(--foreground)]" /> Get test USDC
-          <ExternalLink size={11} className="opacity-60 ml-0.5" />
-        </a>
-
-        {/* Network indicator on Desktop */}
-        <button
-          onClick={handleAddArcNetwork}
-          title="Click to add / switch to Arc Testnet in your Web3 wallet"
-          className={`hidden md:inline-flex items-center gap-2 rounded-full border border-[var(--border-soft)] bg-[var(--surface)] hover:bg-[var(--surface-muted)] transition-all px-3 py-1.5 text-xs ${network === "Arc Testnet" ? "text-[var(--text-muted)]" : "text-rose-500"}`}
-        >
-          {network === "Arc Testnet" ? (
-            <span className="sf-net-dot shrink-0" aria-hidden="true" />
-          ) : (
-            <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-rose-500" />
-          )}
-          <span className="font-medium">{network === "Arc Testnet" ? network : "Wrong network"}</span>
-        </button>
-
       {/* Auth state button */}
       {!isConnected ? (
         <Button onClick={openAuthModal} disabled={isConnecting} variant="primary">
-          {isConnecting ? "Connecting..." : "Sign In / Connect"}
+          {isConnecting ? "Connecting..." : "Sign in"}
         </Button>
       ) : (
         <div className="relative">
@@ -192,8 +143,7 @@ export function AppHeader() {
               <Wallet size={13} className="opacity-70" />
             )}
             <span className="font-medium text-[var(--foreground)] max-w-[120px] truncate">{displayIdentifier}</span>
-            <span className="opacity-20 font-mono">|</span>
-            <span className="font-mono-numbers text-[var(--foreground)] font-medium">{usdcBalance} USDC</span>
+            {hasBrowserWallet ? <><span className="opacity-20 font-mono">|</span><span className="font-mono-numbers text-[var(--foreground)] font-medium">{usdcBalance} USDC</span></> : null}
             <ChevronDown size={12} className="opacity-60" />
           </button>
 
@@ -207,7 +157,7 @@ export function AppHeader() {
               <div className="absolute right-0 top-full mt-2 z-50 w-64 rounded-2xl border border-[var(--border-strong)] bg-[var(--surface)] p-3 shadow-2xl text-xs space-y-2.5 backdrop-blur-xl">
                 <div className="border-b border-[var(--border-soft)] pb-2">
                   <p className="text-[10px] uppercase tracking-wider text-[var(--text-muted)]">
-                    Connected Account
+                    Signed-in account
                   </p>
                   <p className="font-mono text-[var(--foreground)] text-[11px] truncate mt-0.5">
                     {address || email}
@@ -215,6 +165,7 @@ export function AppHeader() {
                 </div>
 
                 <div className="space-y-1">
+                  {hasBrowserWallet ? <>
                   <div className="flex items-center justify-between text-[var(--text-muted)] py-1">
                     <span>USDC Balance</span>
                     <div className="flex items-center gap-1.5">
@@ -257,31 +208,22 @@ export function AppHeader() {
                       </button>
                     </div>
                   )}
+                  </> : null}
                   <p className="text-[11px] text-[var(--text-muted)]">
                     {authType === "web2_google"
-                      ? "Google account · Circle coming soon"
+                      ? "Google account"
                       : authType === "web2_email"
-                      ? "Email account · Circle coming soon"
+                      ? "Email account"
                       : "External Web3 Wallet"}
                   </p>
                 </div>
 
                 <div className="border-t border-[var(--border-soft)] pt-2 space-y-1">
-                  <a
-                    href="https://faucet.circle.com"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={() => setIsDropdownOpen(false)}
-                    className="w-full flex items-center gap-2 rounded-lg hover:bg-[var(--surface-muted)] text-[var(--text-muted)] hover:text-[var(--foreground)] px-2 py-1.5 transition-colors text-[11px]"
-                  >
-                    <Droplets size={13} /> Get Testnet USDC <ExternalLink size={10} className="ml-auto opacity-50" />
-                  </a>
-
                   <button
                     onClick={() => void handleDisconnect()}
                     className="w-full flex items-center gap-2 rounded-lg hover:bg-[var(--surface-muted)] text-[var(--text-muted)] hover:text-[var(--foreground)] px-2 py-1.5 transition-colors font-medium text-[11px]"
                   >
-                    <LogOut size={13} /> Disconnect
+                    <LogOut size={13} /> Sign out
                   </button>
                 </div>
               </div>
@@ -290,13 +232,6 @@ export function AppHeader() {
         </div>
       )}
       </div>
-
-      {/* Faucet Modal */}
-      <FaucetModal
-        isOpen={isFaucetOpen}
-        onClose={() => setIsFaucetOpen(false)}
-        userAddress={address}
-      />
 
     </header>
   );
