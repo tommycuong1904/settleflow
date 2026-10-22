@@ -1,7 +1,7 @@
 # Web2-first UX audit and implementation plan
 
-Status: approved product direction; implementation deliberately deferred
-Last audited: 2026-10-20
+Status: implementation in progress; Phases 1–3 and the scoped Phase 4 surfaces are delivered
+Last audited: 2026-10-22
 Scope: current application routes and workflow surfaces in the repository, with the active testnet implementation as the starting point.
 
 ## Decision record
