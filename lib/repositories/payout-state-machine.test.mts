@@ -64,14 +64,14 @@ const NOW = new Date("2026-08-01T12:00:00.000Z");
 
 // ─── Draft Payout — Activation Invariant Tests ────────────────────────────
 
-test("draft: activation fails without a target wallet address", () => {
+test("draft: activation succeeds without a target wallet address", () => {
   const milestones = [makeMilestone("m1", "Design", "500"), makeMilestone("m2", "Dev", "500")];
   const error = derivePayoutActivationInvariantError({
     targetWalletAddress: null,
     milestones,
     totalAmountUsdc: totalAmount(milestones),
   });
-  assert.equal(error, "PAYOUT_INCOMPLETE");
+  assert.equal(error, null);
 });
 
 test("draft: activation fails with no milestones", () => {

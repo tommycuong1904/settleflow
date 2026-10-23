@@ -4,7 +4,7 @@ import { Decimal } from "@prisma/client/runtime/library";
 
 import { derivePayoutActivationInvariantError } from "./payout-activation";
 
-test("activation requires target wallet and at least one milestone", () => {
+test("activation permits a payout without a wallet and requires at least one milestone", () => {
   const noWallet = derivePayoutActivationInvariantError({
     targetWalletAddress: null,
     milestones: [{ amountUsdc: new Decimal("50") }],
@@ -17,7 +17,7 @@ test("activation requires target wallet and at least one milestone", () => {
     totalAmountUsdc: new Decimal("50"),
   });
 
-  assert.equal(noWallet, "PAYOUT_INCOMPLETE");
+  assert.equal(noWallet, null);
   assert.equal(noMilestones, "PAYOUT_INCOMPLETE");
 });
 
