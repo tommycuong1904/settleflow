@@ -895,15 +895,14 @@ export function PayoutDetailReleaseShell({
                   ) : null}
                   <button type="button" onClick={() => {
                     if (!recipientAddress) {
-                      setReleaseError("Add a wallet address to this contributor before using Wallet payment.");
                       return;
                     }
                     setReleaseModalMode("review");
-                  }} className="w-full rounded-2xl border border-[var(--border-soft)] p-4 text-left transition-colors hover:bg-[var(--surface-muted)]">
+                  }} disabled={!recipientAddress} aria-describedby={!recipientAddress ? "wallet-payment-unavailable" : undefined} className="w-full rounded-2xl border border-[var(--border-soft)] p-4 text-left transition-colors hover:bg-[var(--surface-muted)] disabled:cursor-not-allowed disabled:opacity-55">
                     <span className="block font-semibold text-[var(--foreground)]">Wallet payment <span className="ml-1 text-xs font-normal text-[var(--text-muted)]">Advanced</span></span>
                     <span className="mt-1 block text-sm text-[var(--text-muted)]">Send USDC through a connected browser wallet on Arc Testnet.</span>
                   </button>
-                  {!recipientAddress ? <p className="text-sm text-[var(--text-muted)]">A wallet address has not been configured for this contributor.</p> : null}
+                  {!recipientAddress ? <p id="wallet-payment-unavailable" className="text-sm text-[var(--text-muted)]">To use Wallet payment, add a wallet address to this contributor first.</p> : null}
                 </div>
               </>
             ) : releaseModalMode === "simulated" ? (
