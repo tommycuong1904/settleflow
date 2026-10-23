@@ -101,6 +101,7 @@ test("owner and contributor payout views are scoped to their workspace", async (
     await expect(ownerPage.getByText("No funds will move")).toBeVisible();
     await ownerPage.getByRole("button", { name: "Mark as paid (demo)" }).click();
     await expect(ownerPage.getByLabel("Notifications").getByText("Payment recorded for testing")).toBeVisible();
+    await expect(ownerPage.getByText("Recorded for testing — no funds moved")).toBeVisible();
     await ownerPage.getByRole("button", { name: "Export Payout Summary" }).click();
     await expect(ownerPage.getByText("Payment summary")).toBeVisible();
     await expect(ownerPage.getByText("Simulated payment (test)")).toBeVisible();

@@ -802,13 +802,14 @@ export function PayoutDetailClient({
             {milestones.map((milestone) => (
               <MilestoneRow
                 key={`${milestone.id}:${milestone.status}`}
-                  milestone={milestone}
-                  currentActor={currentActor}
-                  workspaceId={workspaceId}
-                  onApprove={canApproveMilestones ? () => handleApproveMilestone(milestone.id) : undefined}
-                  onReject={canApproveMilestones ? (_milestoneId, comment) => handleRejectMilestone(milestone.id, comment) : undefined}
-                  canStartPayment={isOwnerActor && nextReleasableMilestone?.id === milestone.id}
-                  onReviewPayment={() => setReleaseReviewRequest((current) => current + 1)}
+                milestone={milestone}
+                paymentAttempt={paymentAttempts.find((payment) => payment.milestoneId === milestone.id && payment.status === "completed")}
+                currentActor={currentActor}
+                workspaceId={workspaceId}
+                onApprove={canApproveMilestones ? () => handleApproveMilestone(milestone.id) : undefined}
+                onReject={canApproveMilestones ? (_milestoneId, comment) => handleRejectMilestone(milestone.id, comment) : undefined}
+                canStartPayment={isOwnerActor && nextReleasableMilestone?.id === milestone.id}
+                onReviewPayment={() => setReleaseReviewRequest((current) => current + 1)}
                 onStatusChange={handleMilestoneStatusChange}
               />
             ))}

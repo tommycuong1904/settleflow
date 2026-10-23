@@ -7,6 +7,7 @@ import { ReviewControls } from "@/components/milestones/review-controls";
 import { SubmitMilestoneDialog } from "@/components/milestones/submit-milestone-dialog";
 import { Button } from "@/components/shared/button";
 import type { Milestone } from "@/lib/models/milestone";
+import type { PaymentAttempt } from "@/lib/models/payment-attempt";
 import type { ProductActor } from "@/lib/runtime/product-context";
 import { formatUsdc } from "@/lib/utils/format";
 import {
@@ -23,6 +24,7 @@ import { isRole } from "@/lib/runtime/role-utils";
 
 type MilestoneRowProps = {
   milestone: Milestone;
+  paymentAttempt?: PaymentAttempt;
   currentActor: ProductActor;
   workspaceId: string;
   onApprove?: (milestoneId: string) => void | Promise<void>;
@@ -38,6 +40,7 @@ type MilestoneRowProps = {
 
 export function MilestoneRow({
   milestone,
+  paymentAttempt,
   currentActor,
   workspaceId,
   onApprove,
@@ -74,6 +77,7 @@ export function MilestoneRow({
   const isContributorActor = isRole(currentActor, "contributor");
   const isOwnerActor = isRole(currentActor, "owner");
   const canApproveMilestone = isOwnerActor;
+  const isSimulatedPayment = paymentAttempt?.method === "simulated";
 
   const handleSubmissionSuccess = (meta?: { submittedAt?: string; summary?: string; artifactUrl?: string }) => {
     setStatus("submitted");
@@ -275,7 +279,9 @@ export function MilestoneRow({
                 <span>Payment complete</span>
               </div>
               <span className="text-[11px] text-[var(--text-muted)]">
-                Paid {milestone.releasedAt ? milestone.releasedAt.slice(0, 10) : "recently"} • Transaction details are available below
+                {isSimulatedPayment
+                  ? `Paid ${milestone.releasedAt ? milestone.releasedAt.slice(0, 10) : "recently"} • Recorded for testing — no funds moved`
+                  : `Paid ${milestone.releasedAt ? milestone.releasedAt.slice(0, 10) : "recently"} • Transaction details are available below`}
               </span>
             </div>
           ) : null}
