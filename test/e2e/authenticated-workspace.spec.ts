@@ -85,7 +85,7 @@ test("owner and contributor payout views are scoped to their workspace", async (
     await ownerPage.goto(`/notifications?workspaceId=${workspaceId}`);
     await expect(ownerPage.getByRole("main").getByText("Milestone ready for review")).toBeVisible();
     await ownerPage.goto(`/payouts/${payout.id}?workspaceId=${workspaceId}`);
-    await expect(ownerPage.getByText("1 milestone awaiting your review.")).toBeVisible();
+    await expect(ownerPage.getByRole("main").getByText("1 milestone awaiting your review.")).toBeVisible();
     await expect(ownerPage.getByRole("heading", { name: "Payment action" })).toHaveCount(0);
     await expect(ownerPage.getByText("No payment action needed")).toHaveCount(0);
     await ownerPage.getByRole("button", { name: "Approve Milestone" }).click();
@@ -119,6 +119,7 @@ test("owner and contributor payout views are scoped to their workspace", async (
     await expect(contributorPage.getByText("NAVIGATION")).toBeVisible();
     await expect(contributorPage.getByRole("button", { name: /Client design work/i })).toBeVisible();
     await expect(contributorPage.getByRole("link", { name: "Contributors" })).toHaveCount(0);
+    await expect(contributorPage.getByRole("link", { name: "New Payout" })).toHaveCount(0);
     await contributorPage.getByRole("button", { name: /Client design work/i }).click();
     await contributorPage.getByRole("button", { name: /Rename Client design work for me/i }).click();
     await contributorPage.getByLabel("Label for you").fill("Acme delivery work");
@@ -138,7 +139,10 @@ test("owner and contributor payout views are scoped to their workspace", async (
     const emptyContributorWorkspace = await db.workspace.create({ data: { name: "E2E Empty Contributor Workspace", slug: `e2e-empty-contributor-${suffix}` } });
     emptyContributorWorkspaceId = emptyContributorWorkspace.id;
     await db.workspaceMember.create({ data: { workspaceId: emptyContributorWorkspaceId, userId: contributorUser.id, role: "contributor" } });
-    await contributorContext.addCookies([{ name: "sf_workspace_id", value: emptyContributorWorkspaceId, domain: "127.0.0.1", path: "/" }]);
+    await contributorPage.reload();
+    await contributorPage.getByRole("button", { name: /Acme delivery work/i }).click();
+    await contributorPage.getByRole("menuitem", { name: /E2E Empty Contributor Workspace/i }).click();
+    await expect(contributorPage.getByRole("button", { name: /E2E Empty Contributor Workspace contributor/i })).toBeVisible();
     await contributorPage.goto("/payouts");
     await expect(contributorPage.getByText("See the work assigned to you and submit it when it is ready.")).toBeVisible();
     await expect(contributorPage.getByText("No payouts assigned yet")).toBeVisible();
