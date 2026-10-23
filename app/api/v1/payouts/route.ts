@@ -21,10 +21,10 @@ export async function POST(request: Request) {
       body.totalAmountUsdc];
 
     if (required.some((value) => !isNonEmptyString(value)) || milestones.length === 0) {
-      return apiError("INVALID_PAYOUT_PAYLOAD", { message: "Invalid payout payload.", status: 400 });
+      return apiError("INVALID_PAYOUT_PAYLOAD", { message: "Add a title, choose a contributor, enter a total amount, and include at least one milestone.", status: 400 });
     }
     if (!isValidUsdcAmount(body.totalAmountUsdc) || (body.targetWalletAddress && !isValidEvmAddress(body.targetWalletAddress))) {
-      return apiError("INVALID_PAYOUT_PAYLOAD", { message: "Invalid payout amount or target wallet.", status: 400 });
+      return apiError("INVALID_PAYOUT_PAYLOAD", { message: "Enter a total amount greater than zero. If you added Wallet payment details, check the wallet address.", status: 400 });
     }
 
     if (body.currency && body.currency !== "USDC") {
@@ -45,17 +45,17 @@ export async function POST(request: Request) {
     }>;
 
     if (!hasValidMilestoneShape(milestonePayload)) {
-      return apiError("INVALID_MILESTONE_PAYLOAD", { message: "Invalid milestone payload.", status: 400 });
+      return apiError("INVALID_MILESTONE_PAYLOAD", { message: "Complete the title, description, and amount for every milestone.", status: 400 });
     }
 
     if (!hasContiguousMilestoneSequences(milestonePayload)) {
-      return apiError("INVALID_MILESTONE_SEQUENCE", { message: "Milestone sequence must start at 1 and stay contiguous.", status: 400 });
+      return apiError("INVALID_MILESTONE_SEQUENCE", { message: "Keep milestones in their original order, starting with the first one.", status: 400 });
     }
 
     const milestoneTotal = sumMilestoneAmounts(milestonePayload);
 
     if (!milestoneTotal.equals(sumMilestoneAmounts([{ amountUsdc: body.totalAmountUsdc }]))) {
-      return apiError("PAYOUT_TOTAL_MISMATCH", { message: "totalAmountUsdc must equal the sum of milestone amounts.", status: 400 });
+      return apiError("PAYOUT_TOTAL_MISMATCH", { message: "Make sure the total amount matches the sum of all milestones.", status: 400 });
     }
 
     const payout = await createPayout({
@@ -86,8 +86,8 @@ export async function POST(request: Request) {
         USER_NOT_FOUND: "Owner context user not found.",
         USER_NOT_ALLOWED_TO_CREATE_PAYOUT: "User is not allowed to create payouts in this workspace.",
         CONTRIBUTOR_NOT_FOUND: "Contributor not found.",
-        INVALID_MILESTONE_SEQUENCE: "Milestone sequence must start at 1 and stay contiguous.",
-        PAYOUT_TOTAL_MISMATCH: "totalAmountUsdc must equal the sum of milestone amounts.",
+        INVALID_MILESTONE_SEQUENCE: "Keep milestones in their original order, starting with the first one.",
+        PAYOUT_TOTAL_MISMATCH: "Make sure the total amount matches the sum of all milestones.",
       },
       { message: "Unable to create payout.", status: 500 },
     );

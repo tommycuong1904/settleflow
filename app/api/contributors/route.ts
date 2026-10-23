@@ -10,7 +10,6 @@ import {
   listContributors,
 } from "@/lib/repositories/contributors";
 import { getSessionFromRequest, resolveProductContextFromRequestWithSession } from "@/lib/auth/session-server";
-import { resolveWorkspaceIdFromRequestWithSession } from "@/lib/auth/session-server";
 import { assertCanCreateContributor } from "@/lib/runtime/product-policy";
 
 export async function GET(request: Request) {
@@ -73,7 +72,7 @@ export async function POST(request: Request) {
     if (walletAddress !== undefined && (typeof walletAddress !== "string" || (walletAddress.trim() && !/^0x[a-fA-F0-9]{40}$/.test(walletAddress.trim())))) {
       return apiError("INVALID_WALLET_ADDRESS", {
         message:
-          "Wallet address must be a valid EVM address when provided.",
+          "For Wallet payment, enter a valid wallet address that starts with 0x.",
         status: 400,
       });
     }
@@ -90,8 +89,14 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ data: contributor }, { status: 201 });
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Failed to create contributor.";
+    const rawMessage = error instanceof Error ? error.message : "";
+    const message = rawMessage === "Contributor name is required."
+      ? "Enter the contributor's name."
+      : rawMessage.startsWith("Invalid EVM wallet address")
+      ? "For Wallet payment, enter a valid wallet address that starts with 0x."
+      : rawMessage === "A contributor with this wallet address already exists in this workspace."
+      ? "This wallet address is already linked to a contributor in this workspace."
+      : "We couldn't add this contributor. Please try again.";
     return apiError("CONTRIBUTOR_CREATE_FAILED", {
       message,
       status: 400,
