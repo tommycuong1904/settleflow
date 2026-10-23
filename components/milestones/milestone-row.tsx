@@ -274,13 +274,20 @@ export function MilestoneRow({
 
           {isReleased ? (
             <div className="flex flex-col gap-2 border-t border-[var(--border-soft)] pt-4 text-xs sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-1.5 text-sky-600 dark:text-sky-400 font-semibold">
-                <CheckCircle2 size={15} />
-                <span>Payment complete</span>
+              <div className="flex flex-wrap items-center gap-2 font-semibold text-sky-600 dark:text-sky-400">
+                <span className="flex items-center gap-1.5">
+                  <CheckCircle2 size={15} />
+                  <span>Payment complete</span>
+                </span>
+                {isSimulatedPayment ? (
+                  <span className="rounded-full border border-sky-500/25 bg-sky-500/10 px-2 py-0.5 text-[10px] font-semibold text-sky-700 dark:text-sky-200">
+                    Simulated · no funds moved
+                  </span>
+                ) : null}
               </div>
               <span className="text-[11px] text-[var(--text-muted)]">
                 {isSimulatedPayment
-                  ? `Paid ${milestone.releasedAt ? milestone.releasedAt.slice(0, 10) : "recently"} • Recorded for testing — no funds moved`
+                  ? `Paid ${milestone.releasedAt ? milestone.releasedAt.slice(0, 10) : "recently"}`
                   : `Paid ${milestone.releasedAt ? milestone.releasedAt.slice(0, 10) : "recently"} • Transaction details are available below`}
               </span>
             </div>
