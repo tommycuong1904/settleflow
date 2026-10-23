@@ -125,6 +125,8 @@ export function EditContributorDialog({
       status === "active" ? "archived" : "active";
 
     setIsUpdatingStatus(true);
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 15_000);
     try {
       const res = await fetch(`/api/v1/contributors/${contributor.id}`, {
         method: "PATCH",
@@ -132,6 +134,7 @@ export function EditContributorDialog({
           "Content-Type": "application/json",
           [PRODUCT_CONTEXT_HEADER_NAMES.workspaceId]: workspaceId,
         },
+        signal: controller.signal,
         body: JSON.stringify({ status: nextStatus }),
       });
 
@@ -157,8 +160,9 @@ export function EditContributorDialog({
         router.refresh();
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An unexpected error occurred.");
+      setError(err instanceof DOMException && err.name === "AbortError" ? "Updating contributor status timed out. Check your connection and try again." : err instanceof Error ? err.message : "We couldn't update contributor status. Please try again.");
     } finally {
+      window.clearTimeout(timeoutId);
       setIsUpdatingStatus(false);
     }
   };
