@@ -72,6 +72,7 @@ test("owner and contributor payout views are scoped to their workspace", async (
     await contributorPage.goto(`/payouts?workspaceId=${workspaceId}`);
     await expect(contributorPage.getByRole("link", { name: "Payouts" })).toBeVisible();
     await expect(contributorPage.getByText("Browser-scoped payout")).toBeVisible();
+    await expect(contributorPage.getByRole("link", { name: "New Payout" })).toHaveCount(0);
     await contributorPage.goto(`/payouts/${payout.id}?workspaceId=${workspaceId}`);
     await contributorPage.getByRole("button", { name: "Submit milestone" }).click();
     await contributorPage.getByPlaceholder("https://github.com/org/repo/pull/123").fill("https://example.test/e2e-proof");

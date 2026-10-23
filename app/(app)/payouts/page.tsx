@@ -7,6 +7,7 @@ import { getSessionFromCookieStore, resolveProductContextForServerPage, resolveS
 import { ServerAuthContextState } from "@/components/shared/server-auth-context-state";
 import { redirect } from "next/navigation";
 import { Plus } from "lucide-react";
+import { hasRole } from "@/lib/runtime/role-utils";
 
 export default async function PayoutsPage() {
   const cookieStore = await cookies();
@@ -25,6 +26,7 @@ export default async function PayoutsPage() {
     memberships: resolved.memberships,
     workspaceId: contextResult.productContext.workspaceId,
   });
+  const canCreatePayout = hasRole(contextResult.productContext.actor, "owner");
 
   return (
     <div className="sf-app-wrapper flex flex-col py-8 md:py-12 gap-8">
@@ -33,13 +35,15 @@ export default async function PayoutsPage() {
         title="Payouts"
         description="Organize milestone work, approvals, and payments for your contributors."
       >
-        <Button href="/payouts/new" variant="primary" size="sm">
-          <Plus size={15} className="mr-1.5" /> New Payout
-        </Button>
+        {canCreatePayout ? (
+          <Button href="/payouts/new" variant="primary" size="sm">
+            <Plus size={15} className="mr-1.5" /> New Payout
+          </Button>
+        ) : null}
       </PageHeader>
 
       <section>
-        <PayoutListClient initialPayouts={payouts} />
+        <PayoutListClient initialPayouts={payouts} canCreatePayout={canCreatePayout} />
       </section>
     </div>
   );

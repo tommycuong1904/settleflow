@@ -9,10 +9,12 @@ import { Search, ArrowRight } from "lucide-react";
 
 type PayoutListClientProps = {
   initialPayouts: AccessiblePayoutListItem[];
+  canCreatePayout: boolean;
 };
 
 export function PayoutListClient({
   initialPayouts,
+  canCreatePayout,
 }: PayoutListClientProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<
@@ -121,7 +123,9 @@ export function PayoutListClient({
           description={
             searchQuery || statusFilter !== "all"
               ? "Try adjusting your search query or status filter."
-              : "Create your first payout to organize work, approvals, and payments."
+              : canCreatePayout
+              ? "Create your first payout to organize work, approvals, and payments."
+              : "Payouts assigned to you will appear here after a workspace owner creates one."
           }
         />
       ) : ( <>
