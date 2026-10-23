@@ -96,8 +96,6 @@ test("owner and contributor payout views are scoped to their workspace", async (
     await ownerPage.setViewportSize({ width: 390, height: 844 });
     await ownerPage.getByRole("button", { name: "Pay 100 USDC" }).first().click();
     await expect(ownerPage.getByRole("heading", { name: "Choose how to record this payment" })).toBeVisible();
-    await expect(ownerPage.getByRole("button", { name: /Wallet payment/ })).toBeDisabled();
-    await expect(ownerPage.getByText("To use Wallet payment, add a wallet address to this contributor first.")).toBeVisible();
     await ownerPage.getByRole("button", { name: "Simulated payment" }).click();
     await expect(ownerPage.getByRole("heading", { name: "Mark this milestone as paid?" })).toBeVisible();
     await expect(ownerPage.getByText("No funds will move")).toBeVisible();
@@ -130,6 +128,7 @@ test("owner and contributor payout views are scoped to their workspace", async (
     await expect(contributorPage.getByRole("button", { name: /^Acme delivery work contributor/i })).toBeVisible();
     await contributorPage.getByRole("menuitem", { name: /E2E Personal Workspace/i }).click();
     await expect(contributorPage).toHaveURL(/\/dashboard$/);
+    await contributorPage.reload();
     await expect(contributorPage.getByRole("button", { name: /E2E Personal Workspace/i })).toBeVisible();
     await expect(contributorPage.getByRole("link", { name: "Contributors" })).toBeVisible();
 
@@ -145,6 +144,7 @@ test("owner and contributor payout views are scoped to their workspace", async (
     await contributorPage.reload();
     await contributorPage.getByRole("button", { name: /Acme delivery work/i }).click();
     await contributorPage.getByRole("menuitem", { name: /E2E Empty Contributor Workspace/i }).click();
+    await contributorPage.reload();
     await expect(contributorPage.getByRole("button", { name: /E2E Empty Contributor Workspace contributor/i })).toBeVisible();
     await contributorPage.goto("/payouts");
     await expect(contributorPage.getByText("See the work assigned to you and submit it when it is ready.")).toBeVisible();
@@ -172,6 +172,51 @@ test("owner and contributor payout views are scoped to their workspace", async (
     }
     if (ownerId) await db.user.delete({ where: { id: ownerId } });
     if (contributorUserId) await db.user.delete({ where: { id: contributorUserId } });
+    await db.$disconnect();
+  }
+});
+
+test("wallet payment is unavailable until a contributor has a wallet address", async ({ browser }) => {
+  const suffix = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const ownerAddress = `0x${crypto.randomUUID().replaceAll("-", "").padEnd(40, "1")}`;
+  const db = createTestPrismaClient();
+  let workspaceId = "";
+  let ownerId = "";
+  let context: Awaited<ReturnType<typeof browser.newContext>> | undefined;
+
+  try {
+    const owner = await db.user.create({ data: { displayName: "Wallet-option Owner", email: `wallet-option-owner-${suffix}@example.test` } });
+    ownerId = owner.id;
+    const workspace = await db.workspace.create({ data: { name: "Wallet-option Workspace", slug: `wallet-option-${suffix}` } });
+    workspaceId = workspace.id;
+    await db.workspaceMember.create({ data: { workspaceId, userId: owner.id, role: "owner" } });
+    const contributor = await db.contributor.create({ data: { workspaceId, createdByUserId: owner.id, name: "No-wallet Contributor", walletAddress: null } });
+    const payout = await db.payout.create({ data: { workspaceId, contributorId: contributor.id, createdByUserId: owner.id, title: "No-wallet payment choice", totalAmountUsdc: "25", status: "active" } });
+    await db.milestone.create({ data: { payoutId: payout.id, title: "Approved no-wallet milestone", description: "Check payment choices", amountUsdc: "25", sequence: 1, status: "approved", approvedAt: new Date() } });
+
+    const token = await createSessionToken({ userId: owner.id, email: owner.email!, name: owner.displayName, address: ownerAddress, authType: "web3_wallet" }, "e2e-test-session-secret");
+    context = await browser.newContext();
+    await context.addCookies([{ name: "sf_session", value: token, domain: "127.0.0.1", path: "/" }]);
+    const page = await context.newPage();
+
+    await page.goto(`/payouts/${payout.id}?workspaceId=${workspaceId}`);
+    await expect(page.getByText("Ready to pay")).toBeVisible();
+    await expect(page.getByText("Choose how you want to record this payment.")).toBeVisible();
+    await page.getByRole("button", { name: "Pay 25 USDC" }).click();
+    await expect(page.getByRole("heading", { name: "Choose how to record this payment" })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Wallet payment/ })).toBeDisabled();
+    await expect(page.getByText("To use Wallet payment, add a wallet address to this contributor first.")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Simulated payment" })).toBeEnabled();
+  } finally {
+    await context?.close();
+    if (workspaceId) {
+      await db.paymentAttempt.deleteMany({ where: { payout: { workspaceId } } });
+      await db.payout.deleteMany({ where: { workspaceId } });
+      await db.contributor.deleteMany({ where: { workspaceId } });
+      await db.workspaceMember.deleteMany({ where: { workspaceId } });
+      await db.workspace.delete({ where: { id: workspaceId } });
+    }
+    if (ownerId) await db.user.delete({ where: { id: ownerId } });
     await db.$disconnect();
   }
 });

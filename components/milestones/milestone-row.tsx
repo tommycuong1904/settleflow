@@ -243,11 +243,16 @@ export function MilestoneRow({
 
           {isApproved ? (
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-t border-[var(--border-soft)] pt-4 text-xs">
-              <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-semibold">
-                <CheckCircle2 size={15} />
-                <span>
-                  {isOwnerActor && canStartPayment ? "Ready to pay" : isOwnerActor ? "Payment queued" : "Waiting for payment"}
-                </span>
+              <div className="space-y-1">
+                <div className="flex items-center gap-1.5 font-semibold text-emerald-600 dark:text-emerald-400">
+                  <CheckCircle2 size={15} />
+                  <span>
+                    {isOwnerActor && canStartPayment ? "Ready to pay" : isOwnerActor ? "Payment queued" : "Waiting for payment"}
+                  </span>
+                </div>
+                {isOwnerActor && canStartPayment ? (
+                  <p className="text-[11px] font-normal text-[var(--text-muted)]">Choose how you want to record this payment.</p>
+                ) : null}
               </div>
               {isOwnerActor && canStartPayment ? (
                 <Button size="sm" onClick={onReviewPayment}>
