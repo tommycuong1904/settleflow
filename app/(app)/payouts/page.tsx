@@ -33,7 +33,11 @@ export default async function PayoutsPage() {
       <PageHeader
         eyebrow="Payments"
         title="Payouts"
-        description="Organize milestone work, approvals, and payments for your contributors."
+        description={
+          canCreatePayout
+            ? "Organize milestone work, approvals, and payments for your contributors."
+            : "See the work assigned to you and submit it when it is ready."
+        }
       >
         {canCreatePayout ? (
           <Button href="/payouts/new" variant="primary" size="sm">

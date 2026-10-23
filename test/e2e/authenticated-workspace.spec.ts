@@ -12,6 +12,7 @@ test("owner and contributor payout views are scoped to their workspace", async (
   const db = createTestPrismaClient();
   let workspaceId = "";
   let personalWorkspaceId = "";
+  let emptyContributorWorkspaceId = "";
   let ownerId = "";
   let contributorUserId = "";
 
@@ -82,7 +83,7 @@ test("owner and contributor payout views are scoped to their workspace", async (
 
     await ownerPage.reload();
     await ownerPage.goto(`/notifications?workspaceId=${workspaceId}`);
-    await expect(ownerPage.getByText("Milestone ready for review")).toBeVisible();
+    await expect(ownerPage.getByRole("main").getByText("Milestone ready for review")).toBeVisible();
     await ownerPage.goto(`/payouts/${payout.id}?workspaceId=${workspaceId}`);
     await expect(ownerPage.getByText("1 milestone awaiting your review.")).toBeVisible();
     await expect(ownerPage.getByRole("heading", { name: "Payment action" })).toHaveCount(0);
@@ -130,8 +131,19 @@ test("owner and contributor payout views are scoped to their workspace", async (
 
     await contributorPage.getByRole("button", { name: /E2E Personal Workspace/i }).click();
     await contributorPage.getByRole("menuitem", { name: /Acme delivery work/i }).click();
+    await contributorPage.reload();
     await expect(contributorPage.getByRole("button", { name: /Acme delivery work/i })).toBeVisible();
     await expect(contributorPage.getByRole("link", { name: "Contributors" })).toHaveCount(0);
+
+    const emptyContributorWorkspace = await db.workspace.create({ data: { name: "E2E Empty Contributor Workspace", slug: `e2e-empty-contributor-${suffix}` } });
+    emptyContributorWorkspaceId = emptyContributorWorkspace.id;
+    await db.workspaceMember.create({ data: { workspaceId: emptyContributorWorkspaceId, userId: contributorUser.id, role: "contributor" } });
+    await contributorContext.addCookies([{ name: "sf_workspace_id", value: emptyContributorWorkspaceId, domain: "127.0.0.1", path: "/" }]);
+    await contributorPage.goto("/payouts");
+    await expect(contributorPage.getByText("See the work assigned to you and submit it when it is ready.")).toBeVisible();
+    await expect(contributorPage.getByText("No payouts assigned yet")).toBeVisible();
+    await expect(contributorPage.getByText("Payouts assigned to you will appear here after a workspace owner creates one.")).toBeVisible();
+    await expect(contributorPage.getByRole("link", { name: "New Payout" })).toHaveCount(0);
 
     await ownerContext.close();
     await contributorContext.close();
@@ -146,6 +158,10 @@ test("owner and contributor payout views are scoped to their workspace", async (
     if (personalWorkspaceId) {
       await db.workspaceMember.deleteMany({ where: { workspaceId: personalWorkspaceId } });
       await db.workspace.delete({ where: { id: personalWorkspaceId } });
+    }
+    if (emptyContributorWorkspaceId) {
+      await db.workspaceMember.deleteMany({ where: { workspaceId: emptyContributorWorkspaceId } });
+      await db.workspace.delete({ where: { id: emptyContributorWorkspaceId } });
     }
     if (ownerId) await db.user.delete({ where: { id: ownerId } });
     if (contributorUserId) await db.user.delete({ where: { id: contributorUserId } });

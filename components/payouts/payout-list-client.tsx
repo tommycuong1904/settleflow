@@ -118,7 +118,9 @@ export function PayoutListClient({
           title={
             searchQuery || statusFilter !== "all"
               ? "No matching payout agreements"
-              : "No payouts created yet"
+              : canCreatePayout
+              ? "No payouts created yet"
+              : "No payouts assigned yet"
           }
           description={
             searchQuery || statusFilter !== "all"
