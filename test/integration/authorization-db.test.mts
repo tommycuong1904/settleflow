@@ -6,6 +6,7 @@ import { db } from "@/lib/db/client";
 import { GET as getPayouts } from "@/app/api/payouts/route";
 import { GET as getPayoutDetail } from "@/app/api/v1/payouts/[id]/route";
 import { POST as createPayout } from "@/app/api/v1/payouts/route";
+import { POST as createContributor } from "@/app/api/contributors/route";
 import { POST as approveMilestone } from "@/app/api/v1/milestones/[id]/approve/route";
 
 const walletA = "0x1111111111111111111111111111111111111111";
@@ -18,6 +19,39 @@ function sessionCookie(token: string): string {
 async function tokenFor(email: string, userId: string): Promise<string> {
   return createSessionToken({ userId, email, name: email, address: null, authType: "web2_google" });
 }
+
+test("validation routes keep machine codes and return actionable form guidance", async () => {
+  const suffix = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const owner = await db.user.create({ data: { displayName: "Validation Owner", email: `validation-${suffix}@example.com` } });
+  const workspace = await db.workspace.create({ data: { name: "Validation Workspace", slug: `validation-${suffix}` } });
+  await db.workspaceMember.create({ data: { workspaceId: workspace.id, userId: owner.id, role: "owner" } });
+  const token = await tokenFor(owner.email!, owner.id);
+  const headers = { cookie: sessionCookie(token), "content-type": "application/json" };
+
+  try {
+    const invalidPayout = await createPayout(new Request(`https://settleflow.local/api/v1/payouts?workspaceId=${workspace.id}`, {
+      method: "POST", headers, body: JSON.stringify({ title: "", contributorId: "", totalAmountUsdc: "0", milestones: [] }),
+    }));
+    assert.equal(invalidPayout.status, 400);
+    assert.deepEqual(await invalidPayout.json(), {
+      error: "Add a title, choose a contributor, enter a total amount, and include at least one milestone.",
+      code: "INVALID_PAYOUT_PAYLOAD",
+    });
+
+    const invalidContributor = await createContributor(new Request(`https://settleflow.local/api/contributors?workspaceId=${workspace.id}`, {
+      method: "POST", headers, body: JSON.stringify({ name: "Taylor", walletAddress: "not-a-wallet" }),
+    }));
+    assert.equal(invalidContributor.status, 400);
+    assert.deepEqual(await invalidContributor.json(), {
+      error: "For Wallet payment, enter a valid wallet address that starts with 0x.",
+      code: "INVALID_WALLET_ADDRESS",
+    });
+  } finally {
+    await db.workspaceMember.deleteMany({ where: { workspaceId: workspace.id } });
+    await db.workspace.delete({ where: { id: workspace.id } });
+    await db.user.delete({ where: { id: owner.id } });
+  }
+});
 
 test("cross-workspace create and approve mutations are rejected without side effects", async () => {
   const suffix = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
