@@ -64,7 +64,7 @@ export function EditContributorDialog({
 
     const cleanAddress = walletAddress.trim();
     if (cleanAddress && !/^0x[a-fA-F0-9]{40}$/.test(cleanAddress)) {
-      setError("Please enter a valid 42-character EVM wallet address (0x...)");
+      setError("For Wallet payment, enter a valid wallet address that starts with 0x.");
       return;
     }
 

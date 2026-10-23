@@ -194,7 +194,7 @@ function CreatePayoutPageContent() {
       nextErrors.contributorId = "Contributor selection is required.";
     }
     if (walletAddress.trim() && !isLikelyWalletAddress(walletAddress)) {
-      nextErrors.walletAddress = "Wallet address must be a valid EVM address (e.g. 0x...).";
+      nextErrors.walletAddress = "For Wallet payment, enter a valid wallet address that starts with 0x.";
     }
     if (!milestones.length) {
       nextErrors.milestones = "At least one milestone is required.";
@@ -248,7 +248,7 @@ function CreatePayoutPageContent() {
     const nextErrors: FormErrors = {};
     if (!payoutTitle.trim()) nextErrors.title = "Payout title is required.";
     if (!contributorId) nextErrors.contributorId = "Contributor selection is required.";
-    if (walletAddress.trim() && !isLikelyWalletAddress(walletAddress)) nextErrors.walletAddress = "Wallet address must be a valid EVM address when provided.";
+    if (walletAddress.trim() && !isLikelyWalletAddress(walletAddress)) nextErrors.walletAddress = "For Wallet payment, enter a valid wallet address that starts with 0x.";
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length === 0) setCreationStep(2);
   }
