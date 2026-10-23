@@ -17,6 +17,7 @@ import {
   ArchiveRestore,
 } from "lucide-react";
 import { useToast } from "@/lib/context/toast-context";
+import { createRequestTimeout } from "@/lib/client/request-timeout";
 import { useScrollLock } from "@/lib/hooks/use-scroll-lock";
 import { PRODUCT_CONTEXT_HEADER_NAMES } from "@/lib/runtime/product-context";
 import type { ContributorListItem } from "@/lib/repositories/contributors";
@@ -69,8 +70,7 @@ export function EditContributorDialog({
     }
 
     setIsSubmitting(true);
-    const controller = new AbortController();
-    const timeoutId = window.setTimeout(() => controller.abort(), 15_000);
+    const requestTimeout = createRequestTimeout();
 
     try {
       const res = await fetch(`/api/v1/contributors/${contributor.id}`, {
@@ -79,7 +79,7 @@ export function EditContributorDialog({
           "Content-Type": "application/json",
           [PRODUCT_CONTEXT_HEADER_NAMES.workspaceId]: workspaceId,
         },
-        signal: controller.signal,
+        signal: requestTimeout.signal,
         body: JSON.stringify({
           name: name.trim(),
           walletAddress: cleanAddress,
@@ -114,7 +114,7 @@ export function EditContributorDialog({
     } catch (err) {
       setError(err instanceof DOMException && err.name === "AbortError" ? "Saving changes timed out. Check your connection and try again." : err instanceof Error ? err.message : "We couldn't save these changes. Please try again.");
     } finally {
-      window.clearTimeout(timeoutId);
+      requestTimeout.clear();
       setIsSubmitting(false);
     }
   };
@@ -125,8 +125,7 @@ export function EditContributorDialog({
       status === "active" ? "archived" : "active";
 
     setIsUpdatingStatus(true);
-    const controller = new AbortController();
-    const timeoutId = window.setTimeout(() => controller.abort(), 15_000);
+    const requestTimeout = createRequestTimeout();
     try {
       const res = await fetch(`/api/v1/contributors/${contributor.id}`, {
         method: "PATCH",
@@ -134,7 +133,7 @@ export function EditContributorDialog({
           "Content-Type": "application/json",
           [PRODUCT_CONTEXT_HEADER_NAMES.workspaceId]: workspaceId,
         },
-        signal: controller.signal,
+        signal: requestTimeout.signal,
         body: JSON.stringify({ status: nextStatus }),
       });
 
@@ -162,7 +161,7 @@ export function EditContributorDialog({
     } catch (err) {
       setError(err instanceof DOMException && err.name === "AbortError" ? "Updating contributor status timed out. Check your connection and try again." : err instanceof Error ? err.message : "We couldn't update contributor status. Please try again.");
     } finally {
-      window.clearTimeout(timeoutId);
+      requestTimeout.clear();
       setIsUpdatingStatus(false);
     }
   };

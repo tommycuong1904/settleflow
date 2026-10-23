@@ -15,6 +15,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { useToast } from "@/lib/context/toast-context";
+import { createRequestTimeout } from "@/lib/client/request-timeout";
 import { useScrollLock } from "@/lib/hooks/use-scroll-lock";
 import { PRODUCT_CONTEXT_HEADER_NAMES } from "@/lib/runtime/product-context";
 
@@ -60,8 +61,7 @@ export function AddContributorDialog({
     }
 
     setIsSubmitting(true);
-    const controller = new AbortController();
-    const timeoutId = window.setTimeout(() => controller.abort(), 15_000);
+    const requestTimeout = createRequestTimeout();
 
     try {
       const res = await fetch("/api/contributors", {
@@ -70,7 +70,7 @@ export function AddContributorDialog({
           "Content-Type": "application/json",
           [PRODUCT_CONTEXT_HEADER_NAMES.workspaceId]: workspaceId,
         },
-        signal: controller.signal,
+        signal: requestTimeout.signal,
         body: JSON.stringify({
           name: name.trim(),
           walletAddress: cleanAddress || undefined,
@@ -116,7 +116,7 @@ export function AddContributorDialog({
           : "We couldn't add this contributor. Please try again.",
       );
     } finally {
-      window.clearTimeout(timeoutId);
+      requestTimeout.clear();
       setIsSubmitting(false);
     }
   };

@@ -24,6 +24,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useResolvedProductContext } from "@/lib/runtime/product-context-client";
 import { useWallet } from "@/lib/context/wallet-context";
+import { createRequestTimeout } from "@/lib/client/request-timeout";
 import { formatUsdc } from "@/lib/utils/format";
 import { cn } from "@/lib/utils";
 import { AlertCircle, ArrowLeft } from "lucide-react";
@@ -274,13 +275,12 @@ function CreatePayoutPageContent() {
     }
     setSubmitState("creating");
     setErrors({});
-    const controller = new AbortController();
-    const timeoutId = window.setTimeout(() => controller.abort(), 15_000);
+    const requestTimeout = createRequestTimeout();
     try {
       const response = await fetch("/api/v1/payouts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        signal: controller.signal,
+        signal: requestTimeout.signal,
         body: JSON.stringify({
           title: payoutTitle.trim(),
           contributorId,
@@ -321,7 +321,7 @@ function CreatePayoutPageContent() {
       });
       setSubmitState("idle");
     } finally {
-      window.clearTimeout(timeoutId);
+      requestTimeout.clear();
     }
   }
 
