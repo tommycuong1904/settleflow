@@ -96,6 +96,7 @@ test("owner and contributor payout views are scoped to their workspace", async (
     await ownerPage.setViewportSize({ width: 390, height: 844 });
     await ownerPage.getByRole("button", { name: "Pay 100 USDC" }).first().click();
     await expect(ownerPage.getByRole("heading", { name: "Choose how to record this payment" })).toBeVisible();
+    await expect(ownerPage.getByRole("button", { name: /Wallet payment/ })).toBeEnabled();
     await ownerPage.getByRole("button", { name: "Simulated payment" }).click();
     await expect(ownerPage.getByRole("heading", { name: "Mark this milestone as paid?" })).toBeVisible();
     await expect(ownerPage.getByText("No funds will move")).toBeVisible();
