@@ -60,6 +60,8 @@ export function AddContributorDialog({
     }
 
     setIsSubmitting(true);
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 15_000);
 
     try {
       const res = await fetch("/api/contributors", {
@@ -68,6 +70,7 @@ export function AddContributorDialog({
           "Content-Type": "application/json",
           [PRODUCT_CONTEXT_HEADER_NAMES.workspaceId]: workspaceId,
         },
+        signal: controller.signal,
         body: JSON.stringify({
           name: name.trim(),
           walletAddress: cleanAddress || undefined,
@@ -105,8 +108,15 @@ export function AddContributorDialog({
         }
       }, 1000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An unexpected error occurred.");
+      setError(
+        err instanceof DOMException && err.name === "AbortError"
+          ? "Adding this contributor timed out. Check your connection and try again."
+          : err instanceof Error
+          ? err.message
+          : "We couldn't add this contributor. Please try again.",
+      );
     } finally {
+      window.clearTimeout(timeoutId);
       setIsSubmitting(false);
     }
   };
