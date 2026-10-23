@@ -30,7 +30,7 @@ export default async function NotificationsPage() {
         description="Updates about submitted work, owner decisions, and the payment status of payouts you can access."
       />
       {notifications.length === 0 ? (
-        <EmptyState title="No notifications yet" description="Important payout and milestone updates will appear here." />
+        <EmptyState title="No updates yet" description="Updates will appear here when work is submitted, reviewed, or paid." />
       ) : (
         <NotificationListClient notifications={notifications.map((notification) => ({
           ...notification,
