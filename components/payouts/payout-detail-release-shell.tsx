@@ -849,7 +849,7 @@ export function PayoutDetailReleaseShell({
               ) : isBrowserReleasable ? (
                 <><p className="font-semibold text-[var(--foreground)]">Continue payment</p><p className="mt-1 text-[var(--text-muted)]">Continue the existing payment. SettleFlow will not create another one.</p></>
               ) : nextReleasableMilestone ? (
-                <><p className="font-semibold text-[var(--foreground)]">Ready to pay {formatUsdc(nextReleasableMilestone.amount)} USDC</p><p className="mt-1 text-[var(--text-muted)]">Review the recipient, then sign once in your browser wallet.</p></>
+                <><p className="font-semibold text-[var(--foreground)]">Ready to pay {formatUsdc(nextReleasableMilestone.amount)} USDC</p><p className="mt-1 text-[var(--text-muted)]">Choose how you want to record this payment.</p></>
               ) : null}
             </div>
             {isCircleSettlementPending ? <Button onClick={() => { void handleRefreshCircleSettlement(); }}>Check payment</Button>
