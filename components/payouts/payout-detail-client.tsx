@@ -63,6 +63,7 @@ function getMilestoneAmountError(amount: string) {
   if (!normalized) return "Amount is required.";
   if (!/^\d+(\.\d+)?$/.test(normalized)) return "Amount must be a valid USDC number.";
   if (Number(normalized) <= 0) return "Amount must be greater than zero.";
+  if ((normalized.split(".")[1]?.length ?? 0) > 6) return "Amount can have up to 6 decimal places.";
   return null;
 }
 
@@ -292,6 +293,19 @@ export function PayoutDetailClient({
     };
   });
   const hasMilestoneAmountError = milestoneAmountErrors.some((error) => error !== null);
+  const hasDraftMilestones = draftMilestonesState.length > 0;
+  const draftDetailsReady = !draftTitleDirty && !draftDescriptionDirty && payoutTitleState.trim().length > 0;
+  const draftMilestonePlanReady = hasDraftMilestones && !draftMilestonesDirty && !hasMilestoneAmountError;
+  const canActivateDraft = !activatingPayout && !hasUnsavedDraftChanges && hasDraftMilestones && !hasMilestoneAmountError && payoutTitleState.trim().length > 0;
+  const draftActivationMessage = hasUnsavedDraftChanges
+    ? "Save your draft changes before activation."
+    : !hasDraftMilestones
+      ? "Add at least one milestone before activation."
+    : hasMilestoneAmountError
+      ? "Fix the milestone amounts before activation."
+      : payoutTitleState.trim().length === 0
+        ? "Add a payout title before activation."
+        : "Activation lets contributors submit work for review. You can then approve each milestone when it is complete.";
 
   async function activatePayout() {
     if (activatingPayout || payoutStatusState !== "draft") return;
@@ -308,6 +322,7 @@ export function PayoutDetailClient({
         body: JSON.stringify({}),
       });
       const data = (await response.json()) as { error?: string; payout?: { status?: Payout["status"] } };
+      if (!response.ok) throw new Error(data.error ?? "Unable to activate payout.");
       setPayoutStatusState(data.payout?.status ?? "active");
       toast({
         variant: "success",
@@ -316,8 +331,8 @@ export function PayoutDetailClient({
       });
       notifyWorkflowUpdated();
       await refreshActivity();
-    } catch (error) {
-      setReviewError(error instanceof Error ? error.message : "Unable to activate payout.");
+    } catch {
+      setReviewError("We couldn’t activate this payout. It is still a draft. Try again in a moment.");
     } finally {
       setActivatingPayout(false);
     }
@@ -379,65 +394,42 @@ export function PayoutDetailClient({
     return data.payout;
   }
 
-  async function saveDraftTitle() {
+  async function saveDraftDetails() {
     if (savingDraftTitle || payoutStatusState !== "draft") return;
 
     const nextTitle = payoutTitleState.trim();
-    if (!nextTitle || nextTitle === payoutTitleCommitted) return;
-
-    setReviewError(null);
-    setDraftSaveNotice(null);
-    setSavingDraftTitle(true);
-    try {
-      const updated = await saveDraftFields({ title: nextTitle });
-      const resolvedTitle = updated?.title ?? nextTitle;
-      const resolvedDescription = updated?.description ?? payoutDescriptionState;
-      setPayoutTitleCommitted(resolvedTitle);
-      setPayoutTitleState(resolvedTitle);
-      setPayoutDescriptionCommitted(resolvedDescription);
-      setPayoutDescriptionState(resolvedDescription);
-      setDraftSaveNotice("Draft title saved.");
-      toast({
-        variant: "info",
-        title: "Draft Saved",
-        description: "Payout title has been updated.",
-        durationMs: 2500,
-      });
-    } catch (error) {
-      setReviewError(error instanceof Error ? error.message : "Unable to update payout draft.");
-      setPayoutTitleState(payoutTitleCommitted);
-    } finally {
-      setSavingDraftTitle(false);
-    }
-  }
-
-  async function saveDraftDescription() {
-    if (savingDraftTitle || payoutStatusState !== "draft") return;
-
     const nextDescription = payoutDescriptionState.trim();
-    if (nextDescription === payoutDescriptionCommitted) return;
+    if (!nextTitle) {
+      setReviewError("Add a payout title before saving the draft.");
+      return;
+    }
+    if (!draftTitleDirty && !draftDescriptionDirty) return;
 
     setReviewError(null);
     setDraftSaveNotice(null);
     setSavingDraftTitle(true);
     try {
-      const updated = await saveDraftFields({ description: nextDescription });
-      const resolvedTitle = updated?.title ?? payoutTitleState;
+      const updated = await saveDraftFields({
+        title: draftTitleDirty ? nextTitle : undefined,
+        description: draftDescriptionDirty ? nextDescription : undefined,
+      });
+      const resolvedTitle = updated?.title ?? nextTitle;
       const resolvedDescription = updated?.description ?? nextDescription;
       setPayoutTitleCommitted(resolvedTitle);
       setPayoutTitleState(resolvedTitle);
       setPayoutDescriptionCommitted(resolvedDescription);
       setPayoutDescriptionState(resolvedDescription);
       setPayoutTotalAmountState(Number(updated?.totalAmountUsdc ?? payoutTotalAmountState));
-      setDraftSaveNotice("Draft description saved.");
+      setDraftSaveNotice("Draft details saved.");
       toast({
         variant: "info",
         title: "Draft Saved",
-        description: "Payout description has been updated.",
+        description: "Payout details have been updated.",
         durationMs: 2500,
       });
-    } catch (error) {
-      setReviewError(error instanceof Error ? error.message : "Unable to update payout draft.");
+    } catch {
+      setReviewError("We couldn’t save these draft changes. Your last saved version is unchanged. Try again in a moment.");
+      setPayoutTitleState(payoutTitleCommitted);
       setPayoutDescriptionState(payoutDescriptionCommitted);
     } finally {
       setSavingDraftTitle(false);
@@ -495,8 +487,8 @@ export function PayoutDetailClient({
           amount: Number(updated?.milestones?.[index]?.amountUsdc ?? milestone.amount),
         })),
       );
-    } catch (error) {
-      setReviewError(error instanceof Error ? error.message : "Unable to update payout draft.");
+    } catch {
+      setReviewError("We couldn’t save these draft changes. Your last saved version is unchanged. Try again in a moment.");
       setDraftMilestonesState(draftMilestonesCommitted);
     } finally {
       setSavingDraftTitle(false);
@@ -656,33 +648,29 @@ export function PayoutDetailClient({
         </PageHeader>
 
         <section className="px-1">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
             <h2 className="text-lg font-semibold tracking-tight text-[var(--foreground)]">Payout overview</h2>
-            {payoutStatusState === "draft" && hasRole(currentActor, "owner") ? (
-              <Button
-                onClick={() => { void activatePayout(); }}
-                disabled={activatingPayout || hasUnsavedDraftChanges || hasMilestoneAmountError || payoutTitleState.trim().length === 0}
-              >
-                {activatingPayout ? "Activating..." : "Activate payout"}
-              </Button>
-            ) : null}
           </div>
-          <div className="mt-4 grid gap-y-5 border-y border-[var(--border-soft)] py-4 sm:grid-cols-2 xl:grid-cols-4 xl:divide-x xl:divide-[var(--border-soft)]">
-            <div className="xl:pr-4">
-              <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">Contributor</p>
-              <p className="mt-2 break-all text-sm font-semibold text-[var(--foreground)]">{contributor?.name ?? payout.contributorId}</p>
-            </div>
-            <div className="xl:px-4">
-              <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">Payment setup</p>
-              <p className="mt-2 text-sm font-semibold text-[var(--foreground)]">
-                {contributor?.walletAddress ? "Wallet payment available" : "Choose a method when paying"}
-              </p>
-            </div>
-            <div className="xl:px-4">
+          <div className={`mt-4 grid gap-y-5 border-y border-[var(--border-soft)] py-4 sm:grid-cols-2 ${isOwnerActor ? "xl:grid-cols-4 xl:divide-x xl:divide-[var(--border-soft)]" : "max-w-2xl sm:divide-x sm:divide-[var(--border-soft)]"}`}>
+            {isOwnerActor ? (
+              <>
+                <div className="xl:pr-4">
+                  <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">Contributor</p>
+                  <p className="mt-2 break-all text-sm font-semibold text-[var(--foreground)]">{contributor?.name ?? payout.contributorId}</p>
+                </div>
+                <div className="xl:px-4">
+                  <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">Payment setup</p>
+                  <p className="mt-2 text-sm font-semibold text-[var(--foreground)]">
+                    {contributor?.walletAddress ? "Wallet payment available" : "Choose a method when paying"}
+                  </p>
+                </div>
+              </>
+            ) : null}
+            <div className={isOwnerActor ? "xl:px-4" : "sm:pr-4"}>
               <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">Total amount</p>
               <p className="mt-2 text-sm font-semibold text-[var(--foreground)]">{formatUsdc(payoutTotalAmountState)} USDC</p>
             </div>
-            <div className="xl:pl-4">
+            <div className={isOwnerActor ? "xl:pl-4" : "sm:pl-4"}>
               <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">Payout status</p>
               <p className="mt-2 inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--foreground)]">
                 <span className={`h-1.5 w-1.5 rounded-full ${payoutStatusTone}`} aria-hidden="true" />
@@ -690,45 +678,64 @@ export function PayoutDetailClient({
               </p>
             </div>
           </div>
-          {effectivePayoutStatus !== "active" ? (
+          {payoutStatusState === "draft" && isOwnerActor ? (
+            <div className="mt-4 flex flex-col gap-4 rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="font-semibold text-[var(--foreground)]">{canActivateDraft ? "Ready to activate?" : "Finish the draft first"}</p>
+                <p className="mt-1 text-sm leading-6 text-[var(--text-secondary)]">{draftActivationMessage}</p>
+                <div className="mt-4 grid gap-3 text-xs sm:grid-cols-3">
+                  <div>
+                    <p className="font-medium text-[var(--foreground)]">1. Payout details</p>
+                    <p className={`mt-1 ${draftDetailsReady ? "text-emerald-700" : "text-amber-700"}`}>{draftDetailsReady ? "Saved" : "Needs saving"}</p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-[var(--foreground)]">2. Milestone plan</p>
+                    <p className={`mt-1 ${draftMilestonePlanReady ? "text-emerald-700" : "text-amber-700"}`}>{draftMilestonePlanReady ? "Saved" : "Needs saving"}</p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-[var(--foreground)]">3. Activate</p>
+                    <p className={`mt-1 ${canActivateDraft ? "text-emerald-700" : "text-[var(--text-muted)]"}`}>{canActivateDraft ? "Ready" : "Locked until saved"}</p>
+                  </div>
+                </div>
+              </div>
+              <Button
+                onClick={() => { void activatePayout(); }}
+                disabled={!canActivateDraft}
+                className="w-full justify-center sm:w-auto"
+              >
+                {activatingPayout ? "Activating..." : "Activate payout"}
+              </Button>
+            </div>
+          ) : effectivePayoutStatus !== "active" ? (
             <p className="mt-3 text-sm text-[var(--text-secondary)]">
-              {effectivePayoutStatus === "draft"
-                ? hasUnsavedDraftChanges
-                  ? "Save your draft changes before activating milestone submissions and reviews."
-                  : "Activate this payout to begin milestone submissions and reviews."
-                : effectivePayoutStatus === "partially_released"
+              {effectivePayoutStatus === "partially_released"
                   ? "Some milestones have been paid. Continue reviewing approved milestones."
                   : "All milestones in this payout have been paid."}
             </p>
           ) : null}
         </section>
 
+        {reviewError ? (
+          <div role="alert" className="rounded-2xl border border-rose-400/30 bg-rose-400/10 px-4 py-3 text-sm leading-6 text-rose-700 dark:text-rose-200">
+            {reviewError}
+          </div>
+        ) : null}
+
         {payoutStatusState === "draft" && isOwnerActor ? (
           <>
-            {reviewError ? (
-              <div className="rounded-2xl border border-rose-400/30 bg-rose-400/10 px-4 py-3 text-sm text-rose-600 dark:text-rose-200">
-                {reviewError}
-              </div>
-            ) : null}
             {draftSaveNotice ? (
               <div className="rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-600 dark:text-emerald-200">
                 {draftSaveNotice}
               </div>
             ) : null}
             <Card className="sf-shell">
-              <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+              <CardHeader>
                 <div>
                   <CardTitle>Draft details</CardTitle>
                   <p className="mt-2 text-sm text-[var(--text-secondary)]">
                     Refine the payout title and description before activation so the agreement is ready for review and milestone work.
                   </p>
                 </div>
-                <Button
-                  onClick={() => { void saveDraftTitle(); }}
-                  disabled={savingDraftTitle || payoutTitleState.trim().length === 0 || !draftTitleDirty}
-                >
-                  {savingDraftTitle ? "Saving..." : "Save payout details"}
-                </Button>
               </CardHeader>
               <CardContent>
                 <div className="space-y-6">
@@ -737,9 +744,10 @@ export function PayoutDetailClient({
                       <label className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
                         Draft title
                       </label>
-                      {draftTitleDirty ? <span className="text-[11px] uppercase tracking-[0.16em] text-cyan-200">Changed</span> : null}
+                      {draftTitleDirty ? <span className="text-[11px] font-medium uppercase tracking-[0.16em] text-amber-700">Unsaved</span> : null}
                     </div>
                     <Input
+                      aria-label="Draft payout title"
                       value={payoutTitleState}
                       onChange={(event) => setPayoutTitleState(event.target.value)}
                       placeholder="Refine the payout title"
@@ -750,36 +758,37 @@ export function PayoutDetailClient({
                       <label className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
                         Draft description
                       </label>
-                      {draftDescriptionDirty ? <span className="text-[11px] uppercase tracking-[0.16em] text-cyan-200">Changed</span> : null}
-                      <Button
-                        variant="secondary"
-                        onClick={() => { void saveDraftDescription(); }}
-                        disabled={savingDraftTitle || !draftDescriptionDirty}
-                      >
-                        Save description
-                      </Button>
+                      {draftDescriptionDirty ? <span className="text-[11px] font-medium uppercase tracking-[0.16em] text-amber-700">Unsaved</span> : null}
                     </div>
                     <Textarea
+                      aria-label="Draft payout description"
                       value={payoutDescriptionState}
                       onChange={(event) => setPayoutDescriptionState(event.target.value)}
                       placeholder="Add more context for this payout agreement"
                     />
+                  </div>
+                  <div className="border-t border-[var(--border-soft)] pt-4">
+                    {draftTitleDirty || draftDescriptionDirty ? <p className="mb-3 text-sm text-amber-700">You have unsaved changes.</p> : null}
+                    <Button
+                      onClick={() => { void saveDraftDetails(); }}
+                      disabled={savingDraftTitle || payoutTitleState.trim().length === 0 || (!draftTitleDirty && !draftDescriptionDirty)}
+                      className="w-full justify-center sm:w-auto"
+                    >
+                      {savingDraftTitle ? "Saving..." : "Save draft details"}
+                    </Button>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
             <Card className="sf-shell">
-              <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+              <CardHeader>
                 <div>
                   <CardTitle>Milestone plan</CardTitle>
                   <p className="mt-2 text-sm text-[var(--text-secondary)]">
                     Finalize milestone titles, scope, and amounts before this payout moves into active review and payment work.
                   </p>
                 </div>
-                <Button onClick={() => { void saveDraftMilestones(); }} disabled={savingDraftTitle || !draftMilestonesDirty || hasMilestoneAmountError}>
-                  {savingDraftTitle ? "Saving..." : "Save milestones"}
-                </Button>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
@@ -789,38 +798,47 @@ export function PayoutDetailClient({
                         <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
                           Milestone {index + 1}
                         </p>
-                        {milestoneDirtyStates[index]?.title || milestoneDirtyStates[index]?.description || milestoneDirtyStates[index]?.amount ? <span className="text-[11px] uppercase tracking-[0.16em] text-cyan-200">Changed</span> : null}
+                        {milestoneDirtyStates[index]?.title || milestoneDirtyStates[index]?.description || milestoneDirtyStates[index]?.amount ? <span className="text-[11px] font-medium uppercase tracking-[0.16em] text-amber-700">Unsaved</span> : null}
                       </div>
                       <div className="mt-3 grid gap-3 md:grid-cols-[1fr_180px]">
                         <div className="space-y-2">
                           <Input
+                            aria-label={`Draft milestone ${index + 1} title`}
                             value={milestone.title}
                             onChange={(event) => setDraftMilestonesState((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, title: event.target.value } : item))}
                             placeholder="Milestone title"
                           />
-                          {milestoneDirtyStates[index]?.title ? <p className="text-xs text-cyan-200">Title changed.</p> : null}
+                          {milestoneDirtyStates[index]?.title ? <p className="text-xs text-amber-700">Unsaved title.</p> : null}
                         </div>
                         <div className="space-y-2">
                           <Input
+                            aria-label={`Draft milestone ${index + 1} amount in USDC`}
                             value={milestone.amount}
                             onChange={(event) => setDraftMilestonesState((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, amount: event.target.value } : item))}
                             placeholder="Amount in USDC"
                           />
                           {milestoneAmountErrors[index] ? (
                             <p className="text-xs text-rose-200">{milestoneAmountErrors[index]}</p>
-                          ) : milestoneDirtyStates[index]?.amount ? <p className="text-xs text-cyan-200">Amount changed.</p> : null}
+                          ) : milestoneDirtyStates[index]?.amount ? <p className="text-xs text-amber-700">Unsaved amount.</p> : null}
                         </div>
                       </div>
                       <div className="mt-3 space-y-2">
                         <Textarea
+                          aria-label={`Draft milestone ${index + 1} description`}
                           value={milestone.description}
                           onChange={(event) => setDraftMilestonesState((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, description: event.target.value } : item))}
                           placeholder="Milestone description"
                         />
-                        {milestoneDirtyStates[index]?.description ? <p className="text-xs text-cyan-200">Description changed.</p> : null}
+                        {milestoneDirtyStates[index]?.description ? <p className="text-xs text-amber-700">Unsaved description.</p> : null}
                       </div>
                     </div>
                   ))}
+                </div>
+                <div className="mt-5 border-t border-[var(--border-soft)] pt-4">
+                  {draftMilestonesDirty ? <p className="mb-3 text-sm text-amber-700">You have unsaved milestone changes.</p> : null}
+                  <Button onClick={() => { void saveDraftMilestones(); }} disabled={savingDraftTitle || !draftMilestonesDirty || hasMilestoneAmountError} className="w-full justify-center sm:w-auto">
+                    {savingDraftTitle ? "Saving..." : "Save milestones"}
+                  </Button>
                 </div>
               </CardContent>
             </Card>
