@@ -14,7 +14,12 @@ type NotificationItem = {
   createdAt: string;
 };
 
-export function NotificationListClient({ notifications }: { notifications: NotificationItem[] }) {
+type NotificationListClientProps = {
+  notifications: NotificationItem[];
+  actor: "owner" | "contributor";
+};
+
+export function NotificationListClient({ notifications, actor }: NotificationListClientProps) {
   const router = useRouter();
   const [items, setItems] = useState(notifications);
   const [isMarkingAll, setIsMarkingAll] = useState(false);
@@ -50,13 +55,25 @@ export function NotificationListClient({ notifications }: { notifications: Notif
     }
   }
 
-  const actionLabel = (type: string) => ({
-    milestone_submitted: "Review work",
-    milestone_approved: "Review & pay",
-    milestone_rejected: "View feedback",
-    release_confirmed: "View payment",
-    release_failed: "Review payment",
-  }[type] ?? "View payout");
+  const actionLabel = (type: string) => {
+    if (actor === "contributor") {
+      return ({
+        milestone_submitted: "View submission",
+        milestone_approved: "View approval",
+        milestone_rejected: "Review feedback",
+        release_confirmed: "View payment",
+        release_failed: "View payment status",
+      }[type] ?? "View payout");
+    }
+
+    return ({
+      milestone_submitted: "Review work",
+      milestone_approved: "Review & pay",
+      milestone_rejected: "View feedback",
+      release_confirmed: "View payment",
+      release_failed: "Review payment",
+    }[type] ?? "View payout");
+  };
 
   return (
     <section className="overflow-hidden rounded-2xl border border-[var(--border-soft)] bg-[var(--surface)]">
