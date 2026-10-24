@@ -37,6 +37,10 @@ function ToastItem({
   const [isClosing, setIsClosing] = useState(false);
 
   const handleClose = () => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      onDismiss(id);
+      return;
+    }
     setIsClosing(true);
     setTimeout(() => onDismiss(id), 200);
   };
