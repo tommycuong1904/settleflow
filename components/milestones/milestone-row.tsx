@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { MilestoneStatusBadge } from "@/components/milestones/milestone-status-badge";
 import { ReviewControls } from "@/components/milestones/review-controls";
@@ -61,6 +61,7 @@ export function MilestoneRow({
   const [rejectComment, setRejectComment] = useState("");
   const [reviewBusy, setReviewBusy] = useState(false);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
+  const rejectCommentRef = useRef<HTMLTextAreaElement>(null);
 
   // Initialize from latestSubmission returned by backend getPayout
   const [lastSubmissionSummary, setLastSubmissionSummary] = useState<string | null>(
@@ -112,6 +113,24 @@ export function MilestoneRow({
     submitRequestMilestoneId,
   ]);
 
+  useEffect(() => {
+    if (!isRejectModalOpen) return;
+
+    const focusFrame = window.requestAnimationFrame(() => rejectCommentRef.current?.focus());
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !reviewBusy) {
+        event.preventDefault();
+        setIsRejectModalOpen(false);
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.cancelAnimationFrame(focusFrame);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isRejectModalOpen, reviewBusy]);
+
   const handleSubmissionSuccess = (meta?: { submittedAt?: string; summary?: string; artifactUrl?: string }) => {
     setStatus("submitted");
     if (meta?.summary) setLastSubmissionSummary(meta.summary);
@@ -135,6 +154,10 @@ export function MilestoneRow({
     setRejectComment("");
     setSubmissionError(null);
     setIsRejectModalOpen(true);
+  }
+
+  function closeRejectDialog() {
+    if (!reviewBusy) setIsRejectModalOpen(false);
   }
 
   async function handleConfirmReject() {
@@ -398,7 +421,7 @@ export function MilestoneRow({
       {isRejectModalOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-3 backdrop-blur-md animate-in fade-in sm:p-4"
-          onClick={() => setIsRejectModalOpen(false)}
+          onClick={closeRejectDialog}
         >
           <div
             role="dialog"
@@ -408,7 +431,7 @@ export function MilestoneRow({
             onClick={(e) => e.stopPropagation()}
           >
             <button
-              onClick={() => setIsRejectModalOpen(false)}
+              onClick={closeRejectDialog}
               disabled={reviewBusy}
               className="absolute right-5 top-5 rounded-full p-1.5 text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--foreground)] transition-colors"
               aria-label="Close dialog"
@@ -429,10 +452,12 @@ export function MilestoneRow({
             </p>
 
             <div className="mt-4 space-y-2.5">
-              <label className="block uppercase tracking-wider font-semibold text-xs text-[var(--foreground)]">
+              <label htmlFor={`revision-feedback-${milestone.id}`} className="block uppercase tracking-wider font-semibold text-xs text-[var(--foreground)]">
                 Feedback <span className="text-rose-500">*</span>
               </label>
               <textarea
+                id={`revision-feedback-${milestone.id}`}
+                ref={rejectCommentRef}
                 required
                 rows={3}
                 value={rejectComment}
@@ -443,14 +468,14 @@ export function MilestoneRow({
             </div>
 
             {submissionError && (
-              <p className="mt-2 text-xs text-rose-500">{submissionError}</p>
+              <p role="alert" className="mt-2 text-xs text-rose-500">{submissionError}</p>
             )}
 
             <div className="mt-5 flex flex-col-reverse gap-3 border-t border-[var(--border-soft)] pt-3 sm:flex-row sm:items-center sm:justify-end">
               <Button
                 variant="secondary"
                 size="sm"
-                onClick={() => setIsRejectModalOpen(false)}
+                onClick={closeRejectDialog}
                 disabled={reviewBusy}
                 className="w-full justify-center sm:w-auto"
               >
