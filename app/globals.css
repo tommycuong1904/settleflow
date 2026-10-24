@@ -21,6 +21,7 @@
   --button-secondary-border: rgba(13, 13, 13, 0.22);
   --accent: #111111;
   --accent-strong: #000000;
+  --focus-ring: #075985;
   --accent-cyan: #0284C7;
   --accent-emerald: #059669;
   --success-soft: rgba(5, 150, 105, 0.08);
@@ -48,6 +49,7 @@
   --button-secondary-border: rgba(255, 255, 255, 0.28);
   --accent: #ffffff;
   --accent-strong: #f8fafc;
+  --focus-ring: #7dd3fc;
   --accent-cyan: #38bdf8;
   --accent-emerald: #10b981;
   --success-soft: rgba(16, 185, 129, 0.1);
@@ -134,8 +136,36 @@ a {
 
 button:focus-visible,
 a:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--focus-ring);
   outline-offset: 3px;
+}
+
+:where(input, textarea, select, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 3px;
+}
+
+@media (prefers-contrast: more) {
+  :root {
+    --text-muted: #374151;
+    --border-soft: rgba(0, 0, 0, 0.22);
+    --border-strong: rgba(0, 0, 0, 0.52);
+    --button-secondary-border: rgba(13, 13, 13, 0.56);
+  }
+
+  [data-theme="dark"] {
+    --text-muted: #d1d5db;
+    --border-soft: rgba(255, 255, 255, 0.28);
+    --border-strong: rgba(255, 255, 255, 0.7);
+    --button-secondary-border: rgba(255, 255, 255, 0.72);
+  }
+}
+
+@media (forced-colors: active) {
+  :where(button, a, input, textarea, select, summary, [tabindex]):focus-visible {
+    outline: 3px solid Highlight;
+    outline-offset: 3px;
+  }
 }
 
 ::selection {
