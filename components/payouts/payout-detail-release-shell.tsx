@@ -179,6 +179,7 @@ export function PayoutDetailReleaseShell({
   const [releaseModalMode, setReleaseModalMode] = useState<"method" | "review" | "simulated" | "pending" | "failed" | null>(null);
   const [resumeReleaseId, setResumeReleaseId] = useState<string | undefined>();
   const [recordingSimulatedPayment, setRecordingSimulatedPayment] = useState(false);
+  const [processingRelease, setProcessingRelease] = useState(false);
   const handledReviewRequest = useRef(0);
   useScrollLock(releaseModalMode !== null);
 
@@ -230,6 +231,7 @@ export function PayoutDetailReleaseShell({
   const isRealExecutionBlocked = isRealExecutionAuthorizationError(releaseError);
   const actionableReleaseError = paymentActionErrorMessage(releaseError);
   const failedPaymentGuidance = getFailedPaymentGuidance(resolvedProof?.failureReason ?? releaseError);
+  const isModalActionPending = processingRelease || recordingSimulatedPayment || retryingRelease || refreshingProof || findingTransaction;
   const productContextHeaders = useMemo(
     () => ({
       [PRODUCT_CONTEXT_HEADER_NAMES.workspaceId]: productContext.workspaceId,
@@ -252,12 +254,30 @@ export function PayoutDetailReleaseShell({
     openPaymentMethod();
   }, [isOwnerActor, nextReleasableMilestone, reviewRequest]);
 
+  useEffect(() => {
+    if (!releaseModalMode) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !isModalActionPending) {
+        event.preventDefault();
+        setReleaseModalMode(null);
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isModalActionPending, releaseModalMode]);
+
   const canUseSimulatedPayment = ARC_CONFIG.executionMode === "demo" || ARC_CONFIG.executionMode === "mock";
 
   function openPaymentMethod() {
     setReleaseError(null);
     setResumeReleaseId(undefined);
     setReleaseModalMode("method");
+  }
+
+  function closeReleaseModal() {
+    if (!isModalActionPending) setReleaseModalMode(null);
   }
 
   async function completeCircleRelease(releaseId: string) {
@@ -324,6 +344,7 @@ export function PayoutDetailReleaseShell({
         return;
       }
     }
+    setProcessingRelease(true);
     setReleaseStatus("submitting");
 
     try {
@@ -567,6 +588,8 @@ export function PayoutDetailReleaseShell({
       setReleaseError(releaseErrorMessage(err, "Release request failed."));
       setReleaseStatus("failed");
       setReleaseModalMode("failed");
+    } finally {
+      setProcessingRelease(false);
     }
   }
 
@@ -938,9 +961,9 @@ export function PayoutDetailReleaseShell({
         </section>
       ) : null}
       {releaseModalMode && nextReleasableMilestone ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-3 backdrop-blur-md sm:p-4" onClick={() => setReleaseModalMode(null)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-3 backdrop-blur-md sm:p-4" onClick={closeReleaseModal}>
           <div role="dialog" aria-modal="true" aria-labelledby="release-dialog-title" className="relative max-h-[calc(100dvh-1.5rem)] w-full max-w-lg overflow-y-auto rounded-3xl border border-[var(--border-strong)] bg-[var(--surface)] p-5 shadow-2xl sm:max-h-[calc(100dvh-2rem)] sm:p-6" onClick={(event) => event.stopPropagation()}>
-            <button type="button" onClick={() => setReleaseModalMode(null)} className="absolute right-5 top-5 rounded-full p-1.5 text-[var(--text-muted)] hover:bg-[var(--surface-muted)]" aria-label="Close release dialog"><X size={18} /></button>
+            <button type="button" onClick={closeReleaseModal} disabled={isModalActionPending} className="absolute right-5 top-5 rounded-full p-1.5 text-[var(--text-muted)] hover:bg-[var(--surface-muted)] disabled:cursor-not-allowed disabled:opacity-50" aria-label="Close release dialog"><X size={18} /></button>
             {releaseModalMode === "method" ? (
               <>
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">Pay milestone</p>
@@ -990,7 +1013,7 @@ export function PayoutDetailReleaseShell({
                   <div><dt className="text-xs text-[var(--text-muted)]">Authenticated Web3 wallet</dt><dd className="mt-1 break-all font-mono text-xs text-[var(--foreground)]">{address ?? "Sign in with Web3 first"}</dd></div>
                 </dl>
                 <p className="mt-4 text-xs text-[var(--text-muted)]">If your connected wallet has a different active account, SettleFlow will stop before starting the payment and show you which account to switch.</p>
-                <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"><Button variant="secondary" onClick={() => setReleaseModalMode(null)} className="w-full justify-center sm:w-auto">Cancel</Button><Button onClick={() => { void handleRelease(resumeReleaseId); }} className="w-full justify-center sm:w-auto">{resumeReleaseId ? "Verify wallet & continue" : "Verify wallet & sign"}</Button></div>
+                <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"><Button variant="secondary" onClick={closeReleaseModal} disabled={processingRelease} className="w-full justify-center sm:w-auto">Cancel</Button><Button onClick={() => { void handleRelease(resumeReleaseId); }} disabled={processingRelease} className="w-full justify-center sm:w-auto">{processingRelease ? "Preparing wallet..." : resumeReleaseId ? "Verify wallet & continue" : "Verify wallet & sign"}</Button></div>
               </>
             ) : releaseModalMode === "pending" ? (
               <>

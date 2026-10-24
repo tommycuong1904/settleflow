@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/shared/button";
 import {
   X,
@@ -79,9 +79,28 @@ export function SubmitMilestoneDialog({
   const [showExtraNotes, setShowExtraNotes] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const summaryRef = useRef<HTMLTextAreaElement>(null);
 
   useScrollLock(isOpen);
   const { address: connectedAddress } = useWallet();
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const focusFrame = window.requestAnimationFrame(() => summaryRef.current?.focus());
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !submitting) {
+        event.preventDefault();
+        onClose();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.cancelAnimationFrame(focusFrame);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen, onClose, submitting]);
 
   if (!isOpen) return null;
 
@@ -318,6 +337,7 @@ export function SubmitMilestoneDialog({
             </div>
             <textarea
               id="milestone-submission-summary"
+              ref={summaryRef}
               required
               rows={3}
               value={summary}
