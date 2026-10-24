@@ -42,7 +42,7 @@ export function TransactionProofCard({ proof, milestoneTitle }: TransactionProof
         <div className="rounded-2xl border border-dashed border-[var(--border-soft)] bg-[var(--surface)]/46 p-4">
           <p className="font-semibold text-[var(--foreground)]">No payment details yet</p>
           <p className="mt-1">
-            Details appear after a wallet payment has been sent.
+            Payment details appear after a wallet payment is submitted.
           </p>
         </div>
       </div>

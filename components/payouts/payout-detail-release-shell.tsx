@@ -100,10 +100,49 @@ function releaseErrorMessage(error: unknown, fallback: string) {
 
 function paymentActionErrorMessage(message: string | null) {
   if (!message || message.toLowerCase().includes("release already exists")) return null;
+  if (isRealExecutionAuthorizationError(message)) return null;
   if (message.toLowerCase().includes("network connection failed")) {
     return "No payment was sent. Check that your wallet is connected to Arc Testnet, then try again.";
   }
   return "We couldn’t complete this payment attempt. Review the next steps before trying again.";
+}
+
+function isRealExecutionAuthorizationError(message: string | null) {
+  const normalized = message?.toLowerCase() ?? "";
+  return normalized.includes("live arc testnet payments are not authorized");
+}
+
+function getFailedPaymentGuidance(message: string | null) {
+  const normalized = message?.toLowerCase() ?? "";
+
+  if (isRealExecutionAuthorizationError(message)) {
+    return [
+      "No payment was sent and no payment record was created.",
+      "An administrator must finish the staging safety checks before payments can be enabled.",
+      "Do not retry until the environment is explicitly authorized.",
+    ];
+  }
+
+  if (normalized.includes("network connection failed") || normalized.includes("arc testnet")) {
+    return [
+      "Keep your wallet open.",
+      "Switch it to Arc Testnet and check that it is connected.",
+      "Try the payment again only after the connection is restored.",
+    ];
+  }
+
+  if (normalized.includes("rejected") || normalized.includes("cancelled")) {
+    return [
+      "No payment was sent from the cancelled wallet request.",
+      "When you are ready, start the payment again and approve it in your wallet.",
+    ];
+  }
+
+  return [
+    "Check your wallet activity for a USDC transfer with this amount and recipient.",
+    "If you find one, do not start another payment.",
+    "If no payment was sent, you can start a new one.",
+  ];
 }
 
 export function PayoutDetailReleaseShell({
@@ -188,7 +227,9 @@ export function PayoutDetailReleaseShell({
   );
   const failedBeforeBroadcast = resolvedProof?.failureReason?.startsWith("BROWSER_WALLET_PRE_BROADCAST:") ?? false;
   const isNetworkPreBroadcastFailure = failedBeforeBroadcast || Boolean(releaseError?.toLowerCase().includes("network connection failed"));
+  const isRealExecutionBlocked = isRealExecutionAuthorizationError(releaseError);
   const actionableReleaseError = paymentActionErrorMessage(releaseError);
+  const failedPaymentGuidance = getFailedPaymentGuidance(resolvedProof?.failureReason ?? releaseError);
   const productContextHeaders = useMemo(
     () => ({
       [PRODUCT_CONTEXT_HEADER_NAMES.workspaceId]: productContext.workspaceId,
@@ -274,6 +315,7 @@ export function PayoutDetailReleaseShell({
     }
     if (ARC_CONFIG.executionMode === "real") {
       try {
+        await assertPaymentEnvironmentReady();
         if (!address) throw new Error("The authenticated Web3 wallet address is unavailable. Sign in again before releasing.");
         await assertBrowserWalletMatchesAuthenticatedAccount(address);
       } catch (error) {
@@ -311,6 +353,7 @@ export function PayoutDetailReleaseShell({
           status: string;
           explorerUrl?: string;
           confirmedAt?: string;
+          failureReason?: string;
         };
       } : {
         release: { id: resumeReleaseId!, status: "queued" },
@@ -347,12 +390,13 @@ export function PayoutDetailReleaseShell({
           });
         } catch (error) {
           if (error instanceof BrowserWalletPreBroadcastError) {
+            const failureReason = `BROWSER_WALLET_PRE_BROADCAST: ${error.message}`;
             const failedResponse = await fetch(`/api/v1/releases/${data.release.id}/proof/refresh`, {
               method: "POST",
               headers: { "Content-Type": "application/json", ...productContextHeaders },
               body: JSON.stringify({
                 status: "failed",
-                failureReason: `BROWSER_WALLET_PRE_BROADCAST: ${error.message}`,
+                failureReason,
               }),
             });
             const failedData = (await failedResponse.json()) as {
@@ -372,7 +416,9 @@ export function PayoutDetailReleaseShell({
               network: "Arc Testnet",
               status: "failed",
               explorerUrl: "",
+              failureReason: failedData.proof.failureReason ?? failureReason,
             };
+            setReleaseError(error.message);
           } else if (error instanceof BrowserWalletSubmissionUnknownError) {
             setActiveProof({
               id: data.proof?.id ?? `proof-${nextReleasableMilestone.id}-pending`,
@@ -388,6 +434,9 @@ export function PayoutDetailReleaseShell({
             });
             setReleaseError("Wallet submission outcome is unknown. Check wallet activity and confirm with the transaction hash; retry is locked to prevent duplicate payment.");
             setReleaseStatus("submitting");
+            setConfirmationTxHash("");
+            setFoundTransaction(null);
+            setReleaseModalMode("pending");
             return;
           }
           throw error;
@@ -492,6 +541,9 @@ export function PayoutDetailReleaseShell({
       }
 
       setActiveProof(result);
+      if (result.status === "failed") {
+        result.failureReason = data.proof?.failureReason;
+      }
       if (result.executionMode === undefined && data.release?.id && data.proof?.status) {
         result.executionMode = "browser_wallet";
         result.releaseStatus = data.release.status as TransactionProof["releaseStatus"];
@@ -604,8 +656,8 @@ export function PayoutDetailReleaseShell({
         return;
       }
       setReleaseError("More than one matching payment was found. This payment remains locked so a transaction cannot be selected automatically.");
-    } catch (error) {
-      setReleaseError(error instanceof Error ? error.message : "Unable to check for a payment right now.");
+    } catch {
+      setReleaseError("We couldn’t check for a payment right now. This payment remains locked, so do not sign or retry again. Try checking again in a moment.");
     } finally {
       setFindingTransaction(false);
     }
@@ -615,6 +667,16 @@ export function PayoutDetailReleaseShell({
     setResumeReleaseId(releaseId);
     setReleaseError(null);
     setReleaseModalMode("review");
+  }
+
+  async function assertPaymentEnvironmentReady() {
+    const response = await fetch(`/api/v1/milestones/${nextReleasableMilestone?.id}/release`, {
+      headers: productContextHeaders,
+    });
+    const data = (await response.json()) as { error?: string; ready?: boolean };
+    if (!response.ok || data.error || !data.ready) {
+      throw new Error(data.error ?? "Payments are not ready in this environment.");
+    }
   }
 
   async function handleContinueCircleRelease() {
@@ -723,8 +785,8 @@ export function PayoutDetailReleaseShell({
       setReleaseStatus("submitting");
       void onActivityChange?.();
       return data.release?.id ?? null;
-    } catch (err) {
-      setReleaseError(err instanceof Error ? err.message : "Retry release request failed.");
+    } catch {
+      setReleaseError("We couldn’t prepare another payment. The previous attempt is unchanged. Review your wallet activity before trying again.");
       setReleaseStatus("failed");
       return null;
     } finally {
@@ -820,9 +882,8 @@ export function PayoutDetailReleaseShell({
       });
       setConfirmationTxHash("");
       return true;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Settlement verification did not complete.";
-      setReleaseError(`${message} The payment remains pending; do not retry or sign again.`);
+    } catch {
+      setReleaseError("We couldn’t verify this transaction yet. The payment remains pending; do not retry or sign again. Check the transaction and try verification again later.");
       setReleaseStatus("submitting");
       return false;
     } finally {
@@ -877,13 +938,13 @@ export function PayoutDetailReleaseShell({
         </section>
       ) : null}
       {releaseModalMode && nextReleasableMilestone ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md" onClick={() => setReleaseModalMode(null)}>
-          <div className="relative w-full max-w-lg rounded-3xl border border-[var(--border-strong)] bg-[var(--surface)] p-6 shadow-2xl" onClick={(event) => event.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-3 backdrop-blur-md sm:p-4" onClick={() => setReleaseModalMode(null)}>
+          <div role="dialog" aria-modal="true" aria-labelledby="release-dialog-title" className="relative max-h-[calc(100dvh-1.5rem)] w-full max-w-lg overflow-y-auto rounded-3xl border border-[var(--border-strong)] bg-[var(--surface)] p-5 shadow-2xl sm:max-h-[calc(100dvh-2rem)] sm:p-6" onClick={(event) => event.stopPropagation()}>
             <button type="button" onClick={() => setReleaseModalMode(null)} className="absolute right-5 top-5 rounded-full p-1.5 text-[var(--text-muted)] hover:bg-[var(--surface-muted)]" aria-label="Close release dialog"><X size={18} /></button>
             {releaseModalMode === "method" ? (
               <>
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">Pay milestone</p>
-                <h2 className="mt-2 pr-8 text-xl font-semibold text-[var(--foreground)]">Choose how to record this payment</h2>
+                <h2 id="release-dialog-title" className="mt-2 pr-8 text-xl font-semibold text-[var(--foreground)]">Choose how to record this payment</h2>
                 <p className="mt-2 text-sm text-[var(--text-muted)]">{nextReleasableMilestone.title} · {formatUsdc(nextReleasableMilestone.amount)} USDC</p>
                 {releaseError ? <p className="mt-3 text-sm text-rose-600">{releaseError}</p> : null}
                 <div className="mt-6 space-y-3">
@@ -900,7 +961,7 @@ export function PayoutDetailReleaseShell({
                     setReleaseModalMode("review");
                   }} disabled={!recipientAddress} aria-describedby={!recipientAddress ? "wallet-payment-unavailable" : undefined} className="w-full rounded-2xl border border-[var(--border-soft)] p-4 text-left transition-colors hover:bg-[var(--surface-muted)] disabled:cursor-not-allowed disabled:opacity-55">
                     <span className="block font-semibold text-[var(--foreground)]">Wallet payment <span className="ml-1 text-xs font-normal text-[var(--text-muted)]">Advanced</span></span>
-                    <span className="mt-1 block text-sm text-[var(--text-muted)]">Send USDC through a connected browser wallet on Arc Testnet.</span>
+                    <span className="mt-1 block text-sm text-[var(--text-muted)]">Send USDC from a connected browser wallet. Testnet setup is required.</span>
                   </button>
                   {!recipientAddress ? <p id="wallet-payment-unavailable" className="text-sm text-[var(--text-muted)]">To use Wallet payment, add a wallet address to this contributor first.</p> : null}
                 </div>
@@ -908,19 +969,19 @@ export function PayoutDetailReleaseShell({
             ) : releaseModalMode === "simulated" ? (
               <>
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">Simulated payment</p>
-                <h2 className="mt-2 pr-8 text-xl font-semibold text-[var(--foreground)]">Mark this milestone as paid?</h2>
+                <h2 id="release-dialog-title" className="mt-2 pr-8 text-xl font-semibold text-[var(--foreground)]">Mark this milestone as paid?</h2>
                 <p className="mt-2 text-sm text-[var(--text-muted)]">This records {formatUsdc(nextReleasableMilestone.amount)} USDC as paid to {recipientName ?? "the contributor"} for {nextReleasableMilestone.title} in the test workflow.</p>
                 <div className="mt-5 rounded-2xl border border-amber-300/50 bg-amber-50 p-4 text-sm text-amber-950 dark:border-amber-400/20 dark:bg-amber-400/10 dark:text-amber-100">
                   <p className="font-semibold">No funds will move</p>
-                  <p className="mt-1 leading-5">This does not create a wallet request, Arc transaction, transaction hash, or settlement proof.</p>
+                  <p className="mt-1 leading-5">This does not create a wallet request or a blockchain payment record.</p>
                 </div>
                 {releaseError ? <p className="mt-4 text-sm text-rose-600">{releaseError}</p> : null}
-                <div className="mt-6 flex justify-end gap-3"><Button variant="secondary" onClick={() => setReleaseModalMode("method")} disabled={recordingSimulatedPayment}>Back</Button><Button onClick={() => { void handleSimulatedPayment(); }} disabled={recordingSimulatedPayment}>{recordingSimulatedPayment ? "Recording payment..." : "Mark as paid (demo)"}</Button></div>
+                <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"><Button variant="secondary" onClick={() => setReleaseModalMode("method")} disabled={recordingSimulatedPayment} className="w-full justify-center sm:w-auto">Back</Button><Button onClick={() => { void handleSimulatedPayment(); }} disabled={recordingSimulatedPayment} className="w-full justify-center sm:w-auto">{recordingSimulatedPayment ? "Recording payment..." : "Mark as paid (demo)"}</Button></div>
               </>
             ) : releaseModalMode === "review" ? (
               <>
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">{resumeReleaseId ? "Continue existing payment" : "Review payment"}</p>
-                <h2 className="mt-2 pr-8 text-xl font-semibold text-[var(--foreground)]">{resumeReleaseId ? "Ready for wallet signature" : "Confirm before signing"}</h2>
+                <h2 id="release-dialog-title" className="mt-2 pr-8 text-xl font-semibold text-[var(--foreground)]">{resumeReleaseId ? "Ready for wallet signature" : "Confirm before signing"}</h2>
                 <p className="mt-2 text-sm text-[var(--text-muted)]">{resumeReleaseId ? "This continues the existing payment. SettleFlow will not create another one." : "SettleFlow will verify your active wallet before starting the payment. You will then sign the USDC transfer in your browser wallet."}</p>
                 <dl className="mt-5 space-y-3 rounded-2xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-4 text-sm">
                   <div><dt className="text-xs text-[var(--text-muted)]">Milestone</dt><dd className="mt-1 font-medium text-[var(--foreground)]">{nextReleasableMilestone.title}</dd></div>
@@ -929,17 +990,17 @@ export function PayoutDetailReleaseShell({
                   <div><dt className="text-xs text-[var(--text-muted)]">Authenticated Web3 wallet</dt><dd className="mt-1 break-all font-mono text-xs text-[var(--foreground)]">{address ?? "Sign in with Web3 first"}</dd></div>
                 </dl>
                 <p className="mt-4 text-xs text-[var(--text-muted)]">If your connected wallet has a different active account, SettleFlow will stop before starting the payment and show you which account to switch.</p>
-                <div className="mt-6 flex justify-end gap-3"><Button variant="secondary" onClick={() => setReleaseModalMode(null)}>Cancel</Button><Button onClick={() => { void handleRelease(resumeReleaseId); }}>{resumeReleaseId ? "Verify wallet & continue" : "Verify wallet & sign"}</Button></div>
+                <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"><Button variant="secondary" onClick={() => setReleaseModalMode(null)} className="w-full justify-center sm:w-auto">Cancel</Button><Button onClick={() => { void handleRelease(resumeReleaseId); }} className="w-full justify-center sm:w-auto">{resumeReleaseId ? "Verify wallet & continue" : "Verify wallet & sign"}</Button></div>
               </>
             ) : releaseModalMode === "pending" ? (
               <>
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">Payment status unknown</p>
-                <h2 className="mt-2 pr-8 text-xl font-semibold text-[var(--foreground)]">We’re checking this payment</h2>
+                <h2 id="release-dialog-title" className="mt-2 pr-8 text-xl font-semibold text-[var(--foreground)]">We’re checking this payment</h2>
                 <p className="mt-2 text-sm text-[var(--text-muted)]">SettleFlow did not receive a transaction hash from your wallet. Do not sign or retry again while this payment is being reconciled.</p>
                 {resolvedProof?.txHash ? <a href={`${ARC_CONFIG.explorerUrl}/tx/${resolvedProof.txHash}`} target="_blank" rel="noreferrer" className="mt-5 inline-flex text-sm font-medium text-[var(--foreground)] underline underline-offset-4">View submitted transaction</a> : null}
                 <div className="mt-5 space-y-3 rounded-2xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-4">
                   <p className="text-sm font-medium text-[var(--foreground)]">Find my payment</p>
-                  <p className="text-xs leading-5 text-[var(--text-muted)]">SettleFlow checks confirmed Arc USDC transfers from the release wallet to this contributor, for the exact milestone amount.</p>
+                  <p className="text-xs leading-5 text-[var(--text-muted)]">SettleFlow checks for a confirmed payment from the payment wallet to this contributor, for the exact milestone amount.</p>
                   <Button onClick={() => { void handleFindReleaseTransaction(); }} disabled={findingTransaction}>{findingTransaction ? "Checking Arc..." : "Check for payment"}</Button>
                   {foundTransaction ? <div className="rounded-xl border border-emerald-300/30 bg-emerald-400/10 p-3 text-sm text-emerald-800 dark:text-emerald-100"><p className="font-medium">We found one matching payment.</p><a href={foundTransaction.explorerUrl} target="_blank" rel="noreferrer" className="mt-1 inline-block underline underline-offset-2">View transaction</a><div className="mt-3"><Button onClick={() => { void handleRefreshProof().then((resolved) => { if (resolved) setReleaseModalMode(null); }); }} disabled={refreshingProof}>{refreshingProof ? "Confirming payment..." : "Confirm payment"}</Button></div></div> : null}
                 </div>
@@ -955,12 +1016,17 @@ export function PayoutDetailReleaseShell({
               </>
             ) : (
               <>
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">Payment needs attention</p>
-                <h2 className="mt-2 pr-8 text-xl font-semibold text-[var(--foreground)]">{isNetworkPreBroadcastFailure ? "Check your wallet, then try again" : "Review the previous payment attempt"}</h2>
-                <p className="mt-2 text-sm text-[var(--text-muted)]">{isNetworkPreBroadcastFailure ? "No payment was sent. In your wallet, switch to Arc Testnet and confirm you are online. You can then safely start a new payment." : "SettleFlow marked the prior attempt as unsuccessful. Starting again creates a separate payment attempt; it does not resend the earlier one."}</p>
-                {!isNetworkPreBroadcastFailure ? <div className="mt-4 rounded-2xl border border-amber-300/40 bg-amber-50 p-4 text-sm text-amber-950 dark:border-amber-400/20 dark:bg-amber-400/10 dark:text-amber-100"><p className="font-semibold">Before you continue</p><p className="mt-1 leading-5">Check your wallet activity first. If you find a completed USDC transfer for this milestone, do not start another payment.</p></div> : null}
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">{isRealExecutionBlocked ? "Payments unavailable" : "Payment needs attention"}</p>
+                <h2 id="release-dialog-title" className="mt-2 pr-8 text-xl font-semibold text-[var(--foreground)]">{isRealExecutionBlocked ? "Payments aren’t enabled in this environment" : isNetworkPreBroadcastFailure ? "Check your wallet, then try again" : "Review the previous payment attempt"}</h2>
+                <p className="mt-2 text-sm text-[var(--text-muted)]">{isRealExecutionBlocked ? "No payment was sent. This test environment has not been authorized for live testnet payments yet." : isNetworkPreBroadcastFailure ? "No payment was sent. In your wallet, switch to Arc Testnet and confirm you are online. You can then safely start a new payment." : "SettleFlow marked the prior attempt as unsuccessful. Starting again creates a separate payment attempt; it does not resend the earlier one."}</p>
+                <ol className="mt-4 space-y-2 rounded-2xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-4 text-sm text-[var(--text-secondary)]">
+                  {failedPaymentGuidance.map((step, index) => (
+                    <li key={step} className="flex gap-2"><span className="font-semibold text-[var(--foreground)]">{index + 1}.</span><span>{step}</span></li>
+                  ))}
+                </ol>
+                {!isNetworkPreBroadcastFailure && !isRealExecutionBlocked ? <div className="mt-4 rounded-2xl border border-amber-300/40 bg-amber-50 p-4 text-sm text-amber-950 dark:border-amber-400/20 dark:bg-amber-400/10 dark:text-amber-100"><p className="font-semibold">Before you continue</p><p className="mt-1 leading-5">Check your wallet activity first. If you find a completed USDC transfer for this milestone, do not start another payment.</p></div> : null}
                 {resolvedProof?.failureReason ? <details className="mt-4 rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-3 text-sm text-[var(--text-muted)]"><summary className="cursor-pointer font-medium text-[var(--foreground)]">Technical details</summary><p className="mt-2 break-all font-mono text-xs">{resolvedProof.failureReason}</p></details> : null}
-                <div className="mt-6 flex justify-end gap-3"><Button variant="secondary" onClick={() => setReleaseModalMode(null)}>Cancel</Button><Button onClick={() => { void handleRetryRelease().then((releaseId) => { if (releaseId) openReleaseReview(releaseId); }); }} disabled={retryingRelease}>{retryingRelease ? "Preparing payment..." : isNetworkPreBroadcastFailure ? "Try payment again" : "Start a new payment"}</Button></div>
+                <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"><Button variant="secondary" onClick={() => setReleaseModalMode(null)} className="w-full justify-center sm:w-auto">{isRealExecutionBlocked ? "Close" : "Cancel"}</Button>{!isRealExecutionBlocked ? <Button onClick={() => { void handleRetryRelease().then((releaseId) => { if (releaseId) openReleaseReview(releaseId); }); }} disabled={retryingRelease} className="w-full justify-center sm:w-auto">{retryingRelease ? "Preparing payment..." : isNetworkPreBroadcastFailure ? "Try payment again" : "Start a new payment"}</Button> : null}</div>
                 {actionableReleaseError ? <p className="mt-3 text-sm text-rose-600">{actionableReleaseError}</p> : null}
               </>
             )}

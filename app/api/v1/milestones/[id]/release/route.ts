@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { apiError, apiErrorFromCode } from "@/lib/api/errors";
 import { hasReleaseAmountPayload } from "@/lib/api/release-payload";
 import { isValidUsdcAmount } from "@/lib/api/payout-payload";
-import { ARC_CONFIG } from "@/lib/arc/config";
+import { ARC_CONFIG, isServerRealExecutionAuthorized } from "@/lib/arc/config";
 import { sendUsdcOnArc } from "@/lib/arc/send";
 import { queueMilestoneRelease } from "@/lib/repositories/milestone-release";
 import { claimReleaseExecution, markReleaseReconciliationPending, recordReleaseSourceWallet, recordReleaseTransactionHash, refreshReleaseProof } from "@/lib/repositories/release-proof";
@@ -13,6 +13,30 @@ import { db } from "@/lib/db/client";
 
 function isReleaseExecutionMode(value: unknown): value is "browser_wallet" | "circle_wallet" | "circle_user_wallet" {
   return value === "browser_wallet" || value === "circle_wallet" || value === "circle_user_wallet";
+}
+
+/** Read-only check used before the browser asks a wallet to connect. */
+export async function GET(request: Request) {
+  const productContext = await resolveProductContextFromRequestWithSession(request);
+  const policyViolation = assertCanReleaseMilestone({
+    productContext,
+    actorUserId: productContext.ownerUserId,
+  });
+  if (policyViolation) {
+    return apiError(policyViolation.code, {
+      message: policyViolation.message,
+      status: policyViolation.status,
+    });
+  }
+
+  if (ARC_CONFIG.executionMode === "real" && !isServerRealExecutionAuthorized()) {
+    return apiError("REAL_EXECUTION_NOT_AUTHORIZED", {
+      message: "Live Arc Testnet payments are not authorized in this environment yet.",
+      status: 403,
+    });
+  }
+
+  return NextResponse.json({ ready: true });
 }
 
 export async function POST(
@@ -31,6 +55,17 @@ export async function POST(
     const policyViolation = assertCanReleaseMilestone({ productContext, actorUserId: ownerUserId });
     if (policyViolation) {
       return apiError(policyViolation.code, { message: policyViolation.message, status: policyViolation.status });
+    }
+
+    // A public execution-mode setting must never be enough to create a live
+    // payment attempt. This protects the browser-wallet path as well as the
+    // server executor: no release/proof records are created until an operator
+    // has enabled the server-side staging gate.
+    if (ARC_CONFIG.executionMode === "real" && !isServerRealExecutionAuthorized()) {
+      return apiError("REAL_EXECUTION_NOT_AUTHORIZED", {
+        message: "Live Arc Testnet payments are not authorized in this environment yet.",
+        status: 403,
+      });
     }
 
     const executionMode = isReleaseExecutionMode(body.executionMode) ? body.executionMode : "browser_wallet";
@@ -164,6 +199,7 @@ export async function POST(
         CIRCLE_WALLET_REQUIRES_GOOGLE_SESSION: 403,
         BROWSER_WALLET_REQUIRES_WEB3_SESSION: 403,
         BROWSER_WALLET_SOURCE_NOT_LINKED: 409,
+        REAL_EXECUTION_NOT_AUTHORIZED: 403,
       },
       {
         MILESTONE_NOT_FOUND: "Milestone not found.",
@@ -181,6 +217,7 @@ export async function POST(
         CIRCLE_WALLET_REQUIRES_GOOGLE_SESSION: "A Google owner session is required for a Circle smart-wallet release.",
         BROWSER_WALLET_REQUIRES_WEB3_SESSION: "A verified Web3 owner session is required for a browser-wallet release.",
         BROWSER_WALLET_SOURCE_NOT_LINKED: "The connected wallet is not an enabled transaction wallet for this account.",
+        REAL_EXECUTION_NOT_AUTHORIZED: "Live Arc Testnet payments are not authorized in this environment yet.",
       },
       { message: "Unable to queue release.", status: 500 },
     );

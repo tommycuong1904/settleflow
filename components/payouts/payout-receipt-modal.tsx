@@ -58,6 +58,18 @@ export function PayoutReceiptModal({
     0,
   );
   const remainingAmount = totalAmount - totalSettled;
+  const payoutStatusLabel = payout.status === "draft"
+    ? "Draft"
+    : payout.status === "completed"
+      ? "Complete"
+      : "In progress";
+  const milestoneStatusLabel = (status: Milestone["status"]) => {
+    if (status === "released") return "Paid";
+    if (status === "pending") return "Not started";
+    if (status === "submitted") return "In review";
+    if (status === "approved") return "Ready to pay";
+    return "Changes requested";
+  };
 
   const handlePrint = () => {
     window.print();
@@ -196,7 +208,7 @@ export function PayoutReceiptModal({
             <p className="mt-0.5 text-[var(--text-primary)] print:text-slate-700">
               Status:{" "}
               <strong className="capitalize text-[var(--foreground)] print:text-black">
-                {payout.status.replace("_", " ")}
+                {payoutStatusLabel}
               </strong>
             </p>
           </div>
@@ -234,7 +246,7 @@ export function PayoutReceiptModal({
                             : "bg-[var(--surface-strong)] text-[var(--text-muted)] border border-[var(--border-soft)]"
                         }`}
                       >
-                        {m.status}
+                        {milestoneStatusLabel(m.status)}
                       </span>
                     </div>
                     {m.description && (
@@ -282,38 +294,37 @@ export function PayoutReceiptModal({
         </div>
 
         {releaseProof?.txHash && (
-          <div className="pt-4 pb-2 space-y-1.5">
-            <div className="flex items-center gap-2 text-xs text-[var(--foreground)] print:text-slate-800">
+          <details className="pt-4 pb-2 print:hidden">
+            <summary className="flex cursor-pointer list-none items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[var(--foreground)] [&::-webkit-details-marker]:hidden">
               <ShieldCheck size={15} />
-              <span className="font-semibold uppercase tracking-wider">
-                Transaction details
-              </span>
-            </div>
-            <div className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-[var(--surface-muted)] border border-[var(--border-soft)] text-xs font-mono text-[var(--text-primary)] print:bg-slate-100 print:border-slate-300 print:text-black">
+              Technical transaction details
+            </summary>
+            <div className="mt-3 flex items-center justify-between gap-2 rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-2.5 text-xs font-mono text-[var(--text-primary)]">
               <span className="truncate">Tx: {releaseProof.txHash}</span>
               <a
                 href={`https://testnet.arcscan.app/tx/${releaseProof.txHash}`}
                 target="_blank"
                 rel="noopener noreferrer"
-              className="text-[var(--foreground)] hover:underline flex items-center gap-1 shrink-0 print:hidden"
+                className="flex shrink-0 items-center gap-1 text-[var(--foreground)] hover:underline"
               >
                 Arcscan <ExternalLink size={12} />
               </a>
             </div>
-          </div>
+          </details>
         )}
 
         {/* Action CTAs */}
         <div className="mt-6 pt-4 border-t border-[var(--border-soft)] flex items-center justify-end gap-3 print:hidden">
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            onClick={handleDownloadJson}
-            icon={<Download size={14} />}
-          >
-            Download JSON
-          </Button>
+          <details className="relative">
+            <summary className="cursor-pointer list-none rounded-lg border border-[var(--border-soft)] px-3 py-2 text-xs font-medium text-[var(--foreground)] hover:bg-[var(--surface-muted)] [&::-webkit-details-marker]:hidden">
+              More options
+            </summary>
+            <div className="absolute bottom-full right-0 z-10 mb-2 w-44 rounded-xl border border-[var(--border-soft)] bg-[var(--surface)] p-1 shadow-lg">
+              <button type="button" onClick={handleDownloadJson} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-[var(--foreground)] hover:bg-[var(--surface-muted)]">
+                <Download size={14} /> Download JSON data
+              </button>
+            </div>
+          </details>
           <Button
             type="button"
             variant="primary"

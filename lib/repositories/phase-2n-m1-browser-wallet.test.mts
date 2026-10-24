@@ -29,6 +29,34 @@ test("browser claim does not accept or persist a source wallet", async () => {
   assert.doesNotMatch(repo.slice(repo.indexOf("export async function claimReleaseExecution"), repo.indexOf("export async function getBrowserReleaseReconciliationSnapshot")), /sourceWalletAddress/);
 });
 
+test("real browser-wallet releases are fail-closed until the server safety gate is enabled", async () => {
+  const route = await source("app/api/v1/milestones/[id]/release/route.ts");
+  assert.match(route, /export async function GET/);
+  assert.match(route, /isServerRealExecutionAuthorized/);
+  assert.match(route, /ARC_CONFIG\.executionMode === "real" && !isServerRealExecutionAuthorized\(\)/);
+  assert.match(route, /REAL_EXECUTION_NOT_AUTHORIZED/);
+  const gateIndex = route.indexOf("REAL_EXECUTION_NOT_AUTHORIZED");
+  const queueIndex = route.indexOf("const result = await queueMilestoneRelease");
+  assert.ok(gateIndex >= 0 && queueIndex >= 0 && gateIndex < queueIndex);
+});
+
+test("real payment readiness is checked before a browser wallet is opened", async () => {
+  const ui = await source("components/payouts/payout-detail-release-shell.tsx");
+  assert.match(ui, /async function assertPaymentEnvironmentReady/);
+  const readinessIndex = ui.indexOf("await assertPaymentEnvironmentReady()");
+  const walletIndex = ui.indexOf("await assertBrowserWalletMatchesAuthenticatedAccount(address)");
+  assert.ok(readinessIndex >= 0 && walletIndex >= 0 && readinessIndex < walletIndex);
+});
+
+test("the payment modal explains an unauthorized real environment without offering a retry", async () => {
+  const ui = await source("components/payouts/payout-detail-release-shell.tsx");
+  assert.match(ui, /function isRealExecutionAuthorizationError/);
+  assert.match(ui, /Payments aren’t enabled in this environment/);
+  assert.match(ui, /No payment was sent and no payment record was created/);
+  assert.match(ui, /Do not retry until the environment is explicitly authorized/);
+  assert.match(ui, /!isRealExecutionBlocked \? <Button/);
+});
+
 test("caller sourceWalletAddress is not used by browser confirmation", async () => {
   const [route, ui] = await Promise.all([source("app/api/v1/releases/[id]/claim/route.ts"), source("components/payouts/payout-detail-release-shell.tsx")]);
   assert.doesNotMatch(route, /request\.json|sourceWalletAddress/);
@@ -42,6 +70,18 @@ test("an uncertain browser submission cannot be unlocked from the payout UI", as
   assert.match(ui, /Retrying is intentionally locked to prevent a duplicate payment/);
   assert.doesNotMatch(ui, /OWNER_CONFIRMED_NO_TRANSACTION/);
   assert.doesNotMatch(ui, /handleRefreshProof\("failed"/);
+});
+
+test("an unknown browser wallet result opens transaction verification immediately", async () => {
+  const ui = await source("components/payouts/payout-detail-release-shell.tsx");
+  const branchStart = ui.indexOf("error instanceof BrowserWalletSubmissionUnknownError");
+  const branchEnd = ui.indexOf("return;", branchStart);
+  const branch = ui.slice(branchStart, branchEnd);
+
+  assert.ok(branchStart >= 0 && branchEnd > branchStart);
+  assert.match(branch, /setReleaseStatus\("submitting"\)/);
+  assert.match(branch, /setReleaseModalMode\("pending"\)/);
+  assert.match(branch, /retry is locked to prevent duplicate payment/);
 });
 
 test("verified tx.from must match the browser source snapshot", async () => {
