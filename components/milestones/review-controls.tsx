@@ -19,19 +19,20 @@ export function ReviewControls({
       <div className="space-y-1 min-w-0">
         <p className="font-semibold text-[var(--foreground)] flex items-center gap-1.5 text-xs">
           <Clock size={14} className="text-amber-500 shrink-0" />
-          <span>Owner Review & Decision</span>
+          <span>Review submitted work</span>
         </p>
         <p className="text-[11px] text-[var(--text-muted)] leading-relaxed">
           Submitted {submittedAt ? new Date(submittedAt).toLocaleDateString() : "recently"}. Approving makes this milestone ready for payment.
         </p>
       </div>
-      <div className="flex items-center gap-2.5 shrink-0">
+      <div className="flex w-full items-center gap-2.5 sm:w-auto sm:shrink-0">
         <Button
           variant="danger"
           size="sm"
           onClick={onReject}
           disabled={busy}
           icon={<RotateCcw size={12} />}
+          className="flex-1 justify-center sm:flex-none"
         >
           Request Revision
         </Button>
@@ -40,10 +41,10 @@ export function ReviewControls({
           size="sm"
           onClick={onApprove}
           disabled={busy}
-          className="!bg-emerald-600 hover:!bg-emerald-700 !border-emerald-600 !text-white font-semibold"
+          className="flex-1 justify-center font-semibold sm:flex-none"
           icon={<CheckCircle2 size={14} />}
         >
-          {busy ? "Approving..." : "Approve Milestone"}
+          {busy ? "Approving..." : "Approve work"}
         </Button>
       </div>
     </div>

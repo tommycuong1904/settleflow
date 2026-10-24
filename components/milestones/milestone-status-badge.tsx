@@ -32,9 +32,10 @@ const statusLabels: Record<MilestoneStatus, string> = {
 type MilestoneStatusBadgeProps = {
   status: MilestoneStatus;
   variant?: "badge" | "text";
+  label?: string;
 };
 
-export function MilestoneStatusBadge({ status, variant = "badge" }: MilestoneStatusBadgeProps) {
+export function MilestoneStatusBadge({ status, variant = "badge", label }: MilestoneStatusBadgeProps) {
   return (
     <span
       className={
@@ -43,7 +44,7 @@ export function MilestoneStatusBadge({ status, variant = "badge" }: MilestoneSta
           : `rounded-full px-3 py-1 text-xs font-semibold capitalize tracking-[0.04em] ${statusStyles[status]}`
       }
     >
-      {statusLabels[status]}
+      {label ?? statusLabels[status]}
     </span>
   );
 }

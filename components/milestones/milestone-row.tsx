@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { MilestoneStatusBadge } from "@/components/milestones/milestone-status-badge";
 import { ReviewControls } from "@/components/milestones/review-controls";
@@ -36,6 +36,9 @@ type MilestoneRowProps = {
     status: Milestone["status"],
     meta?: { submittedAt?: string; approvedAt?: string; rejectedAt?: string; releasedAt?: string },
   ) => void;
+  submitRequestMilestoneId?: string | null;
+  onSubmitRequestHandled?: () => void;
+  isPrimarySubmitAction?: boolean;
 };
 
 export function MilestoneRow({
@@ -48,6 +51,9 @@ export function MilestoneRow({
   canStartPayment = false,
   onReviewPayment,
   onStatusChange,
+  submitRequestMilestoneId,
+  onSubmitRequestHandled,
+  isPrimarySubmitAction = false,
 }: MilestoneRowProps) {
   const [status, setStatus] = useState(milestone.status);
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
@@ -78,6 +84,33 @@ export function MilestoneRow({
   const isOwnerActor = isRole(currentActor, "owner");
   const canApproveMilestone = isOwnerActor;
   const isSimulatedPayment = paymentAttempt?.method === "simulated";
+
+  useEffect(() => {
+    if (
+      submitRequestMilestoneId === milestone.id &&
+      isContributorActor &&
+      !isSubmitted &&
+      !isApproved &&
+      !isReleased
+    ) {
+      // The request originates outside this row. Defer the local UI transition
+      // until after this render so React does not cascade state updates in an effect.
+      const openDialog = window.setTimeout(() => {
+        setIsSubmitModalOpen(true);
+        onSubmitRequestHandled?.();
+      }, 0);
+
+      return () => window.clearTimeout(openDialog);
+    }
+  }, [
+    isApproved,
+    isContributorActor,
+    isReleased,
+    isSubmitted,
+    milestone.id,
+    onSubmitRequestHandled,
+    submitRequestMilestoneId,
+  ]);
 
   const handleSubmissionSuccess = (meta?: { submittedAt?: string; summary?: string; artifactUrl?: string }) => {
     setStatus("submitted");
@@ -128,7 +161,8 @@ export function MilestoneRow({
   return (
     <>
       <div
-        className={`sf-shell rounded-2xl p-4 md:p-5 transition-all ${
+        id={`milestone-${milestone.id}`}
+        className={`sf-shell scroll-mt-24 rounded-2xl p-4 md:p-5 transition-all ${
           isSubmitted && canApproveMilestone
             ? "border-amber-500/35 shadow-sm dark:border-amber-500/30"
             : ""
@@ -142,7 +176,11 @@ export function MilestoneRow({
                 <p className="font-semibold text-base text-[var(--foreground)] leading-snug">
                   {milestone.title}
                 </p>
-                <MilestoneStatusBadge status={status} variant="text" />
+                <MilestoneStatusBadge
+                  status={status}
+                  variant="text"
+                  label={isContributorActor && status === "pending" ? "Ready for your work" : undefined}
+                />
                 {isSubmitted && canApproveMilestone && (
                   <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
                     <Clock size={11} /> Review Needed
@@ -163,14 +201,14 @@ export function MilestoneRow({
           {/* Submitted deliverable review section */}
           {(lastArtifactUrl || lastSubmissionSummary || lastNotes) && (
             <div className="border-t border-[var(--border-soft)] pt-4 text-xs space-y-3">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-1.5 font-bold uppercase tracking-wider text-[11px] text-[var(--foreground)]">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex min-w-0 items-center gap-1.5 font-bold uppercase tracking-wider text-[11px] text-[var(--foreground)]">
                   <FileCode size={13} className="text-sky-500 dark:text-sky-400" />
                   <span>Submitted Deliverable Details</span>
                 </div>
                 {milestone.submittedAt && (
                   <span
-                    className="text-[11px] text-[var(--text-muted)]"
+                    className="shrink-0 text-right text-[11px] leading-5 text-[var(--text-muted)]"
                     title={new Date(milestone.submittedAt).toLocaleString()}
                   >
                     {new Intl.DateTimeFormat(undefined, {
@@ -259,7 +297,7 @@ export function MilestoneRow({
                 ) : null}
               </div>
               {isOwnerActor && canStartPayment ? (
-                <Button size="sm" onClick={onReviewPayment}>
+                <Button size="sm" onClick={onReviewPayment} className="w-full justify-center sm:w-auto">
                   Pay {formatUsdc(milestone.amount)} USDC
                 </Button>
               ) : (
@@ -300,13 +338,17 @@ export function MilestoneRow({
                   <AlertTriangle size={15} /> Revision requested
                 </p>
                 <p className="text-xs text-[var(--text-muted)]">
-                  The contributor needs to resubmit this milestone before owner approval can continue.
+                  {isContributorActor
+                    ? "Review the requested changes, then resubmit your work for approval."
+                    : "The contributor needs to resubmit this milestone before owner approval can continue."}
                 </p>
               </div>
-              {isContributorActor ? (
-                <Button onClick={() => setIsSubmitModalOpen(true)} variant="secondary" size="sm">
-                  Resubmit milestone
+              {isContributorActor && !isPrimarySubmitAction ? (
+                <Button onClick={() => setIsSubmitModalOpen(true)} variant="secondary" size="sm" className="w-full justify-center sm:w-auto">
+                  Resubmit work
                 </Button>
+              ) : isContributorActor ? (
+                <p className="text-xs text-[var(--text-muted)]">Use the next-step action above to resubmit your work.</p>
               ) : (
                 <p className="text-xs text-[var(--text-muted)]">Only the contributor can resubmit this milestone.</p>
               )}
@@ -316,13 +358,21 @@ export function MilestoneRow({
           {!isSubmitted && !isApproved && !isReleased && !isRejected ? (
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-3 border-t border-[var(--border-soft)] text-xs">
               <div className="space-y-0.5">
-                <p className="font-semibold text-[var(--foreground)]">Waiting for contributor submission</p>
-                <p className="text-xs text-[var(--text-muted)]">Owner approval and payment become available after work is submitted.</p>
+                <p className="font-semibold text-[var(--foreground)]">
+                  {isContributorActor ? "Ready for your work" : "Waiting for contributor submission"}
+                </p>
+                <p className="text-xs text-[var(--text-muted)]">
+                  {isContributorActor
+                    ? "Submit your completed work for review."
+                    : "Owner approval and payment become available after work is submitted."}
+                </p>
               </div>
-              {isContributorActor ? (
-                <Button onClick={() => setIsSubmitModalOpen(true)} variant="secondary" size="sm">
-                  Submit milestone
+              {isContributorActor && !isPrimarySubmitAction ? (
+                <Button onClick={() => setIsSubmitModalOpen(true)} variant="secondary" size="sm" className="w-full justify-center sm:w-auto">
+                  Submit work
                 </Button>
+              ) : isContributorActor ? (
+                <p className="text-xs text-[var(--text-muted)]">Use the next-step action above to submit your work for review.</p>
               ) : (
                 <p className="text-xs text-[var(--text-muted)]">Only the contributor can submit this milestone.</p>
               )}
@@ -347,11 +397,14 @@ export function MilestoneRow({
       {/* Request Changes / Reject Dialog (Replaces window.prompt) */}
       {isRejectModalOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-3 backdrop-blur-md animate-in fade-in sm:p-4"
           onClick={() => setIsRejectModalOpen(false)}
         >
           <div
-            className="relative w-full max-w-md rounded-xl border border-[var(--border-strong)] bg-[var(--surface)] p-6 shadow-2xl text-[var(--foreground)]"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="request-revision-title"
+            className="relative max-h-[calc(100dvh-1.5rem)] w-full max-w-md overflow-y-auto overscroll-contain rounded-3xl border border-[var(--border-strong)] bg-[var(--surface)] p-5 shadow-2xl text-[var(--foreground)] sm:max-h-[calc(100dvh-2rem)] sm:p-6"
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -368,7 +421,7 @@ export function MilestoneRow({
               <span className="text-xs font-bold uppercase tracking-wider">Request changes</span>
             </div>
 
-            <h3 className="text-lg font-bold text-[var(--foreground)]">
+            <h3 id="request-revision-title" className="pr-8 text-lg font-bold text-[var(--foreground)]">
               Request changes to &quot;{milestone.title}&quot;
             </h3>
             <p className="text-xs text-[var(--text-muted)] mt-1">
@@ -393,12 +446,13 @@ export function MilestoneRow({
               <p className="mt-2 text-xs text-rose-500">{submissionError}</p>
             )}
 
-            <div className="mt-5 flex items-center justify-end gap-3 pt-3 border-t border-[var(--border-soft)]">
+            <div className="mt-5 flex flex-col-reverse gap-3 border-t border-[var(--border-soft)] pt-3 sm:flex-row sm:items-center sm:justify-end">
               <Button
                 variant="secondary"
                 size="sm"
                 onClick={() => setIsRejectModalOpen(false)}
                 disabled={reviewBusy}
+                className="w-full justify-center sm:w-auto"
               >
                 Cancel
               </Button>
@@ -408,6 +462,7 @@ export function MilestoneRow({
                 onClick={handleConfirmReject}
                 disabled={reviewBusy || !rejectComment.trim()}
                 icon={reviewBusy ? <Loader2 size={13} className="animate-spin" /> : undefined}
+                className="w-full justify-center sm:w-auto"
               >
                 {reviewBusy ? "Submitting..." : "Send Revision Request"}
               </Button>

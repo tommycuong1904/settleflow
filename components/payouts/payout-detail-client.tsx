@@ -23,7 +23,7 @@ import { PRODUCT_CONTEXT_HEADER_NAMES } from "@/lib/runtime/product-context";
 import { PayoutReceiptModal } from "@/components/payouts/payout-receipt-modal";
 import { formatUsdc } from "@/lib/utils/format";
 import { FileCheck } from "lucide-react";
-import { hasRole, isRole } from "@/lib/runtime/role-utils";
+import { isRole } from "@/lib/runtime/role-utils";
 import { notifyWorkflowUpdated } from "@/lib/runtime/workflow-sync";
 
 type PersistedReleaseState = {
@@ -117,6 +117,7 @@ export function PayoutDetailClient({
   const [draftSaveNotice, setDraftSaveNotice] = useState<string | null>(null);
   const [reviewError, setReviewError] = useState<string | null>(null);
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
+  const [submitRequestMilestoneId, setSubmitRequestMilestoneId] = useState<string | null>(null);
   const [releaseReviewRequest, setReleaseReviewRequest] = useState(0);
   const { toast } = useToast();
 
@@ -200,6 +201,12 @@ export function PayoutDetailClient({
   const submittedMilestoneCount = milestones.filter(
     (milestone) => milestone.status === "submitted",
   ).length;
+  const nextSubmittedMilestone = milestones.find(
+    (milestone) => milestone.status === "submitted",
+  );
+  const nextContributorMilestone = milestones.find(
+    (milestone) => milestone.status === "pending" || milestone.status === "rejected",
+  );
   const releasedCount = milestones.filter(
     (milestone) => milestone.status === "released",
   ).length;
@@ -233,6 +240,42 @@ export function PayoutDetailClient({
         : effectivePayoutStatus === "active"
           ? "bg-cyan-500"
           : "bg-[var(--text-muted)]";
+
+  const activeHandoff = effectivePayoutStatus === "active" || effectivePayoutStatus === "partially_released"
+    ? isOwnerActor && nextSubmittedMilestone
+      ? {
+        label: "Next step",
+        title: `Review ${nextSubmittedMilestone.title}`,
+        description: "Submitted work is ready for your decision. Approval makes payment available.",
+        href: `#milestone-${nextSubmittedMilestone.id}`,
+        action: "Review work",
+      }
+      : isOwnerActor && nextContributorMilestone
+        ? {
+          label: "Up next",
+          title: "Waiting for a contributor to submit work",
+          description: `The next milestone is ${nextContributorMilestone.title}. You will be able to review it when it is submitted.`,
+        }
+        : !isOwnerActor && nextContributorMilestone
+          ? {
+            label: "Your next step",
+            title: `Submit ${nextContributorMilestone.title}`,
+            description: nextContributorMilestone.status === "rejected"
+              ? "Review the requested changes, then resubmit your work for approval."
+              : "Share the completed work so the workspace owner can review it.",
+            submitMilestoneId: nextContributorMilestone.id,
+            action: nextContributorMilestone.status === "rejected" ? "Resubmit work" : "Submit work for review",
+          }
+          : !isOwnerActor && nextSubmittedMilestone
+            ? {
+              label: "Submitted for review",
+              title: "Your work is awaiting review",
+              description: "The workspace owner will approve it or request changes before payment can continue.",
+              href: `#milestone-${nextSubmittedMilestone.id}`,
+              action: "View submission",
+            }
+            : null
+    : null;
 
   const draftMilestonesDirty = JSON.stringify(normalizeDraftMilestones(draftMilestonesState)) !==
     JSON.stringify(normalizeDraftMilestones(draftMilestonesCommitted));
@@ -532,8 +575,8 @@ export function PayoutDetailClient({
           : "Revisions requested. Contributor notified.",
       });
       await refreshActivity();
-    } catch (error) {
-      setReviewError(error instanceof Error ? error.message : "Review request failed.");
+    } catch {
+      setReviewError(`We couldn’t ${decision === "approved" ? "approve" : "request changes for"} this milestone. Its status has not changed. Try again in a moment.`);
     } finally {
     }
   }
@@ -594,10 +637,12 @@ export function PayoutDetailClient({
           description={
             payoutDescriptionState.trim().length > 0
               ? payoutDescriptionState
-              : "Review milestone submissions, approve work in sequence, and keep payment records together."
+              : isOwnerActor
+                ? "Review milestone submissions, approve work in sequence, and keep payment records together."
+                : "Submit your work, respond to feedback, and track payment progress."
           }
         >
-          {effectivePayoutStatus !== "draft" ? (
+          {isOwnerActor && effectivePayoutStatus !== "draft" ? (
             <Button
               type="button"
               variant="secondary"
@@ -798,6 +843,32 @@ export function PayoutDetailClient({
                 : "Track the work, review submissions, and see what unlocks payment next."}
             </p>
           </div>
+          {activeHandoff ? (
+            <div className="mb-5 flex flex-col gap-3 border-y border-[var(--border-soft)] px-1 py-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0 space-y-1">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">
+                  {activeHandoff.label}
+                </p>
+                <p className="font-semibold text-[var(--foreground)]">{activeHandoff.title}</p>
+                <p className="text-sm text-[var(--text-muted)]">{activeHandoff.description}</p>
+              </div>
+              {activeHandoff.action ? (
+                "submitMilestoneId" in activeHandoff && activeHandoff.submitMilestoneId ? (
+                  <Button
+                    onClick={() => setSubmitRequestMilestoneId(activeHandoff.submitMilestoneId)}
+                    size="sm"
+                    className="w-full shrink-0 justify-center sm:w-auto sm:self-auto"
+                  >
+                    {activeHandoff.action}
+                  </Button>
+                ) : activeHandoff.href ? (
+                  <Button href={activeHandoff.href} variant="secondary" size="sm" className="w-full shrink-0 justify-center sm:w-auto sm:self-auto">
+                    {activeHandoff.action}
+                  </Button>
+                ) : null
+              ) : null}
+            </div>
+          ) : null}
           <div className="space-y-3">
             {milestones.map((milestone) => (
               <MilestoneRow
@@ -811,6 +882,13 @@ export function PayoutDetailClient({
                 canStartPayment={isOwnerActor && nextReleasableMilestone?.id === milestone.id}
                 onReviewPayment={() => setReleaseReviewRequest((current) => current + 1)}
                 onStatusChange={handleMilestoneStatusChange}
+                submitRequestMilestoneId={submitRequestMilestoneId}
+                onSubmitRequestHandled={() => setSubmitRequestMilestoneId(null)}
+                isPrimarySubmitAction={
+                  activeHandoff !== null &&
+                  "submitMilestoneId" in activeHandoff &&
+                  activeHandoff.submitMilestoneId === milestone.id
+                }
               />
             ))}
           </div>
@@ -832,10 +910,10 @@ export function PayoutDetailClient({
 
         <details className="sf-activity-accordion px-1">
           <summary className="flex cursor-pointer list-none items-baseline gap-2 text-lg font-semibold tracking-tight text-[var(--foreground)] [&::-webkit-details-marker]:hidden">
-            <span>Activity</span>
+            <span>{isOwnerActor ? "Activity" : "Updates"}</span>
             <span className="ml-auto text-sm font-normal text-[var(--text-muted)] underline decoration-[var(--border-strong)] underline-offset-4 transition-colors hover:text-[var(--foreground)]">
-              <span className="sf-accordion-closed">View activity ({activityItems.length})</span>
-              <span className="sf-accordion-open">Hide activity</span>
+              <span className="sf-accordion-closed">View {isOwnerActor ? "activity" : "updates"} ({activityItems.length})</span>
+              <span className="sf-accordion-open">Hide {isOwnerActor ? "activity" : "updates"}</span>
             </span>
           </summary>
           <div className="sf-accordion-content">

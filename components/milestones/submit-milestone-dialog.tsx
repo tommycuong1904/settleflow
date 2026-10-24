@@ -54,6 +54,14 @@ function detectLabelFromUrl(url: string): string {
   return "Live Staging / Demo";
 }
 
+function submissionErrorMessage(error: unknown) {
+  const message = error instanceof Error ? error.message : "";
+  if (/failed to fetch|networkerror|network request failed/i.test(message)) {
+    return "We couldn’t reach SettleFlow. Your work has not been submitted. Check your connection, then try again.";
+  }
+  return "We couldn’t submit your work. Nothing was sent for review. Try again in a moment.";
+}
+
 function getLabelIcon(label: string) {
   return SUGGESTED_LABELS.find((l) => l.label === label)?.icon || Globe;
 }
@@ -162,7 +170,7 @@ export function SubmitMilestoneDialog({
       });
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to submit milestone.");
+      setError(submissionErrorMessage(err));
     } finally {
       setSubmitting(false);
     }
@@ -170,11 +178,14 @@ export function SubmitMilestoneDialog({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md transition-opacity animate-in fade-in"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-3 backdrop-blur-md transition-opacity animate-in fade-in sm:p-4"
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-xl border border-[var(--border-strong)] bg-[var(--surface)] p-6 sm:p-7 shadow-2xl text-[var(--foreground)]"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="submit-milestone-title"
+        className="relative max-h-[calc(100dvh-1.5rem)] w-full max-w-lg overflow-y-auto overscroll-contain rounded-3xl border border-[var(--border-strong)] bg-[var(--surface)] p-5 shadow-2xl text-[var(--foreground)] sm:max-h-[calc(100dvh-2rem)] sm:p-6"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close Button */}
@@ -192,24 +203,28 @@ export function SubmitMilestoneDialog({
           <span className="text-[10px] uppercase tracking-[0.2em] text-[var(--text-muted)] font-bold">
             Submit for review
           </span>
-          <h2 className="text-lg sm:text-xl font-bold tracking-tight text-[var(--foreground)] mt-1 line-clamp-1">
+          <h2 id="submit-milestone-title" className="text-lg sm:text-xl font-bold tracking-tight text-[var(--foreground)] mt-1 line-clamp-1">
             {milestone.title}
           </h2>
           <div className="mt-1 flex items-center gap-2 text-xs text-[var(--text-muted)]">
             <span>
-              Reward:{" "}
+              Amount:{" "}
               <strong className="text-[var(--foreground)] font-mono font-semibold">
                 {formatUsdc(milestone.amount)} USDC
               </strong>
             </span>
             <span>•</span>
-            <span className="text-emerald-600 dark:text-emerald-400 font-medium">Payment is released after approval</span>
+            <span className="font-medium text-[var(--text-muted)]">After approval, the owner can arrange payment</span>
           </div>
+          <p className="mt-3 text-xs leading-5 text-[var(--text-muted)]">
+            Add a clear summary for the owner. Links are optional, but useful when there is work to review.
+          </p>
         </div>
 
         {error && (
-          <div className="mb-4 rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-200 animate-in fade-in">
-            {error}
+          <div role="alert" className="mb-4 rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-xs leading-5 text-rose-700 animate-in fade-in dark:text-rose-200">
+            <p className="font-semibold">Work not submitted</p>
+            <p className="mt-1">{error}</p>
           </div>
         )}
 
@@ -281,7 +296,7 @@ export function SubmitMilestoneDialog({
                 onClick={handleAddProof}
                 className="inline-flex items-center gap-1 text-[11px] text-[var(--foreground)] hover:opacity-70 font-semibold transition-opacity pt-1"
               >
-                <Plus size={13} /> Add another proof link
+                <Plus size={13} /> Add another work link
               </button>
             )}
           </div>
@@ -347,13 +362,14 @@ export function SubmitMilestoneDialog({
           </div>
 
           {/* Action Buttons */}
-          <div className="pt-3 flex items-center justify-end gap-3 border-t border-[var(--border-soft)]">
+          <div className="flex flex-col-reverse gap-3 border-t border-[var(--border-soft)] pt-3 sm:flex-row sm:items-center sm:justify-end">
             <Button
               type="button"
               variant="secondary"
               size="sm"
               onClick={onClose}
               disabled={submitting}
+              className="w-full justify-center sm:w-auto"
             >
               Cancel
             </Button>
@@ -363,6 +379,7 @@ export function SubmitMilestoneDialog({
               size="sm"
               disabled={submitting || !summary.trim()}
               icon={submitting ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
+              className="w-full justify-center sm:w-auto"
             >
               {submitting ? "Submitting..." : "Submit for Review"}
             </Button>
