@@ -68,6 +68,7 @@ export async function queueMilestoneRelease(
         id: true,
         title: true,
         status: true,
+        sequence: true,
         amountUsdc: true,
         payout: {
           select: {
@@ -87,6 +88,17 @@ export async function queueMilestoneRelease(
     if (!["active", "partially_released"].includes(milestone.payout.status)) {
       throw new Error("PAYOUT_NOT_RELEASE_READY");
     }
+    await tx.$queryRaw`SELECT id FROM "Payout" WHERE id = ${milestone.payout.id} FOR UPDATE`;
+    const earlierUnpaidMilestone = await tx.milestone.findFirst({
+      where: {
+        payoutId: milestone.payout.id,
+        sequence: { lt: milestone.sequence },
+        status: { not: "released" },
+      },
+      select: { id: true },
+      orderBy: { sequence: "asc" },
+    });
+    if (earlierUnpaidMilestone) throw new Error("PREVIOUS_MILESTONE_NOT_RELEASED");
     if (milestone.releases.length > 0) throw new Error("RELEASE_ALREADY_EXISTS");
     if (!milestone.payout.targetWalletAddress) throw new Error("DESTINATION_WALLET_MISSING");
     if (!isValidEvmAddress(milestone.payout.targetWalletAddress)) throw new Error("INVALID_DESTINATION_WALLET");

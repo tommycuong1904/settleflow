@@ -30,6 +30,7 @@ export async function completeSimulatedPayment(
         id: true,
         title: true,
         status: true,
+        sequence: true,
         amountUsdc: true,
         payoutId: true,
         payout: { select: { id: true, workspaceId: true, status: true, currency: true, contributor: { select: { name: true, linkedUserId: true } } } },
@@ -47,6 +48,17 @@ export async function completeSimulatedPayment(
     if (existing || milestone.releases.length > 0) throw new Error("PAYMENT_ATTEMPT_EXISTS");
     if (milestone.status !== "approved") throw new Error("MILESTONE_NOT_APPROVED");
     if (!['active', 'partially_released'].includes(milestone.payout.status)) throw new Error("PAYOUT_NOT_RELEASE_READY");
+    await tx.$queryRaw`SELECT id FROM "Payout" WHERE id = ${milestone.payoutId} FOR UPDATE`;
+    const earlierUnpaidMilestone = await tx.milestone.findFirst({
+      where: {
+        payoutId: milestone.payoutId,
+        sequence: { lt: milestone.sequence },
+        status: { not: "released" },
+      },
+      select: { id: true },
+      orderBy: { sequence: "asc" },
+    });
+    if (earlierUnpaidMilestone) throw new Error("PREVIOUS_MILESTONE_NOT_RELEASED");
     if (!(await hasWorkspaceRole(tx, workspaceId, ownerUserId, ["owner"]))) throw new Error("USER_NOT_ALLOWED_TO_RELEASE");
     if (!(await tx.user.findUnique({ where: { id: ownerUserId }, select: { id: true } }))) throw new Error("USER_NOT_FOUND");
 

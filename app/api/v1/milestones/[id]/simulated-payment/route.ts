@@ -23,6 +23,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     return apiErrorFromCode(code, {
       MILESTONE_NOT_FOUND: 404,
       MILESTONE_NOT_APPROVED: 409,
+      PREVIOUS_MILESTONE_NOT_RELEASED: 409,
       PAYOUT_NOT_RELEASE_READY: 409,
       PAYMENT_ATTEMPT_EXISTS: 409,
       PAYMENT_AMOUNT_MISMATCH: 400,
@@ -32,6 +33,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       USER_NOT_ALLOWED_TO_RELEASE: 403,
     }, {
       MILESTONE_NOT_APPROVED: "Milestone must be approved before payment.",
+      PREVIOUS_MILESTONE_NOT_RELEASED: "Complete earlier milestones before recording this payment.",
       PAYMENT_ATTEMPT_EXISTS: "A payment attempt already exists for this milestone.",
       PAYMENT_AMOUNT_MISMATCH: "Payment amount must match the milestone amount.",
       SIMULATED_PAYMENT_DISABLED: "Simulated payments are unavailable while real execution is enabled.",

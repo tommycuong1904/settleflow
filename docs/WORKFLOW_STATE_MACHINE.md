@@ -29,7 +29,7 @@ States: `pending`, `submitted`, `approved`, `rejected`, `released`.
 - `pending -> submitted` and `rejected -> submitted`: `submitMilestone` requires the same workspace, a valid contributor user, a linked contributor relationship, an `active` or `partially_released` payout, and a submittable milestone status. Draft payouts are not contributor-visible or submittable. It creates a `MilestoneSubmission` and resets review/release timestamps (`lib/repositories/milestone-submission.ts`).
 - `submitted -> approved`: `reviewMilestone(..., "approved")` requires a submitted milestone with a submission and an Owner workspace role in the active Owner/Contributor MVP (`lib/repositories/milestone-review.ts`).
 - `submitted -> rejected`: the same function requires an Owner, a non-empty rejection comment, and records a rejected review.
-- `approved -> released`: `refreshReleaseProof` sets the milestone to `released` when confirmation is recorded for an approved Arc release. In mock/demo execution modes, `completeSimulatedPayment` may atomically create a completed simulated `PaymentAttempt` with no evidence and set an approved milestone to `released` (`lib/repositories/simulated-payment.ts`).
+- `approved -> released`: `refreshReleaseProof` sets the milestone to `released` when confirmation is recorded for an approved Arc release. In mock/demo execution modes, `completeSimulatedPayment` may atomically create a completed simulated `PaymentAttempt` with no evidence and set an approved milestone to `released` (`lib/repositories/simulated-payment.ts`). Release queueing and simulated payment both require every earlier-sequence milestone in the payout to be `released`.
 
 No direct transition to `released` is supported by the queue operation. Release queuing and simulated payment both require `approved` first.
 
@@ -40,6 +40,8 @@ No direct transition to `released` is supported by the queue operation. Release 
 `ReleaseStatus` values are `queued`, `pending`, `confirmed`, `failed`, and `cancelled`.
 
 `queueMilestoneRelease` creates `queued` release and `pending` proof records only when the milestone is approved, the payout is `active` or `partially_released`, no release already exists, the destination exists, and the requested amount equals the milestone amount. The active MVP release route requires an Owner Web3 session and its enabled EOA source wallet.
+
+Before opening a browser wallet in `real` mode, the client calls the read-only `GET /api/v1/milestones/[id]/release` readiness check. It applies Owner authorization and the server-side real-execution gate but creates no release/proof record. `POST` remains the only endpoint that queues a release.
 
 For a pending browser-wallet release whose wallet callback did not provide a hash, the owner may request a read-only reconciliation search. It considers only recent, confirmed Arc USDC `Transfer` logs from the snapshotted source to the snapshotted destination after the release request, then applies the same full transaction verifier. It never changes release state, selects an ambiguous result, or unlocks retry; confirmation still requires the normal proof-refresh verifier.
 
@@ -65,7 +67,7 @@ See `docs/AUTHORIZATION.md` for actor/role permissions and `docs/SECURITY_INVARI
 
 `completed` is the payout terminal state derived when every milestone is released. `released` is the milestone terminal state in the current workflow. Release `confirmed`, `failed`, and `cancelled` are persisted outcomes, but failed releases may be retried through the repository path.
 
-The implementation does not prove a complete formal state-machine validator for every enum combination, sequential milestone locking, cancellation semantics, or all legacy handlers. Those behaviors are therefore not presented as guaranteed.
+The implementation does not prove a complete formal state-machine validator for every enum combination, cancellation semantics, or all legacy handlers. Those behaviors are therefore not presented as guaranteed.
 
 ## Verification
 
