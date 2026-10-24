@@ -517,6 +517,13 @@ export function PayoutDetailClient({
           : milestone,
       ),
     );
+    if (status === "submitted") {
+      toast({
+        variant: "success",
+        title: "Work submitted for review",
+        description: "It is ready for the workspace owner to review.",
+      });
+    }
     notifyWorkflowUpdated();
     void refreshActivity();
   }

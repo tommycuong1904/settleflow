@@ -43,6 +43,7 @@ function ToastItem({
 
   const isError = variant === "error";
   const isWarning = variant === "warning";
+  const isUrgent = isError || isWarning;
 
   // Theme styles: solid green by default for success and info.
   const bgStyle = isError
@@ -71,7 +72,8 @@ function ToastItem({
         borderColor: borderStyle,
         boxShadow: shadowStyle,
       }}
-      role="alert"
+      role={isUrgent ? "alert" : "status"}
+      aria-live={isUrgent ? "assertive" : "polite"}
     >
       {VARIANT_ICONS[variant] || VARIANT_ICONS.success}
 
@@ -149,7 +151,6 @@ export function ToastContainer() {
   const content = (
     <div
       className="sf-toast-container"
-      aria-live="polite"
       aria-label="Notifications"
       style={{
         position: "fixed",
