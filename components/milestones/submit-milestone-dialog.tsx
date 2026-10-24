@@ -21,6 +21,7 @@ import { formatUsdc } from "@/lib/utils/format";
 import type { Milestone } from "@/lib/models/milestone";
 import { useWallet } from "@/lib/context/wallet-context";
 import { useScrollLock } from "@/lib/hooks/use-scroll-lock";
+import { useFocusTrap } from "@/lib/hooks/use-focus-trap";
 import { PRODUCT_CONTEXT_HEADER_NAMES } from "@/lib/runtime/product-context";
 
 type SubmitMilestoneDialogProps = {
@@ -80,8 +81,10 @@ export function SubmitMilestoneDialog({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const summaryRef = useRef<HTMLTextAreaElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
 
   useScrollLock(isOpen);
+  useFocusTrap(isOpen, dialogRef);
   const { address: connectedAddress } = useWallet();
 
   useEffect(() => {
@@ -201,9 +204,11 @@ export function SubmitMilestoneDialog({
       onClick={onClose}
     >
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="submit-milestone-title"
+        tabIndex={-1}
         className="relative max-h-[calc(100dvh-1.5rem)] w-full max-w-lg overflow-y-auto overscroll-contain rounded-3xl border border-[var(--border-strong)] bg-[var(--surface)] p-5 shadow-2xl text-[var(--foreground)] sm:max-h-[calc(100dvh-2rem)] sm:p-6"
         onClick={(e) => e.stopPropagation()}
       >

@@ -21,6 +21,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { isRole } from "@/lib/runtime/role-utils";
+import { useFocusTrap } from "@/lib/hooks/use-focus-trap";
 
 type MilestoneRowProps = {
   milestone: Milestone;
@@ -62,6 +63,8 @@ export function MilestoneRow({
   const [reviewBusy, setReviewBusy] = useState(false);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
   const rejectCommentRef = useRef<HTMLTextAreaElement>(null);
+  const rejectDialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(isRejectModalOpen, rejectDialogRef);
 
   // Initialize from latestSubmission returned by backend getPayout
   const [lastSubmissionSummary, setLastSubmissionSummary] = useState<string | null>(
@@ -424,9 +427,11 @@ export function MilestoneRow({
           onClick={closeRejectDialog}
         >
           <div
+            ref={rejectDialogRef}
             role="dialog"
             aria-modal="true"
             aria-labelledby="request-revision-title"
+            tabIndex={-1}
             className="relative max-h-[calc(100dvh-1.5rem)] w-full max-w-md overflow-y-auto overscroll-contain rounded-3xl border border-[var(--border-strong)] bg-[var(--surface)] p-5 shadow-2xl text-[var(--foreground)] sm:max-h-[calc(100dvh-2rem)] sm:p-6"
             onClick={(e) => e.stopPropagation()}
           >

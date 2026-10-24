@@ -24,6 +24,7 @@ import { hasRole, isRole } from "@/lib/runtime/role-utils";
 import { useWallet } from "@/lib/context/wallet-context";
 import { formatUsdc, shortenAddress } from "@/lib/utils/format";
 import { useScrollLock } from "@/lib/hooks/use-scroll-lock";
+import { useFocusTrap } from "@/lib/hooks/use-focus-trap";
 import { X } from "lucide-react";
 
 type PayoutDetailReleaseShellProps = {
@@ -181,7 +182,9 @@ export function PayoutDetailReleaseShell({
   const [recordingSimulatedPayment, setRecordingSimulatedPayment] = useState(false);
   const [processingRelease, setProcessingRelease] = useState(false);
   const handledReviewRequest = useRef(0);
+  const releaseDialogRef = useRef<HTMLDivElement>(null);
   useScrollLock(releaseModalMode !== null);
+  useFocusTrap(releaseModalMode !== null, releaseDialogRef);
 
   const resolvedProof = activeProof ?? releaseProof;
   const proofMatchesCurrentMilestone =
@@ -962,7 +965,7 @@ export function PayoutDetailReleaseShell({
       ) : null}
       {releaseModalMode && nextReleasableMilestone ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-3 backdrop-blur-md sm:p-4" onClick={closeReleaseModal}>
-          <div role="dialog" aria-modal="true" aria-labelledby="release-dialog-title" className="relative max-h-[calc(100dvh-1.5rem)] w-full max-w-lg overflow-y-auto rounded-3xl border border-[var(--border-strong)] bg-[var(--surface)] p-5 shadow-2xl sm:max-h-[calc(100dvh-2rem)] sm:p-6" onClick={(event) => event.stopPropagation()}>
+          <div ref={releaseDialogRef} role="dialog" aria-modal="true" aria-labelledby="release-dialog-title" tabIndex={-1} className="relative max-h-[calc(100dvh-1.5rem)] w-full max-w-lg overflow-y-auto rounded-3xl border border-[var(--border-strong)] bg-[var(--surface)] p-5 shadow-2xl sm:max-h-[calc(100dvh-2rem)] sm:p-6" onClick={(event) => event.stopPropagation()}>
             <button type="button" onClick={closeReleaseModal} disabled={isModalActionPending} className="absolute right-5 top-5 rounded-full p-1.5 text-[var(--text-muted)] hover:bg-[var(--surface-muted)] disabled:cursor-not-allowed disabled:opacity-50" aria-label="Close release dialog"><X size={18} /></button>
             {releaseModalMode === "method" ? (
               <>
