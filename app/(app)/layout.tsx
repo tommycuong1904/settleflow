@@ -33,7 +33,7 @@ export default async function AppLayout({
       </Suspense>
       <div className="sf-app-content">
         <Suspense fallback={null}>
-          <AppHeader />
+          <AppHeader hasWorkspace={Boolean(initialWorkspaceId)} />
         </Suspense>
         <WorkflowStateSync />
         <main className="sf-app-main">

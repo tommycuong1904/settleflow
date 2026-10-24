@@ -46,6 +46,7 @@ test("an invited contributor joins the inviter workspace and lands in its dashbo
     await page.goto(`/accept-invite?token=${invitation.token}`);
     await expect(page.getByRole("heading", { name: "Join Invited Workspace" })).toBeVisible();
     await expect(page.getByText("You do not need a wallet to join or work in this workspace.")).toBeVisible();
+    await expect(page.locator("header").getByRole("link", { name: /Notifications/ })).toHaveCount(0);
     await page.getByRole("button", { name: "Accept & Join Invited Workspace" }).click();
     await page.waitForURL("**/dashboard");
     await expect(page.getByRole("heading", { name: "Today’s work" })).toBeVisible();

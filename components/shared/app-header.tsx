@@ -8,7 +8,7 @@ import { useToast } from "@/lib/context/toast-context";
 import { WORKFLOW_UPDATED_EVENT } from "@/lib/runtime/workflow-sync";
 import { LogOut, Wallet, User, ChevronDown, RefreshCw, Copy, Menu, Bell, Settings } from "lucide-react";
 
-export function AppHeader() {
+export function AppHeader({ hasWorkspace = false }: { hasWorkspace?: boolean }) {
   const router = useRouter();
   const pathname = usePathname();
   const {
@@ -32,7 +32,8 @@ export function AppHeader() {
   const notificationRequestRef = useRef(0);
 
   useEffect(() => {
-    if (!isConnected) {
+    if (!isConnected || !hasWorkspace || pathname === "/accept-invite") {
+      setUnreadNotifications(0);
       return;
     }
     let active = true;
@@ -62,7 +63,7 @@ export function AppHeader() {
       window.removeEventListener(WORKFLOW_UPDATED_EVENT, handleWorkflowUpdate);
       window.removeEventListener("settleflow:notifications-updated", handleNotificationUpdate);
     };
-  }, [isConnected, pathname]);
+  }, [hasWorkspace, isConnected, pathname]);
 
   const displayIdentifier = authType === "web3_wallet" && address
     ? `${address.slice(0, 6)}...${address.slice(-4)}`
@@ -105,7 +106,7 @@ export function AppHeader() {
 
       {/* Right group: Desktop Utilities & Wallet / Account (pushed to the right using ml-auto) */}
       <div className="ml-auto flex items-center justify-end gap-2 sm:gap-2.5">
-        {isConnected ? (
+        {isConnected && hasWorkspace && pathname !== "/accept-invite" ? (
           <a
             href="/notifications"
             className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-[var(--border-soft)] bg-[var(--surface)] text-[var(--text-muted)] transition-colors hover:border-[var(--border-strong)] hover:text-[var(--foreground)] md:h-8 md:w-8"
