@@ -172,7 +172,7 @@ export default function SettingsPage() {
       <PageHeader
         eyebrow="Settings"
         title="Workspace settings"
-        description="Manage your workspace, account, and notifications. Advanced payment and testnet tools are optional."
+        description="Manage your workspace, account, and notifications."
       />
 
       <div className="space-y-8">
@@ -347,8 +347,8 @@ export default function SettingsPage() {
                 <Wallet size={20} />
               </div>
               <div>
-                <h2 className="text-base font-semibold text-[var(--foreground)]">Advanced payment methods</h2>
-                <p className="text-xs text-[var(--text-muted)]">Optional. Only set this up if you choose Wallet payment for a milestone.</p>
+                <h2 className="text-base font-semibold text-[var(--foreground)]">Wallet payment (advanced)</h2>
+                <p className="text-xs text-[var(--text-muted)]">Optional. Set this up only when you choose to pay a milestone from a browser wallet.</p>
               </div>
             </div>
             <ChevronDown size={18} className="shrink-0 text-[var(--text-muted)]" />
@@ -356,8 +356,8 @@ export default function SettingsPage() {
           <div className="mt-6 space-y-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h3 className="text-sm font-semibold text-[var(--foreground)]">Browser wallet</h3>
-                <p className="text-xs text-[var(--text-muted)]">Not needed to create payouts, review work, or record simulated payments.</p>
+                <h3 className="text-sm font-semibold text-[var(--foreground)]">Connect a browser wallet</h3>
+                <p className="text-xs text-[var(--text-muted)]">Not needed to create payouts, review work, or record a simulated payment.</p>
               </div>
               <Button type="button" variant="secondary" size="sm" onClick={handleLinkWallet} disabled={!isConnected || isLinkingWallet} className="w-full justify-center sm:w-auto">
                 <Wallet size={13} className="mr-1.5" /> {isLinkingWallet ? "Waiting for signature..." : "Link wallet"}
@@ -374,12 +374,12 @@ export default function SettingsPage() {
               <div key={wallet.id} className="flex flex-col gap-1 rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] px-3.5 py-3 text-xs sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p className="font-medium text-[var(--foreground)]">
-                    {wallet.kind === "circle_sca" ? "Circle Smart Wallet — Coming soon" : wallet.kind === "legacy_export_eoa" ? "Retired legacy EOA" : "Wallet payment address"}
+                    {wallet.kind === "circle_sca" ? "Managed wallet — not available yet" : wallet.kind === "legacy_export_eoa" ? "Previously linked wallet — unavailable" : "Wallet payment address"}
                   </p>
                   <p className="font-mono text-[11px] text-[var(--text-muted)]">{wallet.address}</p>
                 </div>
                 <p className="text-[11px] text-[var(--text-muted)]">
-                  {wallet.kind === "circle_sca" ? "Unavailable for Wallet payment" : wallet.authEnabled ? "Available for Wallet payment" : "Payment source"}
+                  {wallet.kind === "circle_sca" ? "Unavailable for wallet payment" : wallet.authEnabled ? "Available for wallet payment" : "Payment source"}
                 </p>
               </div>
             ))}
@@ -398,7 +398,6 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Advanced Arc tools */}
         <details className="rounded-xl border border-[var(--border-soft)] p-6 sm:p-8">
           <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
             <div className="flex items-center gap-3">
@@ -406,8 +405,8 @@ export default function SettingsPage() {
                 <Cpu size={20} />
               </div>
               <div>
-                <h2 className="text-base font-semibold text-[var(--foreground)]">Developer tools</h2>
-                <p className="text-xs text-[var(--text-muted)]">Testnet diagnostics for advanced Wallet payment troubleshooting. Not required for normal use.</p>
+                <h2 className="text-base font-semibold text-[var(--foreground)]">Technical diagnostics</h2>
+                <p className="text-xs text-[var(--text-muted)]">For troubleshooting advanced wallet payment setup. Not required for normal use.</p>
               </div>
             </div>
             <ChevronDown size={18} className="shrink-0 text-[var(--text-muted)]" />
