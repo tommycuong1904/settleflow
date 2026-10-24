@@ -25,7 +25,23 @@ export default async function DashboardPage() {
   }
   if (contextResult.kind === "authenticated") {
     const productContext = contextResult.productContext;
-    if (productContext.actor === "reviewer" || productContext.actor === "ops") throw new Error("FORBIDDEN_DASHBOARD_SUMMARY");
+    if (productContext.actor === "reviewer" || productContext.actor === "ops") {
+      return (
+        <div className="sf-app-wrapper flex flex-col gap-8 py-8 md:py-12">
+          <PageHeader
+            eyebrow="Workspace"
+            title="Workspace activity"
+            description="Your role does not use the payout dashboard. Review the workspace activity for the updates available to you."
+          />
+          <section className="sf-shell rounded-2xl p-6 md:p-7">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">Workspace access</p>
+            <h2 className="mt-2 text-2xl font-semibold tracking-tight text-[var(--foreground)]">Review updates for this workspace</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--text-muted)]">Use Activity to see submitted work, decisions, and payment updates that are visible to your role.</p>
+            <Button href="/activity" className="mt-5 w-full justify-center sm:w-auto">View activity</Button>
+          </section>
+        </div>
+      );
+    }
     const dashboardData = await getDashboardData({
       workspaceId: productContext.workspaceId,
       role: productContext.actor,
@@ -199,7 +215,7 @@ export default async function DashboardPage() {
         )}
       </section>
 
-      {!isOwnerSetup ? (
+      {!isOwnerSetup && hasPayouts ? (
         <>
       <section className="sf-shell rounded-2xl p-6 md:p-7 shadow-[0_2px_6px_rgba(15,23,42,0.08)]"><div className="flex items-center justify-between gap-4"><div><h2 className="text-lg font-semibold text-[var(--foreground)]">Your work queue</h2><p className="mt-1 text-sm text-[var(--text-muted)]">Work is ordered so the next safe action is always clear.</p></div>{hasPayouts ? <Button href="/payouts" variant="ghost" size="sm">View all payouts</Button> : null}</div><div className="mt-5 divide-y divide-[var(--border-soft)]">{remainingTasks.length > 0 ? remainingTasks.map((task) => <div key={task.id} className="flex flex-col gap-3 py-4 first:pt-0 sm:flex-row sm:items-center sm:justify-between"><div><p className="font-medium text-[var(--foreground)]">{task.title}</p><p className="mt-1 text-sm text-[var(--text-muted)]">{task.description}</p></div><Button href={task.href} variant="secondary" size="sm" className="w-full justify-center sm:w-auto">{task.action}</Button></div>) : <p className="py-4 text-sm text-[var(--text-muted)]">{nextTask ? "Complete the current task above, then your next task will appear here." : !hasContributors ? isOwner ? "After you add a contributor, create a payout to define the work and payment milestones." : "Tasks will appear after your workspace owner sets up the first payout." : !hasPayouts ? isOwner ? "After you create a payout, submitted work, approvals, and payment tasks will appear here." : "Tasks will appear after the workspace owner creates the first payout." : "New review, payment, and verification tasks will appear here."}</p>}</div></section>
 
