@@ -168,11 +168,11 @@ export function EditContributorDialog({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md transition-opacity animate-in fade-in"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md transition-opacity animate-in fade-in"
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-[500px] overflow-hidden rounded-2xl border border-[var(--border-strong)] bg-[var(--surface)] p-6 sm:p-8 shadow-2xl text-[var(--foreground)]"
+        className="relative max-h-[calc(100dvh-1.5rem)] w-full max-w-[calc(100vw-1.5rem)] overflow-y-auto overscroll-contain rounded-2xl border border-[var(--border-strong)] bg-[var(--surface)] p-5 text-[var(--foreground)] shadow-2xl sm:max-h-[calc(100dvh-2rem)] sm:max-w-[500px] sm:p-8"
         onClick={(e) => e.stopPropagation()}
       >
         <button
@@ -184,7 +184,7 @@ export function EditContributorDialog({
           <X size={18} />
         </button>
 
-        <div className="flex items-center gap-3.5 mb-6">
+        <div className="mb-6 flex items-center gap-3.5 pr-8">
           <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] shrink-0">
             <Pencil size={20} />
           </div>
@@ -244,7 +244,7 @@ export function EditContributorDialog({
 
           <details className="rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-4">
             <summary className="cursor-pointer text-xs font-semibold text-[var(--foreground)] marker:text-[var(--text-muted)]">Edit optional details or payment setup</summary>
-            <div className="mt-4 grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+            <div className="mt-4 grid grid-cols-1 gap-3.5">
             <div>
               <label className="mb-2.5 block text-xs font-semibold uppercase tracking-wider">
                 Role / Discipline
@@ -302,13 +302,14 @@ export function EditContributorDialog({
           </details>
 
           {/* Action Buttons */}
-          <div className="pt-2 flex items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-3 pt-2">
             <Button
               type="button"
               variant={status === "active" ? "danger" : "secondary"}
               size="sm"
               onClick={handleStatusToggle}
               disabled={isSubmitting || isUpdatingStatus}
+              className="w-full justify-center sm:w-auto"
             >
               {isUpdatingStatus ? (
                 <>
@@ -325,13 +326,14 @@ export function EditContributorDialog({
               )}
             </Button>
 
-            <div className="flex items-center gap-3">
+            <div className="flex w-full items-center justify-end gap-3 sm:ml-auto sm:w-auto">
               <Button
                 type="button"
                 variant="secondary"
                 size="sm"
                 onClick={onClose}
                 disabled={isSubmitting || isUpdatingStatus}
+                className="flex-1 justify-center sm:flex-none"
               >
                 Cancel
               </Button>
@@ -340,6 +342,7 @@ export function EditContributorDialog({
                 variant="primary"
                 size="sm"
                 disabled={isSubmitting || isUpdatingStatus || !name.trim()}
+                className="flex-1 justify-center sm:flex-none"
               >
                 {isSubmitting ? (
                   <>

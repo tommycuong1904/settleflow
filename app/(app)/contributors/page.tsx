@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { PageHeader } from "@/components/shared/page-header";
+import { Button } from "@/components/shared/button";
 import { ContributorListClient } from "@/components/contributors/contributor-list-client";
 import { listContributors } from "@/lib/repositories/contributors";
 import {
@@ -13,6 +14,20 @@ import { redirect } from "next/navigation";
 type ContributorsPageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
+
+function getSafePayoutReturnPath(value: string | string[] | undefined, workspaceId: string) {
+  const returnTo = Array.isArray(value) ? value[0] : value;
+  if (!returnTo) return undefined;
+
+  try {
+    const target = new URL(returnTo, "https://settleflow.local");
+    if (target.origin !== "https://settleflow.local" || target.pathname !== "/payouts/new") return undefined;
+    target.searchParams.set("workspaceId", workspaceId);
+    return `${target.pathname}${target.search}`;
+  } catch {
+    return undefined;
+  }
+}
 
 export default async function ContributorsPage({ searchParams }: ContributorsPageProps) {
   const cookieStore = await cookies();
@@ -32,6 +47,7 @@ export default async function ContributorsPage({ searchParams }: ContributorsPag
   if (requestedWorkspaceId !== ownerWorkspaceId) {
     redirect(`/contributors?workspaceId=${encodeURIComponent(ownerWorkspaceId)}`);
   }
+  const returnTo = getSafePayoutReturnPath(resolvedSearchParams.returnTo, ownerWorkspaceId);
 
   const contextResult = await resolveProductContextForServerPage(cookieStore, { workspaceId: ownerWorkspaceId });
   if (contextResult.kind === "auth-required") redirect("/auth-required?next=/contributors");
@@ -49,7 +65,9 @@ export default async function ContributorsPage({ searchParams }: ContributorsPag
         eyebrow="People"
         title="Contributors"
         description="Manage the people who receive milestone payouts from this workspace."
-      />
+      >
+        {returnTo ? <Button href={returnTo} variant="secondary" size="sm">Back to Create payout</Button> : null}
+      </PageHeader>
 
       <div className="flex-1">
         <ContributorListClient
@@ -57,6 +75,7 @@ export default async function ContributorsPage({ searchParams }: ContributorsPag
           workspaceId={workspaceId}
           currentActor={productContext.actor}
           activeUserId={productContext.activeUserId}
+          returnTo={returnTo}
         />
       </div>
     </div>

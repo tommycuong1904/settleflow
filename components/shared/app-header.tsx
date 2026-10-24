@@ -6,7 +6,7 @@ import { Button } from "@/components/shared/button";
 import { useWallet } from "@/lib/context/wallet-context";
 import { useToast } from "@/lib/context/toast-context";
 import { WORKFLOW_UPDATED_EVENT } from "@/lib/runtime/workflow-sync";
-import { LogOut, Wallet, User, ChevronDown, RefreshCw, Copy, Menu, Bell } from "lucide-react";
+import { LogOut, Wallet, User, ChevronDown, RefreshCw, Copy, Menu, Bell, Settings } from "lucide-react";
 
 export function AppHeader() {
   const router = useRouter();
@@ -87,18 +87,18 @@ export function AppHeader() {
   };
 
   return (
-    <header className="sf-app-header relative w-full flex items-center">
+    <header className="sf-app-header relative flex min-h-14 w-full items-center">
       {/* Left group: Hamburger + SettleFlow wordmark (Mobile only) */}
-      <div className="flex items-center gap-2 md:hidden shrink-0">
+      <div className="flex shrink-0 items-center gap-1.5 md:hidden">
         <button
           type="button"
           onClick={handleOpenMobileSidebar}
-          className="inline-flex items-center justify-center p-1.5 text-[var(--foreground)] hover:opacity-75 transition-opacity"
+          className="inline-flex h-10 w-10 items-center justify-center rounded-full text-[var(--foreground)] transition-colors hover:bg-[var(--surface-muted)]"
           aria-label="Open navigation menu"
         >
           <Menu size={20} />
         </button>
-        <span className="font-bold text-sm tracking-tight text-[var(--foreground)]">
+        <span className="text-[15px] font-bold tracking-tight text-[var(--foreground)]">
           SettleFlow
         </span>
       </div>
@@ -108,7 +108,7 @@ export function AppHeader() {
         {isConnected ? (
           <a
             href="/notifications"
-            className="relative inline-flex h-8 w-8 items-center justify-center rounded-full border border-[var(--border-soft)] bg-[var(--surface)] text-[var(--text-muted)] transition-colors hover:border-[var(--border-strong)] hover:text-[var(--foreground)]"
+            className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-[var(--border-soft)] bg-[var(--surface)] text-[var(--text-muted)] transition-colors hover:border-[var(--border-strong)] hover:text-[var(--foreground)] md:h-8 md:w-8"
             aria-label={unreadNotifications > 0 ? `${unreadNotifications} unread notifications` : "Notifications"}
           >
             <Bell size={14} />
@@ -128,7 +128,9 @@ export function AppHeader() {
         <div className="relative">
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="flex items-center gap-2 rounded-full border border-[var(--border-soft)] bg-[var(--surface)] px-3.5 py-1.5 text-xs text-[var(--foreground)] hover:border-[var(--border-strong)] hover:bg-[var(--surface-muted)] transition-all"
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--border-soft)] bg-[var(--surface)] text-xs text-[var(--foreground)] transition-all hover:border-[var(--border-strong)] hover:bg-[var(--surface-muted)] md:h-auto md:w-auto md:gap-2 md:px-3.5 md:py-1.5"
+            aria-label="Open account menu"
+            title="Account"
           >
             {userAvatar ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -142,9 +144,9 @@ export function AppHeader() {
             ) : (
               <Wallet size={13} className="opacity-70" />
             )}
-            <span className="font-medium text-[var(--foreground)] max-w-[120px] truncate">{displayIdentifier}</span>
-            {hasBrowserWallet ? <><span className="opacity-20 font-mono">|</span><span className="font-mono-numbers text-[var(--foreground)] font-medium">{usdcBalance} USDC</span></> : null}
-            <ChevronDown size={12} className="opacity-60" />
+            <span className="hidden max-w-[120px] truncate font-medium text-[var(--foreground)] md:block">{displayIdentifier}</span>
+            {hasBrowserWallet ? <><span className="hidden font-mono opacity-20 md:block">|</span><span className="hidden font-mono-numbers font-medium text-[var(--foreground)] md:block">{usdcBalance} USDC</span></> : null}
+            <ChevronDown size={12} className="hidden opacity-60 md:block" />
           </button>
 
           {/* Account Dropdown */}
@@ -219,6 +221,16 @@ export function AppHeader() {
                 </div>
 
                 <div className="border-t border-[var(--border-soft)] pt-2 space-y-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsDropdownOpen(false);
+                      router.push("/settings");
+                    }}
+                    className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-[11px] font-medium text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-muted)] hover:text-[var(--foreground)]"
+                  >
+                    <Settings size={13} /> Account & workspace settings
+                  </button>
                   <button
                     onClick={() => void handleDisconnect()}
                     className="w-full flex items-center gap-2 rounded-lg hover:bg-[var(--surface-muted)] text-[var(--text-muted)] hover:text-[var(--foreground)] px-2 py-1.5 transition-colors font-medium text-[11px]"

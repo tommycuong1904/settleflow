@@ -22,7 +22,7 @@ import { PRODUCT_CONTEXT_HEADER_NAMES } from "@/lib/runtime/product-context";
 type AddContributorDialogProps = {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess?: () => void;
+  onSuccess?: (contributorId: string) => void;
   workspaceId: string;
 };
 
@@ -80,7 +80,7 @@ export function AddContributorDialog({
         }),
       });
 
-      const data = await res.json();
+      const data = await res.json() as { data?: { id?: string }; error?: string };
 
       if (!res.ok) {
         throw new Error(data.error || "Failed to create contributor.");
@@ -88,11 +88,11 @@ export function AddContributorDialog({
 
       toast({
         variant: "success",
-        title: "Contributor Added",
-        description: `${name.trim()} has been registered successfully.`,
+        title: "Contributor added",
+        description: `${name.trim()} is ready for a payout when you are.`,
       });
 
-      setSuccessMessage("Contributor registered successfully!");
+      setSuccessMessage("Contributor added successfully!");
       setTimeout(() => {
         setName("");
         setWalletAddress("");
@@ -102,7 +102,7 @@ export function AddContributorDialog({
         setSuccessMessage(null);
         onClose();
         if (onSuccess) {
-          onSuccess();
+          onSuccess(data.data?.id ?? "");
         } else {
           router.refresh();
         }
@@ -127,7 +127,10 @@ export function AddContributorDialog({
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-[500px] overflow-hidden rounded-2xl border border-[var(--border-strong)] bg-[var(--surface)] p-6 sm:p-8 shadow-2xl text-[var(--foreground)]"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="add-contributor-title"
+        className="relative max-h-[calc(100dvh-1.5rem)] w-full max-w-[500px] overflow-y-auto rounded-2xl border border-[var(--border-strong)] bg-[var(--surface)] p-5 text-[var(--foreground)] shadow-2xl sm:max-h-[calc(100dvh-3rem)] sm:p-8"
         onClick={(e) => e.stopPropagation()}
       >
         <button
@@ -143,8 +146,8 @@ export function AddContributorDialog({
           <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] shrink-0">
             <UserPlus size={20} />
           </div>
-          <div>
-            <h2 className="text-xl font-bold tracking-tight">
+          <div className="pr-8">
+            <h2 id="add-contributor-title" className="text-xl font-bold tracking-tight">
               Add contributor
             </h2>
             <p className="text-xs mt-0.5">
@@ -260,14 +263,14 @@ export function AddContributorDialog({
             </div>
           </details>
 
-          {/* Action Buttons */}
-          <div className="pt-2 flex items-center justify-end gap-3">
+          <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:items-center sm:justify-end">
             <Button
               type="button"
               variant="secondary"
               size="sm"
               onClick={onClose}
               disabled={isSubmitting}
+              className="w-full justify-center sm:w-auto"
             >
               Cancel
             </Button>
@@ -276,6 +279,7 @@ export function AddContributorDialog({
               variant="primary"
               size="sm"
               disabled={isSubmitting || !name.trim()}
+              className="w-full justify-center sm:w-auto"
             >
               {isSubmitting ? (
                 <>

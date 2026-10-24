@@ -70,8 +70,8 @@ export function DeleteContributorDialog({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md transition-opacity animate-in fade-in">
-      <div className="relative w-full max-w-[460px] overflow-hidden rounded-2xl border border-[var(--border-strong)] bg-[var(--surface)] p-6 sm:p-8 shadow-2xl text-[var(--foreground)]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-3 backdrop-blur-md transition-opacity animate-in fade-in sm:p-4">
+      <div className="relative max-h-[calc(100dvh-1.5rem)] w-full max-w-[calc(100vw-1.5rem)] overflow-y-auto overscroll-contain rounded-2xl border border-[var(--border-strong)] bg-[var(--surface)] p-5 text-[var(--foreground)] shadow-2xl sm:max-h-[calc(100dvh-2rem)] sm:max-w-[460px] sm:p-8">
         <button
           type="button"
           onClick={onClose}
@@ -116,13 +116,14 @@ export function DeleteContributorDialog({
           </div>
         )}
 
-        <div className="mt-6 flex items-center justify-end gap-3">
+        <div className="mt-6 flex gap-3 sm:justify-end">
           <Button
             type="button"
             variant="secondary"
             size="sm"
             onClick={onClose}
             disabled={isSubmitting}
+            className="flex-1 justify-center sm:flex-none"
           >
             Cancel
           </Button>
@@ -132,6 +133,7 @@ export function DeleteContributorDialog({
             size="sm"
             onClick={handleDelete}
             disabled={isSubmitting || contributor.payoutCount > 0}
+            className="flex-1 justify-center sm:flex-none"
           >
             {isSubmitting ? (
               <>
