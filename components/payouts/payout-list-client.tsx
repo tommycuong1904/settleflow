@@ -49,11 +49,12 @@ export function PayoutListClient({
   const [currentPage, setCurrentPage] = useState(1);
   const totalPages = Math.ceil(filteredPayouts.length / itemsPerPage);
   const paginatedPayouts = filteredPayouts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const hasNoPayouts = initialPayouts.length === 0;
 
   return (
     <div className="space-y-5">
       {/* Controls: Search & Status Filter */}
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+      {!hasNoPayouts ? <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div className="relative w-full min-w-0 md:flex-1 md:max-w-md">
           <Search
             size={16}
@@ -68,7 +69,7 @@ export function PayoutListClient({
           />
         </div>
 
-        <div className="flex self-center rounded-full bg-[var(--surface)] p-1 border border-[var(--border-soft)] text-xs font-medium md:ml-auto md:shrink-0">
+        <div className="flex w-full self-center rounded-full border border-[var(--border-soft)] bg-[var(--surface)] p-1 text-xs font-medium md:ml-auto md:w-auto md:shrink-0">
           <button
             onClick={() => setStatusFilter("all")}
             className={`rounded-full px-3 py-1.5 transition-all ${
@@ -110,7 +111,7 @@ export function PayoutListClient({
             Completed
           </button>
         </div>
-      </div>
+      </div> : null}
 
       {/* List */}
       {filteredPayouts.length === 0 ? (
@@ -127,7 +128,7 @@ export function PayoutListClient({
               ? "Try adjusting your search query or status filter."
               : canCreatePayout
               ? "Create your first payout to organize work, approvals, and payments."
-              : "Payouts assigned to you will appear here after a workspace owner creates one."
+              : "Your workspace owner will assign a payout when work is ready. You can then review the scope and submit work here — no wallet setup is needed."
           }
         />
       ) : ( <>
@@ -174,8 +175,8 @@ export function PayoutListClient({
                     </p>
                   </div>
 
-                  <div className="flex items-center justify-between gap-6 sm:contents">
-                    <div className="text-right">
+                  <div className="flex flex-col gap-3 sm:contents">
+                    <div className="flex items-center justify-between gap-3 sm:block sm:text-right">
                       <p className="text-[10px] uppercase tracking-wider text-[var(--text-muted)]">
                         Amount
                       </p>
@@ -183,7 +184,7 @@ export function PayoutListClient({
                         {formatUsdc(Number(payout.totalAmount))} USDC
                       </p>
                     </div>
-                    <Button href={`/payouts/${payout.id}?workspaceId=${encodeURIComponent(payout.workspaceId)}`} variant={payout.nextAction === "Payment complete" ? "ghost" : "secondary"} size="sm" className="sm:w-52 whitespace-nowrap">
+                    <Button href={`/payouts/${payout.id}?workspaceId=${encodeURIComponent(payout.workspaceId)}`} variant={payout.nextAction === "Payment complete" ? "ghost" : "secondary"} size="sm" className="w-full justify-center whitespace-nowrap sm:w-52">
                       {payout.nextAction} <ArrowRight size={14} className="ml-1" />
                     </Button>
                   </div>

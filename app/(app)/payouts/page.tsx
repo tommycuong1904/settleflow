@@ -40,7 +40,7 @@ export default async function PayoutsPage() {
         }
       >
         {canCreatePayout ? (
-          <Button href="/payouts/new" variant="primary" size="sm">
+          <Button href="/payouts/new" variant="primary" size="sm" className="w-full justify-center md:w-auto">
             <Plus size={15} className="mr-1.5" /> New Payout
           </Button>
         ) : null}

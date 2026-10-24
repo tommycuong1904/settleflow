@@ -40,6 +40,7 @@ export default async function DashboardPage() {
   const isOwner = contextResult.kind === "authenticated" && contextResult.productContext.actor === "owner";
   const hasContributors = contributors.length > 0;
   const hasPayouts = payouts.length > 0;
+  const isOwnerSetup = isOwner && (!hasContributors || !hasPayouts);
 
   const activePayouts = payouts.filter((payout) =>
     ["active", "partially_released"].includes(payout.status),
@@ -57,6 +58,9 @@ export default async function DashboardPage() {
   const releaseReadyMilestones = milestones.filter(
     (milestone) => milestone.status === "approved",
   );
+  const contributorWorkMilestones = isOwner
+    ? []
+    : milestones.filter((milestone) => milestone.status === "pending" || milestone.status === "rejected");
   const releasedValue = releasedMilestones.reduce(
     (sum, milestone) => sum + milestone.amount,
     0,
@@ -94,6 +98,15 @@ export default async function DashboardPage() {
       description: `${failedSettlementMilestone?.title ?? "A milestone"} needs your decision before another payment attempt.`,
       action: isOwner ? "Review issue" : "View payout",
     }] : []),
+    ...contributorWorkMilestones.map((milestone) => ({
+      id: `submit-${milestone.id}`,
+      href: `/payouts/${milestone.payoutId}`,
+      title: milestone.status === "rejected" ? `Update ${milestone.title}` : `Submit ${milestone.title}`,
+      description: milestone.status === "rejected"
+        ? "The workspace owner requested changes. Update the work, then submit it again."
+        : `${milestone.description} When it is ready, submit it for the workspace owner to review.`,
+      action: milestone.status === "rejected" ? "Update work" : "Submit work",
+    })),
     ...pendingApprovals.map((milestone) => ({
       id: `review-${milestone.id}`,
       href: `/payouts/${milestone.payoutId}`,
@@ -110,6 +123,7 @@ export default async function DashboardPage() {
     })) : []),
   ].slice(0, 5);
   const nextTask = workQueue[0];
+  const remainingTasks = workQueue.slice(1);
   const recentPayments = [
     ...paymentAttempts
       .filter((payment) => payment.status === "completed")
@@ -142,28 +156,19 @@ export default async function DashboardPage() {
         title="Today’s work"
         description="Complete the next payout task, then move on."
       >
-        {nextTask ? (
-          <Button href={nextTask.href} variant="primary" size="sm">
-            {nextTask.action}
-          </Button>
-        ) : null}
-        {isOwner && hasContributors ? (
-          <Button href="/payouts/new" variant={nextTask ? "secondary" : "primary"} size="sm">
+        {isOwner && hasContributors && !nextTask && !isOwnerSetup ? (
+          <Button href="/payouts/new" variant="primary" size="sm" className="w-full justify-center md:w-auto">
             <Plus size={15} className="mr-1.5" /> New Payout
-          </Button>
-        ) : isOwner ? (
-          <Button href="/contributors" variant="primary" size="sm">
-            <Plus size={15} className="mr-1.5" /> Add contributor
           </Button>
         ) : null}
       </PageHeader>
 
       <section className="sf-shell rounded-2xl p-6 md:p-7 shadow-[0_2px_6px_rgba(15,23,42,0.08)]">
         {nextTask ? (
-          <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-center"><div><p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">Up next</p><h2 className="mt-2 text-2xl font-semibold tracking-tight text-[var(--foreground)]">{nextTask.title}</h2><p className="mt-2 text-sm text-[var(--text-muted)]">{nextTask.description}</p></div><Button href={nextTask.href}>{nextTask.action}</Button></div>
+          <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-center"><div><p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">Up next</p><h2 className="mt-2 text-2xl font-semibold tracking-tight text-[var(--foreground)]">{nextTask.title}</h2><p className="mt-2 text-sm text-[var(--text-muted)]">{nextTask.description}</p></div><Button href={nextTask.href} className="w-full justify-center sm:w-auto">{nextTask.action}</Button></div>
         ) : (
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">{hasPayouts ? "All caught up" : "Get started"}</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">{isOwnerSetup ? (!hasContributors ? "Step 1 of 2" : "Step 2 of 2") : hasPayouts ? "All caught up" : "Get started"}</p>
             <h2 className="mt-2 text-2xl font-semibold tracking-tight text-[var(--foreground)]">
               {!hasContributors
                 ? isOwner ? "Add the first person you will pay." : "Your workspace is getting ready."
@@ -181,13 +186,26 @@ export default async function DashboardPage() {
                     : "The workspace owner will create the first payout."
                   : "Create a payout or return when a contributor submits work."}
             </p>
+            {isOwner && !hasContributors ? (
+              <Button href="/contributors" className="mt-5 w-full justify-center sm:w-auto">
+                <Plus size={15} className="mr-1.5" /> Add your first contributor
+              </Button>
+            ) : isOwner && !hasPayouts ? (
+              <Button href="/payouts/new" className="mt-5 w-full justify-center sm:w-auto">
+                <Plus size={15} className="mr-1.5" /> Create your first payout
+              </Button>
+            ) : null}
           </div>
         )}
       </section>
 
-      <section className="sf-shell rounded-2xl p-6 md:p-7 shadow-[0_2px_6px_rgba(15,23,42,0.08)]"><div className="flex items-center justify-between gap-4"><div><h2 className="text-lg font-semibold text-[var(--foreground)]">Your work queue</h2><p className="mt-1 text-sm text-[var(--text-muted)]">Work is ordered so the next safe action is always clear.</p></div>{hasPayouts ? <Button href="/payouts" variant="ghost" size="sm">View all payouts</Button> : null}</div><div className="mt-5 divide-y divide-[var(--border-soft)]">{workQueue.length > 0 ? workQueue.map((task) => <div key={task.id} className="flex flex-col gap-3 py-4 first:pt-0 sm:flex-row sm:items-center sm:justify-between"><div><p className="font-medium text-[var(--foreground)]">{task.title}</p><p className="mt-1 text-sm text-[var(--text-muted)]">{task.description}</p></div><Button href={task.href} variant="secondary" size="sm">{task.action}</Button></div>) : <p className="py-4 text-sm text-[var(--text-muted)]">{!hasContributors ? isOwner ? "After you add a contributor, create a payout to define the work and payment milestones." : "Tasks will appear after your workspace owner sets up the first payout." : !hasPayouts ? isOwner ? "After you create a payout, submitted work, approvals, and payment tasks will appear here." : "Tasks will appear after the workspace owner creates the first payout." : "New review, payment, and verification tasks will appear here."}</p>}</div></section>
+      {!isOwnerSetup ? (
+        <>
+      <section className="sf-shell rounded-2xl p-6 md:p-7 shadow-[0_2px_6px_rgba(15,23,42,0.08)]"><div className="flex items-center justify-between gap-4"><div><h2 className="text-lg font-semibold text-[var(--foreground)]">Your work queue</h2><p className="mt-1 text-sm text-[var(--text-muted)]">Work is ordered so the next safe action is always clear.</p></div>{hasPayouts ? <Button href="/payouts" variant="ghost" size="sm">View all payouts</Button> : null}</div><div className="mt-5 divide-y divide-[var(--border-soft)]">{remainingTasks.length > 0 ? remainingTasks.map((task) => <div key={task.id} className="flex flex-col gap-3 py-4 first:pt-0 sm:flex-row sm:items-center sm:justify-between"><div><p className="font-medium text-[var(--foreground)]">{task.title}</p><p className="mt-1 text-sm text-[var(--text-muted)]">{task.description}</p></div><Button href={task.href} variant="secondary" size="sm" className="w-full justify-center sm:w-auto">{task.action}</Button></div>) : <p className="py-4 text-sm text-[var(--text-muted)]">{nextTask ? "Complete the current task above, then your next task will appear here." : !hasContributors ? isOwner ? "After you add a contributor, create a payout to define the work and payment milestones." : "Tasks will appear after your workspace owner sets up the first payout." : !hasPayouts ? isOwner ? "After you create a payout, submitted work, approvals, and payment tasks will appear here." : "Tasks will appear after the workspace owner creates the first payout." : "New review, payment, and verification tasks will appear here."}</p>}</div></section>
 
       <section className="grid gap-4 lg:grid-cols-[1.3fr_0.7fr]"><div className="sf-shell rounded-2xl p-6 md:p-7 shadow-[0_2px_6px_rgba(15,23,42,0.08)]"><h2 className="text-lg font-semibold text-[var(--foreground)]">Recent payments</h2><div className="mt-4 divide-y divide-[var(--border-soft)]">{recentPayments.length > 0 ? recentPayments.map((payment) => <a key={payment.id} href={payment.milestone ? `/payouts/${payment.milestone.payoutId}` : "/payouts"} className="block py-3 first:pt-0 hover:opacity-70"><p className="font-medium text-[var(--foreground)]">{payment.milestone?.title ?? "Payment completed"}</p><p className="mt-1 text-sm text-[var(--text-muted)]">{formatUsdc(payment.amount)} USDC · {payment.label}</p></a>) : <p className="py-3 text-sm text-[var(--text-muted)]">Completed payments will appear here.</p>}</div></div><details className="sf-shell rounded-2xl p-6 md:p-7 shadow-[0_2px_6px_rgba(15,23,42,0.08)]"><summary className="cursor-pointer text-lg font-semibold text-[var(--foreground)]">Workspace snapshot</summary><div className="mt-4 space-y-3 text-sm text-[var(--text-muted)]"><p>{activePayouts.length} active payouts</p><p>{formatUsdc(inFlightSettlementValue)} USDC payment in progress</p><p>{formatUsdc(outstandingExposure)} USDC left to pay across active payouts</p><p>{formatUsdc(releasedValue)} USDC paid</p></div></details></section>
+        </>
+      ) : null}
     </div>
 
 

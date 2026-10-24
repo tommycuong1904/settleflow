@@ -2,7 +2,7 @@ import { SectionCard } from "@/components/shared/section-card";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Button } from "@/components/shared/button";
 import { MilestoneStatusBadge } from "@/components/milestones/milestone-status-badge";
-import { formatUsdc, shortenAddress } from "@/lib/utils/format";
+import { formatUsdc } from "@/lib/utils/format";
 import type { DashboardData } from "@/lib/repositories/dashboard";
 
 type RecentProofProps = {
@@ -34,6 +34,12 @@ export default function RecentProof({ transactionProofs, milestones }: RecentPro
                 : proof.status === "pending"
                 ? "Open the payout to check confirmation status."
                 : "Open the payout detail to review the payment record.";
+            const paymentSummary =
+              proof.status === "confirmed"
+                ? "Payment recorded"
+                : proof.status === "pending"
+                  ? "Waiting for payment confirmation"
+                  : "Payment attempt needs review";
 
             return (
               <div
@@ -56,16 +62,7 @@ export default function RecentProof({ transactionProofs, milestones }: RecentPro
                     />
                   </div>
                   <p className="text-sm text-[var(--text-primary)]">
-                    {formatUsdc(milestone?.amount ?? 0)} USDC · {proof.network ?? "Arc Testnet"}
-                  </p>
-                  <p className="break-all font-mono text-xs leading-6">
-                    {proof.txHash
-                      ? shortenAddress(proof.txHash)
-                      : proof.status === "pending"
-                      ? "Hash pending / unavailable"
-                      : proof.status === "failed"
-                      ? "No confirmed transaction hash"
-                      : "Payment pending"}
+                    {formatUsdc(milestone?.amount ?? 0)} USDC · {paymentSummary}
                   </p>
                   {milestone?.payoutId ? (
                     <div className="space-y-3 pt-1">
