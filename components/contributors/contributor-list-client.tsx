@@ -12,6 +12,7 @@ import { DeleteContributorDialog } from "./delete-contributor-dialog";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Button } from "@/components/shared/button";
 import { useToast } from "@/lib/context/toast-context";
+import { createRequestTimeout } from "@/lib/client/request-timeout";
 import {
   Search,
   UserPlus,
@@ -87,11 +88,13 @@ export function ContributorListClient({
   }, [openInvitePopoverId]);
 
   const handleCopyClaimLink = async (contributor: ContributorListItem) => {
+    const requestTimeout = createRequestTimeout();
     try {
       setInvitingId(contributor.id);
       const res = await fetch(`/api/v1/contributors/${contributor.id}/invite`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        signal: requestTimeout.signal,
       });
       const data = await res.json();
       if (!res.ok) {
@@ -114,10 +117,13 @@ export function ContributorListClient({
     } catch (err) {
       toast({
         variant: "error",
-        title: "Error",
-        description: err instanceof Error ? err.message : "Could not generate link.",
+        title: "Couldn’t create invite link",
+        description: err instanceof DOMException && err.name === "AbortError"
+          ? "Creating the invite link timed out. Check your connection and try again."
+          : err instanceof Error ? err.message : "Could not generate link.",
       });
     } finally {
+      requestTimeout.clear();
       setInvitingId(null);
     }
   };
@@ -135,6 +141,13 @@ export function ContributorListClient({
 
     return matchesStatus && (matchesName || matchesWallet || matchesRole || matchesEmail);
   });
+  const activeCount = initialContributors.filter((contributor) => contributor.status === "active").length;
+  const archivedCount = initialContributors.filter((contributor) => contributor.status === "archived").length;
+
+  function clearFilters() {
+    setSearchQuery("");
+    setStatusFilter("all");
+  }
 
   return (
     <div className="space-y-6">
@@ -157,10 +170,11 @@ export function ContributorListClient({
 
         {/* Status Filters & Add Button */}
         <div className="flex w-full flex-wrap items-center gap-3 md:ml-auto md:w-auto md:flex-nowrap md:shrink-0">
-          <div className="flex w-full self-center rounded-full border border-[var(--border-soft)] bg-[var(--surface)] p-1 text-xs font-medium md:w-auto">
+          <div className="grid w-full grid-cols-2 gap-1 self-center rounded-2xl border border-[var(--border-soft)] bg-[var(--surface)] p-1 text-xs font-medium md:flex md:w-auto md:rounded-full">
             <button
               onClick={() => setStatusFilter("all")}
-              className={`rounded-full px-3 py-1.5 transition-all ${
+              aria-pressed={statusFilter === "all"}
+              className={`rounded-full px-3 py-1.5 text-center transition-all ${
                 statusFilter === "all"
                   ? "bg-[var(--foreground)] text-[var(--background)] font-semibold"
                   : "text-[var(--text-muted)] hover:text-[var(--foreground)]"
@@ -170,24 +184,26 @@ export function ContributorListClient({
             </button>
             <button
               onClick={() => setStatusFilter("active")}
-              className={`rounded-full px-3 py-1.5 transition-all ${
+              aria-pressed={statusFilter === "active"}
+              className={`rounded-full px-3 py-1.5 text-center transition-all ${
                 statusFilter === "active"
                   ? "bg-[var(--foreground)] text-[var(--background)] font-semibold"
                   : "text-[var(--text-muted)] hover:text-[var(--foreground)]"
               }`}
             >
-              Active
+              Active ({activeCount})
             </button>
             {hasRole(actor, "owner") && (
               <button
                 onClick={() => setStatusFilter("archived")}
-                className={`rounded-full px-3 py-1.5 transition-all ${
+                aria-pressed={statusFilter === "archived"}
+                className={`rounded-full px-3 py-1.5 text-center transition-all ${
                   statusFilter === "archived"
                     ? "bg-[var(--foreground)] text-[var(--background)] font-semibold"
                     : "text-[var(--text-muted)] hover:text-[var(--foreground)]"
               }`}
               >
-                Archived
+                Archived ({archivedCount})
               </button>
             )}
           </div>
@@ -219,6 +235,11 @@ export function ContributorListClient({
                 : "Start with a name and email. Payment details are only needed when you choose a payment method."
             }
           />
+          {searchQuery || statusFilter !== "all" ? (
+            <Button type="button" variant="secondary" size="sm" onClick={clearFilters}>
+              Clear filters
+            </Button>
+          ) : null}
           {!searchQuery && statusFilter === "all" && (
             <div className="flex justify-center">
               <Button
