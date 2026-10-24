@@ -25,7 +25,15 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Settings", href: "/settings", icon: Settings },
 ];
 
-export function AppSidebar({ initialActor, initialWorkspaceId }: { initialActor?: ProductContext["actor"]; initialWorkspaceId?: string }) {
+export function AppSidebar({
+  initialActor,
+  initialWorkspaceId,
+  initialWorkspaceName,
+}: {
+  initialActor?: ProductContext["actor"];
+  initialWorkspaceId?: string;
+  initialWorkspaceName?: string;
+}) {
   const pathname = usePathname();
   const productContext = useResolvedProductContext();
   const actor = initialActor ?? productContext.actor;
@@ -76,7 +84,11 @@ export function AppSidebar({ initialActor, initialWorkspaceId }: { initialActor?
         </button>
       </div>
 
-      <WorkspaceSwitcher activeWorkspaceId={initialWorkspaceId ?? productContext.workspaceId} />
+      <WorkspaceSwitcher
+        activeWorkspaceId={initialWorkspaceId ?? productContext.workspaceId}
+        initialWorkspaceName={initialWorkspaceName}
+        initialRole={actor}
+      />
 
       {/* Navigation */}
       <nav className="sf-sidebar-nav" aria-label="App navigation">

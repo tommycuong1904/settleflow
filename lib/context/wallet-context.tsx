@@ -26,7 +26,9 @@ export interface WalletContextValue {
   usdcBalance: string;
   isRefreshingBalance: boolean;
   isAuthModalOpen: boolean;
+  authReturnTo: string | null;
   openAuthModal: () => void;
+  openAuthModalForReturnTo: (returnTo: string) => void;
   closeAuthModal: () => void;
   refreshBalance: () => Promise<void>;
   refreshCircleWallet: () => Promise<void>;
@@ -88,6 +90,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const [usdcBalance, setUsdcBalance] = useState<string>("—");
   const [isRefreshingBalance, setIsRefreshingBalance] = useState<boolean>(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
+  const [authReturnTo, setAuthReturnTo] = useState<string | null>(null);
 
   // Restore the UI cache, then reconcile it with the HttpOnly server session.
   useEffect(() => {
@@ -188,8 +191,18 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const openAuthModal = useCallback(() => setIsAuthModalOpen(true), []);
-  const closeAuthModal = useCallback(() => setIsAuthModalOpen(false), []);
+  const openAuthModal = useCallback(() => {
+    setAuthReturnTo(null);
+    setIsAuthModalOpen(true);
+  }, []);
+  const openAuthModalForReturnTo = useCallback((returnTo: string) => {
+    setAuthReturnTo(returnTo.startsWith("/") && !returnTo.startsWith("//") ? returnTo : null);
+    setIsAuthModalOpen(true);
+  }, []);
+  const closeAuthModal = useCallback(() => {
+    setIsAuthModalOpen(false);
+    setAuthReturnTo(null);
+  }, []);
 
   const refreshBalance = useCallback(async () => {
     if (!address) return;
@@ -390,7 +403,9 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         usdcBalance,
         isRefreshingBalance,
         isAuthModalOpen,
+        authReturnTo,
         openAuthModal,
+        openAuthModalForReturnTo,
         closeAuthModal,
         refreshBalance,
         refreshCircleWallet,

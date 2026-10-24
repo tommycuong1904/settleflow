@@ -2,7 +2,6 @@
 
 import { Check, ChevronDown, LoaderCircle, Pencil, RotateCcw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 
 type WorkspaceMembership = {
   id: string;
@@ -11,9 +10,20 @@ type WorkspaceMembership = {
   personalLabel: string | null;
 };
 
-export function WorkspaceSwitcher({ activeWorkspaceId }: { activeWorkspaceId?: string }) {
-  const router = useRouter();
-  const [workspaces, setWorkspaces] = useState<WorkspaceMembership[]>([]);
+export function WorkspaceSwitcher({
+  activeWorkspaceId,
+  initialWorkspaceName,
+  initialRole,
+}: {
+  activeWorkspaceId?: string;
+  initialWorkspaceName?: string;
+  initialRole?: string;
+}) {
+  const [workspaces, setWorkspaces] = useState<WorkspaceMembership[]>(() => (
+    activeWorkspaceId && initialWorkspaceName && initialRole
+      ? [{ id: activeWorkspaceId, name: initialWorkspaceName, role: initialRole, personalLabel: null }]
+      : []
+  ));
   const [isOpen, setIsOpen] = useState(false);
   const [isSwitching, setIsSwitching] = useState(false);
   const [editingWorkspaceId, setEditingWorkspaceId] = useState<string | null>(null);
@@ -27,10 +37,11 @@ export function WorkspaceSwitcher({ activeWorkspaceId }: { activeWorkspaceId?: s
     void fetch("/api/v1/workspaces", { cache: "no-store" })
       .then(async (response) => response.ok ? await response.json() as { data?: WorkspaceMembership[] } : null)
       .then((payload) => {
-        if (active) setWorkspaces(payload?.data ?? []);
+        if (active && payload?.data?.length) setWorkspaces(payload.data);
       })
       .catch(() => {
-        if (active) setWorkspaces([]);
+        // Keep the server-provided active workspace visible if this optional
+        // client refresh is unavailable.
       });
     return () => { active = false; };
   }, []);
@@ -65,8 +76,10 @@ export function WorkspaceSwitcher({ activeWorkspaceId }: { activeWorkspaceId?: s
       const payload = await response.json().catch(() => ({})) as { error?: string };
       if (!response.ok) throw new Error(payload.error ?? "Unable to switch workspace.");
       setIsOpen(false);
-      router.replace("/dashboard");
-      router.refresh();
+      // The active workspace is held in an HttpOnly server context cookie.
+      // Use a deliberate document navigation after it changes so every server
+      // component reads the new cookie instead of retaining the prior RSC tree.
+      window.location.assign("/dashboard");
     } catch (switchError) {
       setError(switchError instanceof Error ? switchError.message : "Unable to switch workspace.");
     } finally {

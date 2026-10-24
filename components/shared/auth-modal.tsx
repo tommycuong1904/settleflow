@@ -17,6 +17,7 @@ export function AuthModal() {
   const {
     isAuthModalOpen,
     closeAuthModal,
+    authReturnTo,
     connectWeb3,
     connectGoogle,
     isConnecting,
@@ -25,6 +26,7 @@ export function AuthModal() {
   const router = useRouter();
   const [detectedWallets, setDetectedWallets] = useState<EIP6963ProviderDetail[] | null>(null);
   const [googleError, setGoogleError] = useState<string | null>(null);
+  const [googleButtonWidth, setGoogleButtonWidth] = useState(0);
   const googleButtonRef = useRef<HTMLDivElement>(null);
   const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
@@ -44,15 +46,32 @@ export function AuthModal() {
   const refreshCurrentPage = useCallback(() => {
     closeAuthModal();
     const next = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("next") : null;
-    const destination = next && next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard";
+    const requestedDestination = authReturnTo ?? next;
+    const destination = requestedDestination && requestedDestination.startsWith("/") && !requestedDestination.startsWith("//")
+      ? requestedDestination
+      : "/dashboard";
     // `/auth-required` is a static sign-in boundary. Refreshing it after a
     // successful wallet session leaves the user on the same sign-in screen.
     router.replace(destination);
-  }, [closeAuthModal, router]);
+  }, [authReturnTo, closeAuthModal, router]);
+
+  useEffect(() => {
+    if (!isAuthModalOpen || !googleButtonRef.current) return;
+
+    const updateGoogleButtonWidth = () => {
+      const width = googleButtonRef.current?.getBoundingClientRect().width ?? 0;
+      setGoogleButtonWidth(width > 0 ? Math.min(360, Math.floor(width)) : 0);
+    };
+    updateGoogleButtonWidth();
+    const resizeObserver = new ResizeObserver(updateGoogleButtonWidth);
+    resizeObserver.observe(googleButtonRef.current);
+    return () => resizeObserver.disconnect();
+  }, [isAuthModalOpen]);
 
   useEffect(() => {
     if (!isAuthModalOpen || !googleButtonRef.current) return;
     if (!googleClientId) return;
+    if (!googleButtonWidth) return;
 
     let active = true;
     void loadGoogleGsiScript()
@@ -85,7 +104,7 @@ export function AuthModal() {
           theme: "outline",
           size: "large",
           text: "continue_with",
-          width: 360,
+          width: googleButtonWidth,
         });
       })
       .catch(() => {
@@ -95,7 +114,7 @@ export function AuthModal() {
     return () => {
       active = false;
     };
-  }, [connectGoogle, googleClientId, isAuthModalOpen, refreshCurrentPage]);
+  }, [connectGoogle, googleButtonWidth, googleClientId, isAuthModalOpen, refreshCurrentPage]);
 
   useScrollLock(isAuthModalOpen);
 
@@ -127,12 +146,15 @@ export function AuthModal() {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm transition-opacity duration-200 animate-in fade-in"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3 backdrop-blur-sm transition-opacity duration-200 animate-in fade-in sm:p-4"
       onClick={closeAuthModal}
     >
       <div
-        className="relative w-full max-w-[460px] overflow-hidden rounded-2xl border border-[var(--border-strong)] bg-[var(--surface)] p-6 sm:p-8 shadow-2xl"
+        className="relative max-h-[calc(100dvh-1.5rem)] w-full max-w-[calc(100vw-1.5rem)] min-w-0 overflow-x-hidden overflow-y-auto overscroll-contain rounded-2xl border border-[var(--border-strong)] bg-[var(--surface)] p-5 shadow-2xl sm:max-h-[calc(100dvh-2rem)] sm:max-w-[460px] sm:p-8"
         onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="auth-modal-title"
       >
         {/* Close Button */}
         <button
@@ -149,7 +171,7 @@ export function AuthModal() {
           <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--surface-muted)] border border-[var(--border-soft)] text-[var(--foreground)]">
             <Sparkles size={22} />
           </div>
-          <h2 className="text-2xl font-bold tracking-tight text-[var(--foreground)]">
+          <h2 id="auth-modal-title" className="text-2xl font-bold tracking-tight text-[var(--foreground)]">
             Sign in to SettleFlow
           </h2>
           <p className="mt-2 text-sm text-[var(--text-muted)]">
@@ -157,9 +179,8 @@ export function AuthModal() {
           </p>
         </div>
 
-        <section className="space-y-2.5">
-          <p className="text-xs font-semibold text-[var(--foreground)]">Continue with Google</p>
-          <div ref={googleButtonRef} className="flex min-h-10 justify-center" aria-label="Google sign-in" />
+        <section className="min-w-0 space-y-2.5">
+          <div ref={googleButtonRef} className="flex min-h-11 min-w-0 w-full items-center justify-center overflow-hidden rounded-lg" aria-label="Google sign-in" />
           {googleError || !googleClientId ? <p role="alert" className="text-center text-xs text-rose-600">{googleError ?? "Google sign-in is not configured for this environment."}</p> : null}
         </section>
 

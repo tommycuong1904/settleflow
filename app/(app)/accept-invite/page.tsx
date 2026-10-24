@@ -22,7 +22,7 @@ export default function AcceptInvitePage({
 }) {
   const router = useRouter();
   const { token } = use(searchParams);
-  const { isConnected, email: userEmail, openAuthModal } = useWallet();
+  const { isConnected, email: userEmail, openAuthModalForReturnTo } = useWallet();
 
   const [invite, setInvite] = useState<InviteDetails | null>(null);
   const [loading, setLoading] = useState(() => Boolean(token));
@@ -159,21 +159,25 @@ export default function AcceptInvitePage({
             <span className="font-semibold text-black">{invite.invitedBy}</span>
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-neutral-500">Assigned Role:</span>
+            <span className="text-neutral-500">Your access:</span>
             <span className="font-mono uppercase font-bold text-black tracking-wider px-2 py-0.5 rounded bg-white border border-neutral-300">
               {invite.role}
             </span>
           </div>
         </div>
 
+        <p className="text-center text-sm leading-6 text-neutral-600">
+          After joining, you can view assigned work, submit it for review, and follow payment status. You do not need a wallet to join or work in this workspace.
+        </p>
+
         {/* Auth State & Action Button */}
         <div className="pt-2">
           {!isConnected ? (
             <div className="space-y-3 text-center">
-              <p className="text-xs text-neutral-500">Please sign in to accept this invitation.</p>
+              <p className="text-xs text-neutral-500">Sign in to join this workspace. You can use your email account; a wallet is optional.</p>
               <button
                 className="w-full py-3 px-4 rounded-full border border-black bg-black text-white text-xs font-semibold hover:bg-neutral-800 transition-all flex items-center justify-center gap-2"
-                onClick={openAuthModal}
+                onClick={() => openAuthModalForReturnTo(`/accept-invite?token=${encodeURIComponent(token ?? "")}`)}
               >
                 Sign in to Accept Invitation
                 <ArrowRight size={14} />
@@ -182,7 +186,7 @@ export default function AcceptInvitePage({
           ) : (
             <div className="space-y-4">
               <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-3 text-xs flex justify-between items-center">
-                <span className="text-neutral-500">Signed in as:</span>
+                <span className="text-neutral-500">You are joining as:</span>
                 <span className="font-mono text-black font-medium truncate max-w-[200px]">
                   {userEmail || "Connected User"}
                 </span>
@@ -190,7 +194,7 @@ export default function AcceptInvitePage({
 
               {invite.email && userEmail?.toLowerCase() !== invite.email.toLowerCase() && (
                 <div className="p-3 rounded-xl border border-amber-300 bg-amber-50 text-xs text-amber-900">
-                  Notice: Invitation was sent to <strong className="font-mono">{invite.email}</strong>.
+                  This invitation was sent to <strong className="font-mono">{invite.email}</strong>. Switch to that email account to join.
                 </div>
               )}
 
