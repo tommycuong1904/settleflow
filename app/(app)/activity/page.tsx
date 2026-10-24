@@ -27,8 +27,7 @@ export default async function ActivityPage() {
         description="A complete history of submitted work, decisions, and payments."
       />
 
-      <section>
-        <h2 className="mb-4 text-lg font-semibold tracking-tight text-[var(--foreground)]">All activity</h2>
+      <section aria-label="Activity updates">
         <ActivityLedgerClient initialActivities={activities} />
       </section>
     </div>
