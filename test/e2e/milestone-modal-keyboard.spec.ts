@@ -57,6 +57,7 @@ test("submit milestone dialog keeps keyboard focus contained and restores it on 
     await expect(dialog).toBeVisible();
     await expect(summary).toBeFocused();
 
+    await summary.fill("Keyboard test submission.");
     await submitButton.focus();
     await page.keyboard.press("Tab");
     await expect(closeButton).toBeFocused();
@@ -144,6 +145,10 @@ test("payment review dialog prevents duplicate signing and restores keyboard foc
     });
 
     await page.goto(`/payouts/${payout.id}?workspaceId=${workspaceId}`);
+    await expect.poll(() => page.evaluate(() => {
+      const stored = window.localStorage.getItem("settleflow_auth_session");
+      return stored ? (JSON.parse(stored) as { authType?: string }).authType : null;
+    })).toBe("web3_wallet");
     const payButton = page.getByRole("button", { name: "Pay 10 USDC" });
     await payButton.focus();
     await payButton.press("Enter");
@@ -163,12 +168,12 @@ test("payment review dialog prevents duplicate signing and restores keyboard foc
 
     await signButton.click();
     await releaseStarted;
-    await expect(signButton).toBeDisabled();
-    await expect(signButton).toHaveText("Preparing wallet...");
+    const processingButton = page.getByRole("button", { name: "Preparing wallet..." });
+    await expect(processingButton).toBeDisabled();
     expect(releaseRequests).toBe(1);
 
     releaseResponse?.();
-    await expect(signButton).toBeEnabled();
+    await expect(page.getByRole("button", { name: "Verify wallet & sign" })).toBeEnabled();
     await page.keyboard.press("Escape");
     await expect(dialog).toBeHidden();
     await expect(payButton).toBeFocused();
