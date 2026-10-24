@@ -271,6 +271,17 @@ export function PayoutDetailReleaseShell({
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [isModalActionPending, releaseModalMode]);
 
+  useEffect(() => {
+    if (!releaseModalMode) return;
+
+    const focusFrame = window.requestAnimationFrame(() => {
+      if (!releaseDialogRef.current?.contains(document.activeElement)) {
+        releaseDialogRef.current?.querySelector<HTMLElement>("button:not([disabled])")?.focus();
+      }
+    });
+    return () => window.cancelAnimationFrame(focusFrame);
+  }, [releaseModalMode]);
+
   const canUseSimulatedPayment = ARC_CONFIG.executionMode === "demo" || ARC_CONFIG.executionMode === "mock";
 
   function openPaymentMethod() {
