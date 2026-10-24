@@ -54,15 +54,15 @@ type FormErrors = {
   milestoneErrors?: Record<string, { title?: string; amount?: string; description?: string }>;
 };
 
-const initialMilestoneDrafts: MilestoneDraft[] = [
-  {
-    id: "milestone-draft-1",
-    title: "Draft campaign concepts",
-    description: "Create 3 visual directions for review and first approval.",
-    amount: "0.1",
+function createBlankMilestone(id = "milestone-draft-1"): MilestoneDraft {
+  return {
+    id,
+    title: "",
+    description: "",
+    amount: "",
     state: "Planned milestone",
-  },
-];
+  };
+}
 
 function isLikelyWalletAddress(value: string) {
   return /^0x[a-fA-F0-9]{40}$/.test(value.trim());
@@ -77,13 +77,15 @@ function CreatePayoutPageContent() {
   const searchParams = useSearchParams();
   const queryContributorId = searchParams.get("contributorId");
   const productContext = useResolvedProductContext();
-  const { isConnected, openAuthModal } = useWallet();
+  const { openAuthModal } = useWallet();
   const [contributors, setContributors] = useState<ContributorOption[]>([]);
+  const [contributorsLoaded, setContributorsLoaded] = useState(false);
+  const [contributorLoadRequest, setContributorLoadRequest] = useState(0);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [payoutTitle, setPayoutTitle] = useState("Community Campaign Design");
+  const [payoutTitle, setPayoutTitle] = useState("");
   const [contributorId, setContributorId] = useState("");
   const [walletAddress, setWalletAddress] = useState("");
-  const [milestones, setMilestones] = useState<MilestoneDraft[]>(initialMilestoneDrafts);
+  const [milestones, setMilestones] = useState<MilestoneDraft[]>([createBlankMilestone()]);
   const [creationStep, setCreationStep] = useState<1 | 2 | 3>(1);
   const [submitState, setSubmitState] = useState<"idle" | "creating" | "created">("idle");
   const [errors, setErrors] = useState<FormErrors>({});
@@ -106,19 +108,24 @@ function CreatePayoutPageContent() {
         if (!cancelled) {
           const nextContributors = data.data ?? [];
           setContributors(nextContributors);
+          setLoadError(null);
+          setContributorsLoaded(true);
           const target = queryContributorId ? nextContributors.find((item) => item.id === queryContributorId) : undefined;
-          const initial = target || nextContributors[0];
-          if (initial) {
-            setContributorId(initial.id);
-            setWalletAddress(initial.walletAddress ?? "");
+          if (target) {
+            setContributorId(target.id);
+            setWalletAddress(target.walletAddress ?? "");
           }
         }
       })
       .catch((error) => {
-        if (!cancelled) setLoadError(error instanceof Error ? error.message : "Unable to load contributors.");
+        if (!cancelled) {
+          console.error("Unable to load contributors", error);
+          setLoadError("We couldn’t load contributors. Try again to continue creating this payout.");
+          setContributorsLoaded(true);
+        }
       });
     return () => { cancelled = true; };
-  }, [productContext.workspaceId, queryContributorId]);
+  }, [contributorLoadRequest, productContext.workspaceId, queryContributorId]);
 
   const totalAmount = useMemo(
     () =>
@@ -265,10 +272,6 @@ function CreatePayoutPageContent() {
 
   async function handleCreatePayout() {
     if (submitState === "creating") return;
-    if (!isConnected) {
-      openAuthModal();
-      return;
-    }
     if (!validateForm()) {
       setSubmitState("idle");
       return;
@@ -311,6 +314,11 @@ function CreatePayoutPageContent() {
         return;
       }
     } catch (error) {
+      if (error instanceof Error && error.message === "AUTH_REQUIRED") {
+        openAuthModal();
+        setSubmitState("idle");
+        return;
+      }
       setErrors({
         submit:
           error instanceof DOMException && error.name === "AbortError"
@@ -331,10 +339,27 @@ function CreatePayoutPageContent() {
 
   return (
     <section className="flex flex-col gap-6" aria-label="Create Payout Page Content">
-      <ol className="grid grid-cols-3 gap-2" aria-label="Create payout progress">{["Choose contributor", "Plan payments", "Review & create"].map((label, index) => { const step = index + 1; const complete = creationStep > step; const current = creationStep === step; return <li key={label} className="relative flex flex-col items-center text-center">{index < 2 ? <span aria-hidden className={`absolute left-1/2 top-3.5 h-px w-[calc(100%+0.5rem)] ${complete ? "bg-emerald-600" : "bg-[var(--border-soft)]"}`} /> : null}<span className={`relative z-10 flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold ${complete ? "bg-emerald-600 text-white" : current ? "bg-black text-white" : "bg-[var(--surface-strong)] text-[var(--text-muted)]"}`}>{complete ? "✓" : step}</span><p className={`mt-1 text-xs ${current ? "font-medium text-[var(--foreground)]" : "text-[var(--text-muted)]"}`}>{label}</p></li>; })}</ol>
+      <ol className="grid grid-cols-3 gap-2" aria-label="Create payout progress">{[{ label: "Choose contributor", mobileLabel: "Contributor" }, { label: "Plan milestones", mobileLabel: "Plan" }, { label: "Review & create", mobileLabel: "Review" }].map(({ label, mobileLabel }, index) => { const step = index + 1; const complete = creationStep > step; const current = creationStep === step; return <li key={label} className="relative flex flex-col items-center text-center">{index < 2 ? <span aria-hidden className={`absolute left-1/2 top-3.5 h-px w-[calc(100%+0.5rem)] ${complete ? "bg-emerald-600" : "bg-[var(--border-soft)]"}`} /> : null}<span className={`relative z-10 flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold ${complete ? "bg-emerald-600 text-white" : current ? "bg-black text-white" : "bg-[var(--surface-strong)] text-[var(--text-muted)]"}`}>{complete ? "✓" : step}</span><p className={`mt-1 text-xs ${current ? "font-medium text-[var(--foreground)]" : "text-[var(--text-muted)]"}`}><span className="sm:hidden">{mobileLabel}</span><span className="hidden sm:inline">{label}</span></p></li>; })}</ol>
       <div className="grid w-full gap-6">
         <div className="space-y-6">
-          {loadError ? <p role="alert" className="rounded-xl border border-rose-400/30 bg-rose-400/10 p-3 text-sm text-rose-700">{loadError}</p> : null}
+          {loadError ? (
+            <div role="alert" className="flex flex-col gap-3 rounded-xl border border-rose-400/30 bg-rose-400/10 p-4 text-sm text-rose-700 sm:flex-row sm:items-center sm:justify-between">
+              <p>{loadError}</p>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  setContributorsLoaded(false);
+                  setLoadError(null);
+                  setContributorLoadRequest((current) => current + 1);
+                }}
+                className="shrink-0 self-start sm:self-auto"
+              >
+                Try again
+              </Button>
+            </div>
+          ) : null}
           {errors.submit ? <p role="alert" className="rounded-xl border border-rose-400/30 bg-rose-400/10 p-3 text-sm text-rose-700">{errors.submit}</p> : null}
 
           {/* Summary Error Alert */}
@@ -346,8 +371,8 @@ function CreatePayoutPageContent() {
           ) : null}
 
           <div className="space-y-4">
-            <div className="grid gap-3 sm:grid-cols-3">
-              <div className="rounded-xl border border-[var(--border-soft)] bg-[var(--surface)] px-5 py-4">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              <div className="col-span-2 rounded-xl border border-[var(--border-soft)] bg-[var(--surface)] px-5 py-4 sm:col-span-1">
                 <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">Total payout</p>
                 <p className="mt-2 text-2xl font-semibold tracking-tight text-[var(--foreground)]">{formatUsdc(totalAmount)} USDC</p>
               </div>
@@ -364,7 +389,8 @@ function CreatePayoutPageContent() {
 
           <Card className={cn("sf-shell", creationStep === 1 ? "" : "hidden")}>
             <CardHeader>
-              <CardTitle>Payout Basics</CardTitle>
+              <CardTitle>Payout details</CardTitle>
+              <CardDescription>Start with the agreement details. Payment method details can wait until work is approved.</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid gap-5 md:grid-cols-2">
@@ -377,28 +403,39 @@ function CreatePayoutPageContent() {
                       setPayoutTitle(event.target.value);
                       if (errors.title) setErrors((prev) => ({ ...prev, title: undefined }));
                     }}
+                    placeholder="e.g. Q4 campaign design"
                     className={cn(errors.title && "border-rose-500 bg-rose-500/5 focus:border-rose-500")}
                   />
                   {errors.title ? <p className="mt-2 text-xs text-rose-600 font-medium">{errors.title}</p> : null}
                 </label>
-                <label className="flex flex-col gap-2.5 text-sm text-[var(--text-primary)]" data-error={Boolean(errors.contributorId)}>
-                  <span>Contributor <span className="text-rose-500 font-semibold">*</span></span>
-                  <Select value={contributorId} onValueChange={handleContributorChange}>
-                    <SelectTrigger className={cn(errors.contributorId && "border-rose-500 bg-rose-500/5")}>
-                      <SelectValue placeholder="Select a contributor" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {contributors.map((contributor) => (
-                        <SelectItem key={contributor.id} value={contributor.id}>
-                          {contributor.displayName} · {contributor.status ?? "active"}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {errors.contributorId ? (
-                    <p className="text-xs text-rose-600 font-medium">{errors.contributorId}</p>
-                  ) : null}
-                </label>
+                {contributorsLoaded && contributors.length === 0 && !loadError ? (
+                  <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] p-4">
+                    <p className="font-medium text-[var(--foreground)]">Add a contributor before creating a payout.</p>
+                    <p className="mt-1 text-sm leading-6 text-[var(--text-muted)]">Start with their name and email. Payment details can be added later.</p>
+                    <Button href={`/contributors?workspaceId=${encodeURIComponent(productContext.workspaceId)}&returnTo=${encodeURIComponent(`/payouts/new?workspaceId=${encodeURIComponent(productContext.workspaceId)}`)}`} variant="secondary" size="sm" className="mt-4 w-full justify-center sm:w-auto">
+                      Add contributor
+                    </Button>
+                  </div>
+                ) : (
+                  <label className="flex flex-col gap-2.5 text-sm text-[var(--text-primary)]" data-error={Boolean(errors.contributorId)}>
+                    <span>Contributor <span className="text-rose-500 font-semibold">*</span></span>
+                    <Select value={contributorId} onValueChange={handleContributorChange}>
+                      <SelectTrigger className={cn(errors.contributorId && "border-rose-500 bg-rose-500/5")}>
+                        <SelectValue placeholder={contributorsLoaded ? "Select a contributor" : "Loading contributors…"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {contributors.map((contributor) => (
+                          <SelectItem key={contributor.id} value={contributor.id}>
+                            {contributor.displayName} · {contributor.status ?? "active"}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {errors.contributorId ? (
+                      <p className="text-xs text-rose-600 font-medium">{errors.contributorId}</p>
+                    ) : null}
+                  </label>
+                )}
                 <details className="md:col-span-2 rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-4">
                   <summary className="cursor-pointer text-sm font-medium text-[var(--foreground)]">Add wallet payment details (advanced)</summary>
                   <label className="mt-4 flex flex-col gap-2.5 text-sm text-[var(--text-primary)]" data-error={Boolean(errors.walletAddress)}>
@@ -419,13 +456,14 @@ function CreatePayoutPageContent() {
                   </label>
                 </details>
               </div>
-              <div className="mt-6 flex justify-end"><Button onClick={continueFromContributor}>Continue to payment plan</Button></div>
+              <div className="mt-6 flex justify-end"><Button onClick={continueFromContributor} disabled={!contributorsLoaded || contributors.length === 0} className="w-full justify-center sm:w-auto">Continue to milestones</Button></div>
             </CardContent>
           </Card>
 
           <Card className={cn("sf-shell", creationStep === 2 ? "" : "hidden")}>
             <CardHeader>
               <CardTitle>Milestone Structure</CardTitle>
+              <CardDescription>Split the work into reviewable milestones. Each milestone can be paid after approval.</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="mb-5 rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-5">
@@ -475,7 +513,9 @@ function CreatePayoutPageContent() {
                           <label className="flex flex-col gap-2.5 text-sm text-[var(--text-primary)]" data-error={Boolean(msErr?.title)}>
                             <span>Milestone title <span className="text-rose-500 font-semibold">*</span></span>
                             <Input
+                              aria-label={`Milestone ${index + 1} title`}
                               value={milestone.title}
+                              placeholder="e.g. Design concepts"
                               onChange={(event) =>
                                 handleMilestoneChange(milestone.id, "title", event.target.value)
                               }
@@ -486,11 +526,13 @@ function CreatePayoutPageContent() {
                           <label className="flex flex-col gap-2.5 text-sm text-[var(--text-primary)]" data-error={Boolean(msErr?.amount)}>
                             <span>Amount (USDC) <span className="text-rose-500 font-semibold">*</span></span>
                             <Input
+                              aria-label={`Milestone ${index + 1} amount in USDC`}
                               type="number"
                               inputMode="decimal"
                               min="0"
                               step="0.01"
                               value={milestone.amount}
+                              placeholder="0.00"
                               onChange={(event) =>
                                 handleMilestoneChange(milestone.id, "amount", event.target.value)
                               }
@@ -502,8 +544,10 @@ function CreatePayoutPageContent() {
                         <label className="mt-4 flex flex-col gap-2.5 text-sm text-[var(--text-primary)]" data-error={Boolean(msErr?.description)}>
                           <span>Description <span className="text-rose-500 font-semibold">*</span></span>
                           <Textarea
+                            aria-label={`Milestone ${index + 1} description`}
                             className={cn("min-h-28 resize-none", msErr?.description && "border-rose-500 bg-rose-500/5 focus:border-rose-500")}
                             value={milestone.description}
+                            placeholder="Describe the work and what is ready for review."
                             onChange={(event) =>
                               handleMilestoneChange(milestone.id, "description", event.target.value)
                             }
@@ -515,14 +559,20 @@ function CreatePayoutPageContent() {
                   );
                 })}
               </div>
-              <div className="mt-4 flex flex-wrap gap-3">
-                <Button variant="secondary" icon={<ArrowLeft size={16} />} onClick={() => setCreationStep(1)}>Back</Button>
-                <Button variant="secondary" onClick={handleAddMilestone}>
-                  Add Milestone
-                </Button>
-                <Button onClick={continueFromPlan}>
+              <div className="mt-5 border-t border-[var(--border-soft)] pt-4 sm:border-0 sm:pt-0">
+                <div className="mb-4 flex items-baseline justify-between gap-3 sm:hidden">
+                  <p className="text-sm font-medium text-[var(--foreground)]">{formatUsdc(totalAmount)} USDC total</p>
+                  <p className="text-xs text-[var(--text-muted)]">{milestones.length} milestone{milestones.length === 1 ? "" : "s"}</p>
+                </div>
+                <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                  <Button variant="secondary" icon={<ArrowLeft size={16} />} onClick={() => setCreationStep(1)} className="w-full justify-center sm:w-auto">Back</Button>
+                  <Button variant="secondary" onClick={handleAddMilestone} className="w-full justify-center sm:w-auto">
+                    Add another milestone
+                  </Button>
+                  <Button onClick={continueFromPlan} className="w-full justify-center sm:w-auto">
                   Review payout
-                </Button>
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -544,113 +594,64 @@ function CreatePayoutPageContent() {
           ) : null}
         </div>
 
-        {/* Right column — sidebar */}
         <div className={cn("flex flex-col gap-6", creationStep === 3 ? "" : "hidden")}>
-          <Card className="hidden">
-            <CardHeader>
-              <CardTitle>Approval Logic</CardTitle>
-            </CardHeader>
-              <CardContent>
-                <div className="space-y-3 text-sm text-[var(--text-primary)]">
-                  {[{ title: "Submit work", description: "Contributors complete a milestone and submit work for review." },
-                    { title: "Owner checks milestone", description: "A milestone stays locked until the owner confirms completion." },
-                    { title: "Approve work", description: "Approval makes the milestone ready for payment." },
-                    { title: "Record payment", description: "Choose a payment method when the approved work is ready to pay." }]
-                    .map((step, index) => (
-                      <div key={step.title} className="rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-4">
-                        <div className="flex gap-3">
-                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-cyan-500/30 bg-cyan-400/10 text-xs font-semibold text-cyan-700">
-                            {index + 1}
-                          </div>
-                          <div className="space-y-1.5">
-                            <p className="font-semibold text-[var(--foreground)]">{step.title}</p>
-                            <p className="leading-6 text-[var(--text-muted)]">{step.description}</p>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              </CardContent>
-          </Card>
-
           <Card className="sf-shell">
             <CardHeader>
               <CardTitle>Review payout</CardTitle>
                 <CardDescription>Check the contributor, work, milestones, and amount before creating the draft.</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-5 text-sm text-[var(--text-primary)]">
-                  <Card className="bg-[var(--surface-muted)]">
-                    <CardContent className="p-5">
+                <div className="space-y-6 text-sm text-[var(--text-primary)]">
+                  <div className="grid gap-5 border-y border-[var(--border-soft)] py-5 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+                    <div>
                       <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">Payout title</p>
-                      <p className="mt-2 text-lg font-semibold text-[var(--foreground)]">
-                        {payoutTitle.trim() || "Untitled payout draft"}
-                      </p>
+                      <p className="mt-2 text-lg font-semibold text-[var(--foreground)]">{payoutTitle.trim() || "Untitled payout draft"}</p>
                       <p className="mt-4 text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">Contributor</p>
-                      <p className="mt-2 text-lg font-semibold text-[var(--foreground)]">
-                        {selectedContributor?.displayName ?? "No contributor selected"}
-                      </p>
-                      <p className="mt-1 text-[var(--text-muted)]">{selectedContributor?.status ?? ""}</p>
-                    </CardContent>
-                  </Card>
-
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <Card className="bg-[var(--surface-muted)]">
-                      <CardContent className="p-4">
+                      <p className="mt-2 font-semibold text-[var(--foreground)]">{selectedContributor?.displayName ?? "No contributor selected"}</p>
+                      {selectedContributor?.status ? <p className="mt-1 text-xs text-[var(--text-muted)]">{selectedContributor.status}</p> : null}
+                    </div>
+                    <div className="grid grid-cols-2 gap-5 sm:text-right">
+                      <div>
                         <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">Total payout</p>
-                        <p className="mt-2 font-semibold text-[var(--foreground)]">{formatUsdc(totalAmount)} USDC</p>
-                      </CardContent>
-                    </Card>
-                    <Card className="bg-[var(--surface-muted)]">
-                      <CardContent className="p-4">
-                        <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">Total milestones</p>
-                        <p className="mt-2 font-semibold text-[var(--foreground)]">{milestones.length}</p>
-                      </CardContent>
-                    </Card>
+                        <p className="mt-2 text-lg font-semibold text-[var(--foreground)]">{formatUsdc(totalAmount)} USDC</p>
+                      </div>
+                      <div>
+                        <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">Milestones</p>
+                        <p className="mt-2 text-lg font-semibold text-[var(--foreground)]">{milestones.length}</p>
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="space-y-3">
-                    <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">Preview timeline</p>
-                    {milestones.map((milestone, index) => (
-                      <Card key={milestone.id} className="bg-[var(--surface-muted)]">
-                        <CardContent className="p-4">
-                          <div className="flex flex-wrap items-center justify-between gap-3">
-                            <div>
-                              <p className="font-semibold text-[var(--foreground)]">
-                                {index + 1}. {milestone.title.trim() || "Untitled milestone"}
-                              </p>
-                              <p className="mt-1 text-[var(--text-muted)]">
-                                {milestone.description.trim() || "Description will appear here after the draft is refined."}
-                              </p>
-                            </div>
-                            <div className="text-right">
-                              <p className="font-semibold text-[var(--foreground)]">
-                                {Number(milestone.amount) > 0 ? `${formatUsdc(Number(milestone.amount))} USDC` : "0 USDC"}
-                              </p>
-                              <div className="mt-2 flex justify-end">
-                                <Badge variant="secondary">{milestone.state}</Badge>
-                              </div>
-                            </div>
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">Milestones</p>
+                    <div className="mt-3 divide-y divide-[var(--border-soft)] border-y border-[var(--border-soft)]">
+                      {milestones.map((milestone, index) => (
+                        <div key={milestone.id} className="flex flex-col gap-3 py-4 sm:flex-row sm:items-start sm:justify-between">
+                          <div className="min-w-0">
+                            <p className="font-semibold text-[var(--foreground)]">{index + 1}. {milestone.title.trim() || "Untitled milestone"}</p>
+                            <p className="mt-1 leading-6 text-[var(--text-muted)]">{milestone.description.trim() || "Description will appear here after the draft is refined."}</p>
                           </div>
-                        </CardContent>
-                      </Card>
-                    ))}
+                          <div className="flex shrink-0 items-center justify-between gap-3 sm:block sm:text-right">
+                            <p className="font-semibold text-[var(--foreground)]">{Number(milestone.amount) > 0 ? `${formatUsdc(Number(milestone.amount))} USDC` : "0 USDC"}</p>
+                            <div className="sm:mt-2"><Badge variant="secondary">{milestone.state}</Badge></div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
 
-                  <Card className="border-dashed bg-transparent">
-                    <CardContent className="px-4 py-4 text-sm leading-6 text-[var(--text-muted)]">
-                      After you create the payout, the contributor can submit work. You can
-                      review it, approve it, and choose a payment method when it is ready.
-                    </CardContent>
-                  </Card>
-                  <div className="flex flex-wrap gap-3"><Button variant="secondary" icon={<ArrowLeft size={16} />} onClick={() => setCreationStep(2)}>Back to payment plan</Button><Button disabled={submitState === "creating"} onClick={() => void handleCreatePayout()}>{submitState === "creating" ? "Creating payout..." : "Create payout"}</Button></div>
+                  <p className="border-l-2 border-[var(--border-strong)] pl-4 leading-6 text-[var(--text-muted)]">After you create the payout, the contributor can submit work. You can review it, approve it, and choose a payment method when it is ready.</p>
+                  <div className="flex flex-col gap-3 border-t border-[var(--border-soft)] pt-5 sm:flex-row sm:flex-wrap sm:border-0 sm:pt-0">
+                    <Button variant="secondary" icon={<ArrowLeft size={16} />} onClick={() => setCreationStep(2)} className="w-full justify-center sm:w-auto">Back to milestones</Button>
+                    <Button disabled={submitState === "creating"} onClick={() => void handleCreatePayout()} className="w-full justify-center sm:w-auto">{submitState === "creating" ? "Creating payout..." : "Create payout"}</Button>
+                  </div>
                 </div>
               </CardContent>
           </Card>
         </div>
       </div>
       <div>
-        <Link href="/payouts"><Button variant="secondary" icon={<ArrowLeft size={16} />}>Back to payouts</Button></Link>
+        <Link href="/payouts" className="block sm:inline-block"><Button variant="secondary" icon={<ArrowLeft size={16} />} className="w-full justify-center sm:w-auto">Back to payouts</Button></Link>
       </div>
     </section>
   );
