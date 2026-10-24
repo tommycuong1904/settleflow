@@ -21,6 +21,7 @@ import {
   Droplets,
   UserPlus,
   Wallet,
+  RefreshCw,
 } from "lucide-react";
 
 export default function SettingsPage() {
@@ -41,6 +42,11 @@ export default function SettingsPage() {
     transactionEnabled: boolean;
     circleWallet?: { blockchain: string; accountType: string } | null;
   }>>([]);
+  const [workspaceSummary, setWorkspaceSummary] = useState<{ name: string; role: string } | null>(null);
+  const [workspaceLoadError, setWorkspaceLoadError] = useState<string | null>(null);
+  const [workspaceLoadRequest, setWorkspaceLoadRequest] = useState(0);
+  const [walletLoadError, setWalletLoadError] = useState<string | null>(null);
+  const [walletLoadRequest, setWalletLoadRequest] = useState(0);
 
   const handleDisconnect = async () => {
     await disconnect();
@@ -64,10 +70,38 @@ export default function SettingsPage() {
   useEffect(() => {
     if (!isConnected) return;
     void fetch("/api/v1/auth/wallet/link", { cache: "no-store" })
-      .then(async (response) => response.ok ? await response.json() as { wallets: typeof linkedWallets } : null)
-      .then((payload) => { if (payload) setLinkedWallets(payload.wallets); })
-      .catch(() => undefined);
-  }, [isConnected]);
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Unable to load linked wallets.");
+        return await response.json() as { wallets: typeof linkedWallets };
+      })
+      .then((payload) => {
+        setLinkedWallets(payload.wallets);
+        setWalletLoadError(null);
+      })
+      .catch(() => setWalletLoadError("We couldn’t load your wallet setup. Try again before using Wallet payment."));
+  }, [isConnected, walletLoadRequest]);
+
+  useEffect(() => {
+    let active = true;
+    void fetch("/api/v1/workspaces", { cache: "no-store" })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Unable to load workspace details.");
+        return await response.json() as { data?: Array<{ id: string; name: string; role: string }> };
+      })
+      .then((payload) => {
+        if (!active) return;
+        const workspace = payload?.data?.find((item) => item.id === productContext.workspaceId);
+        setWorkspaceSummary(workspace ? { name: workspace.name, role: workspace.role } : null);
+        setWorkspaceLoadError(null);
+      })
+      .catch(() => {
+        if (active) {
+          setWorkspaceSummary(null);
+          setWorkspaceLoadError("We couldn’t refresh workspace details.");
+        }
+      });
+    return () => { active = false; };
+  }, [productContext.workspaceId, workspaceLoadRequest]);
 
   const [rpcStatus, setRpcStatus] = useState<"idle" | "testing" | "healthy">("idle");
   const [latencyMs, setLatencyMs] = useState<number | null>(null);
@@ -230,7 +264,7 @@ export default function SettingsPage() {
 
         {/* Active session */}
         <div className="rounded-xl border border-[var(--border-soft)] p-6 sm:p-8 space-y-6">
-          <div className="flex items-center justify-between gap-4 pb-4 border-b border-[var(--border-soft)]">
+          <div className="flex flex-col gap-4 border-b border-[var(--border-soft)] pb-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--surface-muted)] border border-[var(--border-soft)] text-[var(--text-muted)]">
                 <Shield size={20} />
@@ -247,6 +281,7 @@ export default function SettingsPage() {
                 variant="danger"
                 size="sm"
                 onClick={handleDisconnect}
+                className="w-full justify-center sm:w-auto"
               >
                 Sign out
               </Button>
@@ -254,6 +289,19 @@ export default function SettingsPage() {
           </div>
 
           <div className="divide-y divide-[var(--border-soft)] rounded-xl border border-[var(--border-soft)] text-xs">
+            <div className="flex flex-col gap-2 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-[11px] uppercase tracking-wider text-[var(--text-muted)] font-semibold">
+                  Current workspace
+                </p>
+                <p className="mt-1 text-sm font-medium text-[var(--foreground)]">
+                  {workspaceSummary?.name ?? "Current workspace"}
+                </p>
+              </div>
+              <span className="inline-flex w-fit rounded-full border border-[var(--border-soft)] bg-[var(--surface-muted)] px-2.5 py-1 text-[11px] font-medium capitalize text-[var(--foreground)]">
+                {workspaceSummary?.role ?? actor}
+              </span>
+            </div>
             <div className="flex flex-col gap-2 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-[11px] uppercase tracking-wider text-[var(--text-muted)] font-semibold">
@@ -284,6 +332,12 @@ export default function SettingsPage() {
             </div>
 
           </div>
+          {workspaceLoadError ? (
+            <div role="alert" className="flex flex-col gap-3 rounded-xl border border-amber-300/50 bg-amber-50/70 p-4 text-sm text-amber-900 sm:flex-row sm:items-center sm:justify-between">
+              <p>{workspaceLoadError} Your current access is still available.</p>
+              <Button type="button" variant="secondary" size="sm" icon={<RefreshCw size={14} />} onClick={() => { setWorkspaceLoadError(null); setWorkspaceLoadRequest((current) => current + 1); }} className="shrink-0 self-start sm:self-auto">Try again</Button>
+            </div>
+          ) : null}
         </div>
 
         <details className="rounded-xl border border-[var(--border-soft)] p-6 sm:p-8">
@@ -305,11 +359,17 @@ export default function SettingsPage() {
                 <h3 className="text-sm font-semibold text-[var(--foreground)]">Browser wallet</h3>
                 <p className="text-xs text-[var(--text-muted)]">Not needed to create payouts, review work, or record simulated payments.</p>
               </div>
-              <Button type="button" variant="secondary" size="sm" onClick={handleLinkWallet} disabled={!isConnected || isLinkingWallet}>
+              <Button type="button" variant="secondary" size="sm" onClick={handleLinkWallet} disabled={!isConnected || isLinkingWallet} className="w-full justify-center sm:w-auto">
                 <Wallet size={13} className="mr-1.5" /> {isLinkingWallet ? "Waiting for signature..." : "Link wallet"}
               </Button>
             </div>
             <div className="space-y-2 pt-1">
+            {walletLoadError ? (
+              <div role="alert" className="flex flex-col gap-3 rounded-xl border border-amber-300/50 bg-amber-50/70 p-4 text-sm text-amber-900 sm:flex-row sm:items-center sm:justify-between">
+                <p>{walletLoadError}</p>
+                <Button type="button" variant="secondary" size="sm" icon={<RefreshCw size={14} />} onClick={() => { setWalletLoadError(null); setWalletLoadRequest((current) => current + 1); }} className="shrink-0 self-start sm:self-auto">Try again</Button>
+              </div>
+            ) : null}
             {linkedWallets.map((wallet) => (
               <div key={wallet.id} className="flex flex-col gap-1 rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] px-3.5 py-3 text-xs sm:flex-row sm:items-center sm:justify-between">
                 <div>
@@ -323,7 +383,7 @@ export default function SettingsPage() {
                 </p>
               </div>
             ))}
-            {isConnected && linkedWallets.length === 0 ? <p className="text-xs text-[var(--text-muted)]">No browser wallet is linked. You only need one for Wallet payment.</p> : null}
+            {isConnected && linkedWallets.length === 0 && !walletLoadError ? <p className="text-xs text-[var(--text-muted)]">No browser wallet is linked. You only need one for Wallet payment.</p> : null}
             </div>
           </div>
         </details>
@@ -354,14 +414,15 @@ export default function SettingsPage() {
           </summary>
 
           <div className="mt-6 space-y-6">
-          <div className="flex flex-col gap-3 border-b border-[var(--border-soft)] pb-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-2">
+          <div className="flex flex-col gap-3 border-b border-[var(--border-soft)] pb-4">
+            <div className="flex flex-col gap-2 sm:flex-row">
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 onClick={handleTestRpc}
                 disabled={rpcStatus === "testing"}
+                className="w-full justify-center sm:w-auto"
               >
                 {rpcStatus === "testing"
                   ? "Pinging node..."
@@ -378,6 +439,7 @@ export default function SettingsPage() {
                     await addArcNetworkToWallet();
                   } catch {}
                 }}
+                className="w-full justify-center sm:w-auto"
               >
                 Add Arc Testnet
               </Button>
@@ -385,7 +447,7 @@ export default function SettingsPage() {
                 href="https://faucet.circle.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[var(--border-soft)] px-3 text-xs font-medium text-[var(--foreground)] hover:bg-[var(--surface-muted)]"
+                className="inline-flex h-8 w-full items-center justify-center gap-1.5 rounded-lg border border-[var(--border-soft)] px-3 text-xs font-medium text-[var(--foreground)] hover:bg-[var(--surface-muted)] sm:w-auto"
               >
                 <Droplets size={13} /> Get test USDC <ExternalLink size={12} />
               </a>
