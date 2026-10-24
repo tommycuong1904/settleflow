@@ -48,3 +48,34 @@ test("later milestones cannot be queued or marked paid until earlier milestones 
     await db.user.delete({ where: { id: owner.id } });
   }
 });
+
+test("concurrent release requests cannot queue a later milestone first", async () => {
+  const suffix = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const owner = await db.user.create({ data: { displayName: "Concurrent Owner", email: `concurrent-owner-${suffix}@example.test` } });
+  const workspace = await db.workspace.create({ data: { name: "Concurrent Payments", slug: `concurrent-${suffix}` } });
+  const contributor = await db.contributor.create({ data: { workspaceId: workspace.id, createdByUserId: owner.id, name: "Concurrent contributor", walletAddress: "0x2222222222222222222222222222222222222222" } });
+  const payout = await db.payout.create({ data: { workspaceId: workspace.id, contributorId: contributor.id, createdByUserId: owner.id, title: "Concurrent payout", totalAmountUsdc: "10", status: "active", targetWalletAddress: contributor.walletAddress } });
+  const first = await db.milestone.create({ data: { payoutId: payout.id, title: "First", description: "First payment", amountUsdc: "5", sequence: 1, status: "approved" } });
+  const second = await db.milestone.create({ data: { payoutId: payout.id, title: "Second", description: "Second payment", amountUsdc: "5", sequence: 2, status: "approved" } });
+  await db.workspaceMember.create({ data: { workspaceId: workspace.id, userId: owner.id, role: "owner" } });
+
+  try {
+    const results = await Promise.allSettled([
+      queueMilestoneRelease(first.id, owner.id, workspace.id, "5"),
+      queueMilestoneRelease(second.id, owner.id, workspace.id, "5"),
+    ]);
+    assert.equal(results.filter((result) => result.status === "fulfilled").length, 1);
+    assert.equal(results.filter((result) => result.status === "rejected").length, 1);
+    assert.equal(await db.release.count({ where: { payoutId: payout.id, milestoneId: first.id } }), 1);
+    assert.equal(await db.release.count({ where: { payoutId: payout.id, milestoneId: second.id } }), 0);
+  } finally {
+    await db.transactionProof.deleteMany({ where: { payoutId: payout.id } });
+    await db.release.deleteMany({ where: { payoutId: payout.id } });
+    await db.milestone.deleteMany({ where: { payoutId: payout.id } });
+    await db.payout.delete({ where: { id: payout.id } });
+    await db.contributor.delete({ where: { id: contributor.id } });
+    await db.workspaceMember.deleteMany({ where: { workspaceId: workspace.id } });
+    await db.workspace.delete({ where: { id: workspace.id } });
+    await db.user.delete({ where: { id: owner.id } });
+  }
+});
