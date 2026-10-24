@@ -12,6 +12,10 @@ type PayoutListClientProps = {
   canCreatePayout: boolean;
 };
 
+function isPassiveNextAction(nextAction: string) {
+  return nextAction.startsWith("Waiting") || nextAction === "Payment complete";
+}
+
 export function PayoutListClient({
   initialPayouts,
   canCreatePayout,
@@ -50,6 +54,20 @@ export function PayoutListClient({
   const totalPages = Math.ceil(filteredPayouts.length / itemsPerPage);
   const paginatedPayouts = filteredPayouts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
   const hasNoPayouts = initialPayouts.length === 0;
+  const activeCount = initialPayouts.filter((payout) => ["active", "partially_released"].includes(payout.status)).length;
+  const draftCount = initialPayouts.filter((payout) => payout.status === "draft").length;
+  const completedCount = initialPayouts.filter((payout) => payout.status === "completed").length;
+
+  function selectStatusFilter(nextFilter: typeof statusFilter) {
+    setStatusFilter(nextFilter);
+    setCurrentPage(1);
+  }
+
+  function clearFilters() {
+    setSearchQuery("");
+    setStatusFilter("all");
+    setCurrentPage(1);
+  }
 
   return (
     <div className="space-y-5">
@@ -63,16 +81,20 @@ export function PayoutListClient({
           <input
             type="search"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setCurrentPage(1);
+            }}
             placeholder="Search payouts or people..."
             className="w-full rounded-full border border-[var(--border-soft)] bg-[var(--input-background)] py-2.5 pl-10 pr-4 text-xs text-[var(--foreground)] placeholder:text-[var(--input-placeholder)] focus:border-[var(--border-strong)] focus:bg-[var(--input-focus-background)] focus:outline-none focus:ring-1 focus:ring-[var(--border-strong)] transition-all"
           />
         </div>
 
-        <div className="flex w-full self-center rounded-full border border-[var(--border-soft)] bg-[var(--surface)] p-1 text-xs font-medium md:ml-auto md:w-auto md:shrink-0">
+        <div className="grid w-full grid-cols-2 gap-1 self-center rounded-2xl border border-[var(--border-soft)] bg-[var(--surface)] p-1 text-xs font-medium md:ml-auto md:flex md:w-auto md:shrink-0 md:rounded-full">
           <button
-            onClick={() => setStatusFilter("all")}
-            className={`rounded-full px-3 py-1.5 transition-all ${
+            onClick={() => selectStatusFilter("all")}
+            aria-pressed={statusFilter === "all"}
+            className={`rounded-full px-3 py-1.5 text-center transition-all ${
               statusFilter === "all"
                 ? "bg-[var(--foreground)] text-[var(--background)] font-semibold"
                 : "text-[var(--text-muted)] hover:text-[var(--foreground)]"
@@ -81,60 +103,72 @@ export function PayoutListClient({
             All ({initialPayouts.length})
           </button>
           <button
-            onClick={() => setStatusFilter("active")}
-            className={`rounded-full px-3 py-1.5 transition-all ${
+            onClick={() => selectStatusFilter("active")}
+            aria-pressed={statusFilter === "active"}
+            className={`rounded-full px-3 py-1.5 text-center transition-all ${
               statusFilter === "active"
                 ? "bg-[var(--foreground)] text-[var(--background)] font-semibold"
                 : "text-[var(--text-muted)] hover:text-[var(--foreground)]"
             }`}
           >
-            Active
+            Active ({activeCount})
           </button>
           <button
-            onClick={() => setStatusFilter("draft")}
-            className={`rounded-full px-3 py-1.5 transition-all ${
+            onClick={() => selectStatusFilter("draft")}
+            aria-pressed={statusFilter === "draft"}
+            className={`rounded-full px-3 py-1.5 text-center transition-all ${
               statusFilter === "draft"
                 ? "bg-[var(--foreground)] text-[var(--background)] font-semibold"
                 : "text-[var(--text-muted)] hover:text-[var(--foreground)]"
             }`}
           >
-            Drafts
+            Drafts ({draftCount})
           </button>
           <button
-            onClick={() => setStatusFilter("completed")}
-            className={`rounded-full px-3 py-1.5 transition-all ${
+            onClick={() => selectStatusFilter("completed")}
+            aria-pressed={statusFilter === "completed"}
+            className={`rounded-full px-3 py-1.5 text-center transition-all ${
               statusFilter === "completed"
                 ? "bg-[var(--foreground)] text-[var(--background)] font-semibold"
                 : "text-[var(--text-muted)] hover:text-[var(--foreground)]"
             }`}
           >
-            Completed
+            Completed ({completedCount})
           </button>
         </div>
       </div> : null}
 
       {/* List */}
       {filteredPayouts.length === 0 ? (
-        <EmptyState
-          title={
-            searchQuery || statusFilter !== "all"
-              ? "No matching payout agreements"
-              : canCreatePayout
-              ? "No payouts created yet"
-              : "No payouts assigned yet"
-          }
-          description={
-            searchQuery || statusFilter !== "all"
-              ? "Try adjusting your search query or status filter."
-              : canCreatePayout
-              ? "Create your first payout to organize work, approvals, and payments."
-              : "Your workspace owner will assign a payout when work is ready. You can then review the scope and submit work here — no wallet setup is needed."
-          }
-        />
+        <div className="space-y-4">
+          <EmptyState
+            title={
+              searchQuery || statusFilter !== "all"
+                ? "No matching payouts"
+                : canCreatePayout
+                ? "No payouts created yet"
+                : "No payouts assigned yet"
+            }
+            description={
+              searchQuery || statusFilter !== "all"
+                ? "Try another search or show all payouts."
+                : canCreatePayout
+                ? "Create a payout to define the work, approval steps, and amount."
+                : "Your workspace owner will assign a payout when work is ready. You can then review the scope and submit work here — no wallet setup is needed."
+            }
+          />
+          {searchQuery || statusFilter !== "all" ? (
+            <Button type="button" variant="secondary" size="sm" onClick={clearFilters}>
+              Clear filters
+            </Button>
+          ) : null}
+        </div>
       ) : ( <>
         <div className="overflow-hidden rounded-2xl border border-[var(--border-soft)] bg-[var(--surface)] divide-y divide-[var(--border-soft)]">
           {paginatedPayouts.map((payout) => {
             const contributor = payout.contributor;
+            const passiveNextAction = isPassiveNextAction(payout.nextAction);
+            const actionLabel = passiveNextAction ? "View payout" : payout.nextAction;
             const statusLabel =
               payout.status === "completed"
                 ? "Paid"
@@ -173,6 +207,9 @@ export function PayoutListClient({
                         {contributor.displayName}
                       </strong>
                     </p>
+                    <p className="text-xs text-[var(--text-muted)]">
+                      Next: <span className="font-medium text-[var(--text-primary)]">{payout.nextAction}</span>
+                    </p>
                   </div>
 
                   <div className="flex flex-col gap-3 sm:contents">
@@ -184,8 +221,8 @@ export function PayoutListClient({
                         {formatUsdc(Number(payout.totalAmount))} USDC
                       </p>
                     </div>
-                    <Button href={`/payouts/${payout.id}?workspaceId=${encodeURIComponent(payout.workspaceId)}`} variant={payout.nextAction === "Payment complete" ? "ghost" : "secondary"} size="sm" className="w-full justify-center whitespace-nowrap sm:w-52">
-                      {payout.nextAction} <ArrowRight size={14} className="ml-1" />
+                    <Button href={`/payouts/${payout.id}?workspaceId=${encodeURIComponent(payout.workspaceId)}`} variant={passiveNextAction ? "ghost" : "secondary"} size="sm" className="w-full justify-center whitespace-nowrap sm:w-52">
+                      {actionLabel} <ArrowRight size={14} className="ml-1" />
                     </Button>
                   </div>
                 </div>
