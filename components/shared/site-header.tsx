@@ -17,7 +17,7 @@ export function SiteHeader() {
     ? [
         ["How it works", "#workflow"],
         ["Payment infrastructure", "#why-arc"],
-        ["Test mode", "#proof"],
+        ["Try safely", "#proof"],
       ]
     : [
         ["Home", "/"],

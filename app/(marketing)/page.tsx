@@ -27,7 +27,7 @@ function AuthEntryButton({ variant = 'ghost' }: { variant?: 'primary' | 'ghost' 
       size="lg"
       onClick={() => isConnected ? router.push('/dashboard') : openAuthModal()}
     >
-      {isConnected ? 'Open dashboard' : 'Sign in'}
+      {isConnected ? 'Open dashboard' : 'Continue with Google'}
     </Button>
   )
 }
@@ -60,26 +60,25 @@ export default function Home() {
     <main id="top">
       <section className="sf-hero sf-container">
         <div className="sf-hero-copy">
-          <SectionKicker>MILESTONE PAYMENT WORKFLOW</SectionKicker>
+          <SectionKicker>PAYMENT WORKFLOW FOR TEAMS</SectionKicker>
           <h1>
-            Pay for approved work, <em>without losing the context.</em>
+            Pay for approved work, <em>without chasing the context.</em>
           </h1>
           <p className="sf-lede">
-            SettleFlow keeps work, approval, payment, and the payment record in one
-            shared workflow. Everyone can see what is ready, what needs review, and what was paid.
+            Keep work, approvals, payments, and records in one shared workflow.
+            Everyone sees what needs attention and what happens next.
           </p>
           <div className="sf-cta-row">
             <AuthEntryButton variant="primary" />
-            <Button href="/payouts/new" variant="ghost" size="lg">
-              Create a payout <ArrowRight size={17} />
+            <Button href="#workflow" variant="ghost" size="lg">
+              See how it works <ArrowRight size={17} />
             </Button>
           </div>
           <div className="sf-hero-note">
             <span className="sf-note-check">
               <Check size={13} />
-            </span>{" "}
-            Approval unlocks payment <span className="sf-note-line" />{" "}
-            Payment record attached
+            </span>
+            Start with Google — no wallet needed
           </div>
         </div>
         <PayoutPreview />
@@ -140,7 +139,7 @@ export default function Home() {
             </div>
             <p className="sf-result">
               The result: teams lose a clear view of what was approved, what is
-              ready to pay, and what was actually settled.
+              ready to pay, and what was paid.
             </p>
           </div>
         </div>
@@ -312,8 +311,8 @@ export default function Home() {
           </div>
           <div className="sf-cta-row">
             <AuthEntryButton variant="primary" />
-            <Button href="/payouts/new" variant="ghost" size="lg">
-              Create a payout <ArrowRight size={17} />
+            <Button href="#workflow" variant="ghost" size="lg">
+              See how it works <ArrowRight size={17} />
             </Button>
           </div>
           <div className="sf-final-flow">
