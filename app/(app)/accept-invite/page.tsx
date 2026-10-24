@@ -69,8 +69,10 @@ export default function AcceptInvitePage({
         throw new Error(body.error || "Failed to accept invitation.");
       }
 
-      router.push("/dashboard");
-      router.refresh();
+      // Accepting an invitation changes the HttpOnly active-workspace cookie.
+      // A client-side route may reuse a Dashboard response prefetched before
+      // that change, so force a document navigation to read the new context.
+      window.location.assign("/dashboard");
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to accept invitation.";
       setError(msg);
