@@ -144,3 +144,22 @@ Fix only evidence-backed failures and leave a repeatable Testnet release process
 - Repeated Testnet payments do not create duplicate releases/proofs.
 - Recovery behavior is documented and verified.
 - Production planning can begin separately.
+
+## Next planned capability — Embedded-wallet hybrid
+
+This work begins only after Phase 3 has one reconciled Arc Testnet payment. It is deliberately sequenced after the first transaction so a wallet-provider integration cannot delay validation of the existing non-custodial browser-wallet rail.
+
+### Goal
+
+Give a Google-first user an optional embedded, non-custodial wallet while retaining support for self-custodied browser wallets.
+
+### Product model
+
+1. A selected embedded-wallet provider creates and recovers the default wallet through the user's Google/passkey identity; SettleFlow must not generate or retain private keys itself.
+2. The user may connect additional self-custodied wallets and select a default source or payout address.
+3. The profile's verified payout address remains the default across workspaces; an explicit workspace override remains available without changing existing or approved payouts.
+4. The current Owner-entered Contributor address remains the Testnet fallback until the Contributor has verified a profile or workspace destination.
+
+### Required design gate
+
+Select the provider and approve recovery, custody, export, transaction-authorization, fee, privacy, and support responsibilities before implementation. Circle Smart Wallet is not assumed to be the selected provider.
