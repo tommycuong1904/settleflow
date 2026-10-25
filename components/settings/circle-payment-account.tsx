@@ -109,6 +109,6 @@ export function CirclePaymentAccount({ onReady }: { onReady?: () => void }) {
 
   return <div className="flex flex-col gap-3 rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)]/30 p-4 sm:flex-row sm:items-center sm:justify-between">
     <div><p className="text-sm font-semibold text-[var(--foreground)]">Set up payment account</p><p className="mt-1 text-xs text-[var(--text-muted)]">Use Google to create your secure USDC payment account. No browser wallet or recovery phrase is needed.</p>{message ? <p role="status" className="mt-2 text-xs text-[var(--text-muted)]">{message}</p> : null}</div>
-    <Button type="button" size="sm" variant="primary" onClick={() => void connect()} disabled={status === "loading" || status === "working"} className="w-full shrink-0 justify-center sm:w-auto"><Wallet size={14} className="mr-1.5" />{status === "working" ? <><LoaderCircle size={14} className="mr-1.5 animate-spin" />Setting up…</> : "Set up account"}</Button>
+    <Button type="button" size="sm" variant="primary" onClick={() => void connect()} disabled={status === "loading" || status === "working" || status === "ready"} className="w-full shrink-0 justify-center sm:w-auto"><Wallet size={14} className="mr-1.5" />{status === "working" ? <><LoaderCircle size={14} className="mr-1.5 animate-spin" />Setting up…</> : status === "ready" ? "Payment account ready" : "Set up account"}</Button>
   </div>;
 }
