@@ -73,6 +73,13 @@ Complete the everyday Owner/Contributor workflow without wallet terminology.
 - Owner reaches an approved milestone with no blockchain setup.
 - Invitation membership, role, and workspace isolation are server-verified.
 
+### Verification record — 2026-10-25
+
+- Invitation acceptance, email binding, lifecycle, and one-membership-role enforcement passed against the isolated database.
+- Workspace switching passed: only persisted memberships are listed and only an authorized workspace can become active.
+- Owner/Contributor workflow authorization passed: only the assigned Contributor may submit/resubmit, and only the workspace Owner may approve or reject.
+- Existing Owner/Contributor navigation and payout views mask Owner-only controls for Contributor memberships; current browser E2E coverage remains a follow-up runtime check because the local temporary Next test server did not remain available on port 3101.
+
 ## Phase 2 — Payment-account foundation
 
 ### Goal
