@@ -114,9 +114,9 @@ export default async function DashboardPage() {
     ...(failedSettlementProof ? [{
       id: `failed-${failedSettlementProof.id}`,
       href: failedSettlementMilestone ? payoutHref(failedSettlementMilestone.payoutId) : "/payouts",
-      title: isOwner ? "Review a payment issue" : "Payment needs owner attention",
-      description: `${failedSettlementMilestone?.title ?? "A milestone"} needs your decision before another payment attempt.`,
-      action: isOwner ? "Review issue" : "View payout",
+      title: "Payment needs support",
+      description: `${failedSettlementMilestone?.title ?? "A milestone"} is being reviewed. No action is needed right now.`,
+      action: "View status",
     }] : []),
     ...contributorWorkMilestones.map((milestone) => ({
       id: `submit-${milestone.id}`,

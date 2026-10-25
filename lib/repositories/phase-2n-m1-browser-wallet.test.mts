@@ -48,13 +48,12 @@ test("real payment readiness is checked before a browser wallet is opened", asyn
   assert.ok(readinessIndex >= 0 && walletIndex >= 0 && readinessIndex < walletIndex);
 });
 
-test("the payment modal explains an unauthorized real environment without offering a retry", async () => {
+test("the payment modal hides payment infrastructure failures from normal owner UI", async () => {
   const ui = await source("components/payouts/payout-detail-release-shell.tsx");
   assert.match(ui, /function isRealExecutionAuthorizationError/);
-  assert.match(ui, /Payments aren’t enabled in this environment/);
-  assert.match(ui, /No payment was sent and no payment record was created/);
-  assert.match(ui, /Do not retry until the environment is explicitly authorized/);
-  assert.match(ui, /!isRealExecutionBlocked \? <Button/);
+  assert.match(ui, /Payment needs support/);
+  assert.match(ui, /You do not need to retry it or provide payment details/);
+  assert.doesNotMatch(ui, /Start a new payment/);
 });
 
 test("caller sourceWalletAddress is not used by browser confirmation", async () => {

@@ -5,7 +5,7 @@ import { createTestPrismaClient } from "@/test/support/test-db";
 const enabled = Boolean(process.env.SETTLEFLOW_TEST_DATABASE_URL);
 test.skip(!enabled, "requires SETTLEFLOW_TEST_DATABASE_URL");
 
-test("wallet payment that was not sent offers a safe retry explanation", async ({ browser }) => {
+test("failed payment shows a simple support status without a retry decision", async ({ browser }) => {
   const suffix = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const ownerAddress = `0x${crypto.randomUUID().replaceAll("-", "").padEnd(40, "1")}`;
   const recipientAddress = `0x${crypto.randomUUID().replaceAll("-", "").padEnd(40, "2")}`;
@@ -31,13 +31,11 @@ test("wallet payment that was not sent offers a safe retry explanation", async (
     await context.addCookies([{ name: "sf_session", value: token, domain: "127.0.0.1", path: "/" }, { name: "sf_workspace_id", value: workspaceId, domain: "127.0.0.1", path: "/" }]);
     const page = await context.newPage();
     await page.goto(`/payouts/${payout.id}?workspaceId=${workspaceId}`);
-    await expect(page.getByText("Payment wasn’t sent")).toBeVisible();
-    await page.getByRole("button", { name: "Check wallet & try again" }).click();
-    await expect(page.getByRole("heading", { name: "Check your wallet, then try again" })).toBeVisible();
-    await expect(page.getByText("No payment was sent.")).toBeVisible();
-    await expect(page.getByText("Switch it to Arc Testnet and check that it is connected.")).toBeVisible();
-    await expect(page.getByText("Try the payment again only after the connection is restored.")).toBeVisible();
-    await expect(page.getByRole("button", { name: "Try payment again" })).toBeVisible();
+    await expect(page.getByText("Payment needs support")).toBeVisible();
+    await page.getByRole("button", { name: "View status" }).click();
+    await expect(page.getByRole("heading", { name: "We’re reviewing this payment" })).toBeVisible();
+    await expect(page.getByText("You do not need to retry it or provide payment details.")).toBeVisible();
+    await expect(page.getByRole("button", { name: /try payment again|start a new payment/i })).toHaveCount(0);
     await context.close();
   } finally {
     if (workspaceId) {
