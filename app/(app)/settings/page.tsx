@@ -11,6 +11,7 @@ import { ARC_CONFIG } from "@/lib/arc/config";
 import { addArcNetworkToWallet } from "@/lib/arc/onchain";
 import { useToast } from "@/lib/context/toast-context";
 import { BrowserPushToggle } from "@/components/notifications/browser-push-toggle";
+import { CirclePaymentAccount } from "@/components/settings/circle-payment-account";
 import {
   Shield,
   Cpu,
@@ -47,6 +48,7 @@ export default function SettingsPage() {
   const [workspaceLoadRequest, setWorkspaceLoadRequest] = useState(0);
   const [walletLoadError, setWalletLoadError] = useState<string | null>(null);
   const [walletLoadRequest, setWalletLoadRequest] = useState(0);
+  const [circleConfigured, setCircleConfigured] = useState(false);
 
   const handleDisconnect = async () => {
     await disconnect();
@@ -80,6 +82,14 @@ export default function SettingsPage() {
       })
       .catch(() => setWalletLoadError("We couldn’t load your wallet setup. Try again before using Wallet payment."));
   }, [isConnected, walletLoadRequest]);
+
+  useEffect(() => {
+    if (!isConnected || authType !== "web2_google") return;
+    void fetch("/api/v1/circle/wallet", { cache: "no-store" })
+      .then(async (response) => response.ok ? await response.json() as { configured?: boolean } : null)
+      .then((payload) => setCircleConfigured(payload?.configured === true))
+      .catch(() => setCircleConfigured(false));
+  }, [authType, isConnected, walletLoadRequest]);
 
   useEffect(() => {
     let active = true;
@@ -354,6 +364,7 @@ export default function SettingsPage() {
             <ChevronDown size={18} className="shrink-0 text-[var(--text-muted)]" />
           </summary>
           <div className="mt-6 space-y-4">
+            {circleConfigured ? <CirclePaymentAccount onReady={() => setWalletLoadRequest((current) => current + 1)} /> : null}
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h3 className="text-sm font-semibold text-[var(--foreground)]">Connect a browser wallet</h3>

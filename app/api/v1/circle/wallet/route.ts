@@ -8,7 +8,6 @@ import {
   CircleConfigurationError,
   type CircleWallet,
   assertArcSmartWallet,
-  createCircleUserSession,
   createCircleWalletInitializationChallenge,
   getCircleChallenge,
   getCircleUserControlledConfig,
@@ -66,7 +65,7 @@ async function persistWallet(userId: string, wallet: CircleWallet) {
       throw new Error("CIRCLE_WALLET_ADDRESS_ALREADY_LINKED");
     }
 
-    return tx.circleUserWallet.upsert({
+    const circleWallet = await tx.circleUserWallet.upsert({
       where: { userId },
       create: {
         userId,
@@ -87,6 +86,12 @@ async function persistWallet(userId: string, wallet: CircleWallet) {
       },
       select: { walletId: true, address: true, blockchain: true, accountType: true, scaCore: true },
     });
+    await tx.paymentAccount.upsert({
+      where: { userId_provider: { userId, provider: "circle_user_controlled" } },
+      create: { userId, provider: "circle_user_controlled", providerAccountId: wallet.id, walletLinkId: walletLink.id, status: "ready" },
+      update: { providerAccountId: wallet.id, walletLinkId: walletLink.id, status: "ready" },
+    });
+    return circleWallet;
   });
 }
 
@@ -111,6 +116,9 @@ export async function POST(request: Request) {
   }
   const user = await requireGoogleUser(request);
   if (user instanceof NextResponse) return user;
+  const body = await request.json().catch(() => null) as { userToken?: unknown } | null;
+  const userToken = typeof body?.userToken === "string" ? body.userToken.trim() : "";
+  if (!userToken) return NextResponse.json({ error: "CIRCLE_USER_SESSION_REQUIRED" }, { status: 400 });
 
   try {
     const existingWallet = await db.circleUserWallet.findUnique({
@@ -119,14 +127,13 @@ export async function POST(request: Request) {
     });
     if (existingWallet) return NextResponse.json({ wallet: existingWallet, challenge: null });
 
-    const session = await createCircleUserSession(user.id);
     const config = getCircleUserControlledConfig();
     let provisioning = await db.circleWalletProvisioning.findUnique({ where: { userId: user.id } });
 
     // A wallet may already have been created in Circle if the database write
     // was interrupted after a completed challenge. Reuse it rather than create
     // another address.
-    const alreadyCreated = selectArcSmartWallet(await listCircleWallets(session.userToken));
+    const alreadyCreated = selectArcSmartWallet(await listCircleWallets(userToken));
     if (alreadyCreated) {
       const wallet = await persistWallet(user.id, alreadyCreated);
       await db.circleWalletProvisioning.deleteMany({ where: { userId: user.id } });
@@ -134,16 +141,16 @@ export async function POST(request: Request) {
     }
 
     if (provisioning?.challengeId) {
-      const challenge = await getCircleChallenge(session.userToken, provisioning.challengeId);
+      const challenge = await getCircleChallenge(userToken, provisioning.challengeId);
       if (challenge.status === "COMPLETE" && challenge.correlationIds?.[0]) {
-        const wallet = await persistWallet(user.id, await getCircleWallet(session.userToken, challenge.correlationIds[0]));
+        const wallet = await persistWallet(user.id, await getCircleWallet(userToken, challenge.correlationIds[0]));
         await db.circleWalletProvisioning.deleteMany({ where: { userId: user.id } });
         return NextResponse.json({ wallet, challenge: null });
       }
       if (challenge.status === "PENDING" || challenge.status === "IN_PROGRESS") {
         return NextResponse.json({
           wallet: null,
-          challenge: { id: provisioning.challengeId, appId: config.appId, ...session },
+          challenge: { id: provisioning.challengeId, appId: config.appId },
         });
       }
       provisioning = await db.circleWalletProvisioning.update({
@@ -157,14 +164,14 @@ export async function POST(request: Request) {
         data: { userId: user.id, idempotencyKey: randomUUID() },
       });
     }
-    const challengeId = await createCircleWalletInitializationChallenge(session.userToken, provisioning.idempotencyKey);
+    const challengeId = await createCircleWalletInitializationChallenge(userToken, provisioning.idempotencyKey);
     await db.circleWalletProvisioning.update({
       where: { userId: user.id },
       data: { challengeId, status: "pending" },
     });
     return NextResponse.json({
       wallet: null,
-      challenge: { id: challengeId, appId: config.appId, ...session },
+      challenge: { id: challengeId, appId: config.appId },
     });
   } catch (error) {
     return circleErrorResponse(error);

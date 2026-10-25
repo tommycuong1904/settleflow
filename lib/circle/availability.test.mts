@@ -3,6 +3,7 @@ import test from "node:test";
 
 import { POST as provisionCircleWallet } from "@/app/api/v1/circle/wallet/route";
 import { POST as completeCircleWallet } from "@/app/api/v1/circle/wallet/complete/route";
+import { POST as createCircleSocialToken } from "@/app/api/v1/circle/wallet/social-token/route";
 import { POST as createCircleReleaseChallenge } from "@/app/api/v1/releases/[id]/circle/challenge/route";
 import { POST as completeCircleRelease } from "@/app/api/v1/releases/[id]/circle/complete/route";
 import { CIRCLE_SMART_WALLET_AVAILABLE } from "./availability";
@@ -14,6 +15,7 @@ test("Circle Smart Wallet remains closed without an explicit enabled Testnet con
   for (const response of await Promise.all([
     provisionCircleWallet(request),
     completeCircleWallet(request),
+    createCircleSocialToken(request),
     createCircleReleaseChallenge(request, params),
     completeCircleRelease(request, params),
   ])) {

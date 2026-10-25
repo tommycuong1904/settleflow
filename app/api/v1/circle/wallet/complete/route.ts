@@ -8,7 +8,6 @@ import {
   CircleApiError,
   CircleConfigurationError,
   assertArcSmartWallet,
-  createCircleUserSession,
   getCircleChallenge,
   getCircleWallet,
 } from "@/lib/circle/user-controlled";
@@ -24,18 +23,20 @@ export async function POST(request: Request) {
   }
   const user = await getVerifiedSessionUser(session);
   if (!user) return NextResponse.json({ error: "AUTH_REQUIRED" }, { status: 401 });
+  const body = await request.json().catch(() => null) as { userToken?: unknown } | null;
+  const userToken = typeof body?.userToken === "string" ? body.userToken.trim() : "";
+  if (!userToken) return NextResponse.json({ error: "CIRCLE_USER_SESSION_REQUIRED" }, { status: 400 });
 
   try {
     const provisioning = await db.circleWalletProvisioning.findUnique({ where: { userId: user.id } });
     if (!provisioning?.challengeId) {
       return NextResponse.json({ error: "CIRCLE_WALLET_PROVISIONING_NOT_FOUND" }, { status: 409 });
     }
-    const circleSession = await createCircleUserSession(user.id);
-    const challenge = await getCircleChallenge(circleSession.userToken, provisioning.challengeId);
+    const challenge = await getCircleChallenge(userToken, provisioning.challengeId);
     if (challenge.status !== "COMPLETE" || !challenge.correlationIds?.[0]) {
       return NextResponse.json({ error: "CIRCLE_WALLET_CHALLENGE_NOT_COMPLETE", status: challenge.status }, { status: 409 });
     }
-    const circleWallet = await getCircleWallet(circleSession.userToken, challenge.correlationIds[0]);
+    const circleWallet = await getCircleWallet(userToken, challenge.correlationIds[0]);
     assertArcSmartWallet(circleWallet);
     if (!isAddress(circleWallet.address)) throw new Error("CIRCLE_WALLET_INVALID_ADDRESS");
     const address = getAddress(circleWallet.address);
@@ -56,7 +57,7 @@ export async function POST(request: Request) {
       if (walletLink.userId !== user.id || walletLink.kind !== "circle_sca") {
         throw new Error("CIRCLE_WALLET_ADDRESS_ALREADY_LINKED");
       }
-      return tx.circleUserWallet.upsert({
+      const persistedCircleWallet = await tx.circleUserWallet.upsert({
         where: { userId: user.id },
         create: {
           userId: user.id,
@@ -77,6 +78,12 @@ export async function POST(request: Request) {
         },
         select: { walletId: true, address: true, blockchain: true, accountType: true, scaCore: true },
       });
+      await tx.paymentAccount.upsert({
+        where: { userId_provider: { userId: user.id, provider: "circle_user_controlled" } },
+        create: { userId: user.id, provider: "circle_user_controlled", providerAccountId: circleWallet.id, walletLinkId: walletLink.id, status: "ready" },
+        update: { providerAccountId: circleWallet.id, walletLinkId: walletLink.id, status: "ready" },
+      });
+      return persistedCircleWallet;
     });
     await db.circleWalletProvisioning.delete({ where: { userId: user.id } });
     return NextResponse.json({ wallet });

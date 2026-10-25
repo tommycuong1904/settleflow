@@ -10,6 +10,11 @@ export type CircleSession = {
   encryptionKey: string;
 };
 
+export type CircleDeviceSession = {
+  deviceToken: string;
+  deviceEncryptionKey: string;
+};
+
 export type CircleChallenge = {
   id: string;
   status: "PENDING" | "IN_PROGRESS" | "COMPLETE" | "FAILED" | "EXPIRED";
@@ -116,6 +121,15 @@ export async function createCircleUserSession(userId: string): Promise<CircleSes
   return circleRequest<CircleSession>("/v1/w3s/users/token", {
     method: "POST",
     body: { userId },
+  });
+}
+
+/** Creates the short-lived, device-bound credentials required before Circle's
+ * browser SDK can perform its own social-login flow. */
+export async function createCircleSocialDeviceSession(deviceId: string): Promise<CircleDeviceSession> {
+  return circleRequest<CircleDeviceSession>("/v1/w3s/users/social/token", {
+    method: "POST",
+    body: { idempotencyKey: randomUUID(), deviceId },
   });
 }
 
