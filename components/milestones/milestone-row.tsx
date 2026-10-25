@@ -370,7 +370,7 @@ export function MilestoneRow({
                 </p>
               </div>
               {isContributorActor && !isPrimarySubmitAction ? (
-                <Button onClick={() => setIsSubmitModalOpen(true)} variant="secondary" size="sm" className="w-full justify-center sm:w-auto">
+                <Button onClick={() => setIsSubmitModalOpen(true)} size="sm" className="w-full justify-center sm:w-auto">
                   Resubmit work
                 </Button>
               ) : isContributorActor ? (
@@ -394,7 +394,7 @@ export function MilestoneRow({
                 </p>
               </div>
               {isContributorActor && !isPrimarySubmitAction ? (
-                <Button onClick={() => setIsSubmitModalOpen(true)} variant="secondary" size="sm" className="w-full justify-center sm:w-auto">
+                <Button onClick={() => setIsSubmitModalOpen(true)} size="sm" className="w-full justify-center sm:w-auto">
                   Submit work
                 </Button>
               ) : isContributorActor ? (
