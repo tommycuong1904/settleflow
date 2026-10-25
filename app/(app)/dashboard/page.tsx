@@ -106,9 +106,9 @@ export default async function DashboardPage() {
       return {
         id: `pending-${proof.id}`,
         href: milestone ? payoutHref(milestone.payoutId) : "/payouts",
-        title: isOwner ? "Verify a payment already sent" : "Payment is being verified",
-        description: `${milestone?.title ?? "A milestone"} for ${contributorNameFor(milestone?.payoutId ?? "")} ${isOwner ? "needs payment confirmation. Do not send it again." : "has been sent and is awaiting confirmation."}`,
-        action: isOwner ? "Verify payment" : "View payout",
+        title: "Payment processing",
+        description: `${milestone?.title ?? "A milestone"} for ${contributorNameFor(milestone?.payoutId ?? "")} is being confirmed. No action is needed right now.`,
+        action: "View status",
       };
     }),
     ...(failedSettlementProof ? [{

@@ -15,7 +15,6 @@ import { mapSendResultToProof } from "@/lib/arc/map-send-result-to-proof";
 import type { ReleasePanelStatus } from "@/components/payouts/release-panel";
 import { TransactionProofCard } from "@/components/payouts/transaction-proof-card";
 import { Button } from "@/components/shared/button";
-import { Input } from "@/components/ui/input";
 import type { Milestone } from "@/lib/models/milestone";
 import type { TransactionProof } from "@/lib/models/transaction-proof";
 import type { PaymentAttempt } from "@/lib/models/payment-attempt";
@@ -173,12 +172,6 @@ export function PayoutDetailReleaseShell({
   );
   const [releaseError, setReleaseError] = useState<string | null>(null);
   const [retryingRelease, setRetryingRelease] = useState(false);
-  const [refreshingProof, setRefreshingProof] = useState(false);
-  const [findingTransaction, setFindingTransaction] = useState(false);
-  const [closingUnsubmittedPayment, setClosingUnsubmittedPayment] = useState(false);
-  const [reconciliationCheckedEmpty, setReconciliationCheckedEmpty] = useState(false);
-  const [confirmationTxHash, setConfirmationTxHash] = useState("");
-  const [foundTransaction, setFoundTransaction] = useState<{ txHash: string; explorerUrl: string } | null>(null);
   const [activeProof, setActiveProof] = useState<TransactionProof | undefined>(releaseProof);
   const [releaseModalMode, setReleaseModalMode] = useState<"method" | "review" | "simulated" | "pending" | "failed" | null>(null);
   const [resumeReleaseId, setResumeReleaseId] = useState<string | undefined>();
@@ -238,7 +231,7 @@ export function PayoutDetailReleaseShell({
   const isRealExecutionBlocked = isRealExecutionAuthorizationError(releaseError);
   const actionableReleaseError = paymentActionErrorMessage(releaseError);
   const failedPaymentGuidance = getFailedPaymentGuidance(resolvedProof?.failureReason ?? releaseError);
-  const isModalActionPending = processingRelease || recordingSimulatedPayment || retryingRelease || refreshingProof || findingTransaction || closingUnsubmittedPayment;
+  const isModalActionPending = processingRelease || recordingSimulatedPayment || retryingRelease;
   const productContextHeaders = useMemo(
     () => ({
       [PRODUCT_CONTEXT_HEADER_NAMES.workspaceId]: productContext.workspaceId,
@@ -561,7 +554,7 @@ export function PayoutDetailReleaseShell({
               : `Payment needs review: settlement verification returned HTTP ${proofResponse.status}.`,
           );
           setReleaseStatus("submitting");
-          focusPendingSettlementResolution();
+          setReleaseModalMode("pending");
           return;
         }
 
@@ -689,77 +682,6 @@ export function PayoutDetailReleaseShell({
     }
   }
 
-  function focusPendingSettlementResolution() {
-    setConfirmationTxHash(resolvedProof?.txHash ?? "");
-    setFoundTransaction(null);
-    setReconciliationCheckedEmpty(false);
-    setReleaseModalMode("pending");
-  }
-
-  async function handleFindReleaseTransaction() {
-    if (!isOwnerActor || !resolvedProof?.releaseId || findingTransaction) return;
-    setReleaseError(null);
-    setFoundTransaction(null);
-    setReconciliationCheckedEmpty(false);
-    setFindingTransaction(true);
-    try {
-      const response = await fetch(`/api/v1/releases/${resolvedProof.releaseId}/browser-candidates`, {
-        method: "POST",
-        headers: productContextHeaders,
-      });
-      const data = (await response.json()) as {
-        error?: string;
-        candidates?: Array<{ txHash: string; explorerUrl: string }>;
-      };
-      if (!response.ok || data.error || !data.candidates) {
-        throw new Error(data.error ?? "Unable to check for a payment right now.");
-      }
-      if (data.candidates.length === 1) {
-        const candidate = data.candidates[0];
-        setConfirmationTxHash(candidate.txHash);
-        setFoundTransaction(candidate);
-        return;
-      }
-      if (data.candidates.length === 0) {
-        setReconciliationCheckedEmpty(true);
-        setReleaseError("No confirmed payment matching this release was found. If you are sure you did not sign or send it, you can close this attempt after one final server check.");
-        return;
-      }
-      setReleaseError("More than one matching payment was found. This payment remains locked so a transaction cannot be selected automatically.");
-    } catch {
-      setReleaseError("We couldn’t check for a payment right now. This payment remains locked, so do not sign or retry again. Try checking again in a moment.");
-    } finally {
-      setFindingTransaction(false);
-    }
-  }
-
-  async function handleMarkPaymentUnsubmitted() {
-    if (!isOwnerActor || !resolvedProof?.releaseId || closingUnsubmittedPayment) return;
-    setReleaseError(null);
-    setClosingUnsubmittedPayment(true);
-    try {
-      const response = await fetch(`/api/v1/releases/${resolvedProof.releaseId}/mark-unsubmitted`, {
-        method: "POST",
-        headers: productContextHeaders,
-      });
-      const data = (await response.json()) as { error?: string; proof?: { status: "failed"; failureReason?: string | null } };
-      if (!response.ok || data.error || !data.proof) throw new Error(data.error ?? "Unable to close this payment attempt.");
-      setActiveProof((current) => current ? { ...current, status: "failed", failureReason: data.proof?.failureReason ?? "No matching confirmed payment was found." } : current);
-      setReleaseStatus("failed");
-      setReleaseModalMode("failed");
-      void onActivityChange?.();
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Unable to close this payment attempt.";
-      setReleaseError(message === "MATCHING_TRANSACTION_FOUND"
-        ? "A matching payment was found. Confirm it instead of starting another payment."
-        : message === "RECONCILIATION_WINDOW_OPEN"
-          ? "Wait a moment, then check Arc again before closing this payment attempt."
-          : "We couldn’t close this payment attempt. It remains locked; do not sign or retry again yet.");
-    } finally {
-      setClosingUnsubmittedPayment(false);
-    }
-  }
-
   function openReleaseReview(releaseId?: string) {
     setResumeReleaseId(releaseId);
     setReleaseError(null);
@@ -878,7 +800,6 @@ export function PayoutDetailReleaseShell({
             }
           : current,
       );
-      setConfirmationTxHash("");
       setReleaseStatus("submitting");
       void onActivityChange?.();
       return data.release?.id ?? null;
@@ -888,103 +809,6 @@ export function PayoutDetailReleaseShell({
       return null;
     } finally {
       setRetryingRelease(false);
-    }
-  }
-
-  async function handleRefreshProof() {
-    if (!isOwnerActor || !resolvedProof?.releaseId || refreshingProof) {
-      return false;
-    }
-
-    const txHash = confirmationTxHash.trim();
-    if (txHash.length === 0) {
-      setReleaseError("Tx hash is required to confirm settlement proof.");
-      return false;
-    }
-
-    setReleaseError(null);
-    setRefreshingProof(true);
-
-    try {
-      const response = await fetch(`/api/v1/releases/${resolvedProof.releaseId}/proof/refresh`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...productContextHeaders,
-        },
-        body: JSON.stringify({
-          status: "confirmed",
-          txHash,
-          network: "Arc Testnet",
-        }),
-      });
-
-      let data: {
-        error?: string;
-        code?: string;
-        proof?: {
-          id: string;
-          releaseId?: string;
-          milestoneId?: string;
-          txHash?: string | null;
-          network?: string | null;
-          status: "pending" | "confirmed" | "failed";
-          explorerUrl?: string | null;
-          confirmedAt?: string | null;
-          failureReason?: string | null;
-        };
-      };
-      try {
-        data = (await response.json()) as typeof data;
-      } catch {
-        throw new Error(`Settlement verification returned HTTP ${response.status}.`);
-      }
-
-      if (!response.ok || data.error || !data.proof) {
-        throw new Error(data.error ?? data.code ?? `Settlement verification returned HTTP ${response.status}.`);
-      }
-
-      const proof = data.proof;
-      const resolvedMilestoneId = proof.milestoneId ?? resolvedProof.milestoneId;
-      const baseProof: TransactionProof = resolvedProof
-        ? resolvedProof
-        : {
-            id: proof.id,
-            releaseId: proof.releaseId,
-            milestoneId: resolvedMilestoneId,
-            txHash: "",
-            network: proof.network ?? "Arc Testnet",
-            status: proof.status,
-            explorerUrl: "",
-          };
-      const updatedProof: TransactionProof = {
-        ...baseProof,
-        id: proof.id,
-        releaseId: proof.releaseId ?? baseProof.releaseId,
-        milestoneId: resolvedMilestoneId,
-        status: proof.status,
-        txHash: proof.txHash ?? "",
-        network: proof.network ?? baseProof.network ?? "Arc Testnet",
-        explorerUrl: proof.explorerUrl ?? "",
-        confirmedAt: proof.confirmedAt ?? undefined,
-        failureReason: proof.failureReason ?? undefined,
-      };
-
-      setActiveProof(updatedProof);
-      setReleaseStatus("confirmed");
-      onReleaseSuccess?.({
-        milestoneId: resolvedMilestoneId,
-        proof: updatedProof,
-        releasedAt: proof.confirmedAt ?? new Date().toISOString(),
-      });
-      setConfirmationTxHash("");
-      return true;
-    } catch {
-      setReleaseError("We couldn’t verify this transaction yet. The payment remains pending; do not retry or sign again. Check the transaction and try verification again later.");
-      setReleaseStatus("submitting");
-      return false;
-    } finally {
-      setRefreshingProof(false);
     }
   }
 
@@ -999,7 +823,7 @@ export function PayoutDetailReleaseShell({
               ) : needsCircleConfirmation ? (
                 <><p className="font-semibold text-[var(--foreground)]">Finish payment confirmation</p><p className="mt-1 text-[var(--text-muted)]">Continue the existing confirmation. SettleFlow will not create another payment.</p></>
               ) : isBrowserReconciliationPending ? (
-                <><p className="font-semibold text-[var(--foreground)]">Payment sent — verify it</p><p className="mt-1 text-[var(--text-muted)]">Do not sign again. Verify the transaction already sent from your wallet.</p></>
+                <><p className="font-semibold text-[var(--foreground)]">Payment processing</p><p className="mt-1 text-[var(--text-muted)]">We’re confirming this payment. You do not need to take action right now.</p></>
               ) : effectiveReleaseStatus === "failed" ? (
                 isNetworkPreBroadcastFailure
                   ? <><p className="font-semibold text-[var(--foreground)]">Payment wasn’t sent</p><p className="mt-1 text-[var(--text-muted)]">Your wallet could not reach Arc Testnet. Check its network, then safely try again.</p></>
@@ -1012,7 +836,7 @@ export function PayoutDetailReleaseShell({
             </div>
             {isCircleSettlementPending ? <Button onClick={() => { void handleRefreshCircleSettlement(); }}>Check payment</Button>
               : needsCircleConfirmation ? <Button onClick={() => { void handleContinueCircleRelease(); }}>Continue confirmation</Button>
-                : isBrowserReconciliationPending ? <Button onClick={focusPendingSettlementResolution}>Verify payment</Button>
+                : isBrowserReconciliationPending ? <Button onClick={() => setReleaseModalMode("pending")}>View status</Button>
                   : effectiveReleaseStatus === "failed" ? <Button onClick={() => setReleaseModalMode("failed")}>{isNetworkPreBroadcastFailure ? "Check wallet & try again" : "Review next steps"}</Button>
                     : isBrowserReleasable ? <Button onClick={() => openReleaseReview(resolvedProof?.releaseId)}>Continue payment</Button>
                       : nextReleasableMilestone ? <Button onClick={openPaymentMethod}>Pay {formatUsdc(nextReleasableMilestone.amount)} USDC</Button>
@@ -1091,25 +915,11 @@ export function PayoutDetailReleaseShell({
               </>
             ) : releaseModalMode === "pending" ? (
               <>
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">Payment status unknown</p>
-                <h2 id="release-dialog-title" className="mt-2 pr-8 text-xl font-semibold text-[var(--foreground)]">We’re checking this payment</h2>
-                <p className="mt-2 text-sm text-[var(--text-muted)]">SettleFlow did not receive a transaction hash from your wallet. Do not sign or retry again while this payment is being reconciled.</p>
-                {resolvedProof?.txHash ? <a href={`${ARC_CONFIG.explorerUrl}/tx/${resolvedProof.txHash}`} target="_blank" rel="noreferrer" className="mt-5 inline-flex text-sm font-medium text-[var(--foreground)] underline underline-offset-4">View submitted transaction</a> : null}
-                <div className="mt-5 space-y-3 rounded-2xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-4">
-                  <p className="text-sm font-medium text-[var(--foreground)]">Find my payment</p>
-                  <p className="text-xs leading-5 text-[var(--text-muted)]">SettleFlow checks for a confirmed payment from the payment wallet to this contributor, for the exact milestone amount.</p>
-                  <Button onClick={() => { void handleFindReleaseTransaction(); }} disabled={findingTransaction}>{findingTransaction ? "Checking Arc..." : "Check for payment"}</Button>
-                  {foundTransaction ? <div className="rounded-xl border border-emerald-300/30 bg-emerald-400/10 p-3 text-sm text-emerald-800 dark:text-emerald-100"><p className="font-medium">We found one matching payment.</p><a href={foundTransaction.explorerUrl} target="_blank" rel="noreferrer" className="mt-1 inline-block underline underline-offset-2">View transaction</a><div className="mt-3"><Button onClick={() => { void handleRefreshProof().then((resolved) => { if (resolved) setReleaseModalMode(null); }); }} disabled={refreshingProof}>{refreshingProof ? "Confirming payment..." : "Confirm payment"}</Button></div></div> : null}
-                </div>
-                <details className="mt-5 border-t border-[var(--border-soft)] pt-4 text-sm text-[var(--text-muted)]">
-                  <summary className="cursor-pointer font-medium text-[var(--foreground)]">Can’t find a transaction?</summary>
-                  <p className="mt-3 leading-6">Check the active wallet’s Activity on Arc Testnet for a USDC transfer with this milestone’s amount and recipient. If you are not certain which transaction is correct, leave this payment pending. Retrying is intentionally locked to prevent a duplicate payment.</p>
-                  {reconciliationCheckedEmpty ? <div className="mt-4 rounded-xl border border-amber-300/50 bg-amber-50 p-3 text-sm text-amber-950 dark:border-amber-400/20 dark:bg-amber-400/10 dark:text-amber-100"><p className="font-medium">No payment was sent?</p><p className="mt-1 text-xs leading-5">Only continue if you are certain you did not approve or sign the transfer. SettleFlow will check Arc one final time before unlocking a new attempt.</p><Button variant="secondary" className="mt-3" onClick={() => { void handleMarkPaymentUnsubmitted(); }} disabled={closingUnsubmittedPayment}>{closingUnsubmittedPayment ? "Checking Arc..." : "I did not send this payment"}</Button></div> : null}
-                  <label className="mt-4 block text-sm font-medium text-[var(--foreground)]" htmlFor="payment-transaction-hash">Enter a transaction hash manually</label>
-                  <Input id="payment-transaction-hash" value={confirmationTxHash} onChange={(event) => { setConfirmationTxHash(event.target.value); setFoundTransaction(null); }} placeholder="Paste the 0x… transaction hash from your wallet" className="mt-2.5" />
-                  <Button className="mt-3" onClick={() => { void handleRefreshProof().then((resolved) => { if (resolved) setReleaseModalMode(null); }); }} disabled={refreshingProof}>{refreshingProof ? "Verifying payment..." : "Verify transaction"}</Button>
-                </details>
-                {releaseError ? <p className="mt-3 text-sm text-rose-600">{releaseError}</p> : null}
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">Payment processing</p>
+                <h2 id="release-dialog-title" className="mt-2 pr-8 text-xl font-semibold text-[var(--foreground)]">We’re confirming your payment</h2>
+                <p className="mt-2 text-sm text-[var(--text-muted)]">Your payment is being checked safely. You do not need to sign, retry, or provide any payment details.</p>
+                <div className="mt-5 rounded-2xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-4 text-sm text-[var(--text-muted)]"><p className="font-medium text-[var(--foreground)]">What happens next</p><p className="mt-1 leading-6">This payment will update when confirmation is complete. If it needs attention, SettleFlow will show the next step.</p></div>
+                <div className="mt-6 flex justify-end"><Button variant="secondary" onClick={closeReleaseModal} className="w-full justify-center sm:w-auto">Close</Button></div>
               </>
             ) : (
               <>

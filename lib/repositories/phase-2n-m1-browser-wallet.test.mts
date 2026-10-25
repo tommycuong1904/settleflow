@@ -64,15 +64,17 @@ test("caller sourceWalletAddress is not used by browser confirmation", async () 
   assert.doesNotMatch(refreshBody, /sourceWalletAddress|connectedAddress/);
 });
 
-test("an uncertain browser submission cannot be unlocked from the payout UI", async () => {
+test("an uncertain browser submission keeps technical recovery out of the payout UI", async () => {
   const ui = await source("components/payouts/payout-detail-release-shell.tsx");
-  assert.match(ui, /Payment status unknown/);
-  assert.match(ui, /Retrying is intentionally locked to prevent a duplicate payment/);
+  assert.match(ui, /Payment processing/);
+  assert.match(ui, /You do not need to sign, retry, or provide any payment details/);
+  assert.doesNotMatch(ui, /Enter a transaction hash manually/);
+  assert.doesNotMatch(ui, /Check for payment/);
   assert.doesNotMatch(ui, /OWNER_CONFIRMED_NO_TRANSACTION/);
   assert.doesNotMatch(ui, /handleRefreshProof\("failed"/);
 });
 
-test("an unknown browser wallet result opens transaction verification immediately", async () => {
+test("an unknown browser wallet result opens a simple processing status", async () => {
   const ui = await source("components/payouts/payout-detail-release-shell.tsx");
   const branchStart = ui.indexOf("error instanceof BrowserWalletSubmissionUnknownError");
   const branchEnd = ui.indexOf("return;", branchStart);
@@ -81,7 +83,7 @@ test("an unknown browser wallet result opens transaction verification immediatel
   assert.ok(branchStart >= 0 && branchEnd > branchStart);
   assert.match(branch, /setReleaseStatus\("submitting"\)/);
   assert.match(branch, /setReleaseModalMode\("pending"\)/);
-  assert.match(branch, /retry is locked to prevent duplicate payment/);
+  assert.doesNotMatch(branch, /browser-candidates/);
 });
 
 test("verified tx.from must match the browser source snapshot", async () => {

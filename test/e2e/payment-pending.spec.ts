@@ -5,7 +5,7 @@ import { createTestPrismaClient } from "@/test/support/test-db";
 const enabled = Boolean(process.env.SETTLEFLOW_TEST_DATABASE_URL);
 test.skip(!enabled, "requires SETTLEFLOW_TEST_DATABASE_URL");
 
-test("pending wallet payment remains actionable on mobile without offering a retry", async ({ browser }) => {
+test("pending payment shows a simple status on mobile without offering a retry", async ({ browser }) => {
   const suffix = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const ownerAddress = `0x${crypto.randomUUID().replaceAll("-", "").padEnd(40, "1")}`;
   const recipientAddress = `0x${crypto.randomUUID().replaceAll("-", "").padEnd(40, "2")}`;
@@ -35,12 +35,12 @@ test("pending wallet payment remains actionable on mobile without offering a ret
     const page = await context.newPage();
     await page.goto(`/payouts/${payout.id}?workspaceId=${workspaceId}`);
 
-    await expect(page.getByText("Payment sent — verify it")).toBeVisible();
-    await expect(page.getByRole("button", { name: "Verify payment" })).toBeVisible();
+    await expect(page.getByText("Payment processing")).toBeVisible();
+    await expect(page.getByRole("button", { name: "View status" })).toBeVisible();
     await expect(page.getByRole("button", { name: /try payment again|start a new payment/i })).toHaveCount(0);
-    await page.getByRole("button", { name: "Verify payment" }).click();
-    await expect(page.getByRole("heading", { name: "We’re checking this payment" })).toBeVisible();
-    await expect(page.getByText("Do not sign or retry again while this payment is being reconciled.")).toBeVisible();
+    await page.getByRole("button", { name: "View status" }).click();
+    await expect(page.getByRole("heading", { name: "We’re confirming your payment" })).toBeVisible();
+    await expect(page.getByText("You do not need to sign, retry, or provide any payment details.")).toBeVisible();
     await expect(page.getByRole("button", { name: /try payment again|start a new payment/i })).toHaveCount(0);
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     await expect.poll(() => page.getByRole("dialog").evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
