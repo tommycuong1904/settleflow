@@ -42,6 +42,8 @@ test("pending wallet payment remains actionable on mobile without offering a ret
     await expect(page.getByRole("heading", { name: "We’re checking this payment" })).toBeVisible();
     await expect(page.getByText("Do not sign or retry again while this payment is being reconciled.")).toBeVisible();
     await expect(page.getByRole("button", { name: /try payment again|start a new payment/i })).toHaveCount(0);
+    await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    await expect.poll(() => page.getByRole("dialog").evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
     await context.close();
   } finally {
     if (workspaceId) {

@@ -35,6 +35,8 @@ test("wallet payment that was not sent offers a safe retry explanation", async (
     await page.getByRole("button", { name: "Check wallet & try again" }).click();
     await expect(page.getByRole("heading", { name: "Check your wallet, then try again" })).toBeVisible();
     await expect(page.getByText("No payment was sent.")).toBeVisible();
+    await expect(page.getByText("Switch it to Arc Testnet and check that it is connected.")).toBeVisible();
+    await expect(page.getByText("Try the payment again only after the connection is restored.")).toBeVisible();
     await expect(page.getByRole("button", { name: "Try payment again" })).toBeVisible();
     await context.close();
   } finally {
