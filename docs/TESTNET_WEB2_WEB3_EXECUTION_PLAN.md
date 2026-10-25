@@ -57,7 +57,7 @@ Verify the existing browser-wallet path is safe to exercise on Arc Testnet witho
 - Verified: `real` mode is server-gated for both readiness and release creation; a public execution-mode value alone cannot create a release or proof.
 - Verified: browser-wallet releases require an Owner Web3 session with an enabled, transaction-capable linked EOA; session, workspace, milestone approval, sequence, amount, destination, and source-wallet checks are server-side.
 - Verified: confirmation checks chain, configured USDC contract, sender, recipient, exact six-decimal transfer amount, successful receipt, and reconciles only unambiguous post-request transfers.
-- Verified: Arc transaction/reconciliation unit coverage passed (24 tests). The default fallback RPC now matches Arc's documented `https://rpc.testnet.arc.network` endpoint.
+- Verified: Arc transaction/reconciliation unit coverage passed (24 tests). The default fallback RPC matches Arc's current documented `https://rpc.testnet.arc.io` endpoint.
 - Open Testnet evidence: browser-wallet App Kit signing, wallet account/network handling, and proof persistence still require a real Arc Testnet transaction.
 - Web2 boundary: a Google session may complete workspace workflow, but the current browser-wallet payment route requires a Web3 Owner session. Improving that handoff belongs to Phase 2; it is not required for the first Testnet transaction.
 

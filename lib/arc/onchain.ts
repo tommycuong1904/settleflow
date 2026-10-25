@@ -11,7 +11,7 @@ export const arcChain = {
   },
   rpcUrls: {
     default: {
-      http: [ARC_CONFIG.rpcUrl, "https://rpc.testnet.arc.network"],
+      http: [ARC_CONFIG.rpcUrl, "https://rpc.testnet.arc.io"],
     },
   },
   blockExplorers: {
