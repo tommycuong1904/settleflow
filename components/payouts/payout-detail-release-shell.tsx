@@ -288,7 +288,9 @@ export function PayoutDetailReleaseShell({
   function openPaymentMethod() {
     setReleaseError(null);
     setResumeReleaseId(undefined);
-    setReleaseModalMode("method");
+    // In real/Testnet there is one enabled rail, so asking the user to choose
+    // it only adds a redundant modal step. Demo/mock retains the selector.
+    setReleaseModalMode(canUseSimulatedPayment ? "method" : "review");
   }
 
   function closeReleaseModal() {
