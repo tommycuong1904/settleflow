@@ -9,6 +9,8 @@ Deliver a Web2-first SettleFlow experience, then verify the advanced browser-wal
 ## Product decisions
 
 - The default account experience is Google/Web2. A wallet is optional until an Owner chooses Wallet payment.
+- A user may link one or more verified browser-wallet addresses to their profile. The profile's verified payout address is the default recipient across workspaces; a Contributor may override it for one workspace when needed. An override never changes existing or already-approved payouts.
+- An Owner's linked wallet is a signing source, while a Contributor's profile/workspace wallet is a payment destination. SettleFlow must not treat a typed address as verified ownership.
 - The active MVP roles are **Owner** and **Contributor**. `ops` and `reviewer` are legacy-compatible roles, not new product roles in this plan.
 - Web3 details are progressively disclosed at the payment boundary only.
 - Testnet uses isolated wallets, database, and configuration. Production remains out of scope.
@@ -90,11 +92,14 @@ Make the advanced Arc Testnet wallet flow clear and recoverable for an Owner.
 2. Validate review/sign modal copy and focused account/network correction actions.
 3. Present payment status as submitted, pending, confirmed, or needs review; put hash/network details behind a technical disclosure.
 4. Validate no duplicate payment is offered after pending or unknown submission.
+5. Add the Web2-to-Web3 wallet setup flow: allow a signed-in Google user to link and verify a browser wallet from Settings; use their verified profile payout address by default when they join a workspace, with an explicit workspace-level recipient override.
+6. Show the recipient-wallet state in plain language: verified profile address, workspace override, or action needed. Keep manual Owner entry as a recovery path and label it as unverified until the Contributor verifies it.
 
 ### Exit criteria
 
 - The Owner can understand exactly what will be paid and how to resolve every supported preflight failure.
 - No crypto terminology blocks earlier Web2 workflow steps.
+- A Contributor can set a verified default payout address once and safely use or override it per workspace.
 
 ## Phase 3 — Real Arc Testnet execution and reconciliation
 
