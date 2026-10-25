@@ -1,165 +1,161 @@
-# Testnet Web2/Web3 Execution Plan
+# Testnet Web2-First Payment Plan
 
 Status: active
 
 ## Objective
 
-Deliver a Web2-first SettleFlow experience, then verify the advanced browser-wallet payment rail on Arc Testnet. Payment acceptance uses real Arc Testnet transactions; simulated/mock payments are not acceptance evidence for this plan.
+Deliver one simple payment experience for Google and Web3 sign-in users: they manage work, recipient, amount, and approval; SettleFlow manages wallet infrastructure, Arc Testnet submission, and reconciliation in the background. All payment acceptance evidence in this plan is a real Arc Testnet transaction. Mock and simulated payments are not acceptance evidence.
 
 ## Product decisions
 
-- The default account experience is Google/Web2. A wallet is optional until an Owner chooses Wallet payment.
-- A user may link one or more verified browser-wallet addresses to their profile. The profile's verified payout address is the default recipient across workspaces; a Contributor may override it for one workspace when needed. An override never changes existing or already-approved payouts.
-- An Owner's linked wallet is a signing source, while a Contributor's profile/workspace wallet is a payment destination. SettleFlow must not treat a typed address as verified ownership.
-- The active MVP roles are **Owner** and **Contributor**. `ops` and `reviewer` are legacy-compatible roles, not new product roles in this plan.
-- Web3 details are progressively disclosed at the payment boundary only.
-- Testnet uses isolated wallets, database, and configuration. Production remains out of scope.
+- The default product experience is Web2-first for every user, including browser-wallet sign-in users.
+- Normal Owner UI must never require chain IDs, RPCs, wallet accounts, transaction hashes, explorers, reconciliation, or duplicate-payment recovery.
+- A payment has only user-facing states: `Ready to pay`, `Processing`, `Paid`, and `Payment needs support`.
+- `Processing` payments reconcile automatically on the server. Owners never enter hashes, self-declare failure, or decide if retry is safe.
+- Owner and Contributor remain the only active workspace roles. The server remains authoritative for membership, scope, approvals, sequencing, and payment permission.
+- A Contributor destination is a verified profile address with an explicit workspace override. An Owner-entered address is temporary internal recovery, never normal onboarding.
+- Browser-wallet execution/reconciliation remains a technical fallback until a managed rail is verified. Remove it from normal UI; do not delete it before replacement is operational.
+- The recommended payment account is a user-controlled embedded wallet. Circle user-controlled wallets are the first candidate because a partial integration exists; provider terms and Testnet configuration require approval. SettleFlow never creates or retains user private keys.
+- Testnet uses isolated credentials, wallets, database, and funding. Production is out of scope.
 
 ## Autonomous execution rule
 
-The agent completes all bounded engineering tasks in the current phase without waiting for another user message. It reports only when the phase is complete or when an external/operator action is required.
+The agent completes bounded engineering tasks in a phase without waiting for another message. Stop only for external configuration/signing/funding, explicit Testnet broadcast approval, or a material product/provider decision.
 
-The agent must stop for user action only when one of these is required:
+- One task is one flow, with nearest relevant files and targeted validation.
+- Do not expand mock UX or perform broad audits.
+- Commit completed scopes separately; push/deploy only on explicit instruction.
+- Update status docs only after implementation or Testnet evidence is verified.
 
-1. Editing Vercel/Neon/Google/OAuth/wallet-provider configuration.
-2. Supplying, funding, switching, or signing with a browser wallet.
-3. Explicit approval to enable `SETTLEFLOW_REAL_EXECUTION_AUTHORIZATION` and broadcast a real Arc Testnet transaction.
-4. A product decision that materially changes roles, payment method, or user-facing scope.
-
-Efficiency rules:
-
-- One task is one flow, nearest relevant files only, and one targeted validation.
-- No broad repository audit, mock UX expansion, or full suite unless release risk requires it.
-- Commit each finished scope separately; push/deploy only on explicit user instruction.
-- Update canonical status documentation only after verified implementation or Testnet evidence.
-
-## Phase 0 — Testnet payment readiness audit
+## Phase 0 — Baseline and safety boundary
 
 ### Goal
 
-Verify the existing browser-wallet path is safe to exercise on Arc Testnet without changing payment behavior.
+Keep the current Arc/browser-wallet implementation safe while removing it as the product-default direction.
 
 ### Tasks
 
-1. Inspect Arc config, browser-wallet adapter, release readiness/creation route, proof refresh, and reconciliation path.
-2. Reconcile code assumptions with current official Arc Testnet network, USDC, gas, and transaction-lifecycle references.
-3. Confirm Owner/Contributor authorization, workspace scope, sequential milestone protection, duplicate prevention, and fail-closed behavior.
-4. Add only missing targeted regression coverage discovered by the audit.
+1. Record current Arc endpoints, release state machine, snapshot verification, and browser-wallet recovery boundary.
+2. Preserve duplicate prevention, proof verification, workspace scope, approval sequence, and audit events.
+3. Classify browser-wallet UI as technical fallback; do not add end-user recovery branches.
+4. Add targeted regression coverage only for observed Testnet defects.
 
 ### Exit criteria
 
-- A concise list of verified invariants and blockers exists.
-- No unresolved code blocker remains for a small browser-wallet Testnet payment.
-- Vercel action list is limited to changing the deployment to `real` while the execution gate remains `disabled`.
+- Existing payment code is fail-closed and available only as fallback.
+- No normal Web2 screen presents blockchain troubleshooting.
 
-### Audit record — 2026-10-25
-
-- Verified: `real` mode is server-gated for both readiness and release creation; a public execution-mode value alone cannot create a release or proof.
-- Verified: browser-wallet releases require an Owner Web3 session with an enabled, transaction-capable linked EOA; session, workspace, milestone approval, sequence, amount, destination, and source-wallet checks are server-side.
-- Verified: confirmation checks chain, configured USDC contract, sender, recipient, exact six-decimal transfer amount, successful receipt, and reconciles only unambiguous post-request transfers.
-- Verified: Arc transaction/reconciliation unit coverage passed (24 tests). The default fallback RPC matches Arc's current documented `https://rpc.testnet.arc.io` endpoint.
-- Open Testnet evidence: browser-wallet App Kit signing, wallet account/network handling, and proof persistence still require a real Arc Testnet transaction.
-- Web2 boundary: a Google session may complete workspace workflow, but the current browser-wallet payment route requires a Web3 Owner session. Improving that handoff belongs to Phase 2; it is not required for the first Testnet transaction.
-
-## Phase 1 — Web2 workflow completion
+## Phase 1 — Unified Web2 workflow and roles
 
 ### Goal
 
-Contributor and Owner complete their work workflow without wallet vocabulary or wallet setup.
+Complete the everyday Owner/Contributor workflow without wallet terminology.
 
 ### Tasks
 
-1. Verify and correct Google-first sign-in, invitation handoff, selected-workspace navigation, and role-aware dashboard actions.
-2. Verify Contributor flow: assigned payout → submit/resubmit → review status.
-3. Verify Owner flow: contributor → payout → milestones → activate → review/approve.
-4. Keep one primary CTA for each workflow state; use business language in normal views.
+1. Verify Google invitation acceptance, selected workspace, navigation, and role-aware dashboard actions.
+2. Verify Contributor: invitation → assigned payout → submit/resubmit → review result.
+3. Verify Owner: contributor → payout → milestones → activate → review/approve.
+4. Simplify normal copy/CTAs around work status and payment readiness; hide wallet/network terminology before payment setup.
+5. Verify server authorization matches visible Owner/Contributor capabilities and workspace selection.
 
 ### Exit criteria
 
-- A Contributor can complete work submission without a wallet.
-- An Owner can reach an approved milestone without a wallet.
-- Server authorization enforces the same boundaries shown by the UI.
+- Contributor completes assigned work without a wallet.
+- Owner reaches an approved milestone with no blockchain setup.
+- Invitation membership, role, and workspace isolation are server-verified.
 
-## Phase 2 — Web3 payment UX completion
+## Phase 2 — Payment-account foundation
 
 ### Goal
 
-Make the advanced Arc Testnet wallet flow clear and recoverable for an Owner.
+Introduce a provider-backed payment account without turning normal workflow into Web3 UX.
 
 ### Tasks
 
-1. Validate payment preflight: role, workspace, approval state, milestone order, recipient, account, network, and RPC.
-2. Validate review/sign modal copy and focused account/network correction actions.
-3. Present payment status as submitted, pending, confirmed, or needs review; put hash/network details behind a technical disclosure.
-4. Validate no duplicate payment is offered after pending or unknown submission.
-5. Add the Web2-to-Web3 wallet setup flow: allow a signed-in Google user to link and verify a browser wallet from Settings; use their verified profile payout address by default when they join a workspace, with an explicit workspace-level recipient override.
-6. Show the recipient-wallet state in plain language: verified profile address, workspace override, or action needed. Keep manual Owner entry as a recovery path and label it as unverified until the Contributor verifies it.
+1. Define the payment-account abstraction: provider wallet ID, owner user, Arc address, status, and immutable payment snapshots.
+2. Add database/API authorization so only account owner and release service can use it; never expose provider credentials or keys in the browser.
+3. Implement Google-driven provisioning/recovery for the selected user-controlled embedded-wallet provider.
+4. Present only `Payment account ready` or `Finish payment account setup` in Settings; no provider/address jargon by default.
+5. Keep Contributor destination separate: verified profile default, workspace override, no mutation of approved payout snapshots.
+
+### External prerequisite
+
+The workspace owner must approve provider choice and configure Testnet credentials, callback/origin settings, funding, recovery, and fee policy. Circle user-controlled wallets are recommended pending that approval.
 
 ### Exit criteria
 
-- The Owner can understand exactly what will be paid and how to resolve every supported preflight failure.
-- No crypto terminology blocks earlier Web2 workflow steps.
-- A Contributor can set a verified default payout address once and safely use or override it per workspace.
+- Google Owner has a secure, recoverable Testnet payment account.
+- Normal UI uses payment-account language only.
+- Provider keys/signing authority stay outside browser app state.
 
-## Phase 3 — Real Arc Testnet execution and reconciliation
+## Phase 3 — Background Testnet payment execution
 
 ### Goal
 
-Complete and reconcile one bounded real Arc Testnet wallet payment.
-
-### User/operator prerequisites
-
-- Dedicated Owner and Contributor Testnet wallets.
-- A small approved Testnet USDC amount.
-- Explicit approval to temporarily enable the execution gate and sign the transaction.
+Send and reconcile a bounded real Arc Testnet payment without exposing blockchain operations to the Owner.
 
 ### Tasks
 
-1. Set `NEXT_PUBLIC_ARC_EXECUTION_MODE=real`; keep `SETTLEFLOW_REAL_EXECUTION_AUTHORIZATION=disabled` for read-only checks.
-2. Verify the approved payout reaches the review/sign step.
-3. After explicit approval, enable the gate, deploy, sign one payment, then disable the gate again.
-4. Reconcile sender, recipient, amount, transaction hash, proof, milestone, payout, activity, and reload persistence.
-5. Exercise wrong network/account and pending/failed recovery without broadcasting duplicate payments.
+1. Replace normal `Pay` with one confirmation: milestone, contributor, recipient, amount, `Confirm payment`.
+2. Create one idempotent release and request provider authorization through the embedded rail.
+3. Persist provider request identity and immutable source/destination/amount snapshots.
+4. Move payment to `Processing`; server-side provider/on-chain reconciliation runs in background.
+5. On confirmation, persist proof, milestone, payout, activity, and notifications atomically as applicable.
+6. On deterministic pre-submission failure, show `Payment needs support` or safe retry only when server knows no request reached network.
+
+### Testnet prerequisites
+
+- Dedicated funded payment account and contributor destination.
+- Small approved Testnet USDC amount.
+- Explicit approval to enable real execution and submit the bounded transaction.
 
 ### Exit criteria
 
-- One Arc Testnet transaction is confirmed and reconciled.
-- Payment state and explorer evidence agree.
-- The gate returns to `disabled`.
+- One real Arc Testnet payment is confirmed and remains `Paid` after reload.
+- Owner never enters a hash, changes network, selects an account, or decides retry safety.
+- Execution gate returns to disabled after test.
 
-## Phase 4 — Testnet hardening
+## Phase 4 — Background reconciliation and internal operations
 
 ### Goal
 
-Fix only evidence-backed failures and leave a repeatable Testnet release process.
+Make uncertain provider/on-chain outcomes safe without turning them into Owner troubleshooting.
 
 ### Tasks
 
-1. Turn each real Testnet defect into a narrow regression test.
-2. Fix payment/reconciliation/authorization defects in isolated commits.
-3. Update `CURRENT_STATE.md`, `FEATURE_MATRIX.md`, workflow, authorization, and operations docs with verified evidence.
+1. Add bounded server reconciliation scheduling for `Processing` using provider status and exact on-chain verification.
+2. Apply deterministic outcomes: confirmed → `Paid`; verified pre-broadcast cancellation → safely retryable; other uncertainty → `Payment needs support`, retry locked.
+3. Create minimal Owner status and internal/admin diagnostics with request IDs, hashes, explorer links, and safe resolution controls.
+4. Require internal resolutions to re-run server verification and write immutable audit events.
+5. Add targeted tests for duplicate prevention, stale attempts, workspace scope, authorization, and observed Testnet defects.
 
 ### Exit criteria
 
-- Repeated Testnet payments do not create duplicate releases/proofs.
-- Recovery behavior is documented and verified.
-- Production planning can begin separately.
+- Normal users see simple payment status only.
+- Technical intervention is internal-only.
+- No uncertain payment can create a duplicate release.
 
-## Next planned capability — Embedded-wallet hybrid
-
-This work begins only after Phase 3 has one reconciled Arc Testnet payment. It is deliberately sequenced after the first transaction so a wallet-provider integration cannot delay validation of the existing non-custodial browser-wallet rail.
+## Phase 5 — Optional advanced integrations
 
 ### Goal
 
-Give a Google-first user an optional embedded, non-custodial wallet while retaining support for self-custodied browser wallets.
+Decide if self-custodied browser-wallet payment is needed after the default rail has Testnet evidence.
 
-### Product model
+### Tasks
 
-1. A selected embedded-wallet provider creates and recovers the default wallet through the user's Google/passkey identity; SettleFlow must not generate or retain private keys itself.
-2. The user may connect additional self-custodied wallets and select a default source or payout address.
-3. The profile's verified payout address remains the default across workspaces; an explicit workspace override remains available without changing existing or approved payouts.
-4. The current Owner-entered Contributor address remains the Testnet fallback until the Contributor has verified a profile or workspace destination.
+1. Measure whether advanced self-custody is required by real users.
+2. If retained, place it behind explicit `Advanced payment options`, outside normal onboarding/daily payment UI.
+3. Reuse snapshot verification/reconciliation safeguards; never reintroduce manual hash/retry troubleshooting to normal screens.
+4. If not required, deprecate only the exposed browser-wallet payment UI after embedded rail verification.
 
-### Required design gate
+### Exit criteria
 
-Select the provider and approve recovery, custody, export, transaction-authorization, fee, privacy, and support responsibilities before implementation. Circle Smart Wallet is not assumed to be the selected provider.
+- Browser-wallet support is bounded advanced integration or safely removed from customer-facing product.
+
+## Non-goals
+
+- Mock/simulated payment as acceptance evidence.
+- Custody of user private keys by SettleFlow.
+- RPC, chain, hash, explorer, wallet-account switching, or reconciliation decisions in normal Owner/Contributor UX.
+- Production rollout, escrow, multi-chain, multisig, or KYC/KYB work.
