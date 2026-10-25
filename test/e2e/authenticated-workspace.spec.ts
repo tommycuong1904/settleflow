@@ -96,7 +96,11 @@ test("owner and contributor payout views are scoped to their workspace", async (
     await expect(contributorPage.getByRole("button", { name: "Submit work for review" })).toHaveCount(1);
     await contributorPage.goto(`/dashboard?workspaceId=${workspaceId}`);
     await expect(contributorPage.getByRole("heading", { name: "Submit Browser milestone" })).toBeVisible();
-    await expect(contributorPage.getByRole("link", { name: "Submit work" })).toHaveCount(1);
+    const submitWorkLink = contributorPage.getByRole("link", { name: "Submit work" });
+    await expect(submitWorkLink).toHaveAttribute("href", `/payouts/${payout.id}?workspaceId=${workspaceId}`);
+    await submitWorkLink.click();
+    await expect(contributorPage).toHaveURL(new RegExp(`/payouts/${payout.id}\\?workspaceId=${workspaceId}`));
+    await expect(contributorPage.getByRole("button", { name: "Submit work for review" })).toBeVisible();
     await contributorPage.goto(`/payouts/${payout.id}?workspaceId=${workspaceId}`);
     await contributorPage.setViewportSize({ width: 390, height: 844 });
     await contributorPage.getByRole("button", { name: "Submit work for review" }).click();

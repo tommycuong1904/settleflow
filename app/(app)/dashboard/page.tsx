@@ -54,6 +54,9 @@ export default async function DashboardPage() {
     paymentAttempts = dashboardData.paymentAttempts;
   }
   const isOwner = contextResult.kind === "authenticated" && contextResult.productContext.actor === "owner";
+  const activeWorkspaceId = contextResult.kind === "authenticated"
+    ? contextResult.productContext.workspaceId
+    : "";
   const hasContributors = contributors.length > 0;
   const hasPayouts = payouts.length > 0;
   const isOwnerSetup = isOwner && (!hasContributors || !hasPayouts);
@@ -116,7 +119,7 @@ export default async function DashboardPage() {
     }] : []),
     ...contributorWorkMilestones.map((milestone) => ({
       id: `submit-${milestone.id}`,
-      href: `/payouts/${milestone.payoutId}`,
+      href: `/payouts/${milestone.payoutId}?workspaceId=${encodeURIComponent(activeWorkspaceId)}`,
       title: milestone.status === "rejected" ? `Update ${milestone.title}` : `Submit ${milestone.title}`,
       description: milestone.status === "rejected"
         ? "The workspace owner requested changes. Update the work, then submit it again."
