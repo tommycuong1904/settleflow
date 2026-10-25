@@ -182,6 +182,7 @@ export function PayoutDetailReleaseShell({
   const [resumeReleaseId, setResumeReleaseId] = useState<string | undefined>();
   const [recordingSimulatedPayment, setRecordingSimulatedPayment] = useState(false);
   const [processingRelease, setProcessingRelease] = useState(false);
+  const [linkedWallets, setLinkedWallets] = useState<string[]>([]);
   const handledReviewRequest = useRef(0);
   const releaseDialogRef = useRef<HTMLDivElement>(null);
   useScrollLock(releaseModalMode !== null);
@@ -284,6 +285,22 @@ export function PayoutDetailReleaseShell({
   }, [releaseModalMode]);
 
   const canUseSimulatedPayment = ARC_CONFIG.executionMode === "demo" || ARC_CONFIG.executionMode === "mock";
+  const linkedPaymentWallet = authType === "web2_google" && linkedWallets.length === 1 ? linkedWallets[0] : null;
+
+  useEffect(() => {
+    if (releaseModalMode !== "review" || authType !== "web2_google") return;
+    let active = true;
+    void fetch("/api/v1/auth/wallet/link", { cache: "no-store" })
+      .then(async (response) => response.ok ? await response.json() as { wallets?: Array<{ address?: string; kind?: string; transactionEnabled?: boolean }> } : null)
+      .then((payload) => {
+        if (!active) return;
+        setLinkedWallets((payload?.wallets ?? [])
+          .filter((wallet) => wallet.kind === "web3_eoa" && wallet.transactionEnabled && typeof wallet.address === "string")
+          .map((wallet) => wallet.address!));
+      })
+      .catch(() => { if (active) setLinkedWallets([]); });
+    return () => { active = false; };
+  }, [authType, releaseModalMode]);
 
   function openPaymentMethod() {
     setReleaseError(null);
@@ -1028,17 +1045,17 @@ export function PayoutDetailReleaseShell({
               </>
             ) : releaseModalMode === "review" ? (
               <>
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">{resumeReleaseId ? "Continue existing payment" : "Review payment"}</p>
-                <h2 id="release-dialog-title" className="mt-2 pr-8 text-xl font-semibold text-[var(--foreground)]">{resumeReleaseId ? "Ready for wallet signature" : "Confirm before signing"}</h2>
-                <p className="mt-2 text-sm text-[var(--text-muted)]">{resumeReleaseId ? "This continues the existing payment. SettleFlow will not create another one." : authType === "web2_google" ? "SettleFlow will ask you to connect the browser wallet linked in Settings, then you will sign the USDC transfer there." : "SettleFlow will verify your active wallet before starting the payment. You will then sign the USDC transfer in your browser wallet."}</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">{resumeReleaseId ? "Continue payment" : "Review payment"}</p>
+                <h2 id="release-dialog-title" className="mt-2 pr-8 text-xl font-semibold text-[var(--foreground)]">{resumeReleaseId ? "Ready to sign" : "Review this payment"}</h2>
+                <p className="mt-2 text-sm text-[var(--text-muted)]">{resumeReleaseId ? "This continues the existing payment. SettleFlow will not create another one." : authType === "web2_google" ? "Arc Testnet · Connect the browser wallet linked to your account, then review and sign the transfer." : "Arc Testnet · Review and sign this transfer in your browser wallet."}</p>
                 <dl className="mt-5 space-y-3 rounded-2xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-4 text-sm">
-                  <div><dt className="text-xs text-[var(--text-muted)]">Milestone</dt><dd className="mt-1 font-medium text-[var(--foreground)]">{nextReleasableMilestone.title}</dd></div>
-                  <div><dt className="text-xs text-[var(--text-muted)]">Amount</dt><dd className="mt-1 text-lg font-semibold text-[var(--foreground)]">{formatUsdc(nextReleasableMilestone.amount)} USDC</dd></div>
-                  <div><dt className="text-xs text-[var(--text-muted)]">Recipient</dt><dd className="mt-1 break-all font-mono text-xs text-[var(--foreground)]">{recipientAddress ?? "Not resolved"}</dd></div>
-                  <div><dt className="text-xs text-[var(--text-muted)]">Payment wallet</dt><dd className="mt-1 break-all font-mono text-xs text-[var(--foreground)]">{address ?? (authType === "web2_google" ? "Connect the wallet linked in Settings to continue" : "Connect a browser wallet to continue")}</dd></div>
+                  <div><dt className="text-xs text-[var(--text-muted)]">You’re paying</dt><dd className="mt-1 text-lg font-semibold text-[var(--foreground)]">{formatUsdc(nextReleasableMilestone.amount)} USDC</dd></div>
+                  <div><dt className="text-xs text-[var(--text-muted)]">For milestone</dt><dd className="mt-1 font-medium text-[var(--foreground)]">{nextReleasableMilestone.title}</dd></div>
+                  <div><dt className="text-xs text-[var(--text-muted)]">Recipient</dt><dd className="mt-1 font-medium text-[var(--foreground)]">{recipientName ?? "Contributor"}</dd><dd className="mt-1 break-all font-mono text-xs text-[var(--text-muted)]">{recipientAddress ?? "Not resolved"}</dd></div>
+                  <div><dt className="text-xs text-[var(--text-muted)]">Payment wallet</dt><dd className="mt-1 break-all font-mono text-xs text-[var(--foreground)]">{address ?? linkedPaymentWallet ?? (authType === "web2_google" ? "Connect the linked wallet to continue" : "Connect a browser wallet to continue")}</dd>{linkedPaymentWallet ? <dd className="mt-1 text-[11px] text-emerald-700">Linked to your account</dd> : null}</div>
                 </dl>
-                <p className="mt-4 text-xs text-[var(--text-muted)]">If your connected wallet has a different active account, SettleFlow will stop before starting the payment and show you which account to switch.</p>
-                <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"><Button variant="secondary" onClick={closeReleaseModal} disabled={processingRelease} className="w-full justify-center sm:w-auto">Cancel</Button><Button onClick={() => { void handleRelease(resumeReleaseId); }} disabled={processingRelease} className="w-full justify-center sm:w-auto">{processingRelease ? "Preparing wallet..." : resumeReleaseId ? "Verify wallet & continue" : "Verify wallet & sign"}</Button></div>
+                <p className="mt-4 text-xs text-[var(--text-muted)]">Check the recipient and amount carefully. A signed blockchain payment cannot be reversed.</p>
+                <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"><Button variant="secondary" onClick={closeReleaseModal} disabled={processingRelease} className="w-full justify-center sm:w-auto">Cancel</Button><Button onClick={() => { void handleRelease(resumeReleaseId); }} disabled={processingRelease} className="w-full justify-center sm:w-auto">{processingRelease ? "Preparing wallet..." : resumeReleaseId ? "Verify wallet & continue" : authType === "web2_google" ? "Connect wallet & sign" : `Sign ${formatUsdc(nextReleasableMilestone.amount)} USDC`}</Button></div>
               </>
             ) : releaseModalMode === "pending" ? (
               <>
