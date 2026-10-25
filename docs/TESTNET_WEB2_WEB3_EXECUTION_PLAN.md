@@ -45,6 +45,14 @@ Keep the current Arc/browser-wallet implementation safe while removing it as the
 - Existing payment code is fail-closed and available only as fallback.
 - No normal Web2 screen presents blockchain troubleshooting.
 
+### Verification record — 2026-10-25
+
+- Arc Testnet fallback configuration uses `https://rpc.testnet.arc.io` and `https://explorer.testnet.arc.io`.
+- Browser release confirmation verifies the snapshotted source, destination, exact USDC amount, chain, receipt, and workspace-scoped release state before confirmation.
+- Pending browser-wallet payment UI now presents only `Payment processing` and `View status`; it exposes no transaction hash input, explorer link, chain check, retry decision, or self-declared failure path.
+- Technical reconciliation/closure routes remain guarded server-side and are not linked from the normal payout or dashboard UI.
+- Targeted browser-wallet source test and lint passed; production build completed without errors.
+
 ## Phase 1 — Unified Web2 workflow and roles
 
 ### Goal
