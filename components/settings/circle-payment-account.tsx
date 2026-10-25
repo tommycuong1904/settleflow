@@ -22,7 +22,9 @@ function setCookie(name: string, value: string) {
   document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=${COOKIE_DAYS * 86400}; samesite=lax`;
 }
 function readCookie(name: string) {
-  return document.cookie.split("; ").find((part) => part.startsWith(`${name}=`))?.slice(name.length + 1);
+  const value = document.cookie.split("; ").find((part) => part.startsWith(`${name}=`))?.slice(name.length + 1);
+  if (!value) return undefined;
+  try { return decodeURIComponent(value); } catch { return undefined; }
 }
 
 export function CirclePaymentAccount({ onReady }: { onReady?: () => void }) {
