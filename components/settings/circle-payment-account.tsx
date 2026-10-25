@@ -27,6 +27,8 @@ function readCookie(name: string) {
   try { return decodeURIComponent(value); } catch { return undefined; }
 }
 
+const pause = (milliseconds: number) => new Promise((resolve) => window.setTimeout(resolve, milliseconds));
+
 export function CirclePaymentAccount({ onReady }: { onReady?: () => void }) {
   const sdkRef = useRef<CircleSdk | null>(null);
   const appId = process.env.NEXT_PUBLIC_CIRCLE_USER_CONTROLLED_APP_ID;
@@ -49,11 +51,20 @@ export function CirclePaymentAccount({ onReady }: { onReady?: () => void }) {
     if (!init.challenge?.id) throw new Error("Circle did not return a wallet setup request.");
     sdk.setAuthentication(login);
     await new Promise<void>((resolve, reject) => sdk.execute(init.challenge!.id, (error) => error ? reject(new Error(error.message || "Wallet setup was not completed.")) : resolve()));
-    const completed = await fetch("/api/v1/circle/wallet/complete", {
-      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userToken: login.userToken }),
-    });
-    const complete = await completed.json().catch(() => ({})) as { error?: string };
-    if (!completed.ok) throw new Error(complete.error || "Unable to finish wallet setup.");
+    let completionError = "Unable to finish wallet setup.";
+    let completed = false;
+    for (let attempt = 0; attempt < 12; attempt += 1) {
+      setMessage("Finalizing your payment account…");
+      const response = await fetch("/api/v1/circle/wallet/complete", {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userToken: login.userToken }),
+      });
+      const complete = await response.json().catch(() => ({})) as { error?: string };
+      if (response.ok) { completed = true; break; }
+      completionError = complete.error || completionError;
+      if (response.status !== 409 || completionError !== "CIRCLE_WALLET_CHALLENGE_NOT_COMPLETE") break;
+      await pause(1000);
+    }
+    if (!completed) throw new Error(completionError);
     setStatus("ready"); setMessage("Payment account is ready."); onReady?.();
   }
 
