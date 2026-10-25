@@ -46,7 +46,7 @@ export function CirclePaymentAccount({ onReady }: { onReady?: () => void }) {
     const init = await initialized.json().catch(() => ({})) as { error?: string; wallet?: unknown; challenge?: { id: string } };
     if (!initialized.ok) throw new Error(init.error || "Unable to create the payment account.");
     if (init.wallet) {
-      setStatus("ready"); setMessage("Payment account is ready."); onReady?.(); return;
+      setStatus("ready"); setMessage(""); onReady?.(); return;
     }
     if (!init.challenge?.id) throw new Error("Circle did not return a wallet setup request.");
     sdk.setAuthentication(login);
@@ -65,7 +65,7 @@ export function CirclePaymentAccount({ onReady }: { onReady?: () => void }) {
       await pause(1000);
     }
     if (!completed) throw new Error(completionError);
-    setStatus("ready"); setMessage("Payment account is ready."); onReady?.();
+    setStatus("ready"); setMessage(""); onReady?.();
   }
 
   useEffect(() => {
