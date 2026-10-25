@@ -118,6 +118,15 @@ The workspace owner must select a provider with documented Arc Testnet support, 
 - Circle’s current public documentation describes generic developer-controlled EVM wallets, but its published supported chains/currencies do not list Arc or Arc Testnet.
 - No current official evidence was found that Circle user-controlled wallets can create and fund an Arc Testnet payment account.
 - The existing Circle code path remains product-gated and must not be enabled based on this partial implementation alone.
+- Dynamic is the current leading candidate: its official documentation supports
+  custom EVM networks and embedded wallets for social-login users. It still
+  requires a dedicated sandbox environment, explicit Arc Testnet network
+  configuration, and a verification of its current wallet/signing tier before
+  integration. Its TSS-MPC offering is documented as beta, so it is suitable
+  only for bounded Testnet validation at this stage.
+- Do not install a provider SDK or alter the protected Google GIS flow until
+  the workspace owner supplies the selected provider's Testnet environment
+  identifier and confirms its recovery, fee, and user-signature policy.
 
 ## Phase 3 — Background Testnet payment execution
 
