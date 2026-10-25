@@ -20,7 +20,8 @@ All values below are placeholders. They MUST be filled in and verified by an aut
 |---|---|
 | Environment | STAGING |
 | Network | `<approved Arc testnet>` |
-| Source wallet | `<dedicated staging wallet>` |
+| Execution path | `browser_wallet` (the only enabled new-release path) |
+| Source wallet | `<dedicated staging Web3 owner EOA>` |
 | Recipient | `<approved staging recipient>` |
 | Token | `<approved USDC token>` |
 | Amount | `<approved small test amount>` |
@@ -36,19 +37,21 @@ Real execution requires BOTH conditions, verified immediately before execution:
 1. `execution mode = real`
 2. `SETTLEFLOW_REAL_EXECUTION_AUTHORIZATION = enabled`
 
-Both are server-side environment variables. If either is absent or not equal to the required value, real execution MUST NOT proceed. No client-side value can satisfy these checks. The dual gate is enforced in `lib/arc/send.ts` and cannot be bypassed by any browser-controlled variable.
+`NEXT_PUBLIC_ARC_EXECUTION_MODE` is browser-visible and selects the intended Arc mode; it is **not** an authorization control. The server independently reads that mode and requires the server-only authorization variable before it creates a browser-wallet release. If the authorization variable is absent or not equal to the required value, real execution MUST NOT proceed and no release/proof record is created. This gate is enforced in `app/api/v1/milestones/[id]/release/route.ts`; the equivalent server-executor guard remains in `lib/arc/send.ts`.
 
 ## Mandatory safety requirements
 
 Every MUST-HAVE item below must be verified before any execution decision. Refer to `STAGING_ENVIRONMENT_SPEC.md` for target configuration, `STAGING_PROVISIONING_CHECKLIST.md` for provisioning evidence, and `ARC_STAGING_SAFETY_RUNBOOK.md` for execution and post-transaction procedure.
 
-- [ ] Dedicated staging signing key (`ARC_SERVER_PRIVATE_KEY`) — generated for staging only, no real funds
-- [ ] Production signing key MUST NOT be used in staging
+- [ ] Dedicated staging Web3 Owner EOA — used only for this browser-wallet test, with no real funds
+- [ ] Source EOA is linked to the Owner's verified Web3 session and marked transaction-enabled
+- [ ] Browser wallet's active account matches the linked Owner EOA immediately before signing
+- [ ] No production EOA or signing key is used in staging
 - [ ] Isolated staging database — separate PostgreSQL instance, independent `DATABASE_URL`
 - [ ] Staging-only authentication secret (`SETTLEFLOW_AUTH_SECRET`) — unique to staging
 - [ ] Staging-only webhook destination — isolated from production destinations
 - [ ] Migration verification — `prisma migrate deploy` against staging DB, all required migrations present (release/proof tables, `Release_one_active_per_milestone` partial unique index)
-- [ ] Source wallet identity verification — derived address matches the expected staging wallet
+- [ ] Source wallet identity verification — verified Owner EOA matches the expected staging wallet
 - [ ] Recipient verification — recipient address matches the approved staging test recipient
 - [ ] Amount verification — transaction amount matches the approved small test amount
 - [ ] Network/token verification — chain ID, RPC, explorer, and USDC token contract match approved sources
@@ -56,6 +59,8 @@ Every MUST-HAVE item below must be verified before any execution decision. Refer
 - [ ] Release/proof record inspection — `GET /api/v1/releases/[id]` and direct DB reads confirm queued/pending state before execution
 - [ ] Post-transaction explorer verification — read-only receipt check on approved explorer
 - [ ] Database verification — release and proof rows preserved with correct final state
+- [ ] Named operator, approver, and incident owner are available for the entire test window
+- [ ] Execution window and one-transaction limit are recorded before the gate is enabled
 
 ## Failure handling
 
@@ -81,20 +86,42 @@ When outcome is ambiguous, the reconciliation runbook (`RELEASE_RECONCILIATION_R
 
 Every MUST-HAVE item from the mandatory safety requirements above must pass before authorization.
 
-- [ ] 1. Dedicated staging signing key
-- [ ] 2. Production key not used
-- [ ] 3. Isolated staging database
-- [ ] 4. Staging-only authentication secret
-- [ ] 5. Staging-only webhook destination
-- [ ] 6. Migration verification
-- [ ] 7. Source wallet identity verification
-- [ ] 8. Recipient verification
-- [ ] 9. Amount verification
-- [ ] 10. Network/token verification
-- [ ] 11. Funding/fee limit verification
-- [ ] 12. Release/proof record inspection
-- [ ] 13. Post-transaction explorer verification
-- [ ] 14. Database verification
+- [ ] 1. Dedicated staging Web3 Owner EOA
+- [ ] 2. Session-linked, transaction-enabled source EOA
+- [ ] 3. Active browser-wallet account matches source EOA
+- [ ] 4. Production key/EOA not used
+- [ ] 5. Isolated staging database
+- [ ] 6. Staging-only authentication secret
+- [ ] 7. Staging-only webhook destination
+- [ ] 8. Migration verification
+- [ ] 9. Recipient verification
+- [ ] 10. Amount verification
+- [ ] 11. Network/token verification
+- [ ] 12. Funding/fee limit verification
+- [ ] 13. Release/proof record inspection
+- [ ] 14. Post-transaction explorer verification
+- [ ] 15. Database verification
+- [ ] 16. Operator, approver, and incident owner available
+- [ ] 17. Bounded time window and one-transaction limit recorded
+
+## Execution record (complete before enabling the server gate)
+
+Do not put private keys, session tokens, or secrets in this document. Record only identifiers and evidence references.
+
+| Field | Required value |
+|---|---|
+| Date/time window (UTC) | `<start – end>` |
+| Authorized operator | `<name or role>` |
+| Approver | `<name or role>` |
+| Incident owner | `<name or role>` |
+| Payout / milestone ID | `<UUID>` |
+| Source EOA | `<checksum address>` |
+| Recipient EOA | `<checksum address>` |
+| USDC amount and maximum | `<amount>` |
+| Approved RPC / explorer | `<URLs>` |
+| Approval evidence | `<ticket, signed note, or change record>` |
+
+After the single signature attempt, immediately return `SETTLEFLOW_REAL_EXECUTION_AUTHORIZATION` to its disabled state. If a transaction hash is absent or its outcome is unknown, keep the gate disabled and follow `RELEASE_RECONCILIATION_RUNBOOK.md`; do not attempt another payment.
 
 ## Authorization statement
 

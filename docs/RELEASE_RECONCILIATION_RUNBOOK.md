@@ -16,3 +16,39 @@ When transaction outcome is ambiguous, DO NOT SEND ANOTHER TRANSACTION.
 8. Webhook failure: settlement state remains authoritative; record and replay only through an approved notification procedure.
 
 There is no automated reconciliation worker currently. Release Operator owns first response; Incident Owner owns escalation; Application Owner owns state corrections.
+
+## Browser-wallet UX verification
+
+This is a testnet-only checklist. It does not authorize a transaction and must
+not be used to enable a server-side real-execution gate. The browser-visible
+`real` mode selects a flow; server authorization remains a separate safety
+control.
+
+### Safe pre-authorization check
+
+With real execution still disabled, an Owner can open **Wallet payment** and
+select **Verify wallet & sign**. The expected result is:
+
+- SettleFlow explains that payments are not enabled in this environment.
+- No wallet signature prompt appears.
+- No `Release` or `TransactionProof` row is created.
+- The UI offers no retry or new-payment action.
+
+This check is safe to repeat because it is read-only and fail-closed.
+
+### Authorized bounded-test checks
+
+Only run the following checks after every requirement in
+`STAGING_BOUNDED_TRANSACTION_GATE.md` has been verified and an authorized
+operator has approved exactly one bounded staging transaction. Use a dedicated
+staging EOA and a small approved test amount.
+
+| Scenario | Expected user-visible result | Required safety outcome |
+| --- | --- | --- |
+| Active wallet account differs from the authenticated Owner EOA | SettleFlow stops before signing and identifies that the account must be switched. | No transaction is submitted; inspect the release/proof records before any retry. |
+| Wallet signature is cancelled before broadcast | **Payment wasn’t sent** explains that a new attempt may be started after the user is ready. | The failed pre-broadcast attempt is recorded; retry eligibility remains server-controlled. |
+| Wallet/network is unavailable before broadcast | **Check your wallet, then try again** explains that no payment was sent. | Confirm Arc Testnet/network status before retrying. |
+| Wallet result is unknown or a hash is absent | **We’re checking this payment** opens automatically. | Do not sign or retry; reconcile the existing payment using the read-only workflow above. |
+
+If any result differs, stop the test, leave real execution disabled, preserve
+the release/proof records, and follow the core reconciliation procedures.

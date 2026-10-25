@@ -10,7 +10,8 @@
     "lint": "eslint",
     "test": "node --import tsx --test $(find lib -name '*.test.mts' -print)",
     "test:integration:db": "NODE_ENV=test node --import tsx --test $(find test/integration -name '*.test.mts' -print)",
-    "test:e2e": "NEXT_PUBLIC_ARC_EXECUTION_MODE=demo npm run build && NODE_ENV=test NEXT_PUBLIC_ARC_EXECUTION_MODE=demo playwright test"
+    "test:e2e": "NEXT_PUBLIC_ARC_EXECUTION_MODE=demo npm run build && NODE_ENV=test NEXT_PUBLIC_ARC_EXECUTION_MODE=demo playwright test",
+    "verify:staging-readiness": "node --import tsx tools/verify-staging-readiness.mts"
   },
   "dependencies": {
     "@circle-fin/adapter-viem-v2": "^1.15.0",

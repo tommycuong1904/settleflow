@@ -11,7 +11,7 @@ This index defines the minimum controls for a controlled staging path. Runtime c
 - **Live Product verified**: `https://settleflow-dev.vercel.app` is live and passing all operational verification checks across all 6 core surfaces.
 - Implemented and verified in code & live DB: authentication, workspace authorization, persistence, release/proof states, retry, and mode-aware Arc execution.
 - **Real Arc execution status**: Strictly fail-closed (`isServerRealExecutionAuthorized()` = `false`), zero real onchain transactions sent, zero real funds moved.
-- Required before real Arc live execution: HSM secret custody for `ARC_SERVER_PRIVATE_KEY`, bounded transaction limits, automated reconciliation daemon, and explicit multi-stakeholder authorization.
+- Required before real Arc live execution: custody controls for the approved execution path, bounded transaction limits, automated reconciliation daemon, and explicit multi-stakeholder authorization. The active browser-wallet path uses a dedicated session-linked staging EOA; `ARC_SERVER_PRIVATE_KEY` applies only to the separate server-executor/Circle path.
 
 REAL ARC TRANSACTIONS REMAIN STRICTLY FAIL-CLOSED AND NOT AUTHORIZED UNTIL SAFETY GATES ARE EXPLICITLY SATISFIED.
 
@@ -23,7 +23,7 @@ Development, test, staging, and production MUST use separate application configu
 |---|---|---|---|---|---|---|---|
 | Development | local Next.js | development DB | development-only | `demo` default | Arc testnet defaults | none | local/test destination |
 | Test | test runner | local `*_test` DB | test-only | non-executing | must not be contacted | none | mocked only |
-| Staging | separate deployment | independently provisioned staging DB | unique staging secret | `demo` until Gate 3 | approved testnet endpoint | dedicated staging key | staging-only destination |
+| Staging | separate deployment | independently provisioned staging DB | unique staging secret | `mock` until Gate 3 | approved testnet endpoint | dedicated staging Web3 Owner EOA; no server key for browser-wallet path | staging-only destination |
 | Production | separate deployment | independently provisioned production DB | unique production secret | explicit approval only | approved endpoint | production custody | production-only destination |
 
 Actual external values and provisioning are **NOT YET APPROVED** and must be supplied by infrastructure operators.

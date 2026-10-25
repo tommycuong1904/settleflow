@@ -10,16 +10,16 @@ Vercel invokes `prisma migrate deploy && prisma generate && npm run build`. Migr
 - `DATABASE_URL`: PostgreSQL connection string. Must point to an independently provisioned Preview/Staging database instance.
 - `SETTLEFLOW_AUTH_SECRET`: High-entropy secret string (min 32 bytes) used for signing and verifying HMAC-SHA256 session cookies (`sf_session`). Fails closed in production if missing.
 
-### Optional Arc Protocol Variables (Safe Defaults Built-in)
-- `NEXT_PUBLIC_ARC_EXECUTION_MODE`: `mock` | `demo` | `real` (default: `demo`). *Must remain `demo` or `mock` for staging verification.*
+### Arc Protocol Variables (Staging-safe configuration)
+- `NEXT_PUBLIC_ARC_EXECUTION_MODE`: `mock` | `demo` | `real` (default: `demo`). *Must be explicitly set to `mock` during staging provisioning and non-payment verification.*
 - `NEXT_PUBLIC_ARC_CHAIN_ID`: Arc Testnet Chain ID (default: `5042002`).
 - `NEXT_PUBLIC_ARC_RPC_URL`: Arc Testnet RPC endpoint (default: `https://rpc.testnet.arc.io`).
 - `NEXT_PUBLIC_ARC_EXPLORER_URL`: Block explorer URL (default: `https://explorer.testnet.arc.io`).
 - `NEXT_PUBLIC_USDC_ADDRESS`: Native/Bridged USDC contract address on Arc Testnet (default: `0x3600000000000000000000000000000000000000`).
 
 ### Safety & Execution Authorization Gates
-- `SETTLEFLOW_REAL_EXECUTION_AUTHORIZATION`: Must remain `disabled` or omitted on Staging. Real onchain fund movement is strictly locked unless explicitly authorized.
-- `ARC_SERVER_PRIVATE_KEY`: Omitted by default. Never configure with real/mainnet private keys.
+- `SETTLEFLOW_REAL_EXECUTION_AUTHORIZATION`: Must be explicitly `disabled` during staging provisioning. Real onchain fund movement remains locked until the bounded transaction gate and separate written authorization are complete.
+- `ARC_SERVER_PRIVATE_KEY`: Omit for the active browser-wallet release path. It is relevant only to a separately authorized server-executor/Circle test and must never contain a production/mainnet key.
 
 ### Authentication & Integration (Optional)
 - `NEXT_PUBLIC_GOOGLE_CLIENT_ID`: Google OAuth Web Client ID for Google Smart Account login rail.
@@ -39,7 +39,7 @@ Deploy through the approved platform workflow. `prisma migrate deploy` is the on
 
 ## Verification
 
-Check deployment logs for migration/build success, application health, authenticated read paths, representative non-payment workflow, and absence of secret values in logs. Verify database migration status using approved read-only checks.
+Check deployment logs for migration/build success, application health, authenticated read paths, representative non-payment workflow, and absence of secret values in logs. Run `npm run verify:staging-readiness` with the staging environment injected; it validates the disabled staging posture without connecting to external services. Verify database migration status using approved read-only checks.
 
 ## Failure and recovery
 

@@ -79,7 +79,15 @@ the active Owner/Contributor MVP.
 ### Enforcement
 The release route derives the source `UserWallet` from the signed session and
 snapshots its ID and address before queueing. Browser proof verification rejects
-a transaction whose `from` differs from that snapshot.
+a transaction whose `from` differs from that snapshot. When the public Arc mode
+is `real`, the route also requires the server-side real-execution authorization
+gate before creating any release or proof record; the public mode alone cannot
+authorize a payment.
+
+The browser client first calls the authenticated, read-only release-readiness
+endpoint. This allows an unauthorized real environment to stop before opening
+or connecting a browser wallet. The readiness endpoint cannot create, claim, or
+modify a release or proof.
 
 ### Evidence
 `app/api/v1/milestones/[id]/release/route.ts`,

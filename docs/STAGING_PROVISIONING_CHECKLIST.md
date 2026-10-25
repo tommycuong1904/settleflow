@@ -4,6 +4,14 @@
 
 This checklist covers everything needed before staging is considered ready. Real execution is NOT authorized at any point in this checklist.
 
+Before marking any configuration item complete, run the non-mutating static preflight in the staging environment:
+
+```bash
+npm run verify:staging-readiness
+```
+
+It checks only variable presence/format and the disabled safety posture. It never prints secret values, connects to a service, enables a gate, or authorizes a transaction.
+
 ---
 
 ## Infrastructure
@@ -35,14 +43,15 @@ This checklist covers everything needed before staging is considered ready. Real
 - [ ] **Unique SETTLEFLOW_AUTH_SECRET generated**
   - 64+ character hex string
   - Stored in Vercel Preview environment (server-only)
-- [ ] **Dedicated Arc Testnet ARC_SERVER_PRIVATE_KEY generated**
-  - New EOA for staging only — no real funds
-  - Stored in Vercel Preview environment (server-only)
-- [ ] **Staging wallet address independently verified**
-  - Derive address from private key
-  - Confirm on Arc Testnet explorer
-- [ ] **Production signing key never reused**
-  - Staging `ARC_SERVER_PRIVATE_KEY` is unique to staging
+- [ ] **Dedicated Arc Testnet Web3 Owner EOA prepared**
+  - New EOA for browser-wallet staging only — no real funds
+  - Linked through the Web3 sign-in flow and marked transaction-enabled
+- [ ] **`ARC_SERVER_PRIVATE_KEY` omitted unless a separate server-executor/Circle test is explicitly authorized**
+  - The active browser-wallet release path does not require a server key
+- [ ] **Staging source EOA independently verified**
+  - Confirm its address in the Web3 Owner session, active browser wallet, and Arc Testnet explorer
+- [ ] **Production signing key or EOA never reused**
+  - Browser-wallet staging source EOA is unique to staging
 - [ ] **Production database never referenced**
   - Staging `DATABASE_URL` points to staging PostgreSQL only
 - [ ] **SETTLEFLOW_REAL_EXECUTION_AUTHORIZATION remains disabled**

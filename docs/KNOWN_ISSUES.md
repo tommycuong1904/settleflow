@@ -14,10 +14,10 @@ This document records current, evidence-backed limitations. Historical audits an
 
 ## Current limitations
 
-### Browser E2E is deferred
+### Browser-wallet-extension E2E is deferred
 
-- No committed Playwright or browser E2E suite exists.
-- This is intentional. CI covers server/unit/DB integration behavior only.
+- A committed Playwright suite covers public auth, authenticated workspace paths, payment recovery, and the real-mode fail-closed readiness UI without a wallet extension.
+- End-to-end tests that require a real browser-wallet extension, a wallet signature, or an independently confirmed Arc transaction remain intentionally deferred.
 
 ### Real Arc settlement and confirmation are deferred
 

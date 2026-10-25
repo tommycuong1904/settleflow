@@ -53,7 +53,7 @@ Placeholder values shown. Real values must be generated and stored in the Vercel
 |---|---|---|
 | `DATABASE_URL` | `<STAGING_POSTGRES_URL>` | Independent staging PostgreSQL. NOT `*_test` |
 | `SETTLEFLOW_AUTH_SECRET` | `<STAGING_ONLY_SECRET>` | Unique 64+ char hex. Not development, not production |
-| `ARC_SERVER_PRIVATE_KEY` | `<STAGING_TESTNET_PRIVATE_KEY>` | Dedicated Arc Testnet EOA. No real funds |
+| `ARC_SERVER_PRIVATE_KEY` | `<STAGING_TESTNET_PRIVATE_KEY>` | Required only for a separately authorized server-executor/Circle test. It is not required for the active browser-wallet release path. |
 | `SETTLEFLOW_REAL_EXECUTION_AUTHORIZATION` | `disabled` | MUST remain disabled until the bounded transaction gate is satisfied and separate operator approval is given; any approved authorization value is managed out-of-band and must not be documented |
 | `NEXT_PUBLIC_ARC_EXECUTION_MODE` | `mock` | Mock mode until final safety gate approval |
 | `NEXT_PUBLIC_ARC_CHAIN_ID` | `5042002` | Arc Testnet |
@@ -76,11 +76,11 @@ Placeholder values shown. Real values must be generated and stored in the Vercel
 
 | Property | Value |
 |---|---|
-| Key | `ARC_SERVER_PRIVATE_KEY` — dedicated staging-only EOA |
+| Key | Browser-wallet test: dedicated staging Web3 Owner EOA. `ARC_SERVER_PRIVATE_KEY` is only for a separately authorized server-executor/Circle test. |
 | Network | Arc Testnet (chain 5042002) |
 | Token | USDC (native on Arc) |
 | Funding | Testnet USDC only. No real funds. Sufficient for gas |
-| Verification | Derive wallet address from private key; confirm explorer shows correct address |
+| Verification | Browser-wallet test: sign in with the Owner EOA and confirm its transaction-enabled wallet record and active browser account match. Server-executor test: derive the address from the private key and confirm it on the explorer. |
 
 ---
 
