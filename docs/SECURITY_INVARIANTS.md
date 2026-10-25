@@ -120,7 +120,7 @@ Implemented and DB integration-tested for the simulated-payment route's covered 
 Circle API credentials and wallet key material must never be sent to the browser. A Google Owner may confirm only a Circle challenge whose wallet source, destination, and amount match an already-authorized release.
 
 ### Enforcement
-The server requires a verified Google Owner session before issuing a short-lived, device-bound Circle social-login token. Circle's browser SDK performs its separate Google authorization and returns a short-lived Circle user token; the server uses that token only for the pending setup or release challenge bound to the signed-in SettleFlow user. It persists one Arc Testnet SCA identifier per user, creates Circle challenges with the release UUID as idempotency key, and re-reads the Circle transaction before onchain proof verification. API credentials and wallet key material never reach the browser.
+The server requires a verified Google Owner session before issuing a short-lived, device-bound Circle social-login token. Circle's browser SDK performs its separate Google authorization and returns a short-lived Circle user token; the browser retains that token and its encryption key only in `sessionStorage`, then supplies the token only with the pending setup or release challenge bound to the signed-in SettleFlow user. The server persists one Arc Testnet SCA identifier per user, creates Circle challenges with the release UUID as idempotency key, and re-reads the Circle transaction before onchain proof verification. API credentials and wallet key material never reach the browser.
 
 ### Evidence
 `lib/circle/user-controlled.ts`; `app/api/v1/circle/wallet/**`; `app/api/v1/releases/[id]/circle/**`; `lib/repositories/release-proof.ts`.

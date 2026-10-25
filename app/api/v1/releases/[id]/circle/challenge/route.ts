@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { ARC_CONFIG } from "@/lib/arc/config";
-import { createCircleTransferChallenge, createCircleUserSession, getCircleUserControlledConfig } from "@/lib/circle/user-controlled";
+import { createCircleTransferChallenge, getCircleUserControlledConfig } from "@/lib/circle/user-controlled";
 import { getSessionFromRequest, resolveProductContextFromRequestWithSession } from "@/lib/auth/session-server";
 import { db } from "@/lib/db/client";
 import { claimReleaseExecution } from "@/lib/repositories/release-proof";
@@ -22,6 +22,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const violation = assertCanReleaseMilestone({ productContext: context, actorUserId: context.activeUserId });
   if (violation) return NextResponse.json({ error: violation.message }, { status: violation.status });
   if (session.userId !== context.ownerUserId) return NextResponse.json({ error: "CIRCLE_WALLET_OWNER_MISMATCH" }, { status: 403 });
+  const body = await request.json().catch(() => null) as { userToken?: unknown } | null;
+  const userToken = typeof body?.userToken === "string" ? body.userToken.trim() : "";
+  if (!userToken) return NextResponse.json({ error: "CIRCLE_USER_SESSION_REQUIRED" }, { status: 400 });
 
   try {
     const release = await db.release.findFirst({
@@ -43,7 +46,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       return NextResponse.json({ error: "CIRCLE_WALLET_SOURCE_MISMATCH" }, { status: 409 });
     }
 
-    const circleSession = await createCircleUserSession(context.ownerUserId);
     const config = getCircleUserControlledConfig();
     let challengeId = release.circleChallengeId;
     if (challengeId && release.status === "queued") {
@@ -51,7 +53,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     }
     if (!challengeId) {
       challengeId = await createCircleTransferChallenge({
-        userToken: circleSession.userToken,
+        userToken,
         walletId: wallet.walletId,
         destinationAddress: release.destinationWalletAddress,
         amount: release.amountUsdc.toString(),
@@ -71,7 +73,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         challengeId = current.circleChallengeId;
       }
     }
-    return NextResponse.json({ challenge: { id: challengeId, appId: config.appId, ...circleSession } });
+    return NextResponse.json({ challenge: { id: challengeId, appId: config.appId } });
   } catch (error) {
     const message = error instanceof Error ? error.message : "CIRCLE_WALLET_ERROR";
     const status = message === "CIRCLE_USER_CONTROLLED_NOT_CONFIGURED" ? 503 : 502;

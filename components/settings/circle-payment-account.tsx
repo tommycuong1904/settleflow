@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { LoaderCircle, Wallet } from "lucide-react";
 
 import { Button } from "@/components/shared/button";
+import { saveCirclePaymentSession } from "@/lib/circle/user-controlled-client";
 
 type CircleSdk = {
   getDeviceId(): Promise<string>;
@@ -38,6 +39,7 @@ export function CirclePaymentAccount({ onReady }: { onReady?: () => void }) {
   const [message, setMessage] = useState(unavailable ? "Payment account setup is unavailable." : "");
 
   async function finishProvisioning(login: Login, sdk: CircleSdk) {
+    saveCirclePaymentSession(login);
     setStatus("working");
     setMessage("Creating your payment account…");
     const initialized = await fetch("/api/v1/circle/wallet", {

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { CIRCLE_ARC_TESTNET, createCircleUserSession, getCircleChallenge, getCircleTransaction } from "@/lib/circle/user-controlled";
+import { CIRCLE_ARC_TESTNET, getCircleChallenge, getCircleTransaction } from "@/lib/circle/user-controlled";
 import { getSessionFromRequest, resolveProductContextFromRequestWithSession } from "@/lib/auth/session-server";
 import { db } from "@/lib/db/client";
 import { markReleaseReconciliationPending, recordReleaseTransactionHash, refreshReleaseProof } from "@/lib/repositories/release-proof";
@@ -72,6 +72,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const violation = assertCanReleaseMilestone({ productContext: context, actorUserId: context.activeUserId });
   if (violation) return NextResponse.json({ error: violation.message }, { status: violation.status });
   if (session.userId !== context.ownerUserId) return NextResponse.json({ error: "CIRCLE_WALLET_OWNER_MISMATCH" }, { status: 403 });
+  const body = await request.json().catch(() => null) as { userToken?: unknown } | null;
+  const userToken = typeof body?.userToken === "string" ? body.userToken.trim() : "";
+  if (!userToken) return NextResponse.json({ error: "CIRCLE_USER_SESSION_REQUIRED" }, { status: 400 });
 
   try {
     const release = await db.release.findFirst({
@@ -104,8 +107,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     if (!wallet || wallet.address.toLowerCase() !== release.sourceWalletAddress?.toLowerCase()) {
       return NextResponse.json({ error: "CIRCLE_WALLET_SOURCE_MISMATCH" }, { status: 409 });
     }
-    const circleSession = await createCircleUserSession(context.ownerUserId);
-    const challenge = await getCircleChallenge(circleSession.userToken, release.circleChallengeId);
+    const challenge = await getCircleChallenge(userToken, release.circleChallengeId);
     if (challenge.status === "PENDING" || challenge.status === "IN_PROGRESS") {
       return NextResponse.json(
         { ...(await circleReleaseSnapshot(release.id, context.workspaceId)), phase: "confirmation" },
@@ -123,7 +125,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       return NextResponse.json(await circleReleaseSnapshot(failed.release.id, context.workspaceId));
     }
 
-    const transaction = await getCircleTransaction(circleSession.userToken, challenge.correlationIds[0]);
+    const transaction = await getCircleTransaction(userToken, challenge.correlationIds[0]);
     if (
       transaction.blockchain !== CIRCLE_ARC_TESTNET ||
       transaction.sourceAddress?.toLowerCase() !== wallet.address.toLowerCase() ||

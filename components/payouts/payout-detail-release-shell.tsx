@@ -10,7 +10,7 @@ import {
   connectBrowserWallet,
   sendUsdcWithBrowserWallet,
 } from "@/lib/arc/browser-wallet";
-import { executeCircleChallenge, type CircleSdkChallenge } from "@/lib/circle/user-controlled-client";
+import { executeCircleChallenge, getCirclePaymentSession, type CircleSdkChallenge } from "@/lib/circle/user-controlled-client";
 import { mapSendResultToProof } from "@/lib/arc/map-send-result-to-proof";
 import type { ReleasePanelStatus } from "@/components/payouts/release-panel";
 import { TransactionProofCard } from "@/components/payouts/transaction-proof-card";
@@ -272,9 +272,12 @@ export function PayoutDetailReleaseShell({
   }
 
   async function completeCircleRelease(releaseId: string) {
+    const circleSession = getCirclePaymentSession();
+    if (!circleSession) throw new Error("Reconnect your payment account before checking this payment.");
     const completed = await fetch(`/api/v1/releases/${releaseId}/circle/complete`, {
       method: "POST",
-      headers: productContextHeaders,
+      headers: { "Content-Type": "application/json", ...productContextHeaders },
+      body: JSON.stringify({ userToken: circleSession.userToken }),
     });
     const completedPayload = (await completed.json()) as CircleReleasePayload;
     if (!completed.ok && completed.status !== 202) throw new Error(completedPayload.error ?? "Circle wallet release failed.");
@@ -282,16 +285,19 @@ export function PayoutDetailReleaseShell({
   }
 
   async function executeCircleRelease(releaseId: string) {
+    const circleSession = getCirclePaymentSession();
+    if (!circleSession) throw new Error("Reconnect your payment account before confirming this payment.");
     const challengeResponse = await fetch(`/api/v1/releases/${releaseId}/circle/challenge`, {
       method: "POST",
-      headers: productContextHeaders,
+      headers: { "Content-Type": "application/json", ...productContextHeaders },
+      body: JSON.stringify({ userToken: circleSession.userToken }),
     });
     const challengePayload = (await challengeResponse.json()) as { error?: string; challenge?: CircleSdkChallenge };
     if (!challengeResponse.ok || challengePayload.error || !challengePayload.challenge) {
       throw new Error(challengePayload.error ?? "Unable to prepare Circle wallet confirmation.");
     }
     try {
-      await executeCircleChallenge(challengePayload.challenge);
+      await executeCircleChallenge(challengePayload.challenge, circleSession);
     } catch (error) {
       // The SDK can reject after Circle accepted the confirmation. Read the
       // authoritative server state before treating it as a failed attempt.
