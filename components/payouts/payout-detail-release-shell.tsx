@@ -120,7 +120,7 @@ function getFailedPaymentGuidance(message: string | null) {
   if (isRealExecutionAuthorizationError(message)) {
     return [
       "No payment was sent and no payment record was created.",
-      "An administrator must finish the staging safety checks before payments can be enabled.",
+      "A SettleFlow administrator must finish the test environment checks before payments can be enabled.",
       "Do not retry until the environment is explicitly authorized.",
     ];
   }
