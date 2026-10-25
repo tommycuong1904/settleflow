@@ -50,6 +50,15 @@ Verify the existing browser-wallet path is safe to exercise on Arc Testnet witho
 - No unresolved code blocker remains for a small browser-wallet Testnet payment.
 - Vercel action list is limited to changing the deployment to `real` while the execution gate remains `disabled`.
 
+### Audit record — 2026-10-25
+
+- Verified: `real` mode is server-gated for both readiness and release creation; a public execution-mode value alone cannot create a release or proof.
+- Verified: browser-wallet releases require an Owner Web3 session with an enabled, transaction-capable linked EOA; session, workspace, milestone approval, sequence, amount, destination, and source-wallet checks are server-side.
+- Verified: confirmation checks chain, configured USDC contract, sender, recipient, exact six-decimal transfer amount, successful receipt, and reconciles only unambiguous post-request transfers.
+- Verified: Arc transaction/reconciliation unit coverage passed (24 tests). The default fallback RPC now matches Arc's documented `https://rpc.testnet.arc.network` endpoint.
+- Open Testnet evidence: browser-wallet App Kit signing, wallet account/network handling, and proof persistence still require a real Arc Testnet transaction.
+- Web2 boundary: a Google session may complete workspace workflow, but the current browser-wallet payment route requires a Web3 Owner session. Improving that handoff belongs to Phase 2; it is not required for the first Testnet transaction.
+
 ## Phase 1 — Web2 workflow completion
 
 ### Goal
@@ -130,4 +139,3 @@ Fix only evidence-backed failures and leave a repeatable Testnet release process
 - Repeated Testnet payments do not create duplicate releases/proofs.
 - Recovery behavior is documented and verified.
 - Production planning can begin separately.
-
