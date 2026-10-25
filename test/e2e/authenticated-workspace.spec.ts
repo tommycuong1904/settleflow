@@ -113,6 +113,11 @@ test("owner and contributor payout views are scoped to their workspace", async (
     await expect(contributorPage.getByText("Submitted • Awaiting workspace owner review")).toBeVisible();
 
     await ownerPage.reload();
+    await ownerPage.goto(`/dashboard?workspaceId=${workspaceId}`);
+    const reviewWorkLink = ownerPage.getByRole("link", { name: "Review work" });
+    await expect(reviewWorkLink).toHaveAttribute("href", `/payouts/${payout.id}?workspaceId=${workspaceId}`);
+    await reviewWorkLink.click();
+    await expect(ownerPage).toHaveURL(new RegExp(`/payouts/${payout.id}\\?workspaceId=${workspaceId}`));
     await ownerPage.goto(`/notifications?workspaceId=${workspaceId}`);
     await expect(ownerPage.getByRole("main").getByText("Milestone ready for review")).toBeVisible();
     await ownerPage.goto(`/payouts/${payout.id}?workspaceId=${workspaceId}`);

@@ -95,6 +95,7 @@ export default async function DashboardPage() {
     return sum + (milestone?.amount ?? 0);
   }, 0);
   const payoutFor = (payoutId: string) => payouts.find((payout) => payout.id === payoutId);
+  const payoutHref = (payoutId: string) => `/payouts/${payoutId}?workspaceId=${encodeURIComponent(activeWorkspaceId)}`;
   const contributorNameFor = (payoutId: string) => {
     const payout = payoutFor(payoutId);
     return contributors.find((contributor) => contributor.id === payout?.contributorId)?.name ?? "Contributor";
@@ -104,7 +105,7 @@ export default async function DashboardPage() {
       const milestone = milestones.find((item) => item.id === proof.milestoneId);
       return {
         id: `pending-${proof.id}`,
-        href: milestone ? `/payouts/${milestone.payoutId}` : "/payouts",
+        href: milestone ? payoutHref(milestone.payoutId) : "/payouts",
         title: isOwner ? "Verify a payment already sent" : "Payment is being verified",
         description: `${milestone?.title ?? "A milestone"} for ${contributorNameFor(milestone?.payoutId ?? "")} ${isOwner ? "needs payment confirmation. Do not send it again." : "has been sent and is awaiting confirmation."}`,
         action: isOwner ? "Verify payment" : "View payout",
@@ -112,14 +113,14 @@ export default async function DashboardPage() {
     }),
     ...(failedSettlementProof ? [{
       id: `failed-${failedSettlementProof.id}`,
-      href: failedSettlementMilestone ? `/payouts/${failedSettlementMilestone.payoutId}` : "/payouts",
+      href: failedSettlementMilestone ? payoutHref(failedSettlementMilestone.payoutId) : "/payouts",
       title: isOwner ? "Review a payment issue" : "Payment needs owner attention",
       description: `${failedSettlementMilestone?.title ?? "A milestone"} needs your decision before another payment attempt.`,
       action: isOwner ? "Review issue" : "View payout",
     }] : []),
     ...contributorWorkMilestones.map((milestone) => ({
       id: `submit-${milestone.id}`,
-      href: `/payouts/${milestone.payoutId}?workspaceId=${encodeURIComponent(activeWorkspaceId)}`,
+      href: payoutHref(milestone.payoutId),
       title: milestone.status === "rejected" ? `Update ${milestone.title}` : `Submit ${milestone.title}`,
       description: milestone.status === "rejected"
         ? "The workspace owner requested changes. Update the work, then submit it again."
@@ -128,14 +129,14 @@ export default async function DashboardPage() {
     })),
     ...pendingApprovals.map((milestone) => ({
       id: `review-${milestone.id}`,
-      href: `/payouts/${milestone.payoutId}`,
+      href: payoutHref(milestone.payoutId),
       title: isOwner ? `Review work from ${contributorNameFor(milestone.payoutId)}` : "Waiting for owner review",
       description: isOwner ? `${milestone.title} · ${formatUsdc(milestone.amount)} USDC` : `${milestone.title} has been submitted.`,
       action: isOwner ? "Review work" : "View payout",
     })),
     ...(isOwner ? releaseReadyMilestones.map((milestone) => ({
       id: `pay-${milestone.id}`,
-      href: `/payouts/${milestone.payoutId}`,
+      href: payoutHref(milestone.payoutId),
       title: `Pay ${formatUsdc(milestone.amount)} USDC to ${contributorNameFor(milestone.payoutId)}`,
       description: `${milestone.title} is approved and ready for payment.`,
       action: "Review & pay",
@@ -222,7 +223,7 @@ export default async function DashboardPage() {
         <>
       <section className="sf-shell rounded-2xl p-6 md:p-7 shadow-[0_2px_6px_rgba(15,23,42,0.08)]"><div className="flex items-center justify-between gap-4"><div><h2 className="text-lg font-semibold text-[var(--foreground)]">Your work queue</h2><p className="mt-1 text-sm text-[var(--text-muted)]">Work is ordered so the next safe action is always clear.</p></div>{hasPayouts ? <Button href="/payouts" variant="ghost" size="sm">View all payouts</Button> : null}</div><div className="mt-5 divide-y divide-[var(--border-soft)]">{remainingTasks.length > 0 ? remainingTasks.map((task) => <div key={task.id} className="flex flex-col gap-3 py-4 first:pt-0 sm:flex-row sm:items-center sm:justify-between"><div><p className="font-medium text-[var(--foreground)]">{task.title}</p><p className="mt-1 text-sm text-[var(--text-muted)]">{task.description}</p></div><Button href={task.href} variant="secondary" size="sm" className="w-full justify-center sm:w-auto">{task.action}</Button></div>) : <p className="py-4 text-sm text-[var(--text-muted)]">{nextTask ? "Complete the current task above, then your next task will appear here." : !hasContributors ? isOwner ? "After you add a contributor, create a payout to define the work and payment milestones." : "Tasks will appear after your workspace owner sets up the first payout." : !hasPayouts ? isOwner ? "After you create a payout, submitted work, approvals, and payment tasks will appear here." : "Tasks will appear after the workspace owner creates the first payout." : "New review, payment, and verification tasks will appear here."}</p>}</div></section>
 
-      <section className="grid gap-4 lg:grid-cols-[1.3fr_0.7fr]"><div className="sf-shell rounded-2xl p-6 md:p-7 shadow-[0_2px_6px_rgba(15,23,42,0.08)]"><h2 className="text-lg font-semibold text-[var(--foreground)]">Recent payments</h2><div className="mt-4 divide-y divide-[var(--border-soft)]">{recentPayments.length > 0 ? recentPayments.map((payment) => <a key={payment.id} href={payment.milestone ? `/payouts/${payment.milestone.payoutId}` : "/payouts"} className="block py-3 first:pt-0 hover:opacity-70"><p className="font-medium text-[var(--foreground)]">{payment.milestone?.title ?? "Payment completed"}</p><p className="mt-1 text-sm text-[var(--text-muted)]">{formatUsdc(payment.amount)} USDC · {payment.label}</p></a>) : <p className="py-3 text-sm text-[var(--text-muted)]">Completed payments will appear here.</p>}</div></div><details className="sf-shell rounded-2xl p-6 md:p-7 shadow-[0_2px_6px_rgba(15,23,42,0.08)]"><summary className="cursor-pointer text-lg font-semibold text-[var(--foreground)]">Workspace snapshot</summary><div className="mt-4 space-y-3 text-sm text-[var(--text-muted)]"><p>{activePayouts.length} active payouts</p><p>{formatUsdc(inFlightSettlementValue)} USDC payment in progress</p><p>{formatUsdc(outstandingExposure)} USDC left to pay across active payouts</p><p>{formatUsdc(releasedValue)} USDC paid</p></div></details></section>
+      <section className="grid gap-4 lg:grid-cols-[1.3fr_0.7fr]"><div className="sf-shell rounded-2xl p-6 md:p-7 shadow-[0_2px_6px_rgba(15,23,42,0.08)]"><h2 className="text-lg font-semibold text-[var(--foreground)]">Recent payments</h2><div className="mt-4 divide-y divide-[var(--border-soft)]">{recentPayments.length > 0 ? recentPayments.map((payment) => <a key={payment.id} href={payment.milestone ? payoutHref(payment.milestone.payoutId) : "/payouts"} className="block py-3 first:pt-0 hover:opacity-70"><p className="font-medium text-[var(--foreground)]">{payment.milestone?.title ?? "Payment completed"}</p><p className="mt-1 text-sm text-[var(--text-muted)]">{formatUsdc(payment.amount)} USDC · {payment.label}</p></a>) : <p className="py-3 text-sm text-[var(--text-muted)]">Completed payments will appear here.</p>}</div></div><details className="sf-shell rounded-2xl p-6 md:p-7 shadow-[0_2px_6px_rgba(15,23,42,0.08)]"><summary className="cursor-pointer text-lg font-semibold text-[var(--foreground)]">Workspace snapshot</summary><div className="mt-4 space-y-3 text-sm text-[var(--text-muted)]"><p>{activePayouts.length} active payouts</p><p>{formatUsdc(inFlightSettlementValue)} USDC payment in progress</p><p>{formatUsdc(outstandingExposure)} USDC left to pay across active payouts</p><p>{formatUsdc(releasedValue)} USDC paid</p></div></details></section>
         </>
       ) : null}
     </div>
