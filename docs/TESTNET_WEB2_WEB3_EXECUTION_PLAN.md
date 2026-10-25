@@ -94,6 +94,15 @@ Introduce a provider-backed payment account without turning normal workflow into
 4. Present only `Payment account ready` or `Finish payment account setup` in Settings; no provider/address jargon by default.
 5. Keep Contributor destination separate: verified profile default, workspace override, no mutation of approved payout snapshots.
 
+### Progress — 2026-10-25
+
+- Task 1 foundation is implemented: `PaymentAccount` is provider-neutral and
+  stores only its owner, provider identifiers, lifecycle status, and an
+  optional canonical `UserWallet` reference. Existing immutable release source
+  wallet snapshots remain the payment-time record.
+- Provisioning, provider authorization, and the Web2 Settings state remain
+  blocked on selection and configuration of an Arc Testnet-capable provider.
+
 ### External prerequisite
 
 The workspace owner must select a provider with documented Arc Testnet support, then configure Testnet credentials, callback/origin settings, funding, recovery, and fee policy. Circle user-controlled wallets are not selected: current public Circle material does not list Arc/Arc Testnet for its supported-chain/currency surfaces, so the retained Circle integration remains disabled until Circle provides written support confirmation.

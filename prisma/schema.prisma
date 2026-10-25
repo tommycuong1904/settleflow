@@ -92,6 +92,15 @@ enum UserWalletKind {
   legacy_export_eoa
 }
 
+/// Lifecycle of a provider-managed payment account. The provider owns key
+/// material; SettleFlow only stores non-secret identifiers and its linked,
+/// verified EVM address.
+enum PaymentAccountStatus {
+  provisioning
+  ready
+  suspended
+}
+
 model Workspace {
   id                 String   @id @default(uuid())
   name               String
@@ -141,6 +150,7 @@ model User {
   linkedContributors       Contributor[]             @relation("LinkedContributor")
   createdInvitations       Invitation[]              @relation("CreatedInvitations")
   wallets                  UserWallet[]
+  paymentAccounts          PaymentAccount[]
   circleWallet             CircleUserWallet?
   circleWalletProvisioning CircleWalletProvisioning?
 }
@@ -162,8 +172,30 @@ model UserWallet {
   user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   circleWallet   CircleUserWallet? @relation("CircleWalletLink")
   sourceReleases Release[]         @relation("ReleaseSourceWallet")
+  paymentAccounts PaymentAccount[] @relation("PaymentAccountWallet")
 
   @@index([userId])
+}
+
+/// Provider-neutral payment account. This keeps embedded-wallet provider
+/// details out of product workflows and lets a user retain an explicitly
+/// linked EVM address as the immutable payment source reference.
+model PaymentAccount {
+  id                String               @id @default(uuid())
+  userId            String
+  provider          String
+  providerAccountId String?
+  walletLinkId      String?              @unique
+  status            PaymentAccountStatus @default(provisioning)
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  walletLink UserWallet? @relation("PaymentAccountWallet", fields: [walletLinkId], references: [id], onDelete: Restrict)
+
+  @@unique([userId, provider])
+  @@unique([provider, providerAccountId])
+  @@index([status])
 }
 
 /// The Arc Testnet smart-contract account held by a Circle user-controlled

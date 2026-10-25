@@ -26,6 +26,12 @@ The legacy `User.walletAddress` remains only as a compatibility field during
 the staged migration. `CircleUserWallet` retains Circle-specific identifiers
 and references the corresponding `UserWallet` link.
 
+`PaymentAccount` is the provider-neutral record for an embedded or managed
+payment account. It persists only the provider identifier, non-secret external
+account identifier, lifecycle status, and optional canonical `UserWallet` link.
+It never stores a private key, provider credential, or user token. Provider
+adapters own account provisioning; payout workflows consume the neutral record.
+
 ### WorkspaceMember and role
 
 `WorkspaceMember` links a `User` to a `Workspace` and stores one `WorkspaceMemberRole`: `owner`, `ops`, `reviewer`, or `contributor`. A database uniqueness constraint allows only one membership row for each `(workspaceId, userId)`. New invitations use only `owner` and `contributor`; `ops` and `reviewer` remain for historical memberships. The runtime actor has the corresponding values: `owner`, `ops`, `reviewer`, and `contributor`. Database roles and runtime actors must not be treated as interchangeable. Detailed policy is in `docs/AUTHORIZATION.md`.
