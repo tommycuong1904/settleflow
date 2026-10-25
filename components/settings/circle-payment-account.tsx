@@ -26,10 +26,11 @@ function readCookie(name: string) {
 
 export function CirclePaymentAccount({ onReady }: { onReady?: () => void }) {
   const sdkRef = useRef<CircleSdk | null>(null);
-  const [status, setStatus] = useState<"loading" | "ready" | "working" | "error">("loading");
-  const [message, setMessage] = useState("");
   const appId = process.env.NEXT_PUBLIC_CIRCLE_USER_CONTROLLED_APP_ID;
   const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+  const unavailable = !appId || !googleClientId;
+  const [status, setStatus] = useState<"loading" | "ready" | "working" | "error">(unavailable ? "error" : "loading");
+  const [message, setMessage] = useState(unavailable ? "Payment account setup is unavailable." : "");
 
   async function finishProvisioning(login: Login, sdk: CircleSdk) {
     setStatus("working");
@@ -54,21 +55,21 @@ export function CirclePaymentAccount({ onReady }: { onReady?: () => void }) {
   }
 
   useEffect(() => {
-    if (!appId || !googleClientId) { setStatus("error"); setMessage("Payment account setup is unavailable."); return; }
+    const configuredAppId = appId;
+    const configuredGoogleClientId = googleClientId;
+    if (!configuredAppId || !configuredGoogleClientId) return;
     let active = true;
     void (async () => {
       try {
-        const { W3SSdk, SocialLoginProvider } = await import("@circle-fin/w3s-pw-web-sdk");
-        const deviceToken = readCookie("sf_circle_device_token");
-        const deviceEncryptionKey = readCookie("sf_circle_device_key");
-        const sdk = new W3SSdk({ appSettings: { appId }, loginConfigs: { deviceToken, deviceEncryptionKey, google: { clientId: googleClientId, redirectUri: window.location.origin, selectAccountPrompt: true } } }, (error, result) => {
+        const { W3SSdk } = await import("@circle-fin/w3s-pw-web-sdk");
+        const deviceToken = readCookie("sf_circle_device_token") ?? "";
+        const deviceEncryptionKey = readCookie("sf_circle_device_key") ?? "";
+        const sdk = new W3SSdk({ appSettings: { appId: configuredAppId }, loginConfigs: { deviceToken, deviceEncryptionKey, google: { clientId: configuredGoogleClientId, redirectUri: window.location.origin, selectAccountPrompt: true } } }, (error, result) => {
           if (!active || !result || error) { if (active && error) { setStatus("error"); setMessage(error.message || "Google wallet setup was not completed."); } return; }
           void finishProvisioning({ userToken: result.userToken, encryptionKey: result.encryptionKey }, sdk as unknown as CircleSdk).catch((cause: unknown) => { if (active) { setStatus("error"); setMessage(cause instanceof Error ? cause.message : "Payment account setup failed."); } });
         });
         sdkRef.current = sdk as unknown as CircleSdk;
         if (active) setStatus("ready");
-        // Keeps the enum import live while avoiding a second package-specific type.
-        void SocialLoginProvider;
       } catch { if (active) { setStatus("error"); setMessage("Payment account setup is unavailable."); } }
     })();
     return () => { active = false; };
@@ -87,7 +88,7 @@ export function CirclePaymentAccount({ onReady }: { onReady?: () => void }) {
       if (!response.ok || !session.deviceToken || !session.deviceEncryptionKey) throw new Error(session.error || "Unable to start payment account setup.");
       setCookie("sf_circle_device_token", session.deviceToken); setCookie("sf_circle_device_key", session.deviceEncryptionKey);
       sdk.updateConfigs({ appSettings: { appId }, loginConfigs: { deviceToken: session.deviceToken, deviceEncryptionKey: session.deviceEncryptionKey, google: { clientId: googleClientId, redirectUri: window.location.origin, selectAccountPrompt: true } } });
-      const { SocialLoginProvider } = await import("@circle-fin/w3s-pw-web-sdk");
+      const { SocialLoginProvider } = await import("@circle-fin/w3s-pw-web-sdk/dist/src/types");
       sdk.performLogin(SocialLoginProvider.GOOGLE);
     } catch (cause) { setStatus("error"); setMessage(cause instanceof Error ? cause.message : "Payment account setup failed."); }
   };
