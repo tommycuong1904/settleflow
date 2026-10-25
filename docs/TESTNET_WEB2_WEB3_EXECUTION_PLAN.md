@@ -15,7 +15,7 @@ Deliver one simple payment experience for Google and Web3 sign-in users: they ma
 - Owner and Contributor remain the only active workspace roles. The server remains authoritative for membership, scope, approvals, sequencing, and payment permission.
 - A Contributor destination is a verified profile address with an explicit workspace override. An Owner-entered address is temporary internal recovery, never normal onboarding.
 - Browser-wallet execution/reconciliation remains a technical fallback until a managed rail is verified. Remove it from normal UI; do not delete it before replacement is operational.
-- The recommended payment account is a user-controlled embedded wallet. Circle user-controlled wallets are the first candidate because a partial integration exists; provider terms and Testnet configuration require approval. SettleFlow never creates or retains user private keys.
+- The default payment account must be a user-controlled embedded wallet from a provider that demonstrably supports Arc Testnet USDC transfers. SettleFlow never creates or retains user private keys.
 - Testnet uses isolated credentials, wallets, database, and funding. Production is out of scope.
 
 ## Autonomous execution rule
@@ -96,13 +96,19 @@ Introduce a provider-backed payment account without turning normal workflow into
 
 ### External prerequisite
 
-The workspace owner must approve provider choice and configure Testnet credentials, callback/origin settings, funding, recovery, and fee policy. Circle user-controlled wallets are recommended pending that approval.
+The workspace owner must select a provider with documented Arc Testnet support, then configure Testnet credentials, callback/origin settings, funding, recovery, and fee policy. Circle user-controlled wallets are not selected: current public Circle material does not list Arc/Arc Testnet for its supported-chain/currency surfaces, so the retained Circle integration remains disabled until Circle provides written support confirmation.
 
 ### Exit criteria
 
 - Google Owner has a secure, recoverable Testnet payment account.
 - Normal UI uses payment-account language only.
 - Provider keys/signing authority stay outside browser app state.
+
+### Provider audit record — 2026-10-25
+
+- Circle’s current public documentation describes generic developer-controlled EVM wallets, but its published supported chains/currencies do not list Arc or Arc Testnet.
+- No current official evidence was found that Circle user-controlled wallets can create and fund an Arc Testnet payment account.
+- The existing Circle code path remains product-gated and must not be enabled based on this partial implementation alone.
 
 ## Phase 3 — Background Testnet payment execution
 
