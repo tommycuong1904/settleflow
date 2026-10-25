@@ -23,3 +23,12 @@ export async function getPaymentAccountForUser(userId: string, provider: string)
     },
   });
 }
+
+/** The only browser-safe view of payment-account readiness. */
+export async function getPaymentAccountReadinessForUser(userId: string) {
+  const account = await db.paymentAccount.findFirst({
+    where: { userId, status: "ready", walletLink: { transactionEnabled: true } },
+    select: { id: true },
+  });
+  return account ? "ready" : "setup_required";
+}
