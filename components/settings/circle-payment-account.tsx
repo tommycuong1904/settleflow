@@ -16,6 +16,7 @@ type CircleSdk = {
 type Login = { userToken: string; encryptionKey: string };
 
 const COOKIE_DAYS = 1;
+const circleRedirectUri = () => `${window.location.origin}/settings`;
 
 function setCookie(name: string, value: string) {
   document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=${COOKIE_DAYS * 86400}; samesite=lax`;
@@ -64,7 +65,7 @@ export function CirclePaymentAccount({ onReady }: { onReady?: () => void }) {
         const { W3SSdk } = await import("@circle-fin/w3s-pw-web-sdk");
         const deviceToken = readCookie("sf_circle_device_token") ?? "";
         const deviceEncryptionKey = readCookie("sf_circle_device_key") ?? "";
-        const sdk = new W3SSdk({ appSettings: { appId: configuredAppId }, loginConfigs: { deviceToken, deviceEncryptionKey, google: { clientId: configuredGoogleClientId, redirectUri: window.location.origin, selectAccountPrompt: true } } }, (error, result) => {
+        const sdk = new W3SSdk({ appSettings: { appId: configuredAppId }, loginConfigs: { deviceToken, deviceEncryptionKey, google: { clientId: configuredGoogleClientId, redirectUri: circleRedirectUri(), selectAccountPrompt: true } } }, (error, result) => {
           if (!active || !result || error) { if (active && error) { setStatus("error"); setMessage(error.message || "Google wallet setup was not completed."); } return; }
           void finishProvisioning({ userToken: result.userToken, encryptionKey: result.encryptionKey }, sdk as unknown as CircleSdk).catch((cause: unknown) => { if (active) { setStatus("error"); setMessage(cause instanceof Error ? cause.message : "Payment account setup failed."); } });
         });
@@ -87,7 +88,7 @@ export function CirclePaymentAccount({ onReady }: { onReady?: () => void }) {
       const session = await response.json().catch(() => ({})) as { deviceToken?: string; deviceEncryptionKey?: string; error?: string };
       if (!response.ok || !session.deviceToken || !session.deviceEncryptionKey) throw new Error(session.error || "Unable to start payment account setup.");
       setCookie("sf_circle_device_token", session.deviceToken); setCookie("sf_circle_device_key", session.deviceEncryptionKey);
-      sdk.updateConfigs({ appSettings: { appId }, loginConfigs: { deviceToken: session.deviceToken, deviceEncryptionKey: session.deviceEncryptionKey, google: { clientId: googleClientId, redirectUri: window.location.origin, selectAccountPrompt: true } } });
+      sdk.updateConfigs({ appSettings: { appId }, loginConfigs: { deviceToken: session.deviceToken, deviceEncryptionKey: session.deviceEncryptionKey, google: { clientId: googleClientId, redirectUri: circleRedirectUri(), selectAccountPrompt: true } } });
       const { SocialLoginProvider } = await import("@circle-fin/w3s-pw-web-sdk/dist/src/types");
       sdk.performLogin(SocialLoginProvider.GOOGLE);
     } catch (cause) { setStatus("error"); setMessage(cause instanceof Error ? cause.message : "Payment account setup failed."); }
