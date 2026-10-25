@@ -105,7 +105,7 @@ Introduce a provider-backed payment account without turning normal workflow into
 
 ### External prerequisite
 
-The workspace owner must select a provider with documented Arc Testnet support, then configure Testnet credentials, callback/origin settings, funding, recovery, and fee policy. Circle user-controlled wallets are not selected: current public Circle material does not list Arc/Arc Testnet for its supported-chain/currency surfaces, so the retained Circle integration remains disabled until Circle provides written support confirmation.
+The workspace owner must select and configure a provider with documented Arc Testnet support, including Testnet credentials, callback/origin settings, funding, recovery, and fee policy. Circle Wallets is a valid candidate: its current Wallets documentation lists Arc Testnet for developer-controlled, user-controlled, and modular wallets. The retained Circle integration remains disabled until the selected Circle wallet product and its configuration are explicitly approved.
 
 ### Exit criteria
 
@@ -115,9 +115,10 @@ The workspace owner must select a provider with documented Arc Testnet support, 
 
 ### Provider audit record — 2026-10-25
 
-- Circle’s current public documentation describes generic developer-controlled EVM wallets, but its published supported chains/currencies do not list Arc or Arc Testnet.
-- No current official evidence was found that Circle user-controlled wallets can create and fund an Arc Testnet payment account.
-- The existing Circle code path remains product-gated and must not be enabled based on this partial implementation alone.
+- Circle Wallets documentation now explicitly lists Arc / Arc Testnet for developer-controlled and user-controlled EOA/SCA wallets, and Modular passkey MSCAs.
+- Circle user-controlled wallets provide self-custodial 2-of-2 MPC with social login, email OTP, or PIN; each signing action requires the user’s active authentication/approval.
+- Circle modular wallets use a device passkey as the signer, support Arc Testnet and testnet gas sponsorship, but require a recovery-key design before production use.
+- The existing Circle code path remains product-gated because it was built against an earlier API surface and has not yet been audited or adapted to this current product model.
 - Dynamic is the current leading candidate: its official documentation supports
   custom EVM networks and embedded wallets for social-login users. It still
   requires a dedicated sandbox environment, explicit Arc Testnet network
