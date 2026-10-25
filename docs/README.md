@@ -24,6 +24,7 @@ Runtime code is authoritative for behavior; `prisma/schema.prisma` and migration
 - `DEMO_GUIDE.md` — current demo walkthrough.
 - `GOOGLE_OAUTH_SETUP.md` — Google OAuth setup.
 - `ARC_STAGING_SAFETY_RUNBOOK.md`, `STAGING_ENVIRONMENT_SPEC.md`, `STAGING_PROVISIONING_CHECKLIST.md`, `STAGING_BOUNDED_TRANSACTION_GATE.md` — staging controls.
+- `TESTNET_WEB2_WEB3_EXECUTION_PLAN.md` — active Web2-first, Arc-Testnet-only execution plan and autonomous phase rule.
 - `DEPLOYMENT_RUNBOOK.md`, `OPERATIONS_RUNBOOK.md`, `DATABASE_MIGRATION_RECOVERY_RUNBOOK.md` — deployment and operations.
 - `RELEASE_RECONCILIATION_RUNBOOK.md`, `SECRETS_AND_KEY_MANAGEMENT_RUNBOOK.md`, `INCIDENT_RESPONSE_RUNBOOK.md`, `WEBHOOK_ISOLATION_POLICY.md` — specialized operations.
 
