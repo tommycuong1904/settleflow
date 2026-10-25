@@ -33,7 +33,6 @@ export function AppHeader({ hasWorkspace = false }: { hasWorkspace?: boolean }) 
 
   useEffect(() => {
     if (!isConnected || !hasWorkspace || pathname === "/accept-invite") {
-      setUnreadNotifications(0);
       return;
     }
     let active = true;
