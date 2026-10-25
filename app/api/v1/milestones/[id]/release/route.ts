@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getAddress, isAddress } from "viem";
 import { apiError, apiErrorFromCode } from "@/lib/api/errors";
 import { hasReleaseAmountPayload } from "@/lib/api/release-payload";
 import { isValidUsdcAmount } from "@/lib/api/payout-payload";
@@ -79,14 +80,25 @@ export async function POST(
     let sourceWalletId: string | null = null;
     if (executionMode === "browser_wallet") {
       const session = await getSessionFromRequest(request);
-      if (!session || session.authType !== "web3_wallet" || session.userId !== ownerUserId || !session.walletId || !session.address) {
-        return apiError("BROWSER_WALLET_REQUIRES_WEB3_SESSION", { message: "A verified Web3 owner session is required for a browser-wallet release.", status: 403 });
+      if (!session || session.userId !== ownerUserId) {
+        return apiError("BROWSER_WALLET_REQUIRES_WEB3_SESSION", { message: "Sign in as the workspace Owner before using Wallet payment.", status: 403 });
       }
+      const requestedSourceAddress = (body as { sourceWalletAddress?: unknown }).sourceWalletAddress;
+      const googleSourceAddress = typeof requestedSourceAddress === "string" && isAddress(requestedSourceAddress)
+        ? getAddress(requestedSourceAddress)
+        : null;
+      const isWeb3Session = session.authType === "web3_wallet" && session.walletId && session.address;
+      const isGoogleSession = session.authType === "web2_google" && Boolean(googleSourceAddress);
+      if (!isWeb3Session && !isGoogleSession) {
+        return apiError("BROWSER_WALLET_REQUIRES_WEB3_SESSION", { message: "Link a browser wallet in Settings, then connect that wallet to pay.", status: 403 });
+      }
+      const normalizedAddress = isWeb3Session
+        ? session.address!.toLowerCase()
+        : googleSourceAddress!.toLowerCase();
       const wallet = await db.userWallet.findFirst({
         where: {
-          id: session.walletId,
           userId: ownerUserId,
-          normalizedAddress: session.address.toLowerCase(),
+          normalizedAddress,
           kind: "web3_eoa",
           authEnabled: true,
           transactionEnabled: true,

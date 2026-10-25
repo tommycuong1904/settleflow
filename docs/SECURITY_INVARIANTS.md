@@ -72,14 +72,16 @@ Implemented and DB integration-tested for the covered paths.
 ## Release source binding
 
 ### Invariant
-A browser-wallet release can only be funded by the enabled EOA that established
-the current Web3 session. Circle release modes are disabled for new releases in
-the active Owner/Contributor MVP.
+A browser-wallet release can only be funded by an enabled EOA owned by the
+current Owner. A Web3 session binds its authenticated EOA directly; a Google
+session must name a previously signature-verified linked EOA. Circle release
+modes are disabled for new releases in the active Owner/Contributor MVP.
 
 ### Enforcement
-The release route derives the source `UserWallet` from the signed session and
-snapshots its ID and address before queueing. Browser proof verification rejects
-a transaction whose `from` differs from that snapshot. When the public Arc mode
+The release route derives the source `UserWallet` from the signed session or,
+for a Google session, verifies the requested source against that Owner's linked
+EOAs; it then snapshots its ID and address before queueing. Browser proof
+verification rejects a transaction whose `from` differs from that snapshot. When the public Arc mode
 is `real`, the route also requires the server-side real-execution authorization
 gate before creating any release or proof record; the public mode alone cannot
 authorize a payment.

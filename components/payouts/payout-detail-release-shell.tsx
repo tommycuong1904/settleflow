@@ -7,6 +7,7 @@ import {
   assertBrowserWalletMatchesAuthenticatedAccount,
   BrowserWalletPreBroadcastError,
   BrowserWalletSubmissionUnknownError,
+  connectBrowserWallet,
   sendUsdcWithBrowserWallet,
 } from "@/lib/arc/browser-wallet";
 import { executeCircleChallenge, type CircleSdkChallenge } from "@/lib/circle/user-controlled-client";
@@ -342,16 +343,23 @@ export function PayoutDetailReleaseShell({
     }
 
     setReleaseError(null);
-    if (authType !== "web3_wallet") {
-      setReleaseError("Connect an enabled Web3 wallet to release from a browser wallet.");
+    if (authType !== "web3_wallet" && authType !== "web2_google") {
+      setReleaseError("Sign in with Google or an enabled Web3 wallet before using Wallet payment.");
       setReleaseModalMode("failed");
       return;
     }
+    let releaseSourceAddress = address ?? undefined;
     if (ARC_CONFIG.executionMode === "real") {
       try {
         await assertPaymentEnvironmentReady();
-        if (!address) throw new Error("The authenticated Web3 wallet address is unavailable. Sign in again before releasing.");
-        await assertBrowserWalletMatchesAuthenticatedAccount(address);
+        if (authType === "web3_wallet") {
+          if (!address) throw new Error("The authenticated Web3 wallet address is unavailable. Sign in again before releasing.");
+          await assertBrowserWalletMatchesAuthenticatedAccount(address);
+        } else {
+          const connection = await connectBrowserWallet();
+          if (!connection.connectedAddress) throw new Error("Connect the browser wallet you linked in Settings before paying.");
+          releaseSourceAddress = connection.connectedAddress;
+        }
       } catch (error) {
         setReleaseError(releaseErrorMessage(error, "Unable to verify the browser wallet account."));
         setReleaseModalMode("failed");
@@ -373,6 +381,7 @@ export function PayoutDetailReleaseShell({
         body: JSON.stringify({
           amountUsdc: String(nextReleasableMilestone.amount),
           executionMode: "browser_wallet",
+          sourceWalletAddress: releaseSourceAddress,
         }),
       });
 
@@ -421,7 +430,7 @@ export function PayoutDetailReleaseShell({
           walletResult = await sendUsdcWithBrowserWallet({
             recipient: recipientAddress ?? "",
             amount: String(nextReleasableMilestone.amount),
-            expectedSender: authType === "web3_wallet" ? address ?? undefined : undefined,
+            expectedSender: releaseSourceAddress,
           });
         } catch (error) {
           if (error instanceof BrowserWalletPreBroadcastError) {

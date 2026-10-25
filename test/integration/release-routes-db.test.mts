@@ -79,15 +79,6 @@ test("release, retry, proof refresh, tampering, and workspace boundaries hold th
       transactionEnabled: true,
     },
   });
-  const token = await createSessionToken({
-    userId: user.id,
-    email,
-    name: "Route Owner",
-    address: sourceWallet.address,
-    walletId: sourceWallet.id,
-    authType: "web3_wallet",
-  });
-  const headers = { cookie: `sf_session=${token}` };
   const params = (id: string) => ({ params: Promise.resolve({ id }) });
 
   try {
@@ -99,9 +90,10 @@ test("release, retry, proof refresh, tampering, and workspace boundaries hold th
     }), params(milestone.id));
     assert.equal(googleAttempt.status, 403);
     assert.equal((await googleAttempt.json()).code, "BROWSER_WALLET_REQUIRES_WEB3_SESSION");
+    const headers = { cookie: `sf_session=${googleToken}` };
 
     const queued = await releaseRoute(new Request(`https://settleflow.local/api/v1/milestones/${milestone.id}/release?workspaceId=${workspace.id}&actor=contributor`, {
-      method: "POST", headers, body: JSON.stringify({ amountUsdc: "5", executionMode: "browser_wallet", ownerUserId: "other-user", workspaceId: otherWorkspace.id }),
+      method: "POST", headers, body: JSON.stringify({ amountUsdc: "5", executionMode: "browser_wallet", sourceWalletAddress: sourceWallet.address, ownerUserId: "other-user", workspaceId: otherWorkspace.id }),
     }), params(milestone.id));
     assert.equal(queued.status, 201);
     const queuedBody = await queued.json();

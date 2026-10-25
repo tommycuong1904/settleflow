@@ -39,7 +39,7 @@ No direct transition to `released` is supported by the queue operation. Release 
 
 `ReleaseStatus` values are `queued`, `pending`, `confirmed`, `failed`, and `cancelled`.
 
-`queueMilestoneRelease` creates `queued` release and `pending` proof records only when the milestone is approved, the payout is `active` or `partially_released`, no release already exists, the destination exists, and the requested amount equals the milestone amount. The active MVP release route requires an Owner Web3 session and its enabled EOA source wallet.
+`queueMilestoneRelease` creates `queued` release and `pending` proof records only when the milestone is approved, the payout is `active` or `partially_released`, no release already exists, the destination exists, and the requested amount equals the milestone amount. The active MVP release route requires an Owner session plus an enabled EOA source wallet: a Web3 session uses its authenticated EOA, while a Google session may select only one of that Owner's previously linked EOAs.
 
 Before opening a browser wallet in `real` mode, the client calls the read-only `GET /api/v1/milestones/[id]/release` readiness check. It applies Owner authorization and the server-side real-execution gate but creates no release/proof record. `POST` remains the only endpoint that queues a release.
 
