@@ -49,6 +49,10 @@ export default function SettingsPage() {
   const [walletLoadError, setWalletLoadError] = useState<string | null>(null);
   const [walletLoadRequest, setWalletLoadRequest] = useState(0);
   const [circleConfigured, setCircleConfigured] = useState(false);
+  // Circle's Google flow returns credentials in the URL fragment. Mount its
+  // SDK immediately on that return path rather than waiting for the async
+  // configuration check to finish and potentially losing the callback.
+  const [isCircleOAuthReturn] = useState(() => typeof window !== "undefined" && window.location.hash.includes("id_token="));
 
   const handleDisconnect = async () => {
     await disconnect();
@@ -364,7 +368,7 @@ export default function SettingsPage() {
             <ChevronDown size={18} className="shrink-0 text-[var(--text-muted)]" />
           </summary>
           <div className="mt-6 space-y-4">
-            {circleConfigured ? <CirclePaymentAccount onReady={() => setWalletLoadRequest((current) => current + 1)} /> : null}
+            {circleConfigured || isCircleOAuthReturn ? <CirclePaymentAccount onReady={() => setWalletLoadRequest((current) => current + 1)} /> : null}
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h3 className="text-sm font-semibold text-[var(--foreground)]">Connect a browser wallet</h3>
