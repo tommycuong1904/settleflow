@@ -15,7 +15,7 @@ Deliver one simple payment experience for Google and Web3 sign-in users: they ma
 - Owner and Contributor remain the only active workspace roles. The server remains authoritative for membership, scope, approvals, sequencing, and payment permission.
 - A Contributor destination is a verified profile address with an explicit workspace override. An Owner-entered address is temporary internal recovery, never normal onboarding.
 - Browser-wallet execution/reconciliation remains a technical fallback until a managed rail is verified. Remove it from normal UI; do not delete it before replacement is operational.
-- The default payment account must be a user-controlled embedded wallet from a provider that demonstrably supports Arc Testnet USDC transfers. SettleFlow never creates or retains user private keys.
+- The default payment account is a Circle User-controlled Smart Contract Account (SCA) on Arc Testnet. SettleFlow never creates or retains user private keys.
 - Testnet uses isolated credentials, wallets, database, and funding. Production is out of scope.
 
 ## Autonomous execution rule
@@ -90,7 +90,7 @@ Introduce a provider-backed payment account without turning normal workflow into
 
 1. Define the payment-account abstraction: provider wallet ID, owner user, Arc address, status, and immutable payment snapshots.
 2. Add database/API authorization so only account owner and release service can use it; never expose provider credentials or keys in the browser.
-3. Implement Google-driven provisioning/recovery for the selected user-controlled embedded-wallet provider.
+3. Implement one-time Circle Google authorization, User-controlled SCA provisioning, recovery, and the SettleFlow User ↔ Circle user/wallet mapping. Keep the existing SettleFlow GIS session as the product session.
 4. Present only `Payment account ready` or `Finish payment account setup` in Settings; no provider/address jargon by default.
 5. Keep Contributor destination separate: verified profile default, workspace override, no mutation of approved payout snapshots.
 
@@ -100,12 +100,15 @@ Introduce a provider-backed payment account without turning normal workflow into
   stores only its owner, provider identifiers, lifecycle status, and an
   optional canonical `UserWallet` reference. Existing immutable release source
   wallet snapshots remain the payment-time record.
-- Provisioning, provider authorization, and the Web2 Settings state remain
-  blocked on selection and configuration of an Arc Testnet-capable provider.
+- Circle has been selected. Provisioning, provider authorization, and the Web2
+  Settings state require the Circle Testnet configuration listed below.
 
 ### External prerequisite
 
-The workspace owner must select and configure a provider with documented Arc Testnet support, including Testnet credentials, callback/origin settings, funding, recovery, and fee policy. Circle Wallets is a valid candidate: its current Wallets documentation lists Arc Testnet for developer-controlled, user-controlled, and modular wallets. The retained Circle integration remains disabled until the selected Circle wallet product and its configuration are explicitly approved.
+Configure Circle Wallets User-controlled for Arc Testnet: a Testnet API key,
+User-controlled App ID, Google OAuth client/origin configuration, Gas Station
+policy, a funded test account, and the recovery policy. The retained Circle
+integration remains disabled until those Testnet values are configured.
 
 ### Exit criteria
 
@@ -118,16 +121,10 @@ The workspace owner must select and configure a provider with documented Arc Tes
 - Circle Wallets documentation now explicitly lists Arc / Arc Testnet for developer-controlled and user-controlled EOA/SCA wallets, and Modular passkey MSCAs.
 - Circle user-controlled wallets provide self-custodial 2-of-2 MPC with social login, email OTP, or PIN; each signing action requires the user’s active authentication/approval.
 - Circle modular wallets use a device passkey as the signer, support Arc Testnet and testnet gas sponsorship, but require a recovery-key design before production use.
-- The existing Circle code path remains product-gated because it was built against an earlier API surface and has not yet been audited or adapted to this current product model.
-- Dynamic is the current leading candidate: its official documentation supports
-  custom EVM networks and embedded wallets for social-login users. It still
-  requires a dedicated sandbox environment, explicit Arc Testnet network
-  configuration, and a verification of its current wallet/signing tier before
-  integration. Its TSS-MPC offering is documented as beta, so it is suitable
-  only for bounded Testnet validation at this stage.
-- Do not install a provider SDK or alter the protected Google GIS flow until
-  the workspace owner supplies the selected provider's Testnet environment
-  identifier and confirms its recovery, fee, and user-signature policy.
+- Selected approach: Circle User-controlled SCA with Circle Google authorization
+  as a one-time payment-account activation step, while existing SettleFlow GIS
+  remains the product session. The existing Circle code path must be audited
+  and adapted to the current API before being enabled.
 
 ## Phase 3 — Background Testnet payment execution
 
