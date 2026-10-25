@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { encodeAbiParameters, encodeEventTopics, erc20Abi } from "viem";
 import { ARC_CONFIG } from "@/lib/arc/config";
-import { findReleaseTransactionCandidates } from "@/lib/arc/find-release-transaction";
+import { BROWSER_RECONCILIATION_GRACE_MS, findReleaseTransactionCandidates, isBrowserReconciliationReadyToClose } from "@/lib/arc/find-release-transaction";
 
 const source = "0x1111111111111111111111111111111111111111";
 const destination = "0x2222222222222222222222222222222222222222";
@@ -71,4 +71,9 @@ test("reconciliation never treats a token transfer with the wrong amount as a ca
   }, wrongAmountClient);
 
   assert.deepEqual(candidates, []);
+});
+
+test("reconciliation closure waits for a short wallet callback grace window", () => {
+  assert.equal(isBrowserReconciliationReadyToClose({ requestedAt }, new Date(requestedAt.getTime() + BROWSER_RECONCILIATION_GRACE_MS - 1)), false);
+  assert.equal(isBrowserReconciliationReadyToClose({ requestedAt }, new Date(requestedAt.getTime() + BROWSER_RECONCILIATION_GRACE_MS)), true);
 });

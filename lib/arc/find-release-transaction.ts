@@ -5,6 +5,7 @@ import { verifyReleaseTransaction } from "@/lib/arc/verify-release-transaction";
 
 const transferEvent = parseAbiItem("event Transfer(address indexed from, address indexed to, uint256 value)");
 const LOOKBACK_BLOCKS = BigInt(4_096);
+export const BROWSER_RECONCILIATION_GRACE_MS = 60_000;
 
 type ReconciliationRelease = {
   amountUsdc: string;
@@ -28,6 +29,14 @@ export type ReleaseTransactionCandidate = {
   confirmedAt: string;
   explorerUrl: string;
 };
+
+/** A wallet callback can arrive late; do not close an uncertain attempt immediately. */
+export function isBrowserReconciliationReadyToClose(
+  release: Pick<ReconciliationRelease, "requestedAt">,
+  now = new Date(),
+) {
+  return now.getTime() - release.requestedAt.getTime() >= BROWSER_RECONCILIATION_GRACE_MS;
+}
 
 /**
  * Finds only confirmed USDC transfers that independently pass the existing
