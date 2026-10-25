@@ -53,6 +53,8 @@ export default function SettingsPage() {
   // SDK immediately on that return path rather than waiting for the async
   // configuration check to finish and potentially losing the callback.
   const [isCircleOAuthReturn] = useState(() => typeof window !== "undefined" && window.location.hash.includes("id_token="));
+  const circlePaymentWallet = linkedWallets.find((wallet) => wallet.kind === "circle_sca");
+  const browserLinkedWallets = linkedWallets.filter((wallet) => wallet.kind !== "circle_sca");
 
   const handleDisconnect = async () => {
     await disconnect();
@@ -354,6 +356,16 @@ export default function SettingsPage() {
           ) : null}
         </div>
 
+        {authType === "web2_google" && (circleConfigured || circlePaymentWallet || isCircleOAuthReturn) ? <section className="rounded-xl border border-[var(--border-soft)] p-6 sm:p-8">
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] text-[var(--text-muted)]"><Wallet size={20} /></div>
+            <div><h2 className="text-base font-semibold text-[var(--foreground)]">Payment account</h2><p className="text-xs text-[var(--text-muted)]">Your secure USDC account for Arc Testnet payments.</p></div>
+          </div>
+          <div className="mt-5">
+            {circlePaymentWallet ? <div className="flex flex-col gap-2 rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] px-3.5 py-3 text-xs sm:flex-row sm:items-center sm:justify-between"><div><p className="font-medium text-[var(--foreground)]">Payment account ready</p><p className="mt-1 font-mono text-[11px] text-[var(--text-muted)]">{circlePaymentWallet.address}</p></div><p className="text-[11px] text-[var(--text-muted)]">Fund with test USDC before your first payment.</p></div> : <CirclePaymentAccount onReady={() => setWalletLoadRequest((current) => current + 1)} />}
+          </div>
+        </section> : null}
+
         <details className="rounded-xl border border-[var(--border-soft)] p-6 sm:p-8">
           <summary className="flex cursor-pointer list-none items-center justify-between gap-4">
             <div className="flex items-center gap-3">
@@ -361,14 +373,13 @@ export default function SettingsPage() {
                 <Wallet size={20} />
               </div>
               <div>
-                <h2 className="text-base font-semibold text-[var(--foreground)]">Wallet payment (advanced)</h2>
-                <p className="text-xs text-[var(--text-muted)]">Optional. Set this up only when you choose to pay a milestone from a browser wallet.</p>
+                <h2 className="text-base font-semibold text-[var(--foreground)]">Browser wallet (advanced)</h2>
+                <p className="text-xs text-[var(--text-muted)]">Optional technical fallback for browser-wallet payments.</p>
               </div>
             </div>
             <ChevronDown size={18} className="shrink-0 text-[var(--text-muted)]" />
           </summary>
           <div className="mt-6 space-y-4">
-            {circleConfigured || isCircleOAuthReturn ? <CirclePaymentAccount onReady={() => setWalletLoadRequest((current) => current + 1)} /> : null}
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h3 className="text-sm font-semibold text-[var(--foreground)]">Connect a browser wallet</h3>
@@ -385,20 +396,20 @@ export default function SettingsPage() {
                 <Button type="button" variant="secondary" size="sm" icon={<RefreshCw size={14} />} onClick={() => { setWalletLoadError(null); setWalletLoadRequest((current) => current + 1); }} className="shrink-0 self-start sm:self-auto">Try again</Button>
               </div>
             ) : null}
-            {linkedWallets.map((wallet) => (
+            {browserLinkedWallets.map((wallet) => (
               <div key={wallet.id} className="flex flex-col gap-1 rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] px-3.5 py-3 text-xs sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p className="font-medium text-[var(--foreground)]">
-                    {wallet.kind === "circle_sca" ? "Managed wallet — not available yet" : wallet.kind === "legacy_export_eoa" ? "Previously linked wallet — unavailable" : "Wallet payment address"}
+                    {wallet.kind === "legacy_export_eoa" ? "Previously linked wallet — unavailable" : "Wallet payment address"}
                   </p>
                   <p className="font-mono text-[11px] text-[var(--text-muted)]">{wallet.address}</p>
                 </div>
                 <p className="text-[11px] text-[var(--text-muted)]">
-                  {wallet.kind === "circle_sca" ? "Unavailable for wallet payment" : wallet.authEnabled ? "Available for wallet payment" : "Payment source"}
+                  {wallet.authEnabled ? "Available for wallet payment" : "Payment source"}
                 </p>
               </div>
             ))}
-            {isConnected && linkedWallets.length === 0 && !walletLoadError ? <p className="text-xs text-[var(--text-muted)]">No browser wallet is linked. You only need one for Wallet payment.</p> : null}
+            {isConnected && browserLinkedWallets.length === 0 && !walletLoadError ? <p className="text-xs text-[var(--text-muted)]">No browser wallet is linked. You only need one for the technical fallback.</p> : null}
             </div>
           </div>
         </details>
