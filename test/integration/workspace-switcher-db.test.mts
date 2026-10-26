@@ -8,6 +8,7 @@ import { db } from "@/lib/db/client";
 import { GET as listWorkspaces } from "@/app/api/v1/workspaces/route";
 import { POST as setActiveWorkspace } from "@/app/api/v1/workspaces/active/route";
 import { PATCH as updateWorkspaceLabel } from "@/app/api/v1/workspaces/[id]/membership-label/route";
+import { GET as listPayouts } from "@/app/api/v1/payouts/route";
 
 function request(url: string, token: string, body?: unknown, workspaceId?: string) {
   return new NextRequest(url, {
@@ -53,6 +54,18 @@ test("workspace switcher lists only memberships and persists only an authorized 
         { workspaceId: contributorWorkspace.id, userId: user.id, role: "contributor", personalLabel: "Client work" },
         { workspaceId: forbiddenWorkspace.id, userId: outsider.id, role: "owner" },
       ],
+    });
+    const ownContributor = await db.contributor.create({
+      data: { workspaceId: ownWorkspace.id, createdByUserId: user.id, name: "Personal payout recipient" },
+    });
+    const clientContributor = await db.contributor.create({
+      data: { workspaceId: contributorWorkspace.id, createdByUserId: user.id, linkedUserId: user.id, name: "Client contributor" },
+    });
+    const ownPayout = await db.payout.create({
+      data: { workspaceId: ownWorkspace.id, contributorId: ownContributor.id, createdByUserId: user.id, title: "Personal payout", totalAmountUsdc: "1" },
+    });
+    const clientPayout = await db.payout.create({
+      data: { workspaceId: contributorWorkspace.id, contributorId: clientContributor.id, createdByUserId: user.id, title: "Client payout", totalAmountUsdc: "1", status: "active" },
     });
 
     const listed = await listWorkspaces(request("https://settleflow.local/api/v1/workspaces", token));
@@ -121,6 +134,24 @@ test("workspace switcher lists only memberships and persists only an authorized 
     assert.equal(context.workspaceId, contributorWorkspace.id);
     assert.equal(context.actor, "contributor");
 
+    const contributorPayouts = await listPayouts(request(
+      "https://settleflow.local/api/v1/payouts",
+      token,
+      undefined,
+      contributorWorkspace.id,
+    ));
+    assert.equal(contributorPayouts.status, 200);
+    assert.deepEqual((await contributorPayouts.json()).data.map((payout: { id: string }) => payout.id), [clientPayout.id]);
+
+    const ownerPayouts = await listPayouts(request(
+      "https://settleflow.local/api/v1/payouts",
+      token,
+      undefined,
+      ownWorkspace.id,
+    ));
+    assert.equal(ownerPayouts.status, 200);
+    assert.deepEqual((await ownerPayouts.json()).data.map((payout: { id: string }) => payout.id), [ownPayout.id]);
+
     const denied = await setActiveWorkspace(request(
       "https://settleflow.local/api/v1/workspaces/active",
       token,
@@ -130,6 +161,8 @@ test("workspace switcher lists only memberships and persists only an authorized 
     assert.equal((await denied.json()).code, "WORKSPACE_ACCESS_DENIED");
     assert.equal(denied.headers.get("set-cookie"), null);
   } finally {
+    await db.payout.deleteMany({ where: { workspaceId: { in: [ownWorkspace.id, contributorWorkspace.id] } } });
+    await db.contributor.deleteMany({ where: { workspaceId: { in: [ownWorkspace.id, contributorWorkspace.id] } } });
     await db.workspaceMember.deleteMany({ where: { workspaceId: { in: [ownWorkspace.id, contributorWorkspace.id, forbiddenWorkspace.id] } } });
     await db.workspace.deleteMany({ where: { id: { in: [ownWorkspace.id, contributorWorkspace.id, forbiddenWorkspace.id] } } });
     await db.user.deleteMany({ where: { id: { in: [user.id, outsider.id] } } });
