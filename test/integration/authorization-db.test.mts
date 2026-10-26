@@ -4,9 +4,10 @@ import test from "node:test";
 import { createSessionToken } from "@/lib/auth/session";
 import { db } from "@/lib/db/client";
 import { GET as getPayouts } from "@/app/api/payouts/route";
-import { GET as getPayoutDetail } from "@/app/api/v1/payouts/[id]/route";
+import { GET as getPayoutDetail, PATCH as updatePayout } from "@/app/api/v1/payouts/[id]/route";
 import { POST as createPayout } from "@/app/api/v1/payouts/route";
 import { POST as createContributor } from "@/app/api/contributors/route";
+import { PATCH as updateContributor } from "@/app/api/v1/contributors/[id]/route";
 import { POST as approveMilestone } from "@/app/api/v1/milestones/[id]/approve/route";
 
 const walletA = "0x1111111111111111111111111111111111111111";
@@ -96,6 +97,42 @@ test("cross-workspace create and approve mutations are rejected without side eff
     await db.workspaceMember.deleteMany({ where: { workspaceId: { in: [workspaceA.id, workspaceB.id] } } });
     await db.workspace.deleteMany({ where: { id: { in: [workspaceA.id, workspaceB.id] } } });
     await db.user.deleteMany({ where: { id: { in: [owner.id, reviewer.id] } } });
+  }
+});
+
+test("an owner cannot update a draft payout or contributor outside the selected workspace", async () => {
+  const suffix = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const owner = await db.user.create({ data: { displayName: "Scoped Mutation Owner", email: `scoped-mutation-${suffix}@example.com` } });
+  const workspaceA = await db.workspace.create({ data: { name: "Scoped Mutation A", slug: `scoped-mutation-a-${suffix}` } });
+  const workspaceB = await db.workspace.create({ data: { name: "Scoped Mutation B", slug: `scoped-mutation-b-${suffix}` } });
+  const contributor = await db.contributor.create({ data: { workspaceId: workspaceB.id, createdByUserId: owner.id, name: "Workspace B Contributor", walletAddress: walletB } });
+  const payout = await db.payout.create({ data: { workspaceId: workspaceB.id, contributorId: contributor.id, createdByUserId: owner.id, title: "Workspace B Draft", totalAmountUsdc: "5" } });
+
+  try {
+    await db.workspaceMember.createMany({ data: [
+      { workspaceId: workspaceA.id, userId: owner.id, role: "owner" },
+      { workspaceId: workspaceB.id, userId: owner.id, role: "owner" },
+    ] });
+    const token = await tokenFor(owner.email!, owner.id);
+    const headers = { cookie: sessionCookie(token), "content-type": "application/json" };
+
+    const payoutResponse = await updatePayout(new Request(`https://settleflow.local/api/v1/payouts/${payout.id}?workspaceId=${workspaceA.id}`, {
+      method: "PATCH", headers, body: JSON.stringify({ title: "Cross workspace edit" }),
+    }), { params: Promise.resolve({ id: payout.id }) });
+    assert.equal(payoutResponse.status, 404);
+    assert.equal((await db.payout.findUnique({ where: { id: payout.id } }))?.title, "Workspace B Draft");
+
+    const contributorResponse = await updateContributor(new Request(`https://settleflow.local/api/v1/contributors/${contributor.id}?workspaceId=${workspaceA.id}`, {
+      method: "PATCH", headers, body: JSON.stringify({ name: "Cross workspace contributor edit" }),
+    }), { params: Promise.resolve({ id: contributor.id }) });
+    assert.equal(contributorResponse.status, 404);
+    assert.equal((await db.contributor.findUnique({ where: { id: contributor.id } }))?.name, "Workspace B Contributor");
+  } finally {
+    await db.payout.delete({ where: { id: payout.id } });
+    await db.contributor.delete({ where: { id: contributor.id } });
+    await db.workspaceMember.deleteMany({ where: { workspaceId: { in: [workspaceA.id, workspaceB.id] } } });
+    await db.workspace.deleteMany({ where: { id: { in: [workspaceA.id, workspaceB.id] } } });
+    await db.user.delete({ where: { id: owner.id } });
   }
 });
 
