@@ -49,6 +49,7 @@ export default function SettingsPage() {
   const [walletLoadError, setWalletLoadError] = useState<string | null>(null);
   const [walletLoadRequest, setWalletLoadRequest] = useState(0);
   const [circleConfigured, setCircleConfigured] = useState(false);
+  const [reconnectingCircle, setReconnectingCircle] = useState(false);
   // Circle's Google flow returns credentials in the URL fragment. Mount its
   // SDK immediately on that return path rather than waiting for the async
   // configuration check to finish and potentially losing the callback.
@@ -362,7 +363,7 @@ export default function SettingsPage() {
             <div><h2 className="text-base font-semibold text-[var(--foreground)]">Payment account</h2><p className="text-xs text-[var(--text-muted)]">Your secure USDC account for Arc Testnet payments.</p></div>
           </div>
           <div className="mt-5">
-            {circlePaymentWallet ? <div className="flex flex-col gap-2 rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] px-3.5 py-3 text-xs sm:flex-row sm:items-center sm:justify-between"><div><p className="font-medium text-[var(--foreground)]">Payment account ready</p><p className="mt-1 font-mono text-[11px] text-[var(--text-muted)]">{circlePaymentWallet.address}</p></div><p className="text-[11px] text-[var(--text-muted)]">Fund with test USDC before your first payment.</p></div> : <CirclePaymentAccount onReady={() => setWalletLoadRequest((current) => current + 1)} />}
+            {circlePaymentWallet && !reconnectingCircle ? <div className="flex flex-col gap-3 rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] px-3.5 py-3 text-xs sm:flex-row sm:items-center sm:justify-between"><div><p className="font-medium text-[var(--foreground)]">Payment account ready</p><p className="mt-1 font-mono text-[11px] text-[var(--text-muted)]">{circlePaymentWallet.address}</p><p className="mt-1 text-[11px] text-[var(--text-muted)]">Fund with test USDC before your first payment.</p></div><Button type="button" variant="secondary" size="sm" onClick={() => setReconnectingCircle(true)} className="shrink-0">Reconnect</Button></div> : <CirclePaymentAccount reconnect={Boolean(circlePaymentWallet)} onReady={() => { setReconnectingCircle(false); setWalletLoadRequest((current) => current + 1); }} />}
           </div>
         </section> : null}
 
