@@ -50,7 +50,7 @@ export async function createPayout(input: CreatePayoutInput) {
 
     const contributor = await tx.contributor.findFirst({
       where: { id: input.contributorId, workspaceId: input.workspaceId, status: "active" },
-      select: { id: true },
+      select: { id: true, walletAddress: true },
     });
     if (!contributor) throw new Error("CONTRIBUTOR_NOT_FOUND");
 
@@ -61,7 +61,7 @@ export async function createPayout(input: CreatePayoutInput) {
         contributorId: input.contributorId,
         title: input.title,
         description: input.description,
-        targetWalletAddress: input.targetWalletAddress?.trim() || null,
+        targetWalletAddress: input.targetWalletAddress?.trim() || contributor.walletAddress || null,
         totalAmountUsdc: input.totalAmountUsdc,
         currency: "USDC",
         status: "draft",

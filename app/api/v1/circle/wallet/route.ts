@@ -3,6 +3,7 @@ import { getAddress, isAddress } from "viem";
 
 import { getSessionFromRequest, getVerifiedSessionUser } from "@/lib/auth/session-server";
 import { db } from "@/lib/db/client";
+import { fillMissingContributorWalletsForUser } from "@/lib/repositories/contributors";
 import {
   CircleApiError,
   CircleConfigurationError,
@@ -91,6 +92,7 @@ async function persistWallet(userId: string, wallet: CircleWallet) {
       create: { userId, provider: "circle_user_controlled", providerAccountId: wallet.id, walletLinkId: walletLink.id, status: "ready" },
       update: { providerAccountId: wallet.id, walletLinkId: walletLink.id, status: "ready" },
     });
+    await fillMissingContributorWalletsForUser(tx, userId, address);
     return circleWallet;
   });
 }

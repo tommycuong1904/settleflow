@@ -198,6 +198,18 @@ export async function reconcileUserContributors(userId: string): Promise<{ linke
   return { linkedCount };
 }
 
+/** Fill only missing workspace-recipient addresses for an already-linked user. */
+export async function fillMissingContributorWalletsForUser(
+  tx: Prisma.TransactionClient,
+  userId: string,
+  walletAddress: string,
+) {
+  return tx.contributor.updateMany({
+    where: { linkedUserId: userId, walletAddress: null },
+    data: { walletAddress },
+  });
+}
+
 export async function createContributor(
   input: CreateContributorInput,
 ): Promise<ContributorListItem> {

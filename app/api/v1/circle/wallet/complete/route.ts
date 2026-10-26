@@ -3,6 +3,7 @@ import { getAddress, isAddress } from "viem";
 
 import { getSessionFromRequest, getVerifiedSessionUser } from "@/lib/auth/session-server";
 import { db } from "@/lib/db/client";
+import { fillMissingContributorWalletsForUser } from "@/lib/repositories/contributors";
 import { CIRCLE_SMART_WALLET_AVAILABLE, circleSmartWalletComingSoonResponse } from "@/lib/circle/availability";
 import {
   CircleApiError,
@@ -83,6 +84,7 @@ export async function POST(request: Request) {
         create: { userId: user.id, provider: "circle_user_controlled", providerAccountId: circleWallet.id, walletLinkId: walletLink.id, status: "ready" },
         update: { providerAccountId: circleWallet.id, walletLinkId: walletLink.id, status: "ready" },
       });
+      await fillMissingContributorWalletsForUser(tx, user.id, address);
       return persistedCircleWallet;
     });
     await db.circleWalletProvisioning.delete({ where: { userId: user.id } });
