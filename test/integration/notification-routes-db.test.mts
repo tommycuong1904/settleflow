@@ -11,14 +11,19 @@ test("notification routes enforce the active user and workspace boundary", async
   const owner = await db.user.create({ data: { displayName: "Notification Route Owner", email: `notification-route-owner-${suffix}@example.com` } });
   const other = await db.user.create({ data: { displayName: "Notification Route Other", email: `notification-route-other-${suffix}@example.com` } });
   const workspace = await db.workspace.create({ data: { name: "Notification Route Workspace", slug: `notification-route-${suffix}` } });
+  const otherWorkspace = await db.workspace.create({ data: { name: "Other Notification Workspace", slug: `other-notification-route-${suffix}` } });
 
   try {
     await db.workspaceMember.createMany({ data: [
       { workspaceId: workspace.id, userId: owner.id, role: "owner" },
       { workspaceId: workspace.id, userId: other.id, role: "contributor" },
+      { workspaceId: otherWorkspace.id, userId: owner.id, role: "owner" },
     ] });
     const notification = await db.notification.create({
       data: { workspaceId: workspace.id, userId: owner.id, type: "milestone_submitted", title: "Review", body: "Review required", href: "/payouts/payout-1" },
+    });
+    const otherWorkspaceNotification = await db.notification.create({
+      data: { workspaceId: otherWorkspace.id, userId: owner.id, type: "milestone_submitted", title: "Other workspace review", body: "Review required elsewhere", href: "/payouts/payout-2" },
     });
     const ownerToken = await createSessionToken({ userId: owner.id, email: owner.email!, name: owner.displayName, address: null, authType: "web2_google" });
     const otherToken = await createSessionToken({ userId: other.id, email: other.email!, name: other.displayName, address: null, authType: "web2_google" });
@@ -48,10 +53,11 @@ test("notification routes enforce the active user and workspace boundary", async
     const markedAll = await markAllNotificationsRead(new Request(`https://settleflow.local/api/v1/notifications?workspaceId=${workspace.id}`, { method: "PATCH", headers: headersFor(ownerToken) }));
     assert.equal(markedAll.status, 200);
     assert.notEqual((await db.notification.findUnique({ where: { id: unreadNotification.id } }))?.readAt, null);
+    assert.equal((await db.notification.findUnique({ where: { id: otherWorkspaceNotification.id } }))?.readAt, null);
   } finally {
-    await db.notification.deleteMany({ where: { workspaceId: workspace.id } });
-    await db.workspaceMember.deleteMany({ where: { workspaceId: workspace.id } });
-    await db.workspace.delete({ where: { id: workspace.id } });
+    await db.notification.deleteMany({ where: { workspaceId: { in: [workspace.id, otherWorkspace.id] } } });
+    await db.workspaceMember.deleteMany({ where: { workspaceId: { in: [workspace.id, otherWorkspace.id] } } });
+    await db.workspace.deleteMany({ where: { id: { in: [workspace.id, otherWorkspace.id] } } });
     await db.user.deleteMany({ where: { id: { in: [owner.id, other.id] } } });
   }
 });
