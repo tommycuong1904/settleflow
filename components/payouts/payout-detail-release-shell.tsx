@@ -377,6 +377,20 @@ export function PayoutDetailReleaseShell({
       };
 
       if ((response && !response.ok) || data.error) {
+        if (data.error?.includes("A release already exists")) {
+          const existingResponse = await fetch(`/api/v1/milestones/${nextReleasableMilestone.id}/release`, {
+            headers: productContextHeaders,
+          });
+          const existingData = (await existingResponse.json().catch(() => null)) as {
+            existingRelease?: { proof?: TransactionProof };
+          } | null;
+          if (existingResponse.ok && existingData?.existingRelease?.proof) {
+            setActiveProof(existingData.existingRelease.proof);
+            setReleaseStatus(existingData.existingRelease.proof.status === "failed" ? "failed" : existingData.existingRelease.proof.status === "confirmed" ? "confirmed" : "submitting");
+            setReleaseModalMode(null);
+            return;
+          }
+        }
         setReleaseError(data.error ?? "Release request failed.");
         setReleaseStatus("failed");
         setReleaseModalMode("failed");
