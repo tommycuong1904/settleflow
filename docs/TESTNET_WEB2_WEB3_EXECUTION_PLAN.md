@@ -159,6 +159,7 @@ Send and reconcile a bounded real Arc Testnet payment without exposing blockchai
 - The normal Owner view exposed only payment status and the final payment record; no transaction hash, network selection, or manual reconciliation decision was required.
 - This is Testnet evidence only. It does not authorize production execution or remove the need for background reconciliation of ambiguous outcomes.
 - The Circle confirmation modal was manually verified as one flow: `Confirm payment` → `Processing` → `Payment confirmed`, without a normal-flow `Check payment` action.
+- Payment UX core is accepted for the current Testnet MVP: Review identifies the recipient with name, masked email, and abbreviated destination; processing and ambiguous outcomes remain non-retryable and product-language-first.
 
 ## Phase 4 — Background reconciliation and internal operations
 
