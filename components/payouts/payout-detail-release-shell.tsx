@@ -185,6 +185,14 @@ export function PayoutDetailReleaseShell({
     proofForNextAction.executionMode === "browser_wallet" &&
     proofForNextAction.releaseStatus === "pending",
   );
+  const canRecoverLegacyBrowserRelease = Boolean(
+    authType === "web2_google" && isBrowserReleasable && resolvedProof?.releaseId,
+  );
+  const canStartCircleReplacement = Boolean(
+    authType === "web2_google" && effectiveReleaseStatus === "failed" &&
+    proofForNextAction?.executionMode === "browser_wallet" &&
+    proofForNextAction.failureReason?.startsWith("BROWSER_WALLET_RECONCILIATION:"),
+  );
   const shouldShowPaymentAction = isOwnerActor && (
     effectiveReleaseStatus === "submitting" ||
     effectiveReleaseStatus === "failed"
@@ -725,6 +733,28 @@ export function PayoutDetailReleaseShell({
     }
   }
 
+  async function handleResolveLegacyBrowserRelease() {
+    if (!resolvedProof?.releaseId) return;
+    setProcessingRelease(true);
+    setReleaseError(null);
+    try {
+      const response = await fetch(`/api/v1/releases/${resolvedProof.releaseId}/mark-unsubmitted`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...productContextHeaders },
+      });
+      const data = await response.json() as { error?: string; proof?: TransactionProof };
+      if (!response.ok || data.error || !data.proof) throw new Error(data.error ?? "Unable to check the previous payment.");
+      setActiveProof({ ...data.proof, executionMode: "browser_wallet", releaseStatus: "failed" });
+      setReleaseStatus("failed");
+      void onActivityChange?.();
+    } catch (error) {
+      setReleaseError(releaseErrorMessage(error, "Unable to check the previous payment."));
+      setReleaseModalMode("failed");
+    } finally {
+      setProcessingRelease(false);
+    }
+  }
+
   async function handleRefreshCircleSettlement() {
     if (!isOwnerActor || !resolvedProof?.releaseId || !isCircleSettlementPending) return;
 
@@ -767,7 +797,9 @@ export function PayoutDetailReleaseShell({
               ) : effectiveReleaseStatus === "failed" ? (
                 <><p className="font-semibold text-[var(--foreground)]">Payment needs support</p><p className="mt-1 text-[var(--text-muted)]">We’re reviewing this payment. You do not need to take action right now.</p></>
               ) : isBrowserReleasable ? (
-                <><p className="font-semibold text-[var(--foreground)]">Continue payment</p><p className="mt-1 text-[var(--text-muted)]">Continue the existing payment. SettleFlow will not create another one.</p></>
+                canRecoverLegacyBrowserRelease
+                  ? <><p className="font-semibold text-[var(--foreground)]">Previous payment needs a quick check</p><p className="mt-1 text-[var(--text-muted)]">We’ll check the earlier browser-wallet request before using your payment account.</p></>
+                  : <><p className="font-semibold text-[var(--foreground)]">Continue payment</p><p className="mt-1 text-[var(--text-muted)]">Continue the existing payment. SettleFlow will not create another one.</p></>
               ) : nextReleasableMilestone ? (
                 <><p className="font-semibold text-[var(--foreground)]">Ready to pay {formatUsdc(nextReleasableMilestone.amount)} USDC</p><p className="mt-1 text-[var(--text-muted)]">Choose how you want to record this payment.</p></>
               ) : null}
@@ -775,7 +807,9 @@ export function PayoutDetailReleaseShell({
             {isCircleSettlementPending ? <Button onClick={() => { void handleRefreshCircleSettlement(); }}>Check payment</Button>
               : needsCircleConfirmation ? <Button onClick={() => { void handleContinueCircleRelease(); }}>Continue confirmation</Button>
                 : isBrowserReconciliationPending ? <Button onClick={() => setReleaseModalMode("pending")}>View status</Button>
+                  : canStartCircleReplacement ? <Button onClick={openPaymentMethod}>Pay with payment account</Button>
                   : effectiveReleaseStatus === "failed" ? <Button onClick={() => setReleaseModalMode("failed")}>View status</Button>
+                    : canRecoverLegacyBrowserRelease ? <Button onClick={() => { void handleResolveLegacyBrowserRelease(); }}>Check previous payment</Button>
                     : isBrowserReleasable ? <Button onClick={() => openReleaseReview(resolvedProof?.releaseId)}>Continue payment</Button>
                       : nextReleasableMilestone ? <Button onClick={openPaymentMethod}>Pay {formatUsdc(nextReleasableMilestone.amount)} USDC</Button>
                         : null}

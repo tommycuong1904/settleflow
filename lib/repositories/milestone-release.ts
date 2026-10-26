@@ -79,7 +79,7 @@ export async function queueMilestoneRelease(
             targetWalletAddress: true,
           },
         },
-        releases: { select: { id: true }, take: 1 },
+        releases: { orderBy: { createdAt: "desc" }, take: 1, select: { id: true, status: true, executionMode: true, proofs: { orderBy: { createdAt: "desc" }, take: 1, select: { status: true, failureReason: true } } } },
       },
     });
     if (!milestone) throw new Error("MILESTONE_NOT_FOUND");
@@ -99,7 +99,14 @@ export async function queueMilestoneRelease(
       orderBy: { sequence: "asc" },
     });
     if (earlierUnpaidMilestone) throw new Error("PREVIOUS_MILESTONE_NOT_RELEASED");
-    if (milestone.releases.length > 0) throw new Error("RELEASE_ALREADY_EXISTS");
+    const previousRelease = milestone.releases[0];
+    const previousProof = previousRelease?.proofs[0];
+    const canReplaceReconciledBrowserRelease = executionMode === "circle_user_wallet"
+      && previousRelease?.status === "failed"
+      && previousRelease.executionMode === "browser_wallet"
+      && previousProof?.status === "failed"
+      && previousProof.failureReason?.startsWith("BROWSER_WALLET_RECONCILIATION:");
+    if (previousRelease && !canReplaceReconciledBrowserRelease) throw new Error("RELEASE_ALREADY_EXISTS");
     if (!milestone.payout.targetWalletAddress) throw new Error("DESTINATION_WALLET_MISSING");
     if (!isValidEvmAddress(milestone.payout.targetWalletAddress)) throw new Error("INVALID_DESTINATION_WALLET");
 

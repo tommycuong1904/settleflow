@@ -5,6 +5,7 @@ import {
 } from "@/lib/arc/find-release-transaction";
 import {
   getBrowserReleaseReconciliationSnapshot,
+  failUnclaimedBrowserRelease,
   refreshReleaseProof,
 } from "@/lib/repositories/release-proof";
 import { resolveProductContextFromRequestWithSession } from "@/lib/auth/session-server";
@@ -31,10 +32,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     if (candidates.length > 0) {
       return NextResponse.json({ error: "MATCHING_TRANSACTION_FOUND", candidates }, { status: 409 });
     }
-    const result = await refreshReleaseProof(id, context.ownerUserId, context.workspaceId, {
-      status: "failed",
-      failureReason: FAILURE_REASON,
-    });
+    const result = release.status === "queued"
+      ? await failUnclaimedBrowserRelease(id, context.ownerUserId, context.workspaceId, FAILURE_REASON)
+      : await refreshReleaseProof(id, context.ownerUserId, context.workspaceId, { status: "failed", failureReason: FAILURE_REASON });
     return NextResponse.json(result);
   } catch (error) {
     const code = error instanceof Error ? error.message : "UNABLE_TO_CLOSE_RECONCILIATION";

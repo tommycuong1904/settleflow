@@ -73,7 +73,7 @@ export async function getBrowserReleaseReconciliationSnapshot(releaseId: string,
   });
   if (!release) throw new Error("RELEASE_NOT_FOUND");
   if (
-    release.status !== "pending" ||
+    !["queued", "pending"].includes(release.status) ||
     release.executionMode !== "browser_wallet" ||
     !release.sourceWalletAddress
   ) {
@@ -84,8 +84,51 @@ export async function getBrowserReleaseReconciliationSnapshot(releaseId: string,
     destinationWalletAddress: release.destinationWalletAddress,
     sourceWalletAddress: release.sourceWalletAddress,
     requestedAt: release.requestedAt,
+    status: release.status,
     executionMode: "browser_wallet" as const,
   };
+}
+
+/** Close an unclaimed browser attempt only after server-side reconciliation. */
+export async function failUnclaimedBrowserRelease(releaseId: string, refreshedByUserId: string, workspaceId: string, failureReason: string) {
+  return db.$transaction(async (tx: Prisma.TransactionClient) => {
+    const release = await tx.release.findFirst({
+      where: { id: releaseId, payout: { workspaceId } },
+      select: {
+        id: true, payoutId: true, milestoneId: true, status: true, executionMode: true,
+        payout: { select: { workspaceId: true } },
+        proofs: { orderBy: { createdAt: "desc" }, take: 1, select: { id: true, status: true } },
+      },
+    });
+    if (!release) throw new Error("RELEASE_NOT_FOUND");
+    if (release.status !== "queued" || release.executionMode !== "browser_wallet") throw new Error("RELEASE_NOT_RECONCILABLE");
+    if (!release.milestoneId) throw new Error("MILESTONE_NOT_FOUND");
+    const canRefresh = await hasWorkspaceRole(tx, release.payout.workspaceId, refreshedByUserId, ["owner"]);
+    if (!canRefresh) throw new Error("FORBIDDEN_PROOF_REFRESH");
+    await tx.$queryRaw`SELECT id FROM "Milestone" WHERE id = ${release.milestoneId} FOR UPDATE`;
+    const latest = await tx.release.findFirst({
+      where: { milestoneId: release.milestoneId, payout: { workspaceId } },
+      orderBy: { createdAt: "desc" },
+      select: { id: true },
+    });
+    if (latest?.id !== release.id) throw new Error("STALE_PROOF_REFRESH");
+    const proof = release.proofs[0];
+    if (!proof || proof.status !== "pending") throw new Error("PROOF_NOT_PENDING");
+    const now = new Date();
+    const proofResult = await tx.transactionProof.updateMany({
+      where: { id: proof.id, status: "pending" },
+      data: deriveProofRefreshUpdate({ status: "failed", failureReason }, now),
+    });
+    const releaseResult = await tx.release.updateMany({
+      where: { id: release.id, status: "queued" },
+      data: deriveReleaseRefreshUpdate({ status: "failed", failureReason }, now),
+    });
+    if (proofResult.count !== 1 || releaseResult.count !== 1) throw new Error("RELEASE_NOT_REFRESHABLE");
+    return {
+      release: await tx.release.findUniqueOrThrow({ where: { id: release.id } }),
+      proof: await tx.transactionProof.findUniqueOrThrow({ where: { id: proof.id } }),
+    };
+  });
 }
 
 type ProofRefreshUpdate = {
