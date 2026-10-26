@@ -77,6 +77,7 @@ export async function queueMilestoneRelease(
             workspaceId: true,
             status: true,
             targetWalletAddress: true,
+            contributorId: true,
           },
         },
         releases: { orderBy: { createdAt: "desc" }, take: 1, select: { id: true, status: true, executionMode: true, proofs: { orderBy: { createdAt: "desc" }, take: 1, select: { status: true, failureReason: true } } } },
@@ -89,6 +90,19 @@ export async function queueMilestoneRelease(
       throw new Error("PAYOUT_NOT_RELEASE_READY");
     }
     await tx.$queryRaw`SELECT id FROM "Payout" WHERE id = ${milestone.payout.id} FOR UPDATE`;
+    if (!milestone.payout.targetWalletAddress && executionMode === "circle_user_wallet") {
+      const contributor = await tx.contributor.findUnique({
+        where: { id: milestone.payout.contributorId },
+        select: { walletAddress: true },
+      });
+      if (contributor?.walletAddress && isValidEvmAddress(contributor.walletAddress)) {
+        const updated = await tx.payout.updateMany({
+          where: { id: milestone.payout.id, targetWalletAddress: null },
+          data: { targetWalletAddress: contributor.walletAddress },
+        });
+        if (updated.count === 1) milestone.payout.targetWalletAddress = contributor.walletAddress;
+      }
+    }
     const earlierUnpaidMilestone = await tx.milestone.findFirst({
       where: {
         payoutId: milestone.payout.id,
