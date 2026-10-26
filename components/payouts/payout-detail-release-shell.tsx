@@ -330,7 +330,7 @@ export function PayoutDetailReleaseShell({
     let result = await completeCircleRelease(releaseId);
     // Keep the normal payment flow in one modal while Circle/Arc finalizes.
     // A bounded poll avoids asking the Owner to manually check immediately.
-    for (let attempt = 0; attempt < 5 && result.status === "pending"; attempt += 1) {
+    for (let attempt = 0; attempt < 15 && result.status === "pending"; attempt += 1) {
       await new Promise<void>((resolve) => window.setTimeout(resolve, 1500));
       result = await completeCircleRelease(releaseId);
     }
@@ -446,6 +446,7 @@ export function PayoutDetailReleaseShell({
           executionMode: "circle_user_wallet",
           releaseStatus: "pending",
         };
+        setActiveProof(fallback);
         setReleaseModalMode("pending");
         const circlePayload = await executeCircleRelease(data.release.id);
         const proof = proofFromCirclePayload(circlePayload, fallback);
@@ -655,6 +656,12 @@ export function PayoutDetailReleaseShell({
         setReleaseModalMode(null);
       }
     } catch (err) {
+      if (authType === "web2_google" && err instanceof Error && err.message === "CIRCLE_WALLET_PROVIDER_ERROR") {
+        setReleaseError(null);
+        setReleaseStatus("submitting");
+        setReleaseModalMode("pending");
+        return;
+      }
       setReleaseError(releaseErrorMessage(err, "Release request failed."));
       setReleaseStatus("failed");
       setReleaseModalMode("failed");
@@ -929,7 +936,7 @@ export function PayoutDetailReleaseShell({
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">Payment processing</p>
                 <h2 id="release-dialog-title" className="mt-2 pr-8 text-xl font-semibold text-[var(--foreground)]">We’re confirming your payment</h2>
                 <p className="mt-2 text-sm text-[var(--text-muted)]">Your payment is being checked safely. You do not need to sign, retry, or provide any payment details.</p>
-                <div className="mt-5 rounded-2xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-4 text-sm text-[var(--text-muted)]"><p className="font-medium text-[var(--foreground)]">What happens next</p><p className="mt-1 leading-6">This payment will update when confirmation is complete. If it needs attention, SettleFlow will show the next step.</p></div>
+                <div className="mt-5 rounded-2xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-4 text-sm text-[var(--text-muted)]"><p className="font-medium text-[var(--foreground)]">Still processing safely</p><p className="mt-1 leading-6">You can close this window. SettleFlow will keep this payment locked and show the completed record once confirmation arrives.</p></div>
                 <div className="mt-6 flex justify-end"><Button variant="secondary" onClick={closeReleaseModal} className="w-full justify-center sm:w-auto">Close</Button></div>
               </>
             ) : (
