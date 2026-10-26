@@ -34,7 +34,7 @@ export interface WalletContextValue {
   refreshCircleWallet: () => Promise<void>;
   connectWeb3: (preferredWallet?: string) => Promise<void>;
   linkWeb3: () => Promise<string>;
-  connectGoogle: (profile: { email: string; name?: string; picture?: string; sub: string; idToken: string }) => Promise<void>;
+  connectGoogle: (profile: { email: string; name?: string; picture?: string; sub: string; idToken: string }) => Promise<boolean>;
   disconnect: () => Promise<void>;
 }
 
@@ -47,7 +47,7 @@ const STORAGE_KEY = "settleflow_auth_session";
  * not block on a network hiccup; the local (client) session still stands.
  * Used so the proxy gate sees a valid `sf_session` cookie on later mutations.
  */
-async function syncServerSession(path: string, body: Record<string, unknown>) {
+async function syncServerSession<T = undefined>(path: string, body: Record<string, unknown>): Promise<T> {
   try {
     const response = await fetch(path, {
       method: "POST",
@@ -58,6 +58,7 @@ async function syncServerSession(path: string, body: Record<string, unknown>) {
       const payload = (await response.json().catch(() => null)) as { error?: string } | null;
       throw new Error(payload?.error || `Session sync failed (${response.status}).`);
     }
+    return await response.json() as T;
   } catch (err) {
     console.warn(`Session sync to ${path} failed:`, err);
     throw err;
@@ -311,7 +312,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         const name = profile.name || profile.email.split("@")[0];
         const avatar = profile.picture || null;
 
-        await syncServerSession("/api/v1/auth/google", {
+        const authentication = await syncServerSession<{ needsPaymentAccountSetup?: boolean }>("/api/v1/auth/google", {
           email: profile.email,
           sub: profile.sub,
           name: profile.name,
@@ -343,6 +344,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         });
 
         setIsAuthModalOpen(false);
+        return authentication.needsPaymentAccountSetup === true;
       } finally {
         setIsConnecting(false);
       }

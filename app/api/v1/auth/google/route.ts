@@ -27,7 +27,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Google email is not verified." }, { status: 403 });
     }
 
-    const { user, initialWorkspace } = await db.$transaction(async (tx) => {
+    const { user, initialWorkspace, needsPaymentAccountSetup } = await db.$transaction(async (tx) => {
       const provisioned = await provisionGoogleUser(tx, {
         sub: profile.sub,
         email: profile.email,
@@ -38,7 +38,8 @@ export async function POST(request: Request) {
         userId: provisioned.user.id,
         displayName: provisioned.user.displayName,
       });
-      return { user: provisioned.user, initialWorkspace };
+      const circleWallet = await tx.circleUserWallet.findUnique({ where: { userId: provisioned.user.id }, select: { id: true } });
+      return { user: provisioned.user, initialWorkspace, needsPaymentAccountSetup: !circleWallet };
     });
 
     // Issue a server-side HttpOnly session cookie so the proxy gate can enforce
@@ -69,6 +70,7 @@ export async function POST(request: Request) {
         picture: profile.picture || null,
         smartAccountAddress: null,
       },
+      needsPaymentAccountSetup,
     });
   } catch (error) {
     return NextResponse.json(

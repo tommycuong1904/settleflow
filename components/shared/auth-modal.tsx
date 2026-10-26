@@ -43,7 +43,7 @@ export function AuthModal() {
     };
   }, [isAuthModalOpen]);
 
-  const refreshCurrentPage = useCallback(() => {
+  const refreshCurrentPage = useCallback((needsPaymentAccountSetup = false) => {
     closeAuthModal();
     const next = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("next") : null;
     const requestedDestination = authReturnTo ?? next;
@@ -52,7 +52,9 @@ export function AuthModal() {
       : "/dashboard";
     // `/auth-required` is a static sign-in boundary. Refreshing it after a
     // successful wallet session leaves the user on the same sign-in screen.
-    router.replace(destination);
+    router.replace(needsPaymentAccountSetup
+      ? `/settings?onboarding=1&next=${encodeURIComponent(destination)}`
+      : destination);
   }, [authReturnTo, closeAuthModal, router]);
 
   useEffect(() => {
@@ -88,8 +90,8 @@ export function AuthModal() {
                 return;
               }
               try {
-                await connectGoogle({ ...profile, idToken: response.credential });
-                refreshCurrentPage();
+                const needsPaymentAccountSetup = await connectGoogle({ ...profile, idToken: response.credential });
+                refreshCurrentPage(needsPaymentAccountSetup);
               } catch (error) {
                 const message = error instanceof Error ? error.message : "Google sign-in failed. Please try again.";
                 setGoogleError(message);

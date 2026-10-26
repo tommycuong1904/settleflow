@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/shared/button";
 import { PageHeader } from "@/components/shared/page-header";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useResolvedProductContext } from "@/lib/runtime/product-context-client";
 import { hasRole } from "@/lib/runtime/role-utils";
 import { useWallet } from "@/lib/context/wallet-context";
@@ -29,6 +29,10 @@ import {
 export default function SettingsPage() {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const isPaymentOnboarding = searchParams.get("onboarding") === "1";
+  const requestedPaymentSetupNext = searchParams.get("next") ?? "/dashboard";
+  const paymentSetupNext = requestedPaymentSetupNext.startsWith("/") && !requestedPaymentSetupNext.startsWith("//") ? requestedPaymentSetupNext : "/dashboard";
   const productContext = useResolvedProductContext();
   const actor = productContext.actor;
   const isOwner = hasRole(actor, "owner");
@@ -69,7 +73,7 @@ export default function SettingsPage() {
     const response = await fetch("/api/v1/auth/wallet/link", { cache: "no-store" });
     if (response.ok) setLinkedWallets((await response.json() as { wallets: typeof linkedWallets }).wallets);
     setWalletLoadRequest((current) => current + 1);
-    router.replace("/settings");
+    router.replace(isPaymentOnboarding ? paymentSetupNext : "/settings");
   };
 
   const handleDisconnect = async () => {
@@ -375,11 +379,12 @@ export default function SettingsPage() {
         {authType === "web2_google" ? <section className="rounded-xl border border-[var(--border-soft)] p-6 sm:p-8">
           <div className="flex items-start gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] text-[var(--text-muted)]"><Wallet size={20} /></div>
-            <div><h2 className="text-base font-semibold text-[var(--foreground)]">Payment account</h2><p className="text-xs text-[var(--text-muted)]">Your secure USDC account for Arc Testnet payments.</p></div>
+            <div><h2 className="text-base font-semibold text-[var(--foreground)]">{isPaymentOnboarding ? "Set up your payment account" : "Payment account"}</h2><p className="text-xs text-[var(--text-muted)]">{isPaymentOnboarding ? "Create a secure USDC account now, or skip and set it up when you need it." : "Your secure USDC account for Arc Testnet payments."}</p></div>
           </div>
           <div className="mt-5">
             {circleState === "error" ? <div className="flex flex-col gap-3 rounded-xl border border-amber-300/50 bg-amber-50/70 p-4 text-sm text-amber-900 sm:flex-row sm:items-center sm:justify-between"><div><p className="font-medium">Payment account is temporarily unavailable</p><p className="mt-1 text-xs">Try again in a moment. Your existing payment address is unchanged.</p></div><Button type="button" variant="secondary" size="sm" onClick={() => { setCircleState("loading"); setWalletLoadRequest((current) => current + 1); }}>Try again</Button></div> : circleState === "unavailable" ? <div className="rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-4 text-sm text-[var(--text-muted)]">Payment accounts are not enabled in this environment yet.</div> : circlePaymentWallet && !shouldResumeCircleConnection ? <div className="flex flex-col gap-3 rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] px-3.5 py-3 text-xs sm:flex-row sm:items-center sm:justify-between"><div><p className="font-medium text-[var(--foreground)]">Payment account ready</p><p className="mt-1 font-mono text-[11px] text-[var(--text-muted)]">{circlePaymentWallet.address}</p><p className="mt-1 text-[11px] text-[var(--text-muted)]">{isOwner ? "Fund with test USDC before your first payment." : "Ready to receive USDC in this workspace. If your contributor profile has no address, SettleFlow will use this one."}</p></div>{hasCircleSession ? <span className="text-xs font-medium text-emerald-700">Connected</span> : <Button type="button" variant="secondary" size="sm" onClick={() => setReconnectingCircle(true)} className="shrink-0">Connect</Button>}</div> : <CirclePaymentAccount reconnect={Boolean(circlePaymentWallet)} purpose={isOwner ? "pay" : "receive"} onReady={() => { void handleCircleReady(); }} />}
           </div>
+          {isPaymentOnboarding && !circlePaymentWallet ? <Button type="button" variant="ghost" size="sm" onClick={() => router.replace(paymentSetupNext)} className="mt-4">Skip for now</Button> : null}
         </section> : null}
 
         <details className="rounded-xl border border-[var(--border-soft)] p-6 sm:p-8">
