@@ -436,6 +436,12 @@ function CreatePayoutPageContent() {
                     ) : null}
                   </label>
                 )}
+                {selectedContributor && !walletAddress.trim() ? (
+                  <div className="md:col-span-2 rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-4 text-sm text-[var(--text-muted)]">
+                    <p className="font-medium text-[var(--foreground)]">Payment account not set up yet</p>
+                    <p className="mt-1">You can create this payout now. Before payment, ask {selectedContributor.displayName} to sign in and set up their payment account in Settings.</p>
+                  </div>
+                ) : null}
                 <details className="md:col-span-2 rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-4">
                   <summary className="cursor-pointer text-sm font-medium text-[var(--foreground)]">Add wallet payment details (advanced)</summary>
                   <label className="mt-4 flex flex-col gap-2.5 text-sm text-[var(--text-primary)]" data-error={Boolean(errors.walletAddress)}>
