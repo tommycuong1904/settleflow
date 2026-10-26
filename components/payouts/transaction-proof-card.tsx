@@ -4,6 +4,7 @@ import { shortenAddress } from "@/lib/utils/format";
 type TransactionProofCardProps = {
   proof?: TransactionProof;
   milestoneTitle?: string;
+  paymentAccount?: boolean;
 };
 
 const statusStyles: Record<TransactionProof["status"], string> = {
@@ -35,7 +36,7 @@ function formatFailureReason(reason: string) {
   return "This payment attempt was not completed. Review the next steps before starting another attempt.";
 }
 
-export function TransactionProofCard({ proof, milestoneTitle }: TransactionProofCardProps) {
+export function TransactionProofCard({ proof, milestoneTitle, paymentAccount = false }: TransactionProofCardProps) {
   if (!proof) {
     return (
       <div className="space-y-4 text-sm text-[var(--text-primary)]">
@@ -55,8 +56,12 @@ export function TransactionProofCard({ proof, milestoneTitle }: TransactionProof
     : statusTitles[proof.status];
   const statusDescription = proof.status === "pending"
     ? pendingWithTransaction
-      ? "Your wallet returned a transaction hash, but SettleFlow has not confirmed that transaction against this payout yet. Do not sign or retry again."
-      : "SettleFlow has not received a transaction hash yet. Check your wallet activity before deciding whether a payment was sent."
+      ? paymentAccount
+        ? "SettleFlow is verifying this payment. Do not retry while confirmation is in progress."
+        : "Your wallet returned a transaction hash, but SettleFlow has not confirmed that transaction against this payout yet. Do not sign or retry again."
+      : paymentAccount
+        ? "SettleFlow is checking this payment. Do not retry while confirmation is in progress."
+        : "SettleFlow has not received a transaction hash yet. Check your wallet activity before deciding whether a payment was sent."
     : statusDescriptions[proof.status];
 
   return (

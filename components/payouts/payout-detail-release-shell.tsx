@@ -846,7 +846,7 @@ export function PayoutDetailReleaseShell({
               Payment details
               <span className="ml-2 font-normal text-[var(--text-muted)]">View payment status and transaction details</span>
             </summary>
-            <div className="mt-4"><TransactionProofCard proof={resolvedProof} milestoneTitle={releaseMilestoneTitle} /></div>
+            <div className="mt-4"><TransactionProofCard proof={resolvedProof} milestoneTitle={releaseMilestoneTitle} paymentAccount={authType === "web2_google"} /></div>
           </details>
         </section>
       ) : null}
