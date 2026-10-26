@@ -65,7 +65,10 @@ test("release, retry, proof refresh, tampering, and workspace boundaries hold th
   const user = await db.user.create({ data: { displayName: "Route Owner", email } });
   const workspace = await db.workspace.create({ data: { name: "Route Workspace", slug: `route-${suffix}` } });
   const otherWorkspace = await db.workspace.create({ data: { name: "Route Other", slug: `route-other-${suffix}` } });
-  await db.workspaceMember.create({ data: { workspaceId: workspace.id, userId: user.id, role: "owner" } });
+  await db.workspaceMember.createMany({ data: [
+    { workspaceId: workspace.id, userId: user.id, role: "owner" },
+    { workspaceId: otherWorkspace.id, userId: user.id, role: "owner" },
+  ] });
   const contributor = await db.contributor.create({ data: { workspaceId: workspace.id, createdByUserId: user.id, name: "Route Contributor", walletAddress: wallet } });
   const payout = await db.payout.create({ data: { workspaceId: workspace.id, contributorId: contributor.id, createdByUserId: user.id, title: "Route Payout", totalAmountUsdc: "5", status: "active", targetWalletAddress: wallet } });
   const milestone = await db.milestone.create({ data: { payoutId: payout.id, title: "Route Milestone", description: "Route test", amountUsdc: "5", sequence: 1, status: "approved" } });
@@ -105,45 +108,43 @@ test("release, retry, proof refresh, tampering, and workspace boundaries hold th
     assert.equal(releaseSnapshot?.sourceWalletId, sourceWallet.id);
     assert.equal(releaseSnapshot?.sourceWalletAddress, sourceWallet.address);
 
-    const claim = await claimRoute(new Request(`https://settleflow.local/api/v1/releases/${queuedBody.release.id}/claim`, {
+    const claim = await claimRoute(new Request(`https://settleflow.local/api/v1/releases/${queuedBody.release.id}/claim?workspaceId=${workspace.id}`, {
       method: "POST", headers, body: JSON.stringify({ sourceWalletAddress: wallet }),
     }), params(queuedBody.release.id));
     assert.equal(claim.status, 200);
-    const duplicateClaim = await claimRoute(new Request(`https://settleflow.local/api/v1/releases/${queuedBody.release.id}/claim`, {
+    const duplicateClaim = await claimRoute(new Request(`https://settleflow.local/api/v1/releases/${queuedBody.release.id}/claim?workspaceId=${workspace.id}`, {
       method: "POST", headers, body: JSON.stringify({ sourceWalletAddress: wallet }),
     }), params(queuedBody.release.id));
     assert.equal(duplicateClaim.status, 409);
 
-    await assert.rejects(
-      proofRefreshRoute(new Request(`https://settleflow.local/api/v1/releases/${queuedBody.release.id}/proof/refresh?workspaceId=${otherWorkspace.id}`, {
-        method: "POST", headers, body: JSON.stringify({ status: "failed", failureReason: "route failure" }),
-      }), params(queuedBody.release.id)),
-      /AUTH_CONTEXT_REQUIRED/,
-    );
+    const crossWorkspaceRefresh = await proofRefreshRoute(new Request(`https://settleflow.local/api/v1/releases/${queuedBody.release.id}/proof/refresh?workspaceId=${otherWorkspace.id}`, {
+      method: "POST", headers, body: JSON.stringify({ status: "failed", failureReason: "route failure" }),
+    }), params(queuedBody.release.id));
+    assert.equal(crossWorkspaceRefresh.status, 404);
+    assert.equal((await db.release.findUnique({ where: { id: queuedBody.release.id } }))?.status, "pending");
 
-    const failed = await proofRefreshRoute(new Request(`https://settleflow.local/api/v1/releases/${queuedBody.release.id}/proof/refresh`, {
+    const failed = await proofRefreshRoute(new Request(`https://settleflow.local/api/v1/releases/${queuedBody.release.id}/proof/refresh?workspaceId=${workspace.id}`, {
       method: "POST", headers, body: JSON.stringify({ status: "failed", failureReason: "route failure" }),
     }), params(queuedBody.release.id));
     assert.equal(failed.status, 200);
     assert.equal((await failed.json()).release.status, "failed");
 
-    await assert.rejects(
-      retryRoute(new Request(`https://settleflow.local/api/v1/releases/${queuedBody.release.id}/retry?actor=contributor&workspaceId=${otherWorkspace.id}`, { method: "POST", headers }), params(queuedBody.release.id)),
-      /AUTH_CONTEXT_REQUIRED/,
-    );
-    const retried = await retryRoute(new Request(`https://settleflow.local/api/v1/releases/${queuedBody.release.id}/retry`, { method: "POST", headers }), params(queuedBody.release.id));
+    const crossWorkspaceRetry = await retryRoute(new Request(`https://settleflow.local/api/v1/releases/${queuedBody.release.id}/retry?actor=contributor&workspaceId=${otherWorkspace.id}`, { method: "POST", headers }), params(queuedBody.release.id));
+    assert.equal(crossWorkspaceRetry.status, 404);
+    assert.equal(await db.release.count({ where: { payoutId: payout.id } }), 1);
+    const retried = await retryRoute(new Request(`https://settleflow.local/api/v1/releases/${queuedBody.release.id}/retry?workspaceId=${workspace.id}`, { method: "POST", headers }), params(queuedBody.release.id));
     assert.equal(retried.status, 201);
     const retryBody = await retried.json();
     assert.notEqual(retryBody.release.id, queuedBody.release.id);
-    const retryClaim = await claimRoute(new Request(`https://settleflow.local/api/v1/releases/${retryBody.release.id}/claim`, {
+    const retryClaim = await claimRoute(new Request(`https://settleflow.local/api/v1/releases/${retryBody.release.id}/claim?workspaceId=${workspace.id}`, {
       method: "POST", headers, body: JSON.stringify({ sourceWalletAddress: wallet }),
     }), params(retryBody.release.id));
     assert.equal(retryClaim.status, 200);
 
-    const duplicateRetry = await retryRoute(new Request(`https://settleflow.local/api/v1/releases/${queuedBody.release.id}/retry`, { method: "POST", headers }), params(queuedBody.release.id));
+    const duplicateRetry = await retryRoute(new Request(`https://settleflow.local/api/v1/releases/${queuedBody.release.id}/retry?workspaceId=${workspace.id}`, { method: "POST", headers }), params(queuedBody.release.id));
     assert.equal(duplicateRetry.status, 409);
 
-    const confirmed = await proofRefreshRoute(new Request(`https://settleflow.local/api/v1/releases/${retryBody.release.id}/proof/refresh`, {
+    const confirmed = await proofRefreshRoute(new Request(`https://settleflow.local/api/v1/releases/${retryBody.release.id}/proof/refresh?workspaceId=${workspace.id}`, {
       method: "POST", headers, body: JSON.stringify({ status: "confirmed", txHash: `0x${"cd".repeat(32)}`, network: "arc-testnet", explorerUrl: "https://example.invalid/tx/route" }),
     }), params(retryBody.release.id));
     const confirmedBody = await confirmed.json();
@@ -158,7 +159,7 @@ test("release, retry, proof refresh, tampering, and workspace boundaries hold th
     await db.milestone.delete({ where: { id: milestone.id } });
     await db.payout.delete({ where: { id: payout.id } });
     await db.contributor.delete({ where: { id: contributor.id } });
-    await db.workspaceMember.deleteMany({ where: { workspaceId: workspace.id } });
+    await db.workspaceMember.deleteMany({ where: { workspaceId: { in: [workspace.id, otherWorkspace.id] } } });
     await db.workspace.deleteMany({ where: { id: { in: [workspace.id, otherWorkspace.id] } } });
     await db.user.delete({ where: { id: user.id } });
   }
