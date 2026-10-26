@@ -50,9 +50,25 @@ export async function createPayout(input: CreatePayoutInput) {
 
     const contributor = await tx.contributor.findFirst({
       where: { id: input.contributorId, workspaceId: input.workspaceId, status: "active" },
-      select: { id: true, walletAddress: true },
+      select: { id: true, walletAddress: true, linkedUserId: true },
     });
     if (!contributor) throw new Error("CONTRIBUTOR_NOT_FOUND");
+
+    // Existing linked contributors may have created their Circle account
+    // before profile synchronization was introduced. Resolve that verified
+    // account for this new agreement without changing the profile or any
+    // existing payout's recipient snapshot.
+    const linkedCircleWallet = !input.targetWalletAddress?.trim() && !contributor.walletAddress && contributor.linkedUserId
+      ? await tx.circleUserWallet.findUnique({
+          where: { userId: contributor.linkedUserId },
+          select: { address: true, blockchain: true, accountType: true },
+        })
+      : null;
+    const recipientAddress = input.targetWalletAddress?.trim()
+      || contributor.walletAddress
+      || (linkedCircleWallet?.blockchain === "ARC-TESTNET" && linkedCircleWallet.accountType === "SCA"
+        ? linkedCircleWallet.address
+        : null);
 
     const payout = await tx.payout.create({
       data: {
@@ -61,7 +77,7 @@ export async function createPayout(input: CreatePayoutInput) {
         contributorId: input.contributorId,
         title: input.title,
         description: input.description,
-        targetWalletAddress: input.targetWalletAddress?.trim() || contributor.walletAddress || null,
+        targetWalletAddress: recipientAddress,
         totalAmountUsdc: input.totalAmountUsdc,
         currency: "USDC",
         status: "draft",
