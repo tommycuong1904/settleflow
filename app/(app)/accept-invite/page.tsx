@@ -53,6 +53,7 @@ export default function AcceptInvitePage({
   }, [token]);
 
   const displayedError = token ? error : "No invitation token provided.";
+  const inviteEmailMismatch = Boolean(invite?.email && userEmail?.toLowerCase() !== invite.email.toLowerCase());
 
   const handleAccept = async () => {
     if (!token) return;
@@ -203,9 +204,11 @@ export default function AcceptInvitePage({
               <button
                 className="w-full py-3 px-4 rounded-full border border-black bg-black text-white text-xs font-semibold hover:bg-neutral-800 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                 onClick={handleAccept}
-                disabled={accepting}
+                disabled={accepting || inviteEmailMismatch}
               >
-                {accepting ? (
+                {inviteEmailMismatch ? (
+                  "Sign in with the invited email"
+                ) : accepting ? (
                   "Joining Workspace..."
                 ) : (
                   <>
