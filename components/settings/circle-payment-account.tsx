@@ -85,7 +85,11 @@ export function CirclePaymentAccount({ onReady, reconnect = false }: { onReady?:
           void finishProvisioning({ userToken: result.userToken, encryptionKey: result.encryptionKey }, sdk as unknown as CircleSdk).catch((cause: unknown) => { if (active) { setStatus("error"); setMessage(cause instanceof Error ? cause.message : "Payment account setup failed."); } });
         });
         sdkRef.current = sdk as unknown as CircleSdk;
-        if (active) setStatus("idle");
+        const isSocialLoginReturn = window.location.hash.includes("id_token=");
+        if (active) {
+          setStatus(isSocialLoginReturn ? "working" : "idle");
+          if (isSocialLoginReturn) setMessage("Finishing your secure connection…");
+        }
       } catch { if (active) { setStatus("error"); setMessage("Payment account setup is unavailable."); } }
     })();
     return () => { active = false; };
