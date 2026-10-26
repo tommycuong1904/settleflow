@@ -194,6 +194,7 @@ export function PayoutDetailReleaseShell({
   );
   const actionableReleaseError = paymentActionErrorMessage(releaseError);
   const requiresPaymentReconnect = releaseError?.includes("Reconnect your payment account") ?? false;
+  const paymentSupportMessage = releaseError ?? "This payment needs a little more time or review. You do not need to retry it or provide payment details.";
   const isModalActionPending = processingRelease || recordingSimulatedPayment;
   const productContextHeaders = useMemo(
     () => ({
@@ -846,7 +847,7 @@ export function PayoutDetailReleaseShell({
               <>
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">{requiresPaymentReconnect ? "Payment account" : "Payment needs support"}</p>
                 <h2 id="release-dialog-title" className="mt-2 pr-8 text-xl font-semibold text-[var(--foreground)]">{requiresPaymentReconnect ? "Reconnect your payment account" : "We’re reviewing this payment"}</h2>
-                <p className="mt-2 text-sm text-[var(--text-muted)]">{requiresPaymentReconnect ? "Your account is ready, but this browser needs a fresh Circle connection before it can confirm a payment." : "This payment needs a little more time or review. You do not need to retry it or provide payment details."}</p>
+                <p className="mt-2 text-sm text-[var(--text-muted)]">{requiresPaymentReconnect ? "Your account is ready, but this browser needs a fresh Circle connection before it can confirm a payment." : paymentSupportMessage}</p>
                 <div className="mt-5 rounded-2xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-4 text-sm text-[var(--text-muted)]"><p className="font-medium text-[var(--foreground)]">What happens next</p><p className="mt-1 leading-6">{requiresPaymentReconnect ? "Reconnect with Google in Settings, then return here to confirm this payment." : "SettleFlow will show an update when there is a safe next step."}</p></div>
                 <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"><Button variant="secondary" onClick={() => setReleaseModalMode(null)} className="w-full justify-center sm:w-auto">Close</Button>{requiresPaymentReconnect ? <Button onClick={() => router.push("/settings")} className="w-full justify-center sm:w-auto">Open Settings</Button> : null}</div>
               </>
