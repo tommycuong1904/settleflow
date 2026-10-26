@@ -141,7 +141,7 @@ export function PayoutDetailReleaseShell({
   );
   const [releaseError, setReleaseError] = useState<string | null>(null);
   const [activeProof, setActiveProof] = useState<TransactionProof | undefined>(releaseProof);
-  const [releaseModalMode, setReleaseModalMode] = useState<"method" | "review" | "simulated" | "pending" | "failed" | "setup" | null>(null);
+  const [releaseModalMode, setReleaseModalMode] = useState<"method" | "review" | "simulated" | "pending" | "success" | "failed" | "setup" | null>(null);
   const [resumeReleaseId, setResumeReleaseId] = useState<string | undefined>();
   const [recordingSimulatedPayment, setRecordingSimulatedPayment] = useState(false);
   const [processingRelease, setProcessingRelease] = useState(false);
@@ -327,7 +327,14 @@ export function PayoutDetailReleaseShell({
       }
       throw error;
     }
-    return completeCircleRelease(releaseId);
+    let result = await completeCircleRelease(releaseId);
+    // Keep the normal payment flow in one modal while Circle/Arc finalizes.
+    // A bounded poll avoids asking the Owner to manually check immediately.
+    for (let attempt = 0; attempt < 5 && result.status === "pending"; attempt += 1) {
+      await new Promise<void>((resolve) => window.setTimeout(resolve, 1500));
+      result = await completeCircleRelease(releaseId);
+    }
+    return result;
   }
 
   async function handleRelease(resumeReleaseId?: string) {
@@ -439,6 +446,7 @@ export function PayoutDetailReleaseShell({
           executionMode: "circle_user_wallet",
           releaseStatus: "pending",
         };
+        setReleaseModalMode("pending");
         const circlePayload = await executeCircleRelease(data.release.id);
         const proof = proofFromCirclePayload(circlePayload, fallback);
         if (!proof) throw new Error("Payment confirmation did not return a payment status.");
@@ -453,7 +461,7 @@ export function PayoutDetailReleaseShell({
         if (proof.status === "failed") setReleaseError(proof.failureReason ?? "This payment could not be completed.");
         void onActivityChange?.();
         setReleaseStatus(proof.status === "confirmed" ? "confirmed" : proof.status === "failed" ? "failed" : "submitting");
-        setReleaseModalMode(proof.status === "confirmed" ? null : proof.status === "failed" ? "failed" : "pending");
+        setReleaseModalMode(proof.status === "confirmed" ? "success" : proof.status === "failed" ? "failed" : "pending");
         return;
       }
 
@@ -914,6 +922,8 @@ export function PayoutDetailReleaseShell({
                 <p className="mt-4 text-xs text-[var(--text-muted)]">Check the recipient and amount carefully. Confirmed payments cannot be reversed.</p>
                 <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"><Button variant="secondary" onClick={closeReleaseModal} disabled={processingRelease} className="w-full justify-center sm:w-auto">Cancel</Button><Button onClick={() => { void handleRelease(resumeReleaseId); }} disabled={processingRelease} className="w-full justify-center sm:w-auto">{processingRelease ? "Preparing payment..." : resumeReleaseId ? "Continue payment" : authType === "web2_google" ? `Confirm ${formatUsdc(nextReleasableMilestone.amount)} USDC` : `Sign ${formatUsdc(nextReleasableMilestone.amount)} USDC`}</Button></div>
               </>
+            ) : releaseModalMode === "success" ? (
+              <><p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">Payment complete</p><h2 id="release-dialog-title" className="mt-2 pr-8 text-xl font-semibold text-[var(--foreground)]">Payment confirmed</h2><p className="mt-2 text-sm text-[var(--text-muted)]">This milestone is paid. The payout has been updated.</p><div className="mt-6 flex justify-end"><Button onClick={() => { setReleaseModalMode(null); router.refresh(); }} className="w-full justify-center sm:w-auto">Done</Button></div></>
             ) : releaseModalMode === "pending" ? (
               <>
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">Payment processing</p>
