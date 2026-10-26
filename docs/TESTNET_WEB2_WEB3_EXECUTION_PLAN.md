@@ -155,6 +155,8 @@ Send and reconcile a bounded real Arc Testnet payment without exposing blockchai
 
 ## Phase 4 — Background reconciliation and internal operations
 
+Status: deferred until one clean Circle Testnet payment is verified end-to-end.
+
 ### Goal
 
 Make uncertain provider/on-chain outcomes safe without turning them into Owner troubleshooting.
