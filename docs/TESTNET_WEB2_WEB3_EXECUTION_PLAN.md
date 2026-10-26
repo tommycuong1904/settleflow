@@ -153,6 +153,12 @@ Send and reconcile a bounded real Arc Testnet payment without exposing blockchai
 - Owner never enters a hash, changes network, selects an account, or decides retry safety.
 - Execution gate returns to disabled after test.
 
+### Verification record — 2026-10-26
+
+- A Circle User-controlled Arc Testnet payment completed end-to-end: an approved 0.1 USDC milestone moved through payment confirmation to `Paid`; the payout rolled up to `Completed` after reload.
+- The normal Owner view exposed only payment status and the final payment record; no transaction hash, network selection, or manual reconciliation decision was required.
+- This is Testnet evidence only. It does not authorize production execution or remove the need for background reconciliation of ambiguous outcomes.
+
 ## Phase 4 — Background reconciliation and internal operations
 
 Status: deferred until one clean Circle Testnet payment is verified end-to-end.
