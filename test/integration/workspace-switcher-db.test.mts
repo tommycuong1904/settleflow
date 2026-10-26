@@ -134,6 +134,27 @@ test("workspace switcher lists only memberships and persists only an authorized 
     assert.equal(context.workspaceId, contributorWorkspace.id);
     assert.equal(context.actor, "contributor");
 
+    const querySelectedContext = await resolveProductContextFromRequestWithSession(
+      new NextRequest(`https://settleflow.local/api/v1/payouts?workspaceId=${ownWorkspace.id}`, {
+        headers: { cookie: `sf_session=${token}; sf_workspace_id=${contributorWorkspace.id}` },
+      }),
+    );
+    assert.equal(querySelectedContext.workspaceId, ownWorkspace.id);
+    assert.equal(querySelectedContext.actor, "owner");
+
+    await assert.rejects(
+      resolveProductContextFromRequestWithSession(new NextRequest(`https://settleflow.local/api/v1/payouts?workspaceId=${forbiddenWorkspace.id}`, {
+        headers: { cookie: `sf_session=${token}` },
+      })),
+      /AUTH_CONTEXT_REQUIRED/,
+    );
+    await assert.rejects(
+      resolveProductContextFromRequestWithSession(new NextRequest("https://settleflow.local/api/v1/payouts", {
+        headers: { cookie: `sf_session=${token}`, "x-settleflow-workspace-id": forbiddenWorkspace.id },
+      })),
+      /AUTH_CONTEXT_REQUIRED/,
+    );
+
     const contributorPayouts = await listPayouts(request(
       "https://settleflow.local/api/v1/payouts",
       token,
