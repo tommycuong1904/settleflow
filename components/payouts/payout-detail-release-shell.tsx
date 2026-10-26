@@ -142,7 +142,6 @@ export function PayoutDetailReleaseShell({
   const [resumeReleaseId, setResumeReleaseId] = useState<string | undefined>();
   const [recordingSimulatedPayment, setRecordingSimulatedPayment] = useState(false);
   const [processingRelease, setProcessingRelease] = useState(false);
-  const [linkedWallets, setLinkedWallets] = useState<string[]>([]);
   const handledReviewRequest = useRef(0);
   const releaseDialogRef = useRef<HTMLDivElement>(null);
   useScrollLock(releaseModalMode !== null);
@@ -241,23 +240,6 @@ export function PayoutDetailReleaseShell({
   }, [releaseModalMode]);
 
   const canUseSimulatedPayment = ARC_CONFIG.executionMode === "demo" || ARC_CONFIG.executionMode === "mock";
-  const linkedPaymentWallet = authType === "web2_google" && linkedWallets.length === 1 ? linkedWallets[0] : null;
-
-  useEffect(() => {
-    if (releaseModalMode !== "review" || authType !== "web2_google") return;
-    let active = true;
-    void fetch("/api/v1/auth/wallet/link", { cache: "no-store" })
-      .then(async (response) => response.ok ? await response.json() as { wallets?: Array<{ address?: string; kind?: string; transactionEnabled?: boolean }> } : null)
-      .then((payload) => {
-        if (!active) return;
-        setLinkedWallets((payload?.wallets ?? [])
-          .filter((wallet) => wallet.kind === "web3_eoa" && wallet.transactionEnabled && typeof wallet.address === "string")
-          .map((wallet) => wallet.address!));
-      })
-      .catch(() => { if (active) setLinkedWallets([]); });
-    return () => { active = false; };
-  }, [authType, releaseModalMode]);
-
   function openPaymentMethod() {
     setReleaseError(null);
     setResumeReleaseId(undefined);
@@ -844,7 +826,7 @@ export function PayoutDetailReleaseShell({
                   <div><dt className="text-xs text-[var(--text-muted)]">You’re paying</dt><dd className="mt-1 text-lg font-semibold text-[var(--foreground)]">{formatUsdc(nextReleasableMilestone.amount)} USDC</dd></div>
                   <div><dt className="text-xs text-[var(--text-muted)]">For milestone</dt><dd className="mt-1 font-medium text-[var(--foreground)]">{nextReleasableMilestone.title}</dd></div>
                   <div><dt className="text-xs text-[var(--text-muted)]">Recipient</dt><dd className="mt-1 font-medium text-[var(--foreground)]">{recipientName ?? "Contributor"}</dd><dd className="mt-1 break-all font-mono text-xs text-[var(--text-muted)]">{recipientAddress ?? "Not resolved"}</dd></div>
-                  <div><dt className="text-xs text-[var(--text-muted)]">{authType === "web2_google" ? "Payment account" : "Payment wallet"}</dt><dd className="mt-1 break-all font-mono text-xs text-[var(--foreground)]">{authType === "web2_google" ? "Secure payment account" : address ?? linkedPaymentWallet ?? "Connect a browser wallet to continue"}</dd>{linkedPaymentWallet ? <dd className="mt-1 text-[11px] text-emerald-700">Linked to your account</dd> : null}</div>
+                  <div><dt className="text-xs text-[var(--text-muted)]">{authType === "web2_google" ? "Payment account" : "Payment wallet"}</dt><dd className="mt-1 break-all font-mono text-xs text-[var(--foreground)]">{authType === "web2_google" ? "Secure payment account" : address ?? "Connect a browser wallet to continue"}</dd></div>
                 </dl>
                 <p className="mt-4 text-xs text-[var(--text-muted)]">Check the recipient and amount carefully. A signed blockchain payment cannot be reversed.</p>
                 <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"><Button variant="secondary" onClick={closeReleaseModal} disabled={processingRelease} className="w-full justify-center sm:w-auto">Cancel</Button><Button onClick={() => { void handleRelease(resumeReleaseId); }} disabled={processingRelease} className="w-full justify-center sm:w-auto">{processingRelease ? "Preparing payment..." : resumeReleaseId ? "Continue payment" : authType === "web2_google" ? `Confirm ${formatUsdc(nextReleasableMilestone.amount)} USDC` : `Sign ${formatUsdc(nextReleasableMilestone.amount)} USDC`}</Button></div>
