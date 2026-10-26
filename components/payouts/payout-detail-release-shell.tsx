@@ -233,6 +233,11 @@ export function PayoutDetailReleaseShell({
           setReleaseModalMode("setup");
           return;
         }
+        if (!getCirclePaymentSession()) {
+          setReleaseError("Reconnect your payment account in Settings before paying.");
+          setReleaseModalMode("failed");
+          return;
+        }
       } catch {
         // The release route remains the readiness authority if this advisory
         // check is temporarily unavailable.
@@ -922,7 +927,7 @@ export function PayoutDetailReleaseShell({
                 <h2 id="release-dialog-title" className="mt-2 pr-8 text-xl font-semibold text-[var(--foreground)]">{requiresPaymentReconnect ? "Reconnect your payment account" : hasExistingRelease ? "Your payment is ready to continue" : "We’re reviewing this payment"}</h2>
                 <p className="mt-2 text-sm text-[var(--text-muted)]">{requiresPaymentReconnect ? "Your account is ready, but this browser needs a fresh Circle connection before it can confirm a payment." : hasExistingRelease ? "SettleFlow saved the payment request safely. Load its current status instead of starting another payment." : paymentSupportMessage}</p>
                 <div className="mt-5 rounded-2xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-4 text-sm text-[var(--text-muted)]"><p className="font-medium text-[var(--foreground)]">What happens next</p><p className="mt-1 leading-6">{requiresPaymentReconnect ? "Reconnect with Google in Settings, then return here to confirm this payment." : hasExistingRelease ? "After loading, continue the existing Circle confirmation. No second payment will be created." : "SettleFlow will show an update when there is a safe next step."}</p></div>
-                <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"><Button variant="secondary" onClick={() => setReleaseModalMode(null)} className="w-full justify-center sm:w-auto">Close</Button>{requiresPaymentReconnect ? <Button onClick={() => router.push("/settings")} className="w-full justify-center sm:w-auto">Open Settings</Button> : null}{hasExistingRelease ? <Button onClick={() => { setReleaseModalMode(null); router.refresh(); }} className="w-full justify-center sm:w-auto">Load payment status</Button> : null}</div>
+                <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"><Button variant="secondary" onClick={() => setReleaseModalMode(null)} className="w-full justify-center sm:w-auto">Close</Button>{requiresPaymentReconnect ? <Button onClick={() => { const next = `${window.location.pathname}${window.location.search}`; router.push(`/settings?onboarding=1&next=${encodeURIComponent(next)}`); }} className="w-full justify-center sm:w-auto">Open Settings</Button> : null}{hasExistingRelease ? <Button onClick={() => { setReleaseModalMode(null); router.refresh(); }} className="w-full justify-center sm:w-auto">Load payment status</Button> : null}</div>
               </>
             )}
           </div>
