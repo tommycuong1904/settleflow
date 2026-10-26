@@ -32,6 +32,12 @@ account identifier, lifecycle status, and optional canonical `UserWallet` link.
 It never stores a private key, provider credential, or user token. Provider
 adapters own account provisioning; payout workflows consume the neutral record.
 
+`User.paymentAccountOnboardingSkippedAt` records an explicit, account-scoped
+deferral of the optional Google payment-account onboarding. It prevents a
+future sign-in from repeatedly forcing the setup; it neither creates a wallet
+nor affects payment eligibility. A ready `CircleUserWallet` always suppresses
+onboarding regardless of this value.
+
 ### WorkspaceMember and role
 
 `WorkspaceMember` links a `User` to a `Workspace` and stores one `WorkspaceMemberRole`: `owner`, `ops`, `reviewer`, or `contributor`. A database uniqueness constraint allows only one membership row for each `(workspaceId, userId)`. New invitations use only `owner` and `contributor`; `ops` and `reviewer` remain for historical memberships. The runtime actor has the corresponding values: `owner`, `ops`, `reviewer`, and `contributor`. Database roles and runtime actors must not be treated as interchangeable. Detailed policy is in `docs/AUTHORIZATION.md`.

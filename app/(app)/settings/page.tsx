@@ -55,6 +55,7 @@ export default function SettingsPage() {
   const [walletLoadRequest, setWalletLoadRequest] = useState(0);
   const [circleState, setCircleState] = useState<"loading" | "configured" | "unavailable" | "error">("loading");
   const [reconnectingCircle, setReconnectingCircle] = useState(false);
+  const [isSkippingPaymentSetup, setIsSkippingPaymentSetup] = useState(false);
   const [hasCircleSession, setHasCircleSession] = useState(() => Boolean(getCirclePaymentSession()));
   // Circle's Google flow returns credentials in the URL fragment. Mount its
   // SDK immediately on that return path rather than waiting for the async
@@ -79,6 +80,19 @@ export default function SettingsPage() {
   const handleDisconnect = async () => {
     await disconnect();
     router.replace(`/auth-required?next=${encodeURIComponent(pathname || "/settings")}`);
+  };
+
+  const handleSkipPaymentSetup = async () => {
+    setIsSkippingPaymentSetup(true);
+    try {
+      const response = await fetch("/api/v1/payment-account/onboarding/skip", { method: "POST" });
+      if (!response.ok) throw new Error("Unable to save this choice.");
+      router.replace(paymentSetupNext);
+    } catch {
+      toast({ variant: "error", title: "Couldn’t skip setup", description: "Try again, or set up your payment account now." });
+    } finally {
+      setIsSkippingPaymentSetup(false);
+    }
   };
 
   const handleLinkWallet = async () => {
@@ -384,7 +398,7 @@ export default function SettingsPage() {
           <div className="mt-5">
             {circleState === "error" ? <div className="flex flex-col gap-3 rounded-xl border border-amber-300/50 bg-amber-50/70 p-4 text-sm text-amber-900 sm:flex-row sm:items-center sm:justify-between"><div><p className="font-medium">Payment account is temporarily unavailable</p><p className="mt-1 text-xs">Try again in a moment. Your existing payment address is unchanged.</p></div><Button type="button" variant="secondary" size="sm" onClick={() => { setCircleState("loading"); setWalletLoadRequest((current) => current + 1); }}>Try again</Button></div> : circleState === "unavailable" ? <div className="rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-4 text-sm text-[var(--text-muted)]">Payment accounts are not enabled in this environment yet.</div> : circlePaymentWallet && !shouldResumeCircleConnection ? <div className="flex flex-col gap-3 rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] px-3.5 py-3 text-xs sm:flex-row sm:items-center sm:justify-between"><div><p className="font-medium text-[var(--foreground)]">Payment account ready</p><p className="mt-1 font-mono text-[11px] text-[var(--text-muted)]">{circlePaymentWallet.address}</p><p className="mt-1 text-[11px] text-[var(--text-muted)]">{isOwner ? "Fund with test USDC before your first payment." : "Ready to receive USDC in this workspace. If your contributor profile has no address, SettleFlow will use this one."}</p></div>{hasCircleSession ? <span className="text-xs font-medium text-emerald-700">Connected</span> : <Button type="button" variant="secondary" size="sm" onClick={() => setReconnectingCircle(true)} className="shrink-0">Connect</Button>}</div> : <CirclePaymentAccount reconnect={Boolean(circlePaymentWallet)} purpose={isOwner ? "pay" : "receive"} onReady={() => { void handleCircleReady(); }} />}
           </div>
-          {isPaymentOnboarding && !circlePaymentWallet ? <Button type="button" variant="ghost" size="sm" onClick={() => router.replace(paymentSetupNext)} className="mt-4">Skip for now</Button> : null}
+          {isPaymentOnboarding && !circlePaymentWallet ? <Button type="button" variant="ghost" size="sm" onClick={() => { void handleSkipPaymentSetup(); }} disabled={isSkippingPaymentSetup} className="mt-4">{isSkippingPaymentSetup ? "Saving..." : "Skip for now"}</Button> : null}
         </section> : null}
 
         <details className="rounded-xl border border-[var(--border-soft)] p-6 sm:p-8">

@@ -4,6 +4,7 @@ import test from "node:test";
 import { db } from "@/lib/db/client";
 import { createSessionToken } from "@/lib/auth/session";
 import { GET as getPaymentAccount } from "@/app/api/v1/payment-account/route";
+import { POST as skipPaymentAccountOnboarding } from "@/app/api/v1/payment-account/onboarding/skip/route";
 import { NextRequest } from "next/server";
 import { getPaymentAccountForUser, getPaymentAccountReadinessForUser } from "@/lib/repositories/payment-accounts";
 
@@ -56,6 +57,31 @@ test("payment accounts expose only a user's provider-neutral, verified wallet li
 
     const anonymous = await getPaymentAccount(new NextRequest("https://settleflow.local/api/v1/payment-account"));
     assert.equal(anonymous.status, 401);
+  } finally {
+    await db.user.delete({ where: { id: user.id } });
+  }
+});
+
+test("Google users can defer payment-account onboarding once across future sign-ins", async () => {
+  const suffix = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const user = await db.user.create({ data: { displayName: "Deferred setup", email: `deferred-setup-${suffix}@example.com` } });
+
+  try {
+    const token = await createSessionToken({
+      userId: user.id,
+      email: user.email!,
+      name: user.displayName,
+      address: null,
+      authType: "web2_google",
+    });
+    const response = await skipPaymentAccountOnboarding(new NextRequest("https://settleflow.local/api/v1/payment-account/onboarding/skip", {
+      method: "POST",
+      headers: { cookie: `sf_session=${token}` },
+    }));
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), { skipped: true });
+    assert.ok((await db.user.findUniqueOrThrow({ where: { id: user.id } })).paymentAccountOnboardingSkippedAt);
   } finally {
     await db.user.delete({ where: { id: user.id } });
   }

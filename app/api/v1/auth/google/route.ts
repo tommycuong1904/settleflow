@@ -38,8 +38,18 @@ export async function POST(request: Request) {
         userId: provisioned.user.id,
         displayName: provisioned.user.displayName,
       });
-      const circleWallet = await tx.circleUserWallet.findUnique({ where: { userId: provisioned.user.id }, select: { id: true } });
-      return { user: provisioned.user, initialWorkspace, needsPaymentAccountSetup: !circleWallet };
+      const paymentSetup = await tx.user.findUniqueOrThrow({
+        where: { id: provisioned.user.id },
+        select: {
+          paymentAccountOnboardingSkippedAt: true,
+          circleWallet: { select: { id: true } },
+        },
+      });
+      return {
+        user: provisioned.user,
+        initialWorkspace,
+        needsPaymentAccountSetup: !paymentSetup.circleWallet && !paymentSetup.paymentAccountOnboardingSkippedAt,
+      };
     });
 
     // Issue a server-side HttpOnly session cookie so the proxy gate can enforce

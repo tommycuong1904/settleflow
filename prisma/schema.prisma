@@ -131,6 +131,9 @@ model User {
   email         String?  @unique
   googleSub     String?  @unique
   avatarUrl     String?
+  // Records an explicit deferral of the optional Web2 payment-account setup.
+  // A ready payment account always takes precedence over this timestamp.
+  paymentAccountOnboardingSkippedAt DateTime?
   // Retained temporarily for a separately approved destructive migration.
   // Runtime identity and authorization use UserWallet exclusively.
   walletAddress String?
