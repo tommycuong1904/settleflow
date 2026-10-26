@@ -15,8 +15,10 @@ const moduleUrl = new URL(
   import.meta.url,
 ).href + `?readiness=${Date.now()}`;
 const { GET: releaseReadiness } = (await import(moduleUrl)) as {
-  GET: (request: Request) => Promise<Response>;
+  GET: (request: Request, context: { params: Promise<{ id: string }> }) => Promise<Response>;
 };
+
+const routeParams = (id: string) => ({ params: Promise.resolve({ id }) });
 
 test("unauthorized real readiness is read-only and creates no release records", async () => {
   const suffix = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -54,7 +56,7 @@ test("unauthorized real readiness is read-only and creates no release records", 
     const response = await releaseReadiness(new Request(
       `https://settleflow.local/api/v1/milestones/${milestone.id}/release?workspaceId=${workspace.id}`,
       { headers: { cookie: `sf_session=${token}` } },
-    ));
+    ), routeParams(milestone.id));
 
     assert.equal(response.status, 403);
     const body = await response.json() as { code?: string; error?: string };
@@ -115,7 +117,7 @@ test("authorized real readiness is still read-only", async () => {
     const response = await releaseReadiness(new Request(
       `https://settleflow.local/api/v1/milestones/${milestone.id}/release?workspaceId=${workspace.id}`,
       { headers: { cookie: `sf_session=${token}` } },
-    ));
+    ), routeParams(milestone.id));
 
     assert.equal(response.status, 200);
     assert.deepEqual(await response.json(), { ready: true });
@@ -180,7 +182,7 @@ test("a contributor cannot inspect payment readiness", async () => {
     const response = await releaseReadiness(new Request(
       `https://settleflow.local/api/v1/milestones/${milestone.id}/release?workspaceId=${workspace.id}`,
       { headers: { cookie: `sf_session=${token}` } },
-    ));
+    ), routeParams(milestone.id));
 
     assert.equal(response.status, 403);
     const body = await response.json() as { code?: string };
