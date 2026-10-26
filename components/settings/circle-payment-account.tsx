@@ -35,7 +35,7 @@ export function CirclePaymentAccount({ onReady, reconnect = false }: { onReady?:
   const appId = process.env.NEXT_PUBLIC_CIRCLE_USER_CONTROLLED_APP_ID;
   const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
   const unavailable = !appId || !googleClientId;
-  const [status, setStatus] = useState<"loading" | "ready" | "working" | "error">(unavailable ? "error" : "loading");
+  const [status, setStatus] = useState<"loading" | "idle" | "ready" | "working" | "error">(unavailable ? "error" : "loading");
   const [message, setMessage] = useState(unavailable ? "Payment account setup is unavailable." : "");
 
   async function finishProvisioning(login: Login, sdk: CircleSdk) {
@@ -85,7 +85,7 @@ export function CirclePaymentAccount({ onReady, reconnect = false }: { onReady?:
           void finishProvisioning({ userToken: result.userToken, encryptionKey: result.encryptionKey }, sdk as unknown as CircleSdk).catch((cause: unknown) => { if (active) { setStatus("error"); setMessage(cause instanceof Error ? cause.message : "Payment account setup failed."); } });
         });
         sdkRef.current = sdk as unknown as CircleSdk;
-        if (active) setStatus("ready");
+        if (active) setStatus("idle");
       } catch { if (active) { setStatus("error"); setMessage("Payment account setup is unavailable."); } }
     })();
     return () => { active = false; };
