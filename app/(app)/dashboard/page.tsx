@@ -214,6 +214,10 @@ export default async function DashboardPage() {
               <Button href="/payouts/new" className="mt-5 w-full justify-center sm:w-auto">
                 <Plus size={15} className="mr-1.5" /> Create your first payout
               </Button>
+            ) : !isOwner && !hasPayouts ? (
+              <Button href="/settings" variant="secondary" className="mt-5 w-full justify-center sm:w-auto">
+                Set up payment account
+              </Button>
             ) : null}
           </div>
         )}
