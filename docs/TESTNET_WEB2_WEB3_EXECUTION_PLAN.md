@@ -158,6 +158,7 @@ Send and reconcile a bounded real Arc Testnet payment without exposing blockchai
 - A Circle User-controlled Arc Testnet payment completed end-to-end: an approved 0.1 USDC milestone moved through payment confirmation to `Paid`; the payout rolled up to `Completed` after reload.
 - The normal Owner view exposed only payment status and the final payment record; no transaction hash, network selection, or manual reconciliation decision was required.
 - This is Testnet evidence only. It does not authorize production execution or remove the need for background reconciliation of ambiguous outcomes.
+- The Circle confirmation modal was manually verified as one flow: `Confirm payment` → `Processing` → `Payment confirmed`, without a normal-flow `Check payment` action.
 
 ## Phase 4 — Background reconciliation and internal operations
 
