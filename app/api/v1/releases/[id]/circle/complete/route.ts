@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { CIRCLE_ARC_TESTNET, getCircleChallenge, getCircleTransaction } from "@/lib/circle/user-controlled";
+import { CIRCLE_ARC_TESTNET, CircleApiError, getCircleChallenge, getCircleTransaction } from "@/lib/circle/user-controlled";
 import { getSessionFromRequest, resolveProductContextFromRequestWithSession } from "@/lib/auth/session-server";
 import { db } from "@/lib/db/client";
 import { markReleaseReconciliationPending, recordReleaseTransactionHash, refreshReleaseProof } from "@/lib/repositories/release-proof";
@@ -172,6 +172,14 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     );
   } catch (error) {
     const message = error instanceof Error ? error.message : "CIRCLE_WALLET_ERROR";
+    // Keep provider diagnostics server-only. Never log the Circle user token,
+    // API key, wallet address, or challenge payload.
+    console.error("Circle payment confirmation failed", {
+      releaseId: id,
+      providerStatus: error instanceof CircleApiError ? error.status : undefined,
+      providerCode: error instanceof CircleApiError ? error.code : undefined,
+      error: message,
+    });
     return NextResponse.json({ error: message === "CIRCLE_USER_CONTROLLED_NOT_CONFIGURED" ? message : "CIRCLE_WALLET_PROVIDER_ERROR" }, { status: message === "CIRCLE_USER_CONTROLLED_NOT_CONFIGURED" ? 503 : 502 });
   }
 }
