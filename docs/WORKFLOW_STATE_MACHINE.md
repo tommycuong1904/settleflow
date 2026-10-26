@@ -15,7 +15,7 @@ States: `draft`, `active`, `partially_released`, `completed`.
 ### Supported transitions
 
 - Creation creates a `draft` payout through `lib/repositories/payout-creation.ts` and `app/api/v1/payouts/route.ts`.
-- `draft -> active` is performed by `activatePayout` after workspace/owner-role authorization, target-wallet presence, at least one milestone, and exact milestone-total validation (`lib/repositories/payout-activation.ts`).
+- `draft -> active` is performed by `activatePayout` after workspace/owner-role authorization, at least one milestone, exact milestone-total validation, and validation of a target wallet when one is already present (`lib/repositories/payout-activation.ts`). A destination may be completed later through the contributor's payment-account flow.
 - After a confirmed Arc release proof or a completed simulated payment, `recalculatePayoutStatus` derives `active`, `partially_released`, or `completed` from milestone statuses (`lib/repositories/payout-status.ts`). All milestones released yields `completed` and `completedAt`; some released yields `partially_released`.
 
 There is no separately verified pause, cancel, or formal transition table beyond these repository rules. A payout with no milestones is derived as `draft`.
