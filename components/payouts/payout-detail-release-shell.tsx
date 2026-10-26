@@ -94,15 +94,16 @@ function proofFromCirclePayload(
 function releaseErrorMessage(error: unknown, fallback: string) {
   const message = error instanceof Error ? error.message : fallback;
   if (message === "CIRCLE_WALLET_PROVIDER_ERROR") {
-    return "Circle is temporarily unavailable. This release remains pending; retry the current confirmation or settlement refresh without creating a new release.";
+    return "Payment confirmation is temporarily unavailable. This payment is still being checked; do not start another payment.";
   }
   return message;
 }
 
-function paymentActionErrorMessage(message: string | null) {
+function paymentActionErrorMessage(message: string | null, paymentAccount: boolean) {
   if (!message || message.toLowerCase().includes("release already exists")) return null;
   if (isRealExecutionAuthorizationError(message)) return null;
   if (message.toLowerCase().includes("network connection failed")) {
+    if (paymentAccount) return "No payment was sent. Reconnect your payment account, then try again.";
     return "No payment was sent. Check that your wallet is connected to Arc Testnet, then try again.";
   }
   return "We couldn’t complete this payment attempt. Review the next steps before trying again.";
@@ -203,7 +204,7 @@ export function PayoutDetailReleaseShell({
   const shouldShowPaymentRecord = Boolean(
     resolvedProof && (resolvedProof.status === "confirmed" || resolvedProof.txHash),
   );
-  const actionableReleaseError = paymentActionErrorMessage(releaseError);
+  const actionableReleaseError = paymentActionErrorMessage(releaseError, authType === "web2_google");
   const requiresPaymentReconnect = releaseError?.includes("Reconnect your payment account") ?? false;
   const hasExistingRelease = releaseError?.includes("A release already exists") ?? false;
   const paymentSupportMessage = releaseError ?? "This payment needs a little more time or review. You do not need to retry it or provide payment details.";
@@ -745,7 +746,7 @@ export function PayoutDetailReleaseShell({
         });
       }
       if (proof.status === "failed") {
-        setReleaseError(proof.failureReason ?? "Circle wallet transfer failed before a transaction was submitted.");
+        setReleaseError(proof.failureReason ?? "This payment could not be completed before confirmation.");
       }
       void onActivityChange?.();
       setReleaseStatus(proof.status === "confirmed" ? "confirmed" : proof.status === "failed" ? "failed" : "submitting");
@@ -794,7 +795,7 @@ export function PayoutDetailReleaseShell({
         });
       }
       if (proof.status === "failed") {
-        setReleaseError(proof.failureReason ?? "Circle wallet transfer failed.");
+        setReleaseError(proof.failureReason ?? "This payment could not be completed.");
       }
       void onActivityChange?.();
       setReleaseStatus(proof.status === "confirmed" ? "confirmed" : proof.status === "failed" ? "failed" : "submitting");

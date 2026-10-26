@@ -28,8 +28,9 @@ const statusDescriptions: Record<Exclude<TransactionProof["status"], "pending">,
     "Review the payment issue before starting another attempt.",
 };
 
-function formatFailureReason(reason: string) {
+function formatFailureReason(reason: string, paymentAccount: boolean) {
   if (reason.startsWith("BROWSER_WALLET_PRE_BROADCAST:")) {
+    if (paymentAccount) return "No payment was sent. Return to this payout and follow the next safe payment step.";
     return "No payment was sent. Check that your wallet is connected to Arc Testnet, then you can safely try again.";
   }
 
@@ -113,7 +114,7 @@ export function TransactionProofCard({ proof, milestoneTitle, paymentAccount = f
           <p className="text-xs uppercase tracking-[0.18em] text-rose-800/80 dark:text-rose-200/80">
             What happened
           </p>
-          <p className="mt-2 leading-6">{formatFailureReason(proof.failureReason)}</p>
+          <p className="mt-2 leading-6">{formatFailureReason(proof.failureReason, paymentAccount)}</p>
           <details className="mt-3 border-t border-rose-300/20 pt-3 text-xs">
             <summary className="cursor-pointer font-medium">Show technical details</summary>
             <p className="mt-2 break-all font-mono">{proof.failureReason}</p>
