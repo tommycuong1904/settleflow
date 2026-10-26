@@ -12,6 +12,7 @@ import { addArcNetworkToWallet } from "@/lib/arc/onchain";
 import { useToast } from "@/lib/context/toast-context";
 import { BrowserPushToggle } from "@/components/notifications/browser-push-toggle";
 import { CirclePaymentAccount } from "@/components/settings/circle-payment-account";
+import { getCirclePaymentSession } from "@/lib/circle/user-controlled-client";
 import {
   Shield,
   Cpu,
@@ -50,6 +51,7 @@ export default function SettingsPage() {
   const [walletLoadRequest, setWalletLoadRequest] = useState(0);
   const [circleConfigured, setCircleConfigured] = useState(false);
   const [reconnectingCircle, setReconnectingCircle] = useState(false);
+  const [hasCircleSession, setHasCircleSession] = useState(() => Boolean(getCirclePaymentSession()));
   // Circle's Google flow returns credentials in the URL fragment. Mount its
   // SDK immediately on that return path rather than waiting for the async
   // configuration check to finish and potentially losing the callback.
@@ -58,11 +60,14 @@ export default function SettingsPage() {
   const browserLinkedWallets = linkedWallets.filter((wallet) => wallet.kind !== "circle_sca");
   const shouldResumeCircleConnection = isCircleOAuthReturn || reconnectingCircle;
 
-  const handleCircleReady = () => {
+  const handleCircleReady = async () => {
     setReconnectingCircle(false);
+    setHasCircleSession(true);
     if (typeof window !== "undefined" && window.location.hash) {
       window.history.replaceState(null, "", "/settings");
     }
+    const response = await fetch("/api/v1/auth/wallet/link", { cache: "no-store" });
+    if (response.ok) setLinkedWallets((await response.json() as { wallets: typeof linkedWallets }).wallets);
     setWalletLoadRequest((current) => current + 1);
     router.replace("/settings");
   };
@@ -373,7 +378,7 @@ export default function SettingsPage() {
             <div><h2 className="text-base font-semibold text-[var(--foreground)]">Payment account</h2><p className="text-xs text-[var(--text-muted)]">Your secure USDC account for Arc Testnet payments.</p></div>
           </div>
           <div className="mt-5">
-            {circlePaymentWallet && !shouldResumeCircleConnection ? <div className="flex flex-col gap-3 rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] px-3.5 py-3 text-xs sm:flex-row sm:items-center sm:justify-between"><div><p className="font-medium text-[var(--foreground)]">Payment account ready</p><p className="mt-1 font-mono text-[11px] text-[var(--text-muted)]">{circlePaymentWallet.address}</p><p className="mt-1 text-[11px] text-[var(--text-muted)]">Fund with test USDC before your first payment.</p></div><Button type="button" variant="secondary" size="sm" onClick={() => setReconnectingCircle(true)} className="shrink-0">Reconnect</Button></div> : <CirclePaymentAccount reconnect={Boolean(circlePaymentWallet)} onReady={handleCircleReady} />}
+            {circlePaymentWallet && !shouldResumeCircleConnection ? <div className="flex flex-col gap-3 rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] px-3.5 py-3 text-xs sm:flex-row sm:items-center sm:justify-between"><div><p className="font-medium text-[var(--foreground)]">Payment account ready</p><p className="mt-1 font-mono text-[11px] text-[var(--text-muted)]">{circlePaymentWallet.address}</p><p className="mt-1 text-[11px] text-[var(--text-muted)]">Fund with test USDC before your first payment.</p></div>{hasCircleSession ? <span className="text-xs font-medium text-emerald-700">Connected</span> : <Button type="button" variant="secondary" size="sm" onClick={() => setReconnectingCircle(true)} className="shrink-0">Connect</Button>}</div> : <CirclePaymentAccount reconnect={Boolean(circlePaymentWallet)} onReady={() => { void handleCircleReady(); }} />}
           </div>
         </section> : null}
 
