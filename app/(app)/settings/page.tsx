@@ -26,6 +26,8 @@ import {
   RefreshCw,
 } from "lucide-react";
 
+const CIRCLE_ONBOARDING_RETURN_TO_KEY = "sf_circle_onboarding_return_to";
+
 export default function SettingsPage() {
   const router = useRouter();
   const pathname = usePathname();
@@ -65,6 +67,12 @@ export default function SettingsPage() {
   const browserLinkedWallets = linkedWallets.filter((wallet) => wallet.kind !== "circle_sca");
   const shouldResumeCircleConnection = isCircleOAuthReturn || reconnectingCircle;
 
+  useEffect(() => {
+    if (isPaymentOnboarding && typeof window !== "undefined") {
+      window.sessionStorage.setItem(CIRCLE_ONBOARDING_RETURN_TO_KEY, paymentSetupNext);
+    }
+  }, [isPaymentOnboarding, paymentSetupNext]);
+
   const handleCircleReady = async () => {
     setReconnectingCircle(false);
     setHasCircleSession(true);
@@ -74,7 +82,13 @@ export default function SettingsPage() {
     const response = await fetch("/api/v1/auth/wallet/link", { cache: "no-store" });
     if (response.ok) setLinkedWallets((await response.json() as { wallets: typeof linkedWallets }).wallets);
     setWalletLoadRequest((current) => current + 1);
-    router.replace(isPaymentOnboarding ? paymentSetupNext : "/settings");
+    const returnTo = isPaymentOnboarding
+      ? paymentSetupNext
+      : typeof window !== "undefined"
+        ? window.sessionStorage.getItem(CIRCLE_ONBOARDING_RETURN_TO_KEY) || "/settings"
+        : "/settings";
+    if (typeof window !== "undefined") window.sessionStorage.removeItem(CIRCLE_ONBOARDING_RETURN_TO_KEY);
+    router.replace(returnTo);
   };
 
   const handleDisconnect = async () => {
@@ -87,6 +101,7 @@ export default function SettingsPage() {
     try {
       const response = await fetch("/api/v1/payment-account/onboarding/skip", { method: "POST" });
       if (!response.ok) throw new Error("Unable to save this choice.");
+      if (typeof window !== "undefined") window.sessionStorage.removeItem(CIRCLE_ONBOARDING_RETURN_TO_KEY);
       router.replace(paymentSetupNext);
     } catch {
       toast({ variant: "error", title: "Couldn’t skip setup", description: "Try again, or set up your payment account now." });
