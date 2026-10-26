@@ -851,7 +851,7 @@ export function PayoutDetailReleaseShell({
                       : nextReleasableMilestone ? <Button onClick={() => { void openPaymentMethod(); }}>Pay {formatUsdc(nextReleasableMilestone.amount)} USDC</Button>
                         : null}
           </div>
-          {actionableReleaseError ? <p className="mt-3 text-sm text-rose-600">{actionableReleaseError}</p> : null}
+          {!isCircleSettlementPending && actionableReleaseError ? <p className="mt-3 text-sm text-rose-600">{actionableReleaseError}</p> : null}
         </section>
       ) : null}
 
