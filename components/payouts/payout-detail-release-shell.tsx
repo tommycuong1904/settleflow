@@ -934,9 +934,8 @@ export function PayoutDetailReleaseShell({
             ) : releaseModalMode === "pending" ? (
               <>
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">Payment processing</p>
-                <h2 id="release-dialog-title" className="mt-2 pr-8 text-xl font-semibold text-[var(--foreground)]">We’re confirming your payment</h2>
-                <p className="mt-2 text-sm text-[var(--text-muted)]">Your payment is being checked safely. You do not need to sign, retry, or provide any payment details.</p>
-                <div className="mt-5 rounded-2xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-4 text-sm text-[var(--text-muted)]"><p className="font-medium text-[var(--foreground)]">Still processing safely</p><p className="mt-1 leading-6">You can close this window. SettleFlow will keep this payment locked and show the completed record once confirmation arrives.</p></div>
+                <h2 id="release-dialog-title" className="mt-2 pr-8 text-xl font-semibold text-[var(--foreground)]">Confirming your payment</h2>
+                <p className="mt-2 text-sm text-[var(--text-muted)]">This usually takes a moment. You can close this window safely.</p>
                 <div className="mt-6 flex justify-end"><Button variant="secondary" onClick={closeReleaseModal} className="w-full justify-center sm:w-auto">Close</Button></div>
               </>
             ) : (
