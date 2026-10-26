@@ -56,6 +56,16 @@ export default function SettingsPage() {
   const [isCircleOAuthReturn] = useState(() => typeof window !== "undefined" && window.location.hash.includes("id_token="));
   const circlePaymentWallet = linkedWallets.find((wallet) => wallet.kind === "circle_sca");
   const browserLinkedWallets = linkedWallets.filter((wallet) => wallet.kind !== "circle_sca");
+  const shouldResumeCircleConnection = isCircleOAuthReturn || reconnectingCircle;
+
+  const handleCircleReady = () => {
+    setReconnectingCircle(false);
+    if (typeof window !== "undefined" && window.location.hash) {
+      window.history.replaceState(null, "", "/settings");
+    }
+    setWalletLoadRequest((current) => current + 1);
+    router.replace("/settings");
+  };
 
   const handleDisconnect = async () => {
     await disconnect();
@@ -363,7 +373,7 @@ export default function SettingsPage() {
             <div><h2 className="text-base font-semibold text-[var(--foreground)]">Payment account</h2><p className="text-xs text-[var(--text-muted)]">Your secure USDC account for Arc Testnet payments.</p></div>
           </div>
           <div className="mt-5">
-            {circlePaymentWallet && !reconnectingCircle ? <div className="flex flex-col gap-3 rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] px-3.5 py-3 text-xs sm:flex-row sm:items-center sm:justify-between"><div><p className="font-medium text-[var(--foreground)]">Payment account ready</p><p className="mt-1 font-mono text-[11px] text-[var(--text-muted)]">{circlePaymentWallet.address}</p><p className="mt-1 text-[11px] text-[var(--text-muted)]">Fund with test USDC before your first payment.</p></div><Button type="button" variant="secondary" size="sm" onClick={() => setReconnectingCircle(true)} className="shrink-0">Reconnect</Button></div> : <CirclePaymentAccount reconnect={Boolean(circlePaymentWallet)} onReady={() => { setReconnectingCircle(false); setWalletLoadRequest((current) => current + 1); }} />}
+            {circlePaymentWallet && !shouldResumeCircleConnection ? <div className="flex flex-col gap-3 rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] px-3.5 py-3 text-xs sm:flex-row sm:items-center sm:justify-between"><div><p className="font-medium text-[var(--foreground)]">Payment account ready</p><p className="mt-1 font-mono text-[11px] text-[var(--text-muted)]">{circlePaymentWallet.address}</p><p className="mt-1 text-[11px] text-[var(--text-muted)]">Fund with test USDC before your first payment.</p></div><Button type="button" variant="secondary" size="sm" onClick={() => setReconnectingCircle(true)} className="shrink-0">Reconnect</Button></div> : <CirclePaymentAccount reconnect={Boolean(circlePaymentWallet)} onReady={handleCircleReady} />}
           </div>
         </section> : null}
 
