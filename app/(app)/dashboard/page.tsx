@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { Button } from "@/components/shared/button";
 import { PageHeader } from "@/components/shared/page-header";
 import { getDashboardData } from "@/lib/repositories/dashboard";
+import { db } from "@/lib/db/client";
 import { resolveProductContextForServerPage } from "@/lib/auth/session-server";
 import { ServerAuthContextState } from "@/components/shared/server-auth-context-state";
 import { formatUsdc } from "@/lib/utils/format";
@@ -15,6 +16,7 @@ export default async function DashboardPage() {
   let contributors: Awaited<ReturnType<typeof getDashboardData>>["contributors"] = [];
   let transactionProofs: Awaited<ReturnType<typeof getDashboardData>>["transactionProofs"] = [];
   let paymentAttempts: Awaited<ReturnType<typeof getDashboardData>>["paymentAttempts"] = [];
+  let needsContributorPaymentSetup = false;
 
   const contextResult = await resolveProductContextForServerPage(cookieStore);
   if (contextResult.kind === "auth-required") {
@@ -52,6 +54,13 @@ export default async function DashboardPage() {
     contributors = dashboardData.contributors;
     transactionProofs = dashboardData.transactionProofs;
     paymentAttempts = dashboardData.paymentAttempts;
+    if (productContext.actor === "contributor" && dashboardData.payouts.some((payout) => ["active", "partially_released"].includes(payout.status))) {
+      const paymentUser = await db.user.findUnique({
+        where: { id: productContext.activeUserId },
+        select: { googleSub: true, circleWallet: { select: { id: true } } },
+      });
+      needsContributorPaymentSetup = Boolean(paymentUser?.googleSub && !paymentUser.circleWallet);
+    }
   }
   const isOwner = contextResult.kind === "authenticated" && contextResult.productContext.actor === "owner";
   const activeWorkspaceId = contextResult.kind === "authenticated"
@@ -141,6 +150,13 @@ export default async function DashboardPage() {
       description: `${milestone.title} is approved and ready for payment.`,
       action: "Review & pay",
     })) : []),
+    ...(!isOwner && needsContributorPaymentSetup ? [{
+      id: "setup-payment-account",
+      href: "/settings?onboarding=1&next=%2Fdashboard",
+      title: "Set up your payment account",
+      description: "Your payout is active. Set up your secure account now so you are ready to receive USDC when payment is approved.",
+      action: "Set up account",
+    }] : []),
   ].slice(0, 5);
   const nextTask = workQueue[0];
   const remainingTasks = workQueue.slice(1);
