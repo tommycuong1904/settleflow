@@ -19,6 +19,7 @@ async function requestFor(user: { id: string; email: string }, path: string, bod
 test("milestone workflow permits only the assigned contributor and workspace owner at each transition", async () => {
   const suffix = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const owner = await db.user.create({ data: { displayName: "Workflow Owner", email: `workflow-owner-${suffix}@example.test` } });
+  const reviewer = await db.user.create({ data: { displayName: "Workflow Reviewer", email: `workflow-reviewer-${suffix}@example.test` } });
   const assignee = await db.user.create({ data: { displayName: "Workflow Assignee", email: `workflow-assignee-${suffix}@example.test` } });
   const otherContributor = await db.user.create({ data: { displayName: "Workflow Other", email: `workflow-other-${suffix}@example.test` } });
   const workspace = await db.workspace.create({ data: { name: "Workflow Authorization", slug: `workflow-auth-${suffix}` } });
@@ -27,6 +28,7 @@ test("milestone workflow permits only the assigned contributor and workspace own
   const milestone = await db.milestone.create({ data: { payoutId: payout.id, title: "Workflow milestone", description: "Authorization boundary", amountUsdc: "5", sequence: 1 } });
   await db.workspaceMember.createMany({ data: [
     { workspaceId: workspace.id, userId: owner.id, role: "owner" },
+    { workspaceId: workspace.id, userId: reviewer.id, role: "reviewer" },
     { workspaceId: workspace.id, userId: assignee.id, role: "contributor" },
     { workspaceId: workspace.id, userId: otherContributor.id, role: "contributor" },
   ] });
@@ -38,6 +40,8 @@ test("milestone workflow permits only the assigned contributor and workspace own
     assert.equal((await db.milestone.findUnique({ where: { id: milestone.id } }))?.status, "pending");
 
     assert.equal((await submit(await requestFor(assignee, `${path}/submit?workspaceId=${workspace.id}`, { summary: "Initial work for review." }), { params: Promise.resolve({ id: milestone.id }) })).status, 201);
+    assert.equal((await approve(await requestFor(reviewer, `${path}/approve?workspaceId=${workspace.id}`), { params: Promise.resolve({ id: milestone.id }) })).status, 403);
+    assert.equal((await reject(await requestFor(reviewer, `${path}/reject?workspaceId=${workspace.id}`, { comment: "Legacy reviewer cannot decide." }), { params: Promise.resolve({ id: milestone.id }) })).status, 403);
     assert.equal((await approve(await requestFor(assignee, `${path}/approve?workspaceId=${workspace.id}`), { params: Promise.resolve({ id: milestone.id }) })).status, 403);
     assert.equal((await reject(await requestFor(otherContributor, `${path}/reject?workspaceId=${workspace.id}`, { comment: "Not authorized." }), { params: Promise.resolve({ id: milestone.id }) })).status, 403);
     assert.equal((await db.milestone.findUnique({ where: { id: milestone.id } }))?.status, "submitted");
@@ -57,6 +61,6 @@ test("milestone workflow permits only the assigned contributor and workspace own
     await db.contributor.delete({ where: { id: contributor.id } });
     await db.workspaceMember.deleteMany({ where: { workspaceId: workspace.id } });
     await db.workspace.delete({ where: { id: workspace.id } });
-    await db.user.deleteMany({ where: { id: { in: [owner.id, assignee.id, otherContributor.id] } } });
+    await db.user.deleteMany({ where: { id: { in: [owner.id, reviewer.id, assignee.id, otherContributor.id] } } });
   }
 });
