@@ -81,7 +81,10 @@ export function CirclePaymentAccount({ onReady, reconnect = false }: { onReady?:
         const deviceToken = readCookie("sf_circle_device_token") ?? "";
         const deviceEncryptionKey = readCookie("sf_circle_device_key") ?? "";
         const sdk = new W3SSdk({ appSettings: { appId: configuredAppId }, loginConfigs: { deviceToken, deviceEncryptionKey, google: { clientId: configuredGoogleClientId, redirectUri: circleRedirectUri(), selectAccountPrompt: true } } }, (error, result) => {
-          if (!active || !result || error) { if (active && error) { setStatus("error"); setMessage(error.message || "Google wallet setup was not completed."); } return; }
+          if (!result || error) { if (active && error) { setStatus("error"); setMessage(error.message || "Google wallet setup was not completed."); } return; }
+          // React development mode replays effects. A Circle OAuth callback may
+          // already be verifying when the first effect is cleaned up, so do not
+          // discard that verified result before its browser session is saved.
           void finishProvisioning({ userToken: result.userToken, encryptionKey: result.encryptionKey }, sdk as unknown as CircleSdk).catch((cause: unknown) => { if (active) { setStatus("error"); setMessage(cause instanceof Error ? cause.message : "Payment account setup failed."); } });
         });
         sdkRef.current = sdk as unknown as CircleSdk;
