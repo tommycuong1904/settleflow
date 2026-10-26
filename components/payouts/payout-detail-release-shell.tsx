@@ -745,10 +745,11 @@ export function PayoutDetailReleaseShell({
   }
 
   async function handleContinueCircleRelease() {
-    if (!isOwnerActor || !resolvedProof?.releaseId || !isPendingCircleRelease) return;
+    if (!isOwnerActor || !resolvedProof?.releaseId || !isPendingCircleRelease || processingRelease) return;
 
     setReleaseError(null);
     setReleaseStatus("submitting");
+    setProcessingRelease(true);
     try {
       // Inspect Circle first. A completed challenge must be reconciled, never
       // reopened in the SDK; reopening it is what caused provider errors.
@@ -773,6 +774,8 @@ export function PayoutDetailReleaseShell({
       setReleaseStatus(proof.status === "confirmed" ? "confirmed" : proof.status === "failed" ? "failed" : "submitting");
     } catch (err) {
       setReleaseError(releaseErrorMessage(err, "Unable to continue Circle wallet confirmation."));
+    } finally {
+      setProcessingRelease(false);
     }
   }
 
@@ -799,10 +802,11 @@ export function PayoutDetailReleaseShell({
   }
 
   async function handleRefreshCircleSettlement() {
-    if (!isOwnerActor || !resolvedProof?.releaseId || !isCircleSettlementPending) return;
+    if (!isOwnerActor || !resolvedProof?.releaseId || !isCircleSettlementPending || processingRelease) return;
 
     setReleaseError(null);
     setReleaseStatus("submitting");
+    setProcessingRelease(true);
     try {
       const completedPayload = await completeCircleRelease(resolvedProof.releaseId);
       const proof = proofFromCirclePayload(completedPayload, resolvedProof);
@@ -822,6 +826,8 @@ export function PayoutDetailReleaseShell({
       setReleaseStatus(proof.status === "confirmed" ? "confirmed" : proof.status === "failed" ? "failed" : "submitting");
     } catch (err) {
       setReleaseError(releaseErrorMessage(err, "Unable to refresh Circle settlement."));
+    } finally {
+      setProcessingRelease(false);
     }
   }
 
@@ -847,8 +853,8 @@ export function PayoutDetailReleaseShell({
                 <><p className="font-semibold text-[var(--foreground)]">Ready to pay {formatUsdc(nextReleasableMilestone.amount)} USDC</p><p className="mt-1 text-[var(--text-muted)]">Choose how you want to record this payment.</p></>
               ) : null}
             </div>
-            {isCircleSettlementPending ? <Button onClick={() => { void handleRefreshCircleSettlement(); }}>Check payment</Button>
-              : needsCircleConfirmation ? <Button onClick={() => { void handleContinueCircleRelease(); }}>Continue confirmation</Button>
+            {isCircleSettlementPending ? <Button onClick={() => { void handleRefreshCircleSettlement(); }} disabled={processingRelease}>{processingRelease ? "Checking…" : "Check payment"}</Button>
+              : needsCircleConfirmation ? <Button onClick={() => { void handleContinueCircleRelease(); }} disabled={processingRelease}>{processingRelease ? "Checking…" : "Continue confirmation"}</Button>
                 : canRecoverLegacyBrowserRelease ? <Button onClick={() => { void handleResolveLegacyBrowserRelease(); }}>{processingRelease ? "Checking payment..." : "Check previous payment"}</Button>
                 : isBrowserReconciliationPending ? <Button onClick={() => setReleaseModalMode("pending")}>View status</Button>
                   : canStartCircleReplacement ? <Button onClick={() => { void openPaymentMethod(); }}>Pay with payment account</Button>
@@ -857,6 +863,7 @@ export function PayoutDetailReleaseShell({
                       : nextReleasableMilestone ? <Button onClick={() => { void openPaymentMethod(); }}>Pay {formatUsdc(nextReleasableMilestone.amount)} USDC</Button>
                         : null}
           </div>
+          {isCircleSettlementPending && releaseError ? <p className="mt-3 text-sm text-[var(--text-muted)]">We couldn’t refresh the payment just now. It is still being checked, so do not start another payment.</p> : null}
           {!isCircleSettlementPending && actionableReleaseError ? <p className="mt-3 text-sm text-rose-600">{actionableReleaseError}</p> : null}
         </section>
       ) : null}
