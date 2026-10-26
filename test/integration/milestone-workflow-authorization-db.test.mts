@@ -7,8 +7,9 @@ import { POST as submit } from "@/app/api/v1/milestones/[id]/submit/route";
 import { createSessionToken } from "@/lib/auth/session";
 import { db } from "@/lib/db/client";
 
-async function requestFor(user: { id: string; email: string }, path: string, body?: unknown) {
-  const token = await createSessionToken({ userId: user.id, email: user.email, name: user.email, address: null, authType: "web2_google" });
+async function requestFor(user: { id: string; email: string | null }, path: string, body?: unknown) {
+  const email = user.email ?? "";
+  const token = await createSessionToken({ userId: user.id, email, name: email, address: null, authType: "web2_google" });
   return new Request(`https://settleflow.local${path}`, {
     method: "POST",
     headers: { cookie: `sf_session=${token}`, "content-type": "application/json" },
