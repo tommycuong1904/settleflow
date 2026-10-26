@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { ARC_CONFIG } from "@/lib/arc/config";
@@ -140,7 +140,7 @@ export function PayoutDetailReleaseShell({
   );
   const [releaseError, setReleaseError] = useState<string | null>(null);
   const [activeProof, setActiveProof] = useState<TransactionProof | undefined>(releaseProof);
-  const [releaseModalMode, setReleaseModalMode] = useState<"method" | "review" | "simulated" | "pending" | "failed" | null>(null);
+  const [releaseModalMode, setReleaseModalMode] = useState<"method" | "review" | "simulated" | "pending" | "failed" | "setup" | null>(null);
   const [resumeReleaseId, setResumeReleaseId] = useState<string | undefined>();
   const [recordingSimulatedPayment, setRecordingSimulatedPayment] = useState(false);
   const [processingRelease, setProcessingRelease] = useState(false);
@@ -219,6 +219,28 @@ export function PayoutDetailReleaseShell({
     [productContext.actor, productContext.contributorUserId, productContext.ownerUserId, productContext.reviewerUserId, productContext.workspaceId],
   );
 
+  const canUseSimulatedPayment = ARC_CONFIG.executionMode === "demo" || ARC_CONFIG.executionMode === "mock";
+  const openPaymentMethod = useCallback(async () => {
+    setReleaseError(null);
+    setResumeReleaseId(undefined);
+    // In real/Testnet there is one enabled rail, so asking the user to choose
+    // it only adds a redundant modal step. Demo/mock retains the selector.
+    if (authType === "web2_google" && !canUseSimulatedPayment) {
+      try {
+        const response = await fetch("/api/v1/circle/wallet", { cache: "no-store" });
+        const payload = response.ok ? await response.json() as { wallet?: { address?: string } | null } : null;
+        if (!payload?.wallet?.address) {
+          setReleaseModalMode("setup");
+          return;
+        }
+      } catch {
+        // The release route remains the readiness authority if this advisory
+        // check is temporarily unavailable.
+      }
+    }
+    setReleaseModalMode(canUseSimulatedPayment ? "method" : "review");
+  }, [authType, canUseSimulatedPayment]);
+
   useEffect(() => {
     if (
       !reviewRequest ||
@@ -227,8 +249,8 @@ export function PayoutDetailReleaseShell({
       !nextReleasableMilestone
     ) return;
     handledReviewRequest.current = reviewRequest;
-    openPaymentMethod();
-  }, [isOwnerActor, nextReleasableMilestone, reviewRequest]);
+    void openPaymentMethod();
+  }, [isOwnerActor, nextReleasableMilestone, openPaymentMethod, reviewRequest]);
 
   useEffect(() => {
     if (!releaseModalMode) return;
@@ -254,15 +276,6 @@ export function PayoutDetailReleaseShell({
     });
     return () => window.cancelAnimationFrame(focusFrame);
   }, [releaseModalMode]);
-
-  const canUseSimulatedPayment = ARC_CONFIG.executionMode === "demo" || ARC_CONFIG.executionMode === "mock";
-  function openPaymentMethod() {
-    setReleaseError(null);
-    setResumeReleaseId(undefined);
-    // In real/Testnet there is one enabled rail, so asking the user to choose
-    // it only adds a redundant modal step. Demo/mock retains the selector.
-    setReleaseModalMode(canUseSimulatedPayment ? "method" : "review");
-  }
 
   function closeReleaseModal() {
     if (!isModalActionPending) setReleaseModalMode(null);
@@ -604,27 +617,27 @@ export function PayoutDetailReleaseShell({
         return;
       }
 
-      setActiveProof(result);
-      if (result.status === "failed") {
-        result.failureReason = data.proof?.failureReason;
-      }
-      if (result.executionMode === undefined && data.release?.id && data.proof?.status) {
-        result.executionMode = "browser_wallet";
-        result.releaseStatus = data.release.status as TransactionProof["releaseStatus"];
-      }
-      if (result.status === "confirmed") {
+      const resolvedResult: TransactionProof = {
+        ...result,
+        ...(result.status === "failed" ? { failureReason: data.proof?.failureReason } : {}),
+        ...(result.executionMode === undefined && data.release?.id && data.proof?.status
+          ? { executionMode: "browser_wallet" as const, releaseStatus: data.release.status as TransactionProof["releaseStatus"] }
+          : {}),
+      };
+      setActiveProof(resolvedResult);
+      if (resolvedResult.status === "confirmed") {
         onReleaseSuccess?.({
           milestoneId: nextReleasableMilestone.id,
-          proof: result,
-          releasedAt: result.confirmedAt ?? new Date().toISOString(),
+          proof: resolvedResult,
+          releasedAt: resolvedResult.confirmedAt ?? new Date().toISOString(),
         });
       }
 
       void onActivityChange?.();
-      setReleaseStatus(result.status === "failed" ? "failed" : result.status === "pending" ? "submitting" : "confirmed");
-      if (result.status === "failed") {
+      setReleaseStatus(resolvedResult.status === "failed" ? "failed" : resolvedResult.status === "pending" ? "submitting" : "confirmed");
+      if (resolvedResult.status === "failed") {
         setReleaseModalMode("failed");
-      } else if (result.status === "confirmed") {
+      } else if (resolvedResult.status === "confirmed") {
         setReleaseModalMode(null);
       }
     } catch (err) {
@@ -811,10 +824,10 @@ export function PayoutDetailReleaseShell({
               : needsCircleConfirmation ? <Button onClick={() => { void handleContinueCircleRelease(); }}>Continue confirmation</Button>
                 : canRecoverLegacyBrowserRelease ? <Button onClick={() => { void handleResolveLegacyBrowserRelease(); }}>{processingRelease ? "Checking payment..." : "Check previous payment"}</Button>
                 : isBrowserReconciliationPending ? <Button onClick={() => setReleaseModalMode("pending")}>View status</Button>
-                  : canStartCircleReplacement ? <Button onClick={openPaymentMethod}>Pay with payment account</Button>
+                  : canStartCircleReplacement ? <Button onClick={() => { void openPaymentMethod(); }}>Pay with payment account</Button>
                   : effectiveReleaseStatus === "failed" ? <Button onClick={() => setReleaseModalMode("failed")}>View status</Button>
                     : isBrowserReleasable ? <Button onClick={() => openReleaseReview(resolvedProof?.releaseId)}>Continue payment</Button>
-                      : nextReleasableMilestone ? <Button onClick={openPaymentMethod}>Pay {formatUsdc(nextReleasableMilestone.amount)} USDC</Button>
+                      : nextReleasableMilestone ? <Button onClick={() => { void openPaymentMethod(); }}>Pay {formatUsdc(nextReleasableMilestone.amount)} USDC</Button>
                         : null}
           </div>
           {actionableReleaseError ? <p className="mt-3 text-sm text-rose-600">{actionableReleaseError}</p> : null}
@@ -836,7 +849,15 @@ export function PayoutDetailReleaseShell({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-3 backdrop-blur-md sm:p-4" onClick={closeReleaseModal}>
           <div ref={releaseDialogRef} role="dialog" aria-modal="true" aria-labelledby="release-dialog-title" tabIndex={-1} className="relative max-h-[calc(100dvh-1.5rem)] w-full max-w-lg overflow-y-auto rounded-3xl border border-[var(--border-strong)] bg-[var(--surface)] p-5 shadow-2xl sm:max-h-[calc(100dvh-2rem)] sm:p-6" onClick={(event) => event.stopPropagation()}>
             <button type="button" onClick={closeReleaseModal} disabled={isModalActionPending} className="absolute right-5 top-5 rounded-full p-1.5 text-[var(--text-muted)] hover:bg-[var(--surface-muted)] disabled:cursor-not-allowed disabled:opacity-50" aria-label="Close release dialog"><X size={18} /></button>
-            {releaseModalMode === "method" ? (
+            {releaseModalMode === "setup" ? (
+              <>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">Payment account</p>
+                <h2 id="release-dialog-title" className="mt-2 pr-8 text-xl font-semibold text-[var(--foreground)]">Set up your payment account first</h2>
+                <p className="mt-2 text-sm text-[var(--text-muted)]">SettleFlow needs your secure payment account before it can send this USDC payment. You will return here after setup.</p>
+                <div className="mt-5 rounded-2xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-4 text-sm text-[var(--text-muted)]"><p className="font-medium text-[var(--foreground)]">No browser wallet needed</p><p className="mt-1 leading-6">Use your Google account to create the payment account for Arc Testnet.</p></div>
+                <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"><Button variant="secondary" onClick={closeReleaseModal} className="w-full justify-center sm:w-auto">Not now</Button><Button onClick={() => { const next = `${window.location.pathname}${window.location.search}`; router.push(`/settings?onboarding=1&next=${encodeURIComponent(next)}`); }} className="w-full justify-center sm:w-auto">Set up payment account</Button></div>
+              </>
+            ) : releaseModalMode === "method" ? (
               <>
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">Pay milestone</p>
                 <h2 id="release-dialog-title" className="mt-2 pr-8 text-xl font-semibold text-[var(--foreground)]">Choose how to record this payment</h2>
