@@ -30,7 +30,7 @@ function readCookie(name: string) {
 
 const pause = (milliseconds: number) => new Promise((resolve) => window.setTimeout(resolve, milliseconds));
 
-export function CirclePaymentAccount({ onReady, reconnect = false }: { onReady?: () => void; reconnect?: boolean }) {
+export function CirclePaymentAccount({ onReady, reconnect = false, purpose = "pay" }: { onReady?: () => void; reconnect?: boolean; purpose?: "pay" | "receive" }) {
   const sdkRef = useRef<CircleSdk | null>(null);
   const appId = process.env.NEXT_PUBLIC_CIRCLE_USER_CONTROLLED_APP_ID;
   const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
@@ -117,7 +117,7 @@ export function CirclePaymentAccount({ onReady, reconnect = false }: { onReady?:
   };
 
   return <div className="flex flex-col gap-3 rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)]/30 p-4 sm:flex-row sm:items-center sm:justify-between">
-    <div><p className="text-sm font-semibold text-[var(--foreground)]">{reconnect ? "Reconnect payment account" : "Set up payment account"}</p><p className="mt-1 text-xs text-[var(--text-muted)]">{reconnect ? "Use Google to reconnect this browser before confirming a payment." : "Use Google to create your secure USDC payment account. No browser wallet or recovery phrase is needed."}</p>{message ? <p role="status" className="mt-2 text-xs text-[var(--text-muted)]">{message}</p> : null}</div>
-    <Button type="button" size="sm" variant="primary" onClick={() => void connect()} disabled={status === "loading" || status === "working" || status === "ready"} className="w-full shrink-0 justify-center sm:w-auto"><Wallet size={14} className="mr-1.5" />{status === "working" ? <><LoaderCircle size={14} className="mr-1.5 animate-spin" />{reconnect ? "Reconnecting…" : "Setting up…"}</> : status === "ready" ? (reconnect ? "Reconnected" : "Payment account ready") : (reconnect ? "Reconnect with Google" : "Set up account")}</Button>
+    <div><p className="text-sm font-semibold text-[var(--foreground)]">{reconnect ? "Connect payment account" : "Set up payment account"}</p><p className="mt-1 text-xs text-[var(--text-muted)]">{reconnect ? "Reconnect this browser to confirm payments. Your payment address will not change." : purpose === "pay" ? "Use Google to create your secure USDC payment account. No browser wallet or recovery phrase is needed." : "Use Google to create your secure USDC receiving account. No browser wallet or recovery phrase is needed."}</p><p className="mt-1 text-xs text-[var(--text-muted)]">Circle may ask you to confirm Google once more to secure this payment account.</p>{message ? <p role="status" className="mt-2 text-xs text-[var(--text-muted)]">{message}</p> : null}</div>
+    <Button type="button" size="sm" variant="primary" onClick={() => void connect()} disabled={status === "loading" || status === "working" || status === "ready"} className="w-full shrink-0 justify-center sm:w-auto"><Wallet size={14} className="mr-1.5" />{status === "working" ? <><LoaderCircle size={14} className="mr-1.5 animate-spin" />{reconnect ? "Connecting…" : "Setting up…"}</> : status === "ready" ? "Connected" : (reconnect ? "Connect" : "Set up account")}</Button>
   </div>;
 }
