@@ -922,6 +922,7 @@ export function PayoutDetailClient({
         <PayoutDetailReleaseShell
           payoutId={payout.id}
           recipientName={contributor?.name}
+          recipientEmail={contributor?.email}
           recipientAddress={contributor?.walletAddress}
           nextReleasableMilestone={nextReleasableMilestone}
           releaseMilestoneTitle={latestReleasedMilestone?.title}

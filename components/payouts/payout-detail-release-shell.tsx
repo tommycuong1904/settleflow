@@ -30,6 +30,7 @@ import { LoaderCircle, X } from "lucide-react";
 type PayoutDetailReleaseShellProps = {
   payoutId: string;
   recipientName?: string;
+  recipientEmail?: string;
   recipientAddress?: string;
   nextReleasableMilestone?: Milestone;
   releaseMilestoneTitle?: string;
@@ -116,6 +117,7 @@ function isRealExecutionAuthorizationError(message: string | null) {
 
 export function PayoutDetailReleaseShell({
   recipientName,
+  recipientEmail,
   recipientAddress,
   nextReleasableMilestone,
   releaseMilestoneTitle,
@@ -127,6 +129,10 @@ export function PayoutDetailReleaseShell({
   onActivityChange,
 }: PayoutDetailReleaseShellProps) {
   const router = useRouter();
+  const recipientIdentity = [
+    recipientEmail ? `${recipientEmail.slice(0, 2)}•••${recipientEmail.includes("@") ? recipientEmail.slice(recipientEmail.indexOf("@")) : ""}` : null,
+    recipientAddress ? `${recipientAddress.slice(0, 6)}…${recipientAddress.slice(-4)}` : null,
+  ].filter(Boolean).join(" · ");
   const productContext = useResolvedProductContext();
   const { isConnected, address, authType, openAuthModal } = useWallet();
   const isOwnerActor = isRole(currentActor, "owner");
@@ -923,8 +929,8 @@ export function PayoutDetailReleaseShell({
                 <dl className="mt-5 space-y-3 rounded-2xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-4 text-sm">
                   <div><dt className="text-xs text-[var(--text-muted)]">You’re paying</dt><dd className="mt-1 text-lg font-semibold text-[var(--foreground)]">{formatUsdc(nextReleasableMilestone.amount)} USDC</dd></div>
                   <div><dt className="text-xs text-[var(--text-muted)]">For milestone</dt><dd className="mt-1 font-medium text-[var(--foreground)]">{nextReleasableMilestone.title}</dd></div>
-                  <div><dt className="text-xs text-[var(--text-muted)]">Recipient</dt><dd className="mt-1 font-medium text-[var(--foreground)]">{recipientName ?? "Contributor"}</dd>{authType !== "web2_google" ? <dd className="mt-1 break-all font-mono text-xs text-[var(--text-muted)]">{recipientAddress ?? "Not resolved"}</dd> : null}</div>
-                  <div><dt className="text-xs text-[var(--text-muted)]">{authType === "web2_google" ? "Payment account" : "Payment wallet"}</dt><dd className="mt-1 break-all font-mono text-xs text-[var(--foreground)]">{authType === "web2_google" ? "Payment account" : address ?? "Connect a browser wallet to continue"}</dd></div>
+                  <div><dt className="text-xs text-[var(--text-muted)]">Recipient</dt><dd className="mt-1 font-medium text-[var(--foreground)]">{recipientName ?? "Contributor"}</dd>{recipientIdentity ? <dd className="mt-1 text-xs text-[var(--text-muted)]">{recipientIdentity}</dd> : null}</div>
+                  {authType !== "web2_google" ? <div><dt className="text-xs text-[var(--text-muted)]">Payment wallet</dt><dd className="mt-1 break-all font-mono text-xs text-[var(--foreground)]">{address ?? "Connect a browser wallet to continue"}</dd></div> : null}
                 </dl>
                 <p className="mt-4 text-xs text-[var(--text-muted)]">Payments can’t be reversed after confirmation.</p>
                 <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"><Button variant="secondary" onClick={closeReleaseModal} disabled={processingRelease} className="w-full justify-center sm:w-auto">Back</Button><Button onClick={() => { void handleRelease(resumeReleaseId); }} disabled={processingRelease} className="w-full justify-center sm:w-auto">{processingRelease ? <><LoaderCircle size={15} className="animate-spin" />Confirming…</> : resumeReleaseId ? "Continue payment" : authType === "web2_google" ? `Confirm ${formatUsdc(nextReleasableMilestone.amount)} USDC` : `Sign ${formatUsdc(nextReleasableMilestone.amount)} USDC`}</Button></div>
