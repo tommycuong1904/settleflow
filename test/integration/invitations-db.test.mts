@@ -34,6 +34,7 @@ test("invitations enforce authorization, email binding, lifecycle, and one membe
     },
   });
   const workspace = await db.workspace.create({ data: { name: "Invitation Test", slug: `invitation-${suffix}` } });
+  const otherWorkspace = await db.workspace.create({ data: { name: "Other Invitation Test", slug: `other-invitation-${suffix}` } });
 
   const tokenFor = (user: typeof owner) => createSessionToken({
     userId: user.id, email: user.email!, name: user.displayName, address: null, authType: "web2_google",
@@ -43,6 +44,7 @@ test("invitations enforce authorization, email binding, lifecycle, and one membe
   try {
     await db.workspaceMember.createMany({ data: [
       { workspaceId: workspace.id, userId: owner.id, role: "owner" },
+      { workspaceId: otherWorkspace.id, userId: owner.id, role: "owner" },
       { workspaceId: workspace.id, userId: reviewer.id, role: "reviewer" },
       { workspaceId: workspace.id, userId: existing.id, role: "ops" },
     ] });
@@ -75,6 +77,15 @@ test("invitations enforce authorization, email binding, lifecycle, and one membe
     ));
     assert.equal(ownerInvitation.status, 200);
     assert.equal((await ownerInvitation.json() as { invitation: { role: string } }).invitation.role, "owner");
+
+    const otherWorkspaceInvitation = await createInvitationRoute(request(
+      `https://settleflow.local/api/v1/invitations?workspaceId=${otherWorkspace.id}`,
+      await tokenFor(owner),
+      { role: "owner", expiresInDays: 7 },
+    ));
+    assert.equal(otherWorkspaceInvitation.status, 200);
+    const otherWorkspaceInvite = await otherWorkspaceInvitation.json() as { invitation: { id: string } };
+    assert.equal((await db.invitation.findUniqueOrThrow({ where: { id: otherWorkspaceInvite.invitation.id } })).workspaceId, otherWorkspace.id);
 
     const invitedContributor = await db.contributor.create({
       data: {
@@ -204,9 +215,9 @@ test("invitations enforce authorization, email binding, lifecycle, and one membe
     assert.equal((await db.workspaceMember.findUnique({ where: { workspaceId_userId: { workspaceId: workspace.id, userId: existing.id } } }))?.role, "ops");
   } finally {
     await db.payout.deleteMany({ where: { workspaceId: workspace.id } });
-    await db.workspaceMember.deleteMany({ where: { workspaceId: workspace.id } });
-    await db.invitation.deleteMany({ where: { workspaceId: workspace.id } });
-    await db.workspace.delete({ where: { id: workspace.id } });
+    await db.workspaceMember.deleteMany({ where: { workspaceId: { in: [workspace.id, otherWorkspace.id] } } });
+    await db.invitation.deleteMany({ where: { workspaceId: { in: [workspace.id, otherWorkspace.id] } } });
+    await db.workspace.deleteMany({ where: { id: { in: [workspace.id, otherWorkspace.id] } } });
     await db.user.deleteMany({ where: { id: { in: [owner.id, reviewer.id, recipient.id, other.id, existing.id, walletRecipient.id] } } });
   }
 });
