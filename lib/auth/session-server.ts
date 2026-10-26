@@ -109,7 +109,10 @@ export async function resolveSessionMemberships(
 
   const memberships = await db.workspaceMember.findMany({
     where: { userId: user.id },
-    orderBy: { createdAt: "asc" },
+    // An account can receive multiple memberships within the same database
+    // timestamp. Keep the personal Owner workspace deterministic before the
+    // remaining memberships so a reload never appears to switch workspace.
+    orderBy: [{ role: "asc" }, { createdAt: "asc" }, { workspaceId: "asc" }],
     select: { workspaceId: true, role: true, personalLabel: true },
   });
 
