@@ -11,6 +11,8 @@ import { assertCanReleaseMilestone } from "@/lib/runtime/product-policy";
 import { resolveProductContextFromRequestWithSession } from "@/lib/auth/session-server";
 import { getSessionFromRequest } from "@/lib/auth/session-server";
 import { db } from "@/lib/db/client";
+import { CIRCLE_SMART_WALLET_AVAILABLE } from "@/lib/circle/availability";
+import { getPaymentAccountForUser } from "@/lib/repositories/payment-accounts";
 
 function isReleaseExecutionMode(value: unknown): value is "browser_wallet" | "circle_wallet" | "circle_user_wallet" {
   return value === "browser_wallet" || value === "circle_wallet" || value === "circle_user_wallet";
@@ -70,10 +72,16 @@ export async function POST(
     }
 
     const executionMode = isReleaseExecutionMode(body.executionMode) ? body.executionMode : "browser_wallet";
-    if (executionMode !== "browser_wallet") {
+    if (executionMode === "circle_wallet") {
       return apiError("WEB3_RELEASE_ONLY", {
-        message: "Web3 browser-wallet releases are the only enabled release path in this MVP. Circle Smart Wallet is coming soon.",
+        message: "This payment method is not available.",
         status: 409,
+      });
+    }
+    if (executionMode === "circle_user_wallet" && !CIRCLE_SMART_WALLET_AVAILABLE) {
+      return apiError("CIRCLE_SMART_WALLET_COMING_SOON", {
+        message: "Payment accounts are not enabled in this environment yet.",
+        status: 503,
       });
     }
     let sourceWalletAddress: string | null = null;
@@ -122,6 +130,14 @@ export async function POST(
       });
       if (!wallet || wallet.blockchain !== "ARC-TESTNET" || wallet.accountType !== "SCA" || !wallet.walletLinkId) {
         return apiError("CIRCLE_WALLET_NOT_PROVISIONED", { message: "Set up your Circle Arc smart wallet before releasing funds.", status: 409 });
+      }
+      const paymentAccount = await getPaymentAccountForUser(ownerUserId, "circle_user_controlled");
+      if (
+        paymentAccount?.status !== "ready" ||
+        paymentAccount.walletLink?.id !== wallet.walletLinkId ||
+        !paymentAccount.walletLink.transactionEnabled
+      ) {
+        return apiError("CIRCLE_PAYMENT_ACCOUNT_NOT_READY", { message: "Finish setting up your payment account before releasing funds.", status: 409 });
       }
       sourceWalletAddress = wallet.address;
       sourceWalletId = wallet.walletLinkId;
@@ -209,6 +225,8 @@ export async function POST(
         SOURCE_WALLET_NOT_ALLOWED: 403,
         SOURCE_WALLET_REQUIRED: 409,
         CIRCLE_WALLET_NOT_PROVISIONED: 409,
+        CIRCLE_PAYMENT_ACCOUNT_NOT_READY: 409,
+        CIRCLE_SMART_WALLET_COMING_SOON: 503,
         CIRCLE_WALLET_REQUIRES_GOOGLE_SESSION: 403,
         BROWSER_WALLET_REQUIRES_WEB3_SESSION: 403,
         BROWSER_WALLET_SOURCE_NOT_LINKED: 409,
@@ -228,6 +246,8 @@ export async function POST(
         SOURCE_WALLET_NOT_ALLOWED: "The selected source wallet is not eligible for this owner.",
         SOURCE_WALLET_REQUIRED: "Release source wallet is required before confirmation.",
         CIRCLE_WALLET_NOT_PROVISIONED: "Set up your Circle Arc smart wallet before releasing funds.",
+        CIRCLE_PAYMENT_ACCOUNT_NOT_READY: "Finish setting up your payment account before releasing funds.",
+        CIRCLE_SMART_WALLET_COMING_SOON: "Payment accounts are not enabled in this environment yet.",
         CIRCLE_WALLET_REQUIRES_GOOGLE_SESSION: "A Google owner session is required for a Circle smart-wallet release.",
         BROWSER_WALLET_REQUIRES_WEB3_SESSION: "A verified Web3 owner session is required for a browser-wallet release.",
         BROWSER_WALLET_SOURCE_NOT_LINKED: "The connected wallet is not an enabled transaction wallet for this account.",

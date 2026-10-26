@@ -7,7 +7,6 @@ import {
   assertBrowserWalletMatchesAuthenticatedAccount,
   BrowserWalletPreBroadcastError,
   BrowserWalletSubmissionUnknownError,
-  connectBrowserWallet,
   sendUsdcWithBrowserWallet,
 } from "@/lib/arc/browser-wallet";
 import { executeCircleChallenge, getCirclePaymentSession, type CircleSdkChallenge } from "@/lib/circle/user-controlled-client";
@@ -330,17 +329,16 @@ export function PayoutDetailReleaseShell({
       setReleaseModalMode("failed");
       return;
     }
-    let releaseSourceAddress = address ?? undefined;
+    const usesCirclePaymentAccount = authType === "web2_google";
+    const releaseSourceAddress = address ?? undefined;
     if (ARC_CONFIG.executionMode === "real") {
       try {
         await assertPaymentEnvironmentReady();
         if (authType === "web3_wallet") {
           if (!address) throw new Error("The authenticated Web3 wallet address is unavailable. Sign in again before releasing.");
           await assertBrowserWalletMatchesAuthenticatedAccount(address);
-        } else {
-          const connection = await connectBrowserWallet();
-          if (!connection.connectedAddress) throw new Error("Connect the browser wallet you linked in Settings before paying.");
-          releaseSourceAddress = connection.connectedAddress;
+        } else if (!getCirclePaymentSession()) {
+          throw new Error("Reconnect your payment account in Settings before paying.");
         }
       } catch (error) {
         setReleaseError(releaseErrorMessage(error, "Unable to verify the browser wallet account."));
@@ -362,7 +360,7 @@ export function PayoutDetailReleaseShell({
         },
         body: JSON.stringify({
           amountUsdc: String(nextReleasableMilestone.amount),
-          executionMode: "browser_wallet",
+          executionMode: usesCirclePaymentAccount ? "circle_user_wallet" : "browser_wallet",
           sourceWalletAddress: releaseSourceAddress,
         }),
       });
@@ -395,6 +393,36 @@ export function PayoutDetailReleaseShell({
         setReleaseError(data.error ?? "Release request failed.");
         setReleaseStatus("failed");
         setReleaseModalMode("failed");
+        return;
+      }
+
+      if (ARC_CONFIG.executionMode === "real" && usesCirclePaymentAccount && data.release?.id) {
+        const fallback: TransactionProof = {
+          id: data.proof?.id ?? `proof-${nextReleasableMilestone.id}-pending`,
+          releaseId: data.proof?.releaseId ?? data.release.id,
+          milestoneId: data.proof?.milestoneId ?? nextReleasableMilestone.id,
+          txHash: data.proof?.txHash ?? "",
+          network: data.proof?.network ?? "Arc Testnet",
+          status: "pending",
+          explorerUrl: data.proof?.explorerUrl ?? "",
+          executionMode: "circle_user_wallet",
+          releaseStatus: "pending",
+        };
+        const circlePayload = await executeCircleRelease(data.release.id);
+        const proof = proofFromCirclePayload(circlePayload, fallback);
+        if (!proof) throw new Error("Payment confirmation did not return a payment status.");
+        setActiveProof(proof);
+        if (proof.status === "confirmed") {
+          onReleaseSuccess?.({
+            milestoneId: proof.milestoneId,
+            proof,
+            releasedAt: proof.confirmedAt ?? new Date().toISOString(),
+          });
+        }
+        if (proof.status === "failed") setReleaseError(proof.failureReason ?? "This payment could not be completed.");
+        void onActivityChange?.();
+        setReleaseStatus(proof.status === "confirmed" ? "confirmed" : proof.status === "failed" ? "failed" : "submitting");
+        setReleaseModalMode(proof.status === "confirmed" ? null : proof.status === "failed" ? "failed" : "pending");
         return;
       }
 
@@ -460,8 +488,6 @@ export function PayoutDetailReleaseShell({
             });
             setReleaseError("Wallet submission outcome is unknown. Check wallet activity and confirm with the transaction hash; retry is locked to prevent duplicate payment.");
             setReleaseStatus("submitting");
-            setConfirmationTxHash("");
-            setFoundTransaction(null);
             setReleaseModalMode("pending");
             return;
           }
@@ -813,15 +839,15 @@ export function PayoutDetailReleaseShell({
               <>
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">{resumeReleaseId ? "Continue payment" : "Review payment"}</p>
                 <h2 id="release-dialog-title" className="mt-2 pr-8 text-xl font-semibold text-[var(--foreground)]">{resumeReleaseId ? "Ready to sign" : "Review this payment"}</h2>
-                <p className="mt-2 text-sm text-[var(--text-muted)]">{resumeReleaseId ? "This continues the existing payment. SettleFlow will not create another one." : authType === "web2_google" ? "Arc Testnet · Connect the browser wallet linked to your account, then review and sign the transfer." : "Arc Testnet · Review and sign this transfer in your browser wallet."}</p>
+                <p className="mt-2 text-sm text-[var(--text-muted)]">{resumeReleaseId ? "This continues the existing payment. SettleFlow will not create another one." : authType === "web2_google" ? "Arc Testnet · Confirm this transfer with your secure payment account." : "Arc Testnet · Review and sign this transfer in your browser wallet."}</p>
                 <dl className="mt-5 space-y-3 rounded-2xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-4 text-sm">
                   <div><dt className="text-xs text-[var(--text-muted)]">You’re paying</dt><dd className="mt-1 text-lg font-semibold text-[var(--foreground)]">{formatUsdc(nextReleasableMilestone.amount)} USDC</dd></div>
                   <div><dt className="text-xs text-[var(--text-muted)]">For milestone</dt><dd className="mt-1 font-medium text-[var(--foreground)]">{nextReleasableMilestone.title}</dd></div>
                   <div><dt className="text-xs text-[var(--text-muted)]">Recipient</dt><dd className="mt-1 font-medium text-[var(--foreground)]">{recipientName ?? "Contributor"}</dd><dd className="mt-1 break-all font-mono text-xs text-[var(--text-muted)]">{recipientAddress ?? "Not resolved"}</dd></div>
-                  <div><dt className="text-xs text-[var(--text-muted)]">Payment wallet</dt><dd className="mt-1 break-all font-mono text-xs text-[var(--foreground)]">{address ?? linkedPaymentWallet ?? (authType === "web2_google" ? "Connect the linked wallet to continue" : "Connect a browser wallet to continue")}</dd>{linkedPaymentWallet ? <dd className="mt-1 text-[11px] text-emerald-700">Linked to your account</dd> : null}</div>
+                  <div><dt className="text-xs text-[var(--text-muted)]">{authType === "web2_google" ? "Payment account" : "Payment wallet"}</dt><dd className="mt-1 break-all font-mono text-xs text-[var(--foreground)]">{authType === "web2_google" ? "Secure payment account" : address ?? linkedPaymentWallet ?? "Connect a browser wallet to continue"}</dd>{linkedPaymentWallet ? <dd className="mt-1 text-[11px] text-emerald-700">Linked to your account</dd> : null}</div>
                 </dl>
                 <p className="mt-4 text-xs text-[var(--text-muted)]">Check the recipient and amount carefully. A signed blockchain payment cannot be reversed.</p>
-                <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"><Button variant="secondary" onClick={closeReleaseModal} disabled={processingRelease} className="w-full justify-center sm:w-auto">Cancel</Button><Button onClick={() => { void handleRelease(resumeReleaseId); }} disabled={processingRelease} className="w-full justify-center sm:w-auto">{processingRelease ? "Preparing wallet..." : resumeReleaseId ? "Verify wallet & continue" : authType === "web2_google" ? "Connect wallet & sign" : `Sign ${formatUsdc(nextReleasableMilestone.amount)} USDC`}</Button></div>
+                <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"><Button variant="secondary" onClick={closeReleaseModal} disabled={processingRelease} className="w-full justify-center sm:w-auto">Cancel</Button><Button onClick={() => { void handleRelease(resumeReleaseId); }} disabled={processingRelease} className="w-full justify-center sm:w-auto">{processingRelease ? "Preparing payment..." : resumeReleaseId ? "Continue payment" : authType === "web2_google" ? `Confirm ${formatUsdc(nextReleasableMilestone.amount)} USDC` : `Sign ${formatUsdc(nextReleasableMilestone.amount)} USDC`}</Button></div>
               </>
             ) : releaseModalMode === "pending" ? (
               <>

@@ -39,7 +39,7 @@ No direct transition to `released` is supported by the queue operation. Release 
 
 `ReleaseStatus` values are `queued`, `pending`, `confirmed`, `failed`, and `cancelled`.
 
-`queueMilestoneRelease` creates `queued` release and `pending` proof records only when the milestone is approved, the payout is `active` or `partially_released`, no release already exists, the destination exists, and the requested amount equals the milestone amount. The active MVP release route requires an Owner session plus an enabled EOA source wallet: a Web3 session uses its authenticated EOA, while a Google session may select only one of that Owner's previously linked EOAs.
+`queueMilestoneRelease` creates `queued` release and `pending` proof records only when the milestone is approved, the payout is `active` or `partially_released`, no release already exists, the destination exists, and the requested amount equals the milestone amount. The release route requires an Owner session and a release source: a Web3 session uses its authenticated enabled EOA; a Google session uses its ready Circle Arc Testnet payment account when the explicit Circle gate is enabled.
 
 Before opening a browser wallet in `real` mode, the client calls the read-only `GET /api/v1/milestones/[id]/release` readiness check. It applies Owner authorization and the server-side real-execution gate but creates no release/proof record. `POST` remains the only endpoint that queues a release.
 
@@ -53,7 +53,7 @@ The executor may move execution through its mode-specific send path. `refreshRel
 
 - `browser_wallet`: server execution fails explicitly; browser signing is handled by the wallet boundary.
 - `circle_wallet`: `lib/arc/release-executor.ts` sends from the server-side key when configured, then proof refresh persists the result.
-- `circle_user_wallet`: retained for future Circle work. New Circle releases are disabled in the active MVP; the UI labels Circle Smart Wallet as Coming soon.
+- `circle_user_wallet`: a Google Owner queues a release only after a ready Circle Arc Testnet SCA/payment-account link is verified. The browser holds Circle's short-lived session material and explicitly confirms the provider challenge; the server then verifies the resulting transaction before confirming proof. This path is gated by `CIRCLE_USER_CONTROLLED_ENABLED` and remains operationally testnet-only.
 
 Production settlement readiness is not asserted here.
 

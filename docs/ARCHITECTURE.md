@@ -87,7 +87,8 @@ Workflow transitions are coordinated by repository modules including `payout-cre
 `lib/arc/` contains Arc configuration, browser-wallet integration, onchain helpers, and the release executor:
 
 - `browser_wallet` — signing is performed by a connected browser wallet; the server executor fails explicitly for this mode.
-- `circle_wallet` and `circle_user_wallet` — retained implementation paths for future work. New releases using either mode are rejected by the active Owner/Contributor MVP route; release uses only `browser_wallet`.
+- `circle_wallet` — a legacy server-executor path and not an enabled UI payment method.
+- `circle_user_wallet` — a gated Google-owner payment path. Circle's browser SDK obtains user confirmation; the server queues the release and verifies the provider transaction/proof. It is available only with explicit Circle Testnet configuration and a ready payment account.
 
 Release proof and source-wallet information are persisted through release/proof repositories. Production custody, funding, gas, compliance, and operational readiness are not asserted here; see `docs/CURRENT_STATE.md` and `docs/SECURITY_INVARIANTS.md`.
 
@@ -95,7 +96,7 @@ Release proof and source-wallet information are persisted through release/proof 
 
 Public Arc/network values are read by `lib/arc/config.ts` from `NEXT_PUBLIC_*` variables with defaults. The server signing key is read by `lib/arc/release-executor.ts` from `ARC_SERVER_PRIVATE_KEY` and is not a public configuration value.
 
-The embedded Circle path is product-gated as Coming soon in the active MVP, independent of provider credentials. Its provisioning and release endpoints return `CIRCLE_SMART_WALLET_COMING_SOON`; Web3 EOA remains the sole enabled release source. When the explicit Testnet gate is enabled, the browser SDK performs Circle's separate Google social-login authorization using a server-issued device token, while the SettleFlow GIS session remains the product session. Circle API credentials remain server-only.
+The embedded Circle path is product-gated by `CIRCLE_USER_CONTROLLED_ENABLED=true` plus its server credentials and public App ID. When enabled for Testnet, the browser SDK performs Circle's separate Google social-login authorization using a server-issued device token, while the SettleFlow GIS session remains the product session. Circle API credentials remain server-only. A ready Circle payment account is used for a Google Owner's release; Web3 EOA remains the advanced alternative for Web3 sessions.
 
 ## Implemented versus planned
 
