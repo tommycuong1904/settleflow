@@ -40,11 +40,11 @@ adapters own account provisioning; payout workflows consume the neutral record.
 
 ### Contributor
 
-`Contributor` is a workspace-scoped recipient profile with an optional wallet address, optional linked user, optional creator, contact fields, role/notes, and `active` or `archived` status. Contributor creation and update validate an EVM wallet when one is provided and prevent duplicate wallet addresses within a workspace.
+`Contributor` is a workspace-scoped recipient profile with an optional wallet address, optional linked user, optional creator, contact fields, role/notes, and `active` or `archived` status. Contributor creation and update validate an EVM wallet when one is provided and prevent duplicate wallet addresses within a workspace. When an already-linked user provisions a Circle Arc SCA, a missing recipient address may be filled from that verified account; an explicitly stored workspace address is never overwritten.
 
 ### Payout
 
-`Payout` is the agreement between a workspace and one contributor. It records the creator, title/description, USDC total, optional target wallet and chain/token configuration, dates, and a `PayoutStatus`. A payout owns milestones, releases, proofs, and activity logs. Its contributor and workspace relations are restrictive on delete.
+`Payout` is the agreement between a workspace and one contributor. It records the creator, title/description, USDC total, optional target wallet and chain/token configuration, dates, and a `PayoutStatus`. At creation, a missing target wallet can be resolved from the linked Contributor's verified Arc Circle SCA and is then snapshotted on the payout; later profile changes do not redirect it. A payout owns milestones, releases, proofs, and activity logs. Its contributor and workspace relations are restrictive on delete.
 
 ### Milestone
 
