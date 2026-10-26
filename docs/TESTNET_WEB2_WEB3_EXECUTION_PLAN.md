@@ -78,7 +78,7 @@ Complete the everyday Owner/Contributor workflow without wallet terminology.
 - Invitation acceptance, email binding, lifecycle, and one-membership-role enforcement passed against the isolated database.
 - Workspace switching passed: only persisted memberships are listed and only an authorized workspace can become active.
 - Owner/Contributor workflow authorization passed: only the assigned Contributor may submit/resubmit, and only the workspace Owner may approve or reject.
-- Existing Owner/Contributor navigation and payout views mask Owner-only controls for Contributor memberships; current browser E2E coverage remains a follow-up runtime check because the local temporary Next test server did not remain available on port 3101.
+- Existing Owner/Contributor navigation and payout views mask Owner-only controls for Contributor memberships; the isolated Chromium E2E suite now verifies authenticated workspace onboarding and payment-pending states against the dedicated test database.
 
 ## Phase 2 — Payment-account foundation
 
