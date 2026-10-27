@@ -5,6 +5,7 @@ import { POST as release } from "@/app/api/v1/milestones/[id]/release/route";
 import { GET as getRelease } from "@/app/api/v1/releases/[id]/route";
 import { POST as refreshProof } from "@/app/api/v1/releases/[id]/proof/refresh/route";
 import { POST as retry } from "@/app/api/v1/releases/[id]/retry/route";
+import { POST as browserCandidates } from "@/app/api/v1/releases/[id]/browser-candidates/route";
 import { createSessionToken } from "@/lib/auth/session";
 import { db } from "@/lib/db/client";
 
@@ -76,6 +77,16 @@ test("a contributor cannot queue, refresh, or retry a workspace release", async 
     }), params(failedRelease.id));
     assert.equal(opsRefreshAttempt.status, 403);
     assert.equal((await db.transactionProof.findUnique({ where: { id: proof.id } }))?.failureReason, "Original failure");
+
+    const browserCandidatesAttempt = await browserCandidates(new Request(`https://settleflow.local/api/v1/releases/${failedRelease.id}/browser-candidates?workspaceId=${workspace.id}`, {
+      method: "POST", headers,
+    }), params(failedRelease.id));
+    assert.equal(browserCandidatesAttempt.status, 403);
+
+    const opsBrowserCandidatesAttempt = await browserCandidates(new Request(`https://settleflow.local/api/v1/releases/${failedRelease.id}/browser-candidates?workspaceId=${workspace.id}`, {
+      method: "POST", headers: opsHeaders,
+    }), params(failedRelease.id));
+    assert.equal(opsBrowserCandidatesAttempt.status, 403);
 
     const retryAttempt = await retry(new Request(`https://settleflow.local/api/v1/releases/${failedRelease.id}/retry?workspaceId=${workspace.id}`, { method: "POST", headers }), params(failedRelease.id));
     assert.equal(retryAttempt.status, 403);
