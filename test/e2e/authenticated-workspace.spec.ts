@@ -133,7 +133,7 @@ test("owner and contributor payout views are scoped to their workspace", async (
     await ownerPage.getByLabel("Close dialog").click();
     await ownerPage.getByRole("button", { name: "Approve work" }).click();
     await expect(ownerPage.getByText("Ready to pay")).toBeVisible();
-    await expect(ownerPage.getByText("Choose how you want to record this payment.")).toBeVisible();
+    await expect(ownerPage.getByText(/Pay 100 USDC to .*You’ll review the details before payment begins\./)).toBeVisible();
     await expect(ownerPage.getByRole("heading", { name: "Payment action" })).toHaveCount(0);
     await expect(ownerPage.getByRole("button", { name: "Pay 100 USDC" })).toBeVisible();
     await ownerPage.setViewportSize({ width: 390, height: 844 });
@@ -343,7 +343,7 @@ test("wallet payment is unavailable until a contributor has a wallet address", a
 
     await page.goto(`/payouts/${payout.id}?workspaceId=${workspaceId}`);
     await expect(page.getByText("Ready to pay")).toBeVisible();
-    await expect(page.getByText("Choose how you want to record this payment.")).toBeVisible();
+    await expect(page.getByText(/Pay 0\.1 USDC to .*You’ll review the details before payment begins\./)).toBeVisible();
     await page.getByRole("button", { name: "Pay 25 USDC" }).click();
     await expect(page.getByRole("heading", { name: "Choose how to record this payment" })).toBeVisible();
     await expect(page.getByRole("button", { name: /Wallet payment/ })).toBeDisabled();

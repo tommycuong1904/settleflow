@@ -28,6 +28,7 @@ type MilestoneRowProps = {
   paymentAttempt?: PaymentAttempt;
   currentActor: ProductActor;
   workspaceId: string;
+  recipientName?: string;
   onApprove?: (milestoneId: string) => void | Promise<void>;
   onReject?: (milestoneId: string, comment?: string) => void | Promise<void>;
   canStartPayment?: boolean;
@@ -47,6 +48,7 @@ export function MilestoneRow({
   paymentAttempt,
   currentActor,
   workspaceId,
+  recipientName,
   onApprove,
   onReject,
   canStartPayment = false,
@@ -319,7 +321,7 @@ export function MilestoneRow({
                   </span>
                 </div>
                 {isOwnerActor && canStartPayment ? (
-                  <p className="text-[11px] font-normal text-[var(--text-muted)]">Choose how you want to record this payment.</p>
+                  <p className="text-[11px] font-normal text-[var(--text-muted)]">Pay {formatUsdc(milestone.amount)} USDC to {recipientName ?? "the contributor"}. You’ll review the details before payment begins.</p>
                 ) : null}
               </div>
               {isOwnerActor && canStartPayment ? (

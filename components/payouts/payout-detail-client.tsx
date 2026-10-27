@@ -260,8 +260,8 @@ export function PayoutDetailClient({
         : isOwnerActor && nextReleasableMilestone
           ? {
             label: "Ready to pay",
-            title: `${nextReleasableMilestone.title} is approved`,
-            description: "Payment is the next step. Use the payment action on this milestone when you are ready.",
+            title: `Pay ${formatUsdc(nextReleasableMilestone.amount)} USDC to ${contributor?.name ?? "the contributor"}`,
+            description: `${nextReleasableMilestone.title} is approved. Review the payment details on this milestone before sending it.`,
           }
         : !isOwnerActor && nextContributorMilestone
           ? {
@@ -914,6 +914,7 @@ export function PayoutDetailClient({
                 paymentAttempt={paymentAttempts.find((payment) => payment.milestoneId === milestone.id && payment.status === "completed")}
                 currentActor={currentActor}
                 workspaceId={workspaceId}
+                recipientName={contributor?.name}
                 onApprove={canApproveMilestones ? () => handleApproveMilestone(milestone.id) : undefined}
                 onReject={canApproveMilestones ? (_milestoneId, comment) => handleRejectMilestone(milestone.id, comment) : undefined}
                 canStartPayment={isOwnerActor && nextReleasableMilestone?.id === milestone.id}
