@@ -339,7 +339,7 @@ function CreatePayoutPageContent() {
 
   return (
     <section className="flex flex-col gap-6" aria-label="Create Payout Page Content">
-      <ol className="grid grid-cols-3 gap-2" aria-label="Create payout progress">{[{ label: "Choose contributor", mobileLabel: "Contributor" }, { label: "Plan milestones", mobileLabel: "Plan" }, { label: "Review & create", mobileLabel: "Review" }].map(({ label, mobileLabel }, index) => { const step = index + 1; const complete = creationStep > step; const current = creationStep === step; return <li key={label} className="relative flex flex-col items-center text-center">{index < 2 ? <span aria-hidden className={`absolute left-1/2 top-3.5 h-px w-[calc(100%+0.5rem)] ${complete ? "bg-emerald-600" : "bg-[var(--border-soft)]"}`} /> : null}<span className={`relative z-10 flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold ${complete ? "bg-emerald-600 text-white" : current ? "bg-black text-white" : "bg-[var(--surface-strong)] text-[var(--text-muted)]"}`}>{complete ? "✓" : step}</span><p className={`mt-1 text-xs ${current ? "font-medium text-[var(--foreground)]" : "text-[var(--text-muted)]"}`}><span className="sm:hidden">{mobileLabel}</span><span className="hidden sm:inline">{label}</span></p></li>; })}</ol>
+      <ol className="grid grid-cols-3 gap-2" aria-label="Create payout progress">{[{ label: "Choose contributor", mobileLabel: "Contributor" }, { label: "Plan milestones", mobileLabel: "Plan" }, { label: "Review & save draft", mobileLabel: "Review" }].map(({ label, mobileLabel }, index) => { const step = index + 1; const complete = creationStep > step; const current = creationStep === step; return <li key={label} className="relative flex flex-col items-center text-center">{index < 2 ? <span aria-hidden className={`absolute left-1/2 top-3.5 h-px w-[calc(100%+0.5rem)] ${complete ? "bg-emerald-600" : "bg-[var(--border-soft)]"}`} /> : null}<span className={`relative z-10 flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold ${complete ? "bg-emerald-600 text-white" : current ? "bg-black text-white" : "bg-[var(--surface-strong)] text-[var(--text-muted)]"}`}>{complete ? "✓" : step}</span><p className={`mt-1 text-xs ${current ? "font-medium text-[var(--foreground)]" : "text-[var(--text-muted)]"}`}><span className="sm:hidden">{mobileLabel}</span><span className="hidden sm:inline">{label}</span></p></li>; })}</ol>
       <div className="grid w-full gap-6">
         <div className="space-y-6">
           {loadError ? (
@@ -603,8 +603,8 @@ function CreatePayoutPageContent() {
         <div className={cn("flex flex-col gap-6", creationStep === 3 ? "" : "hidden")}>
           <Card className="sf-shell">
             <CardHeader>
-              <CardTitle>Review payout</CardTitle>
-                <CardDescription>Check the contributor, work, milestones, and amount before creating the draft.</CardDescription>
+            <CardTitle>Review payout draft</CardTitle>
+                <CardDescription>Check the contributor, work, milestones, and amount before saving this draft.</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-6 text-sm text-[var(--text-primary)]">
@@ -646,10 +646,10 @@ function CreatePayoutPageContent() {
                     </div>
                   </div>
 
-                  <p className="border-l-2 border-[var(--border-strong)] pl-4 leading-6 text-[var(--text-muted)]">After you create the payout, the contributor can submit work. You can review it, approve it, and choose a payment method when it is ready.</p>
+                  <p className="border-l-2 border-[var(--border-strong)] pl-4 leading-6 text-[var(--text-muted)]">Saving creates a draft. Review the saved details, then activate the payout before the contributor can submit work.</p>
                   <div className="flex flex-col gap-3 border-t border-[var(--border-soft)] pt-5 sm:flex-row sm:flex-wrap sm:border-0 sm:pt-0">
                     <Button variant="secondary" icon={<ArrowLeft size={16} />} onClick={() => setCreationStep(2)} className="w-full justify-center sm:w-auto">Back to milestones</Button>
-                    <Button disabled={submitState === "creating"} onClick={() => void handleCreatePayout()} className="w-full justify-center sm:w-auto">{submitState === "creating" ? "Creating payout..." : "Create payout"}</Button>
+                    <Button disabled={submitState === "creating"} onClick={() => void handleCreatePayout()} className="w-full justify-center sm:w-auto">{submitState === "creating" ? "Saving draft..." : "Save payout draft"}</Button>
                   </div>
                 </div>
               </CardContent>

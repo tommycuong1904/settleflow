@@ -63,7 +63,7 @@ test("owner and contributor payout views are scoped to their workspace", async (
     await ownerPage.getByLabel("Milestone 1 amount in USDC").fill("0.1");
     await ownerPage.getByLabel("Milestone 1 description").fill("A milestone without a wallet payment address.");
     await ownerPage.getByRole("button", { name: "Review payout" }).click();
-    await ownerPage.getByRole("button", { name: "Create payout" }).click();
+    await ownerPage.getByRole("button", { name: "Save payout draft" }).click();
     await expect(ownerPage).toHaveURL(/\/payouts\//);
     await expect(ownerPage.getByText("Choose a method when paying")).toBeVisible();
     await expect(ownerPage.getByText("Ready to activate?")).toBeVisible();
@@ -302,8 +302,8 @@ test("owner onboarding presents one clear next step on mobile", async ({ browser
     await expect(page.getByText("0.3 USDC total")).toBeVisible();
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     await page.getByRole("button", { name: "Review payout" }).click();
-    await expect(page.getByRole("button", { name: "Create payout" })).toBeVisible();
-    await page.getByRole("button", { name: "Create payout" }).click();
+    await expect(page.getByRole("button", { name: "Save payout draft" })).toBeVisible();
+    await page.getByRole("button", { name: "Save payout draft" }).click();
     await expect(page).toHaveURL(/\/payouts\//);
   } finally {
     await context?.close();
