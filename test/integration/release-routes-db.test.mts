@@ -7,6 +7,7 @@ import { POST as releaseRoute } from "@/app/api/v1/milestones/[id]/release/route
 import { POST as retryRoute } from "@/app/api/v1/releases/[id]/retry/route";
 import { POST as proofRefreshRoute } from "@/app/api/v1/releases/[id]/proof/refresh/route";
 import { POST as claimRoute } from "@/app/api/v1/releases/[id]/claim/route";
+import { POST as markUnsubmittedRoute } from "@/app/api/v1/releases/[id]/mark-unsubmitted/route";
 
 const wallet = "0x4444444444444444444444444444444444444444";
 
@@ -107,6 +108,23 @@ test("release, retry, proof refresh, tampering, and workspace boundaries hold th
     });
     assert.equal(releaseSnapshot?.sourceWalletId, sourceWallet.id);
     assert.equal(releaseSnapshot?.sourceWalletAddress, sourceWallet.address);
+
+    const crossWorkspaceClaim = await claimRoute(new Request(`https://settleflow.local/api/v1/releases/${queuedBody.release.id}/claim?workspaceId=${otherWorkspace.id}`, {
+      method: "POST", headers,
+    }), params(queuedBody.release.id));
+    assert.equal(crossWorkspaceClaim.status, 404);
+    assert.equal((await db.release.findUnique({ where: { id: queuedBody.release.id } }))?.status, "queued");
+
+    const crossWorkspaceClose = await markUnsubmittedRoute(new Request(`https://settleflow.local/api/v1/releases/${queuedBody.release.id}/mark-unsubmitted?workspaceId=${otherWorkspace.id}`, {
+      method: "POST", headers,
+    }), params(queuedBody.release.id));
+    assert.equal(crossWorkspaceClose.status, 404);
+
+    const prematureClose = await markUnsubmittedRoute(new Request(`https://settleflow.local/api/v1/releases/${queuedBody.release.id}/mark-unsubmitted?workspaceId=${workspace.id}`, {
+      method: "POST", headers,
+    }), params(queuedBody.release.id));
+    assert.equal(prematureClose.status, 409);
+    assert.equal((await db.release.findUnique({ where: { id: queuedBody.release.id } }))?.status, "queued");
 
     const claim = await claimRoute(new Request(`https://settleflow.local/api/v1/releases/${queuedBody.release.id}/claim?workspaceId=${workspace.id}`, {
       method: "POST", headers, body: JSON.stringify({ sourceWalletAddress: wallet }),
