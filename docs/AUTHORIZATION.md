@@ -77,6 +77,7 @@ This is the approved policy baseline, not a claim that the current implementatio
 - Contributor A's tested payout, milestone, release, proof, and contributor mutations against Contributor B's resources were denied.
 - Rejected mutations left the checked payout, milestone, contributor, release, and transaction-proof records unchanged.
 - Forged actor/workspace/user fields did not replace session authority in the tested routes.
+- The remaining legacy `/api/*` surface was inspected: contributor mutation is the shared v1 handler, payout/dashboard reads resolve session membership context, and the legacy release mutation is disabled with `410`.
 - The completed tests found **0 confirmed authorization vulnerabilities**.
 
 ### ARCHITECTURAL RISK
@@ -86,7 +87,7 @@ This is the approved policy baseline, not a claim that the current implementatio
 
 ### NOT VERIFIED
 - Direct reads for milestone, submission, review, and transaction proof were not separately verified where no dedicated GET route was covered.
-- Full legacy `/api/**` versus `/api/v1/**` parity, `ops` privilege escalation, and complete forged cookie/header/body coverage remain unverified.
+- `ops` privilege escalation and complete forged cookie/header/body coverage remain unverified.
 
 The centralized policy functions currently enforce:
 
