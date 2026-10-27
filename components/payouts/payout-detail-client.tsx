@@ -940,6 +940,7 @@ export function PayoutDetailClient({
           recipientAddress={contributor?.walletAddress}
           nextReleasableMilestone={nextReleasableMilestone}
           releaseMilestoneTitle={latestReleasedMilestone?.title}
+          releaseMilestoneAmount={latestReleasedMilestone?.amount}
           releaseProof={releaseProof}
           currentActor={currentActor}
           reviewRequest={releaseReviewRequest}

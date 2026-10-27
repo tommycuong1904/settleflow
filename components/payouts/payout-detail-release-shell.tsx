@@ -34,6 +34,7 @@ type PayoutDetailReleaseShellProps = {
   recipientAddress?: string;
   nextReleasableMilestone?: Milestone;
   releaseMilestoneTitle?: string;
+  releaseMilestoneAmount?: number;
   releaseProof?: TransactionProof;
   currentActor: ProductActor;
   reviewRequest?: number;
@@ -121,6 +122,7 @@ export function PayoutDetailReleaseShell({
   recipientAddress,
   nextReleasableMilestone,
   releaseMilestoneTitle,
+  releaseMilestoneAmount,
   releaseProof,
   currentActor,
   reviewRequest = 0,
@@ -875,7 +877,7 @@ export function PayoutDetailReleaseShell({
               Payment details
               <span className="ml-2 font-normal text-[var(--text-muted)]">View payment status and transaction details</span>
             </summary>
-            <div className="mt-4"><TransactionProofCard proof={resolvedProof} milestoneTitle={releaseMilestoneTitle} paymentAccount={authType === "web2_google"} /></div>
+            <div className="mt-4"><TransactionProofCard proof={resolvedProof} milestoneTitle={releaseMilestoneTitle} amountUsdc={releaseMilestoneAmount} paymentAccount={authType === "web2_google"} recipientView={currentActor === "contributor"} /></div>
           </details>
         </section>
       ) : null}

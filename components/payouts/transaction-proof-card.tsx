@@ -1,10 +1,12 @@
 import type { TransactionProof } from "@/lib/models/transaction-proof";
-import { shortenAddress } from "@/lib/utils/format";
+import { formatUsdc, shortenAddress } from "@/lib/utils/format";
 
 type TransactionProofCardProps = {
   proof?: TransactionProof;
   milestoneTitle?: string;
+  amountUsdc?: number;
   paymentAccount?: boolean;
+  recipientView?: boolean;
 };
 
 const statusStyles: Record<TransactionProof["status"], string> = {
@@ -37,7 +39,7 @@ function formatFailureReason(reason: string, paymentAccount: boolean) {
   return "This payment attempt was not completed. Review the next steps before starting another attempt.";
 }
 
-export function TransactionProofCard({ proof, milestoneTitle, paymentAccount = false }: TransactionProofCardProps) {
+export function TransactionProofCard({ proof, milestoneTitle, amountUsdc, paymentAccount = false, recipientView = false }: TransactionProofCardProps) {
   if (!proof) {
     return (
       <div className="space-y-4 text-sm text-[var(--text-primary)]">
@@ -54,7 +56,7 @@ export function TransactionProofCard({ proof, milestoneTitle, paymentAccount = f
   const pendingWithTransaction = proof.status === "pending" && Boolean(proof.txHash);
   const statusTitle = proof.status === "pending"
     ? pendingWithTransaction ? "Payment sent — verification needed" : "Payment needs review"
-    : statusTitles[proof.status];
+    : proof.status === "confirmed" && recipientView ? "Payment received" : statusTitles[proof.status];
   const statusDescription = proof.status === "pending"
     ? pendingWithTransaction
       ? paymentAccount
@@ -63,7 +65,9 @@ export function TransactionProofCard({ proof, milestoneTitle, paymentAccount = f
       : paymentAccount
         ? "SettleFlow is checking this payment. Do not retry while confirmation is in progress."
         : "SettleFlow has not received a transaction hash yet. Check your wallet activity before deciding whether a payment was sent."
-    : statusDescriptions[proof.status];
+    : proof.status === "confirmed" && recipientView
+      ? "This payment is confirmed. The USDC is available in your payment account."
+      : statusDescriptions[proof.status];
 
   return (
     <div className="space-y-4 text-sm text-[var(--text-primary)]">
@@ -87,6 +91,12 @@ export function TransactionProofCard({ proof, milestoneTitle, paymentAccount = f
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
+        {recipientView && proof.status === "confirmed" && amountUsdc !== undefined ? (
+          <div className="rounded-2xl border border-[var(--border-soft)] bg-[var(--surface)]/60 p-4">
+            <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">Amount received</p>
+            <p className="mt-2 font-semibold text-[var(--foreground)]">{formatUsdc(amountUsdc)} USDC</p>
+          </div>
+        ) : null}
         <div className="rounded-2xl border border-[var(--border-soft)] bg-[var(--surface)]/60 p-4">
           <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
             Milestone
