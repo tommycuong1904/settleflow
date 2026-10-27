@@ -275,16 +275,16 @@ export function PayoutDetailClient({
           }
           : !isOwnerActor && nextSubmittedMilestone
             ? {
-              label: "Submitted for review",
-              title: "Your work is awaiting review",
+              label: "Awaiting review",
+              title: "Your work is with the workspace owner",
               description: "The workspace owner will approve it or request changes before payment can continue.",
               href: `#milestone-${nextSubmittedMilestone.id}`,
               action: "View submission",
             }
             : !isOwnerActor && nextReleasableMilestone
               ? {
-                label: "Work approved",
-                title: `${nextReleasableMilestone.title} is ready for payment`,
+                label: "Payment on the way",
+                title: `${nextReleasableMilestone.title} is approved`,
                 description: "The workspace owner can now send payment. You will see the confirmation here when it is complete.",
               }
             : null

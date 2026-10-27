@@ -301,7 +301,7 @@ export function MilestoneRow({
             <div className="flex flex-col gap-2 border-t border-[var(--border-soft)] pt-4 text-xs sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 font-medium">
                 <Clock size={13} />
-                <span>Submitted • Awaiting workspace owner review</span>
+                <span>Awaiting review</span>
               </div>
               <span className="text-[11px] text-[var(--text-muted)]">
                 Only the workspace owner can approve or reject this milestone.
@@ -315,7 +315,7 @@ export function MilestoneRow({
                 <div className="flex items-center gap-1.5 font-semibold text-emerald-600 dark:text-emerald-400">
                   <CheckCircle2 size={15} />
                   <span>
-                    {isOwnerActor && canStartPayment ? "Ready to pay" : isOwnerActor ? "Payment queued" : "Waiting for payment"}
+                    {isOwnerActor && canStartPayment ? "Ready to pay" : isOwnerActor ? "Payment queued" : "Payment on the way"}
                   </span>
                 </div>
                 {isOwnerActor && canStartPayment ? (
@@ -330,7 +330,7 @@ export function MilestoneRow({
                 <span className="text-[11px] text-[var(--text-muted)]">
                   {isOwnerActor
                     ? "An earlier approved milestone must be paid first."
-                    : "This milestone has been approved and is waiting for payment."}
+                    : "This milestone is approved. The workspace owner can now send payment."}
                 </span>
               )}
             </div>
@@ -341,7 +341,7 @@ export function MilestoneRow({
               <div className="flex flex-wrap items-center gap-2 font-semibold text-sky-600 dark:text-sky-400">
                 <span className="flex items-center gap-1.5">
                   <CheckCircle2 size={15} />
-                  <span>Payment complete</span>
+                  <span>Paid</span>
                 </span>
                 {isSimulatedPayment ? (
                   <span className="rounded-full border border-sky-500/25 bg-sky-500/10 px-2 py-0.5 text-[10px] font-semibold text-sky-700 dark:text-sky-200">
