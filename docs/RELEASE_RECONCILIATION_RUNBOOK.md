@@ -15,7 +15,24 @@ When transaction outcome is ambiguous, DO NOT SEND ANOTHER TRANSACTION.
 7. Insufficient funds: freeze execution, verify wallet/environment, and obtain explicit funding approval.
 8. Webhook failure: settlement state remains authoritative; record and replay only through an approved notification procedure.
 
-There is no automated reconciliation worker currently. Release Operator owns first response; Incident Owner owns escalation; Application Owner owns state corrections.
+## Automated testnet reconciliation
+
+Vercel invokes `GET /api/v1/cron/reconcile-releases` once daily. It requires
+the `CRON_SECRET` environment variable; Vercel supplies it as a Bearer token.
+The job considers at most 20 browser-wallet releases that are older than the
+60-second callback grace window and still have a pending proof.
+
+- Exactly one independently verified Arc USDC transfer: claim the queued
+  release if necessary and record the normal confirmed proof.
+- No verified transfer: preserve the pending release.
+- More than one candidate or any verification error: preserve the pending
+  release and expose the count in the cron response/logs.
+
+The job never sends funds, retries a release, or marks a release failed. Owner
+reconciliation remains required for any closure without a verified transfer.
+
+Release Operator owns first response; Incident Owner owns escalation; Application
+Owner owns state corrections.
 
 ## Browser-wallet UX verification
 
