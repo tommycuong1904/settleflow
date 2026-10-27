@@ -110,7 +110,7 @@ test("owner and contributor payout views are scoped to their workspace", async (
     await contributorPage.getByPlaceholder("https://github.com/org/repo/pull/123").fill("https://example.test/e2e-proof");
     await contributorPage.getByLabel(/What did you complete/).fill("Browser evidence submitted by the assigned contributor.");
     await contributorPage.getByRole("button", { name: "Submit for Review" }).click();
-    await expect(contributorPage.getByText("Submitted • Awaiting workspace owner review")).toBeVisible();
+    await expect(contributorPage.getByText("Awaiting review")).toBeVisible();
 
     await ownerPage.reload();
     await ownerPage.goto(`/dashboard?workspaceId=${workspaceId}`);

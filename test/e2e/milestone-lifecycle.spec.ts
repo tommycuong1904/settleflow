@@ -64,7 +64,7 @@ test("contributor can revise submitted work and owner can approve the resubmissi
     await contributorPage.getByRole("button", { name: "Submit work for review" }).click();
     await contributorPage.getByLabel(/What did you complete/).fill("Initial delivery for review.");
     await contributorPage.getByRole("button", { name: "Submit for Review" }).click();
-    await expect(contributorPage.getByText("Submitted • Awaiting workspace owner review")).toBeVisible();
+    await expect(contributorPage.getByText("Awaiting review")).toBeVisible();
 
     const ownerPage = await ownerContext.newPage();
     await ownerPage.goto(`/payouts/${payoutId}?workspaceId=${workspaceId}`);
@@ -75,10 +75,13 @@ test("contributor can revise submitted work and owner can approve the resubmissi
 
     await contributorPage.reload();
     await expect(contributorPage.getByText("Revision requested")).toBeVisible();
+    await expect(contributorPage.getByText("Owner feedback")).toBeVisible();
+    await expect(contributorPage.getByText("Please add the final source files before approval.")).toBeVisible();
     await contributorPage.getByRole("button", { name: "Resubmit work" }).first().click();
-    await contributorPage.getByLabel(/What did you complete/).fill("Updated delivery includes the final source files.");
-    await contributorPage.getByRole("button", { name: "Submit for Review" }).click();
-    await expect(contributorPage.getByText("Submitted • Awaiting workspace owner review")).toBeVisible();
+    await expect(contributorPage.getByText("Update and resubmit")).toBeVisible();
+    await contributorPage.getByLabel(/What did you change/).fill("Updated delivery includes the final source files.");
+    await contributorPage.getByRole("button", { name: "Resubmit for Review" }).click();
+    await expect(contributorPage.getByText("Awaiting review")).toBeVisible();
 
     await ownerPage.reload();
     await ownerPage.getByRole("button", { name: "Approve work" }).click();

@@ -86,6 +86,10 @@ export function SubmitMilestoneDialog({
   useScrollLock(isOpen);
   useFocusTrap(isOpen, dialogRef);
   const { address: connectedAddress } = useWallet();
+  const isResubmission = milestone.status === "rejected";
+  const ownerFeedback = milestone.latestReview?.decision === "rejected"
+    ? milestone.latestReview.comment?.trim()
+    : undefined;
 
   useEffect(() => {
     if (!isOpen) return;
@@ -130,7 +134,9 @@ export function SubmitMilestoneDialog({
 
   const handleFillTemplate = () => {
     setSummary(
-      `Completed deliverable for "${milestone.title}". All acceptance criteria have been implemented, tested, and verified.`,
+      isResubmission
+        ? `Updated deliverable for "${milestone.title}". I addressed the requested changes and verified the updated work.`
+        : `Completed deliverable for "${milestone.title}". All acceptance criteria have been implemented, tested, and verified.`,
     );
   };
 
@@ -225,7 +231,7 @@ export function SubmitMilestoneDialog({
         {/* Header */}
         <div className="mb-5 pr-8">
           <span className="text-[10px] uppercase tracking-[0.2em] text-[var(--text-muted)] font-bold">
-            Submit for review
+            {isResubmission ? "Update and resubmit" : "Submit for review"}
           </span>
           <h2 id="submit-milestone-title" className="text-lg sm:text-xl font-bold tracking-tight text-[var(--foreground)] mt-1 line-clamp-1">
             {milestone.title}
@@ -241,9 +247,18 @@ export function SubmitMilestoneDialog({
             <span className="font-medium text-[var(--text-muted)]">After approval, the owner can arrange payment</span>
           </div>
           <p className="mt-3 text-xs leading-5 text-[var(--text-muted)]">
-            Add a clear summary for the owner. Links are optional, but useful when there is work to review.
+            {isResubmission
+              ? "Explain what you changed, then send the updated work back to the owner for review."
+              : "Add a clear summary for the owner. Links are optional, but useful when there is work to review."}
           </p>
         </div>
+
+        {ownerFeedback ? (
+          <div className="mb-4 rounded-xl border border-amber-500/20 bg-amber-500/10 p-3 text-xs text-amber-950 dark:text-amber-100">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-amber-800 dark:text-amber-300">Owner feedback</p>
+            <p className="mt-1 whitespace-pre-line leading-5">{ownerFeedback}</p>
+          </div>
+        ) : null}
 
         {error && (
           <div role="alert" className="mb-4 rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-xs leading-5 text-rose-700 animate-in fade-in dark:text-rose-200">
@@ -328,7 +343,7 @@ export function SubmitMilestoneDialog({
           <div className="space-y-2.5">
             <div className="flex items-center justify-between">
               <label htmlFor="milestone-submission-summary" className="block uppercase tracking-wider font-semibold text-[var(--foreground)]">
-                What did you complete? <span className="text-rose-500">*</span>
+                {isResubmission ? "What did you change?" : "What did you complete?"} <span className="text-rose-500">*</span>
               </label>
               {!summary && (
                 <button
@@ -347,7 +362,7 @@ export function SubmitMilestoneDialog({
               rows={3}
               value={summary}
               onChange={(e) => setSummary(e.target.value)}
-              placeholder="Briefly describe the completed work and anything the owner should review."
+              placeholder={isResubmission ? "Briefly explain the changes you made and what the owner should review again." : "Briefly describe the completed work and anything the owner should review."}
               className="w-full rounded-xl border border-[var(--border-soft)] bg-[var(--input-background)] p-3 text-xs text-[var(--foreground)] placeholder:text-[var(--input-placeholder)] focus:border-[var(--border-strong)] focus:bg-[var(--input-focus-background)] focus:outline-none focus:ring-1 focus:ring-[var(--border-strong)] transition-all resize-none leading-relaxed"
             />
           </div>
@@ -406,7 +421,7 @@ export function SubmitMilestoneDialog({
               icon={submitting ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
               className="w-full justify-center sm:w-auto"
             >
-              {submitting ? "Submitting..." : "Submit for Review"}
+              {submitting ? "Submitting..." : isResubmission ? "Resubmit for Review" : "Submit for Review"}
             </Button>
           </div>
         </form>
