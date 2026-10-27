@@ -11,8 +11,8 @@ export async function POST(request: Request) {
   try {
     context = await resolveProductContextFromRequestWithSession(request);
   } catch (error) {
-    if (error instanceof Error && error.message === "AUTH_CONTEXT_REQUIRED") {
-      return NextResponse.json({ error: "AUTH_CONTEXT_REQUIRED" }, { status: 403 });
+    if (error instanceof Error && (error.message === "AUTH_CONTEXT_REQUIRED" || error.message === "AUTH_ROLE_AMBIGUOUS")) {
+      return NextResponse.json({ error: error.message }, { status: 403 });
     }
     throw error;
   }
