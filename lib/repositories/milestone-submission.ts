@@ -87,6 +87,7 @@ export async function submitMilestone(
     }
 
     const previousCount = await tx.milestoneSubmission.count({ where: { milestoneId } });
+    const isResubmission = previousCount > 0;
     const submission = await tx.milestoneSubmission.create({
       data: {
         milestoneId,
@@ -124,8 +125,10 @@ export async function submitMilestone(
       workspaceId,
       userIds: owners.map((owner) => owner.userId),
       type: "milestone_submitted",
-      title: "Milestone ready for review",
-      body: `${milestone.title} was submitted for ${milestone.amountUsdc.toString()} USDC.`,
+      title: isResubmission ? "Updated work ready for review" : "Milestone ready for review",
+      body: isResubmission
+        ? `${milestone.title} was updated and resubmitted for review.`
+        : `${milestone.title} was submitted for ${milestone.amountUsdc.toString()} USDC.`,
       href: `/payouts/${milestone.payout.id}`,
     });
     return {

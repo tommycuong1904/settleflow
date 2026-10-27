@@ -40,6 +40,17 @@ test("milestone submission and requested changes notify recipients and expose fe
     const contributorDetail = await getPayoutDetail(payout.id, workspace.id, { linkedUserId: contributorUser.id });
     assert.equal(contributorDetail?.milestones[0]?.latestReview?.decision, "rejected");
     assert.equal(contributorDetail?.milestones[0]?.latestReview?.comment, "Add the final source link before resubmitting.");
+
+    await submitMilestone(milestone.id, workspace.id, { authenticatedUserId: contributorUser.id, summary: "Updated work with the final source link" }, () => undefined);
+    const ownerReviewNotifications = await db.notification.findMany({
+      where: { workspaceId: workspace.id, userId: owner.id, type: "milestone_submitted" },
+      orderBy: { createdAt: "asc" },
+      select: { title: true, body: true },
+    });
+    assert.deepEqual(ownerReviewNotifications, [
+      { title: "Milestone ready for review", body: "Workflow milestone was submitted for 10 USDC." },
+      { title: "Updated work ready for review", body: "Workflow milestone was updated and resubmitted for review." },
+    ]);
   } finally {
     await db.notification.deleteMany({ where: { workspaceId: workspace.id } });
     await db.milestoneReview.deleteMany({ where: { milestoneId: milestone.id } });
