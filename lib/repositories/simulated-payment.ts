@@ -83,7 +83,7 @@ export async function completeSimulatedPayment(
     const released = await tx.milestone.updateMany({ where: { id: milestoneId, status: "approved" }, data: { status: "released", releasedAt: now } });
     if (released.count !== 1) throw new Error("MILESTONE_NOT_APPROVED");
     await recordActivity(tx, { workspaceId, actorUserId: ownerUserId, entityType: "payment", entityId: payment.id, payoutId: milestone.payoutId, milestoneId, action: "payment_simulated_completed", metadata: { amountUsdc, currency: milestone.payout.currency, evidenceType: "none", fundsMoved: false } });
-    await createInAppNotifications(tx, { workspaceId, userIds: [ownerUserId, milestone.payout.contributor.linkedUserId ?? ""], type: "payment_completed", title: "Payment recorded for testing", body: `${amountUsdc} ${milestone.payout.currency} was marked paid for testing. No funds moved.`, href: `/payouts/${milestone.payoutId}` });
+    await createInAppNotifications(tx, { workspaceId, userIds: [ownerUserId, milestone.payout.contributor.linkedUserId ?? ""], type: "payment_completed", title: "Payment recorded for testing", body: `${amountUsdc} ${milestone.payout.currency} was marked paid for testing. No funds moved. View payment summary.`, href: `/payouts/${milestone.payoutId}?receipt=payment` });
     const payout = await recalculatePayoutStatus(tx, milestone.payoutId, workspaceId, true);
     return { payment: { ...payment, amountUsdc: payment.amountUsdc.toString(), completedAt: payment.completedAt?.toISOString() ?? null }, payout, idempotent: false };
   });

@@ -126,6 +126,20 @@ export function PayoutDetailClient({
   const [savingDraftTitle, setSavingDraftTitle] = useState(false);
 
   useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    if (searchParams.get("receipt") !== "payment") return;
+
+    setIsReceiptModalOpen(true);
+    searchParams.delete("receipt");
+    const query = searchParams.toString();
+    window.history.replaceState(
+      window.history.state,
+      "",
+      `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`,
+    );
+  }, []);
+
+  useEffect(() => {
     if (!initialReleaseProof || !persistedRelease) {
       return;
     }

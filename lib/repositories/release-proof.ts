@@ -356,6 +356,7 @@ export async function refreshReleaseProof(
       where: { id: release.id },
       select: {
         triggeredByUserId: true,
+        milestone: { select: { title: true } },
         payout: { select: { contributor: { select: { linkedUserId: true } } } },
       },
     });
@@ -367,9 +368,9 @@ export async function refreshReleaseProof(
       type: input.status === "confirmed" ? "release_confirmed" : "release_failed",
       title: input.status === "confirmed" ? "Payment confirmed" : "Payment needs attention",
       body: input.status === "confirmed"
-        ? `${release.amountUsdc.toString()} USDC was confirmed for this milestone.`
+        ? `${release.amountUsdc.toString()} USDC was confirmed for ${notificationContext?.milestone?.title ?? "this milestone"}. View payment summary.`
         : "This payment could not be confirmed. Review the payout before retrying.",
-      href: `/payouts/${release.payoutId}`,
+      href: input.status === "confirmed" ? `/payouts/${release.payoutId}?receipt=payment` : `/payouts/${release.payoutId}`,
     });
 
     await recordActivity(tx, {

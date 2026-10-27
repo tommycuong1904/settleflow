@@ -84,6 +84,7 @@ export function NotificationListClient({ notifications, actor }: NotificationLis
         milestone_submitted: "View submission",
         milestone_approved: "View approval",
         milestone_rejected: "Review feedback",
+        payment_completed: "View payment",
         release_confirmed: "View payment",
         release_failed: "View payment status",
       }[type] ?? "View payout");
@@ -93,6 +94,7 @@ export function NotificationListClient({ notifications, actor }: NotificationLis
       milestone_submitted: "Review work",
       milestone_approved: "Review & pay",
       milestone_rejected: "View feedback",
+      payment_completed: "View payment",
       release_confirmed: "View payment",
       release_failed: "Review payment",
     }[type] ?? "View payout");
