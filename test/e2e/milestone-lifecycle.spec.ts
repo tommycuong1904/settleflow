@@ -63,29 +63,46 @@ test("contributor can revise submitted work and owner can approve the resubmissi
     await contributorPage.goto(`/payouts/${payoutId}?workspaceId=${workspaceId}`);
     await contributorPage.getByRole("button", { name: "Submit work for review" }).click();
     await contributorPage.getByLabel(/What did you complete/).fill("Initial delivery for review.");
+    const submitResponse = contributorPage.waitForResponse((response) =>
+      response.request().method() === "POST" && response.url().includes("/submit"),
+    );
     await contributorPage.getByRole("button", { name: "Submit for Review" }).click();
-    await expect(contributorPage.getByText("Awaiting review")).toBeVisible();
+    await expect((await submitResponse).status()).toBe(201);
+    await expect.poll(async () => (await db.milestone.findFirst({ where: { payoutId }, select: { status: true } }))?.status).toBe("submitted");
 
     const ownerPage = await ownerContext.newPage();
     await ownerPage.goto(`/payouts/${payoutId}?workspaceId=${workspaceId}`);
     await ownerPage.getByRole("button", { name: "Request changes" }).click();
     await ownerPage.getByLabel("Feedback").fill("Please add the final source files before approval.");
+    const rejectResponse = ownerPage.waitForResponse((response) =>
+      response.request().method() === "POST" && response.url().includes("/reject"),
+    );
     await ownerPage.getByRole("button", { name: "Send Revision Request" }).click();
+    await expect((await rejectResponse).status()).toBe(200);
+    await expect.poll(async () => (await db.milestone.findFirst({ where: { payoutId }, select: { status: true } }))?.status).toBe("rejected");
     await expect(ownerPage.getByText("Revision requested")).toBeVisible();
 
     await contributorPage.reload();
     await expect(contributorPage.getByText("Revision requested")).toBeVisible();
     await expect(contributorPage.getByText("Owner feedback")).toBeVisible();
-    await expect(contributorPage.getByText("Please add the final source files before approval.")).toBeVisible();
+    await expect(contributorPage.getByText("Please add the final source files before approval.").first()).toBeVisible();
     await contributorPage.getByRole("button", { name: "Resubmit work" }).first().click();
     await expect(contributorPage.getByText("Update and resubmit")).toBeVisible();
     await contributorPage.getByLabel(/What did you change/).fill("Updated delivery includes the final source files.");
+    const resubmitResponse = contributorPage.waitForResponse((response) =>
+      response.request().method() === "POST" && response.url().includes("/submit"),
+    );
     await contributorPage.getByRole("button", { name: "Resubmit for Review" }).click();
-    await expect(contributorPage.getByText("Awaiting review")).toBeVisible();
+    await expect((await resubmitResponse).status()).toBe(201);
+    await expect.poll(async () => (await db.milestone.findFirst({ where: { payoutId }, select: { status: true } }))?.status).toBe("submitted");
 
     await ownerPage.reload();
+    const approveResponse = ownerPage.waitForResponse((response) =>
+      response.request().method() === "POST" && response.url().includes("/approve"),
+    );
     await ownerPage.getByRole("button", { name: "Approve work" }).click();
-    await expect(ownerPage.getByText("Ready to pay")).toBeVisible();
+    await expect((await approveResponse).status()).toBe(200);
+    await expect.poll(async () => (await db.milestone.findFirst({ where: { payoutId }, select: { status: true } }))?.status).toBe("approved");
 
     const milestone = await db.milestone.findFirst({ where: { payoutId }, select: { status: true } });
     expect(milestone?.status).toBe("approved");

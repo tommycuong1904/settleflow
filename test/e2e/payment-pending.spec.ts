@@ -39,8 +39,8 @@ test("pending payment shows a simple status on mobile without offering a retry",
     await expect(page.getByRole("button", { name: "View status" })).toBeVisible();
     await expect(page.getByRole("button", { name: /try payment again|start a new payment/i })).toHaveCount(0);
     await page.getByRole("button", { name: "View status" }).click();
-    await expect(page.getByRole("heading", { name: "We’re confirming your payment" })).toBeVisible();
-    await expect(page.getByText("You do not need to sign, retry, or provide any payment details.")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Confirming your payment" })).toBeVisible();
+    await expect(page.getByText("This usually takes a moment. You can close this window safely.")).toBeVisible();
     await expect(page.getByRole("button", { name: /try payment again|start a new payment/i })).toHaveCount(0);
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     await expect.poll(() => page.getByRole("dialog").evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);

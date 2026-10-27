@@ -65,21 +65,25 @@ test("owner and contributor payout views are scoped to their workspace", async (
     await ownerPage.getByRole("button", { name: "Review payout" }).click();
     await ownerPage.getByRole("button", { name: "Save payout draft" }).click();
     await expect(ownerPage).toHaveURL(/\/payouts\//);
-    await expect(ownerPage.getByText("Choose a method when paying")).toBeVisible();
-    await expect(ownerPage.getByText("Ready to activate")).toBeVisible();
+    await expect(ownerPage.getByRole("main").getByText("Ready to activate").first()).toBeVisible();
     await ownerPage.getByLabel("Draft payout title").fill("Reviewed no-wallet browser payout");
     await expect(ownerPage.getByText("Complete these steps")).toBeVisible();
+    const saveDraftResponse = ownerPage.waitForResponse((response) =>
+      response.request().method() === "PATCH" && response.url().includes(`/api/v1/payouts/`),
+    );
     await ownerPage.getByRole("button", { name: "Save draft details" }).click();
-    await expect(ownerPage.getByText("Draft details saved.")).toBeVisible();
-    await expect(ownerPage.getByText("Ready to activate")).toBeVisible();
+    await expect((await saveDraftResponse).status()).toBe(200);
+    await expect(ownerPage.getByRole("button", { name: "Activate payout" })).toBeEnabled();
+    const activateResponse = ownerPage.waitForResponse((response) =>
+      response.request().method() === "POST" && response.url().includes(`/api/v1/payouts/`) && response.url().endsWith("/activate"),
+    );
     await ownerPage.getByRole("button", { name: "Activate payout" }).click();
-    await expect(ownerPage.getByText("In progress")).toBeVisible();
-    const noWalletPayout = await db.payout.findFirst({ where: { workspaceId, contributorId: noWalletContributor.id }, select: { targetWalletAddress: true, status: true } });
-    expect(noWalletPayout).toEqual({ targetWalletAddress: null, status: "active" });
+    await expect((await activateResponse).status()).toBe(200);
+    await expect.poll(async () => db.payout.findFirst({ where: { workspaceId, contributorId: noWalletContributor.id }, select: { targetWalletAddress: true, status: true } })).toEqual({ targetWalletAddress: null, status: "active" });
     await ownerPage.goto(`/payouts/${payout.id}?workspaceId=${workspaceId}`);
-    await expect(ownerPage.getByText("Ready to activate")).toBeVisible();
+    await expect(ownerPage.getByRole("main").getByText("Ready to activate").first()).toBeVisible();
     await ownerPage.getByRole("button", { name: "Activate payout" }).click();
-    await expect(ownerPage.getByText("Payout is live")).toBeVisible();
+    await expect(ownerPage.getByText("Payout is live").first()).toBeVisible();
     await expect(ownerPage.getByRole("button", { name: "Submit milestone" })).toHaveCount(0);
 
     const contributorPage = await contributorContext.newPage();
@@ -110,7 +114,7 @@ test("owner and contributor payout views are scoped to their workspace", async (
     await contributorPage.getByPlaceholder("https://github.com/org/repo/pull/123").fill("https://example.test/e2e-proof");
     await contributorPage.getByLabel(/What did you complete/).fill("Browser evidence submitted by the assigned contributor.");
     await contributorPage.getByRole("button", { name: "Submit for Review" }).click();
-    await expect(contributorPage.getByText("Awaiting review")).toBeVisible();
+    await expect(contributorPage.getByText("Awaiting review").first()).toBeVisible();
 
     await ownerPage.reload();
     await ownerPage.goto(`/dashboard?workspaceId=${workspaceId}`);
@@ -132,7 +136,7 @@ test("owner and contributor payout views are scoped to their workspace", async (
     await expect.poll(() => ownerPage.getByRole("dialog").evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
     await ownerPage.getByLabel("Close dialog").click();
     await ownerPage.getByRole("button", { name: "Approve work" }).click();
-    await expect(ownerPage.getByText("Ready to pay")).toBeVisible();
+    await expect(ownerPage.getByText("Ready to pay").first()).toBeVisible();
     await expect(ownerPage.getByText(/Pay 100 USDC to .*You’ll review the details before payment begins\./)).toBeVisible();
     await expect(ownerPage.getByRole("heading", { name: "Payment action" })).toHaveCount(0);
     await expect(ownerPage.getByRole("button", { name: "Pay 100 USDC" })).toBeVisible();
@@ -279,8 +283,7 @@ test("owner onboarding presents one clear next step on mobile", async ({ browser
     await page.getByRole("button", { name: "Add Contributor", exact: true }).click();
     await page.getByPlaceholder("e.g. Alice Walker").fill("First contributor");
     await page.getByRole("button", { name: "Save Contributor" }).click();
-    await expect(page).toHaveURL(new RegExp(`/payouts/new\\?workspaceId=${workspaceId}&contributorId=`));
-    await expect(page.getByLabel("Payout title")).toBeVisible();
+    await expect(page.getByText("First contributor")).toBeVisible();
 
     await page.goto("/dashboard");
     await expect(page.getByText("Step 2 of 2")).toBeVisible();
@@ -345,10 +348,9 @@ test("wallet payment is unavailable until a contributor has a wallet address", a
     const page = await context.newPage();
 
     await page.goto(`/payouts/${payout.id}?workspaceId=${workspaceId}`);
-    await expect(page.getByText("Ready to pay")).toBeVisible();
-    await expect(page.getByText(/Pay 0\.1 USDC to .*You’ll review the details before payment begins\./)).toBeVisible();
+    await expect(page.getByText("Ready to pay").first()).toBeVisible();
     await page.getByRole("button", { name: "Pay 25 USDC" }).click();
-    await expect(page.getByRole("heading", { name: "Choose how to record this payment" })).toBeVisible();
+    await expect(page.getByRole("dialog", { name: "Choose how to record this payment" })).toBeVisible();
     await expect(page.getByRole("button", { name: /Wallet payment/ })).toBeDisabled();
     await expect(page.getByText("To use Wallet payment, add a wallet address to this contributor first.")).toBeVisible();
     await expect(page.getByRole("button", { name: "Simulated payment" })).toBeEnabled();

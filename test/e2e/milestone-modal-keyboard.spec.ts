@@ -154,9 +154,9 @@ test("payment review dialog prevents duplicate signing and restores keyboard foc
     await payButton.press("Enter");
     await page.getByRole("button", { name: /Wallet payment/ }).click();
 
-    const dialog = page.getByRole("dialog", { name: "Confirm before signing" });
+    const dialog = page.getByRole("dialog", { name: "Confirm 10 USDC payment" });
     const closeButton = page.getByRole("button", { name: "Close release dialog" });
-    const signButton = page.getByRole("button", { name: "Verify wallet & sign" });
+    const signButton = page.getByRole("button", { name: "Sign 10 USDC" });
     await expect(dialog).toBeVisible();
     await expect(closeButton).toBeFocused();
 
@@ -168,12 +168,12 @@ test("payment review dialog prevents duplicate signing and restores keyboard foc
 
     await signButton.click();
     await releaseStarted;
-    const processingButton = page.getByRole("button", { name: "Preparing wallet..." });
+    const processingButton = page.getByRole("button", { name: "Confirming…" });
     await expect(processingButton).toBeDisabled();
     expect(releaseRequests).toBe(1);
 
     releaseResponse?.();
-    await expect(page.getByRole("button", { name: "Verify wallet & sign" })).toBeEnabled();
+    await expect(page.getByRole("button", { name: "Sign 10 USDC" })).toBeEnabled();
     await page.keyboard.press("Escape");
     await expect(dialog).toBeHidden();
     await expect(payButton).toBeFocused();
