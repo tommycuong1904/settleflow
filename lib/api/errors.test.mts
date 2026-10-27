@@ -62,3 +62,8 @@ test("apiErrorFromCode returns 403 for a missing authorized session context", as
   const response = apiErrorFromCode("AUTH_CONTEXT_REQUIRED", {}, {}, { status: 500 });
   assert.equal(response.status, 403);
 });
+
+test("apiErrorFromCode returns 403 for an ambiguous authorized session role", async () => {
+  const response = apiErrorFromCode("AUTH_ROLE_AMBIGUOUS", {}, {}, { status: 500 });
+  assert.equal(response.status, 403);
+});

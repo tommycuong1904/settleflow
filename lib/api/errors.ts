@@ -18,8 +18,9 @@ export function apiErrorFromCode(
   messages: Record<string, string> = {},
   fallback: ApiErrorOptions = {},
 ) {
+  const isAuthorizationContextError = code === "AUTH_CONTEXT_REQUIRED" || code === "AUTH_ROLE_AMBIGUOUS";
   return apiError(code, {
-    status: statuses[code] ?? (code === "AUTH_CONTEXT_REQUIRED" ? 403 : fallback.status ?? 500),
+    status: statuses[code] ?? (isAuthorizationContextError ? 403 : fallback.status ?? 500),
     message: messages[code] ?? fallback.message ?? code,
   });
 }
