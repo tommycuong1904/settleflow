@@ -1,5 +1,7 @@
 import { db } from "@/lib/db/client";
 
+const PAYMENT_RECONCILIATION_NOTICE_MS = 15 * 60 * 1_000;
+
 export async function getDashboardSummary(workspaceId: string, linkedUserId?: string, role: "owner" | "contributor" = "owner") {
   if (!workspaceId.trim()) throw new Error("AUTH_CONTEXT_REQUIRED");
   if (role !== "owner" && !linkedUserId) throw new Error("FORBIDDEN_DASHBOARD_SUMMARY");
@@ -63,6 +65,8 @@ export type DashboardTransactionProof = {
   network: string;
   status: "pending" | "confirmed" | "failed";
   explorerUrl: string;
+  createdAt: string;
+  needsReconciliationAttention: boolean;
   confirmedAt?: string;
 };
 
@@ -150,8 +154,9 @@ function mapProof(row: {
   network: string | null;
   status: string;
   explorerUrl: string | null;
+  createdAt: Date;
   confirmedAt: Date | null;
-}): DashboardTransactionProof {
+}, reconciliationNoticeBefore: Date): DashboardTransactionProof {
   return {
     id: row.id,
     milestoneId: row.milestoneId ?? "",
@@ -159,6 +164,8 @@ function mapProof(row: {
     network: row.network ?? "Arc Testnet",
     status: row.status as DashboardTransactionProof["status"],
     explorerUrl: row.explorerUrl ?? "",
+    createdAt: row.createdAt.toISOString(),
+    needsReconciliationAttention: row.status === "pending" && row.createdAt <= reconciliationNoticeBefore,
     confirmedAt: row.confirmedAt?.toISOString() ?? undefined,
   };
 }
@@ -254,6 +261,7 @@ export async function getDashboardData(input: {
           network: true,
           status: true,
           explorerUrl: true,
+          createdAt: true,
           confirmedAt: true,
         },
       }),
@@ -273,11 +281,12 @@ export async function getDashboardData(input: {
       }),
     ]);
 
+  const reconciliationNoticeBefore = new Date(Date.now() - PAYMENT_RECONCILIATION_NOTICE_MS);
   return {
     payouts: payoutRows.map(mapPayout),
     milestones: milestoneRows.map(mapMilestone),
     contributors: contributorRows.map(mapContributor),
-    transactionProofs: proofRows.map(mapProof),
+    transactionProofs: proofRows.map((proof) => mapProof(proof, reconciliationNoticeBefore)),
     paymentAttempts: paymentAttemptRows.map(mapPaymentAttempt),
   };
 }

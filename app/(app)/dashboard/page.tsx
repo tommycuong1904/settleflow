@@ -96,6 +96,11 @@ export default async function DashboardPage() {
   const outstandingExposure = Math.max(totalScheduled - releasedValue, 0);
   const failedSettlementProof = transactionProofs.find((proof) => proof.status === "failed");
   const pendingSettlementProofs = transactionProofs.filter((proof) => proof.status === "pending");
+  const stalePendingProofIds = new Set(
+    pendingSettlementProofs
+      .filter((proof) => proof.needsReconciliationAttention)
+      .map((proof) => proof.id),
+  );
   const failedSettlementMilestone = failedSettlementProof
     ? milestones.find((milestone) => milestone.id === failedSettlementProof.milestoneId)
     : undefined;
@@ -112,11 +117,16 @@ export default async function DashboardPage() {
   const workQueue = [
     ...pendingSettlementProofs.map((proof) => {
       const milestone = milestones.find((item) => item.id === proof.milestoneId);
+      const isTakingLonger = stalePendingProofIds.has(proof.id);
       return {
         id: `pending-${proof.id}`,
         href: milestone ? payoutHref(milestone.payoutId) : "/payouts",
-        title: "Payment processing",
-        description: `${milestone?.title ?? "A milestone"} for ${contributorNameFor(milestone?.payoutId ?? "")} is being confirmed. No action is needed right now.`,
+        title: isTakingLonger ? "Payment still being checked" : "Payment processing",
+        description: isTakingLonger
+          ? isOwner
+            ? `${milestone?.title ?? "A milestone"} is taking longer than usual to confirm. SettleFlow is still checking it, so do not create another payment.`
+            : `${milestone?.title ?? "A milestone"} is taking longer than usual to confirm. Your workspace owner is checking it, so no action is needed from you.`
+          : `${milestone?.title ?? "A milestone"} for ${contributorNameFor(milestone?.payoutId ?? "")} is being confirmed. No action is needed right now.`,
         action: "View status",
       };
     }),
