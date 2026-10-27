@@ -158,7 +158,7 @@ test("owner and contributor payout views are scoped to their workspace", async (
     await expect(ownerPage.getByText("USDC on Arc Testnet")).toHaveCount(0);
     await ownerPage.getByLabel("Close modal").click();
     await ownerPage.goto(`/payouts/${payout.id}?workspaceId=${workspaceId}&receipt=payment`);
-    await expect(ownerPage.getByText("Payment summary")).toBeVisible();
+    await expect(ownerPage.getByText("Payment summary").first()).toBeVisible();
     await ownerPage.getByLabel("Close modal").click();
 
     await contributorPage.reload();
