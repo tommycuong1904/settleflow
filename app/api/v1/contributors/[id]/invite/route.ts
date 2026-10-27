@@ -59,6 +59,9 @@ export async function POST(
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to create invitation link.";
+    if (message === "AUTH_CONTEXT_REQUIRED" || message === "AUTH_ROLE_AMBIGUOUS") {
+      return apiError(message, { status: 403 });
+    }
     return apiError("INVITATION_CREATE_FAILED", { message, status: 400 });
   }
 }

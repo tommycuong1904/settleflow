@@ -8,6 +8,7 @@ import { GET as getPayoutDetail, PATCH as updatePayout } from "@/app/api/v1/payo
 import { POST as createPayout } from "@/app/api/v1/payouts/route";
 import { POST as createContributor } from "@/app/api/contributors/route";
 import { POST as createContributorV1 } from "@/app/api/v1/contributors/route";
+import { POST as createContributorInvitation } from "@/app/api/v1/contributors/[id]/invite/route";
 import { DELETE as deleteContributor, PATCH as updateContributor } from "@/app/api/v1/contributors/[id]/route";
 import { POST as approveMilestone } from "@/app/api/v1/milestones/[id]/approve/route";
 
@@ -150,6 +151,13 @@ test("an owner cannot update a draft payout or contributor outside the selected 
     assert.equal(missingDeleteContext.status, 403);
     assert.equal((await missingDeleteContext.json()).code, "AUTH_CONTEXT_REQUIRED");
     assert.equal((await db.contributor.findUnique({ where: { id: contributor.id } }))?.name, "Workspace B Contributor");
+
+    const missingInvitationContext = await createContributorInvitation(new Request(`https://settleflow.local/api/v1/contributors/${contributor.id}/invite`, {
+      method: "POST", headers,
+    }), { params: Promise.resolve({ id: contributor.id }) });
+    assert.equal(missingInvitationContext.status, 403);
+    assert.equal((await missingInvitationContext.json()).code, "AUTH_CONTEXT_REQUIRED");
+    assert.equal(await db.invitation.count({ where: { workspaceId: workspaceB.id } }), 0);
 
     const payoutResponse = await updatePayout(new Request(`https://settleflow.local/api/v1/payouts/${payout.id}?workspaceId=${workspaceA.id}`, {
       method: "PATCH", headers, body: JSON.stringify({ title: "Cross workspace edit" }),
