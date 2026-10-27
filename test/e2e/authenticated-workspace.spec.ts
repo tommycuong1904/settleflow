@@ -66,12 +66,12 @@ test("owner and contributor payout views are scoped to their workspace", async (
     await ownerPage.getByRole("button", { name: "Save payout draft" }).click();
     await expect(ownerPage).toHaveURL(/\/payouts\//);
     await expect(ownerPage.getByText("Choose a method when paying")).toBeVisible();
-    await expect(ownerPage.getByText("Ready to activate?")).toBeVisible();
+    await expect(ownerPage.getByText("Ready to activate")).toBeVisible();
     await ownerPage.getByLabel("Draft payout title").fill("Reviewed no-wallet browser payout");
-    await expect(ownerPage.getByText("Finish the draft first")).toBeVisible();
+    await expect(ownerPage.getByText("Complete these steps")).toBeVisible();
     await ownerPage.getByRole("button", { name: "Save draft details" }).click();
     await expect(ownerPage.getByText("Draft details saved.")).toBeVisible();
-    await expect(ownerPage.getByText("Ready to activate?")).toBeVisible();
+    await expect(ownerPage.getByText("Ready to activate")).toBeVisible();
     await ownerPage.getByRole("button", { name: "Activate payout" }).click();
     await expect(ownerPage.getByText("In progress")).toBeVisible();
     const noWalletPayout = await db.payout.findFirst({ where: { workspaceId, contributorId: noWalletContributor.id }, select: { targetWalletAddress: true, status: true } });

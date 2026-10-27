@@ -700,20 +700,16 @@ export function PayoutDetailClient({
           {payoutStatusState === "draft" && isOwnerActor ? (
             <div className="mt-4 flex flex-col gap-4 rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] p-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="font-semibold text-[var(--foreground)]">{canActivateDraft ? "Ready to activate?" : "Finish the draft first"}</p>
+                <p className="font-semibold text-[var(--foreground)]">{canActivateDraft ? "Ready to activate" : "Complete these steps"}</p>
                 <p className="mt-1 text-sm leading-6 text-[var(--text-secondary)]">{draftActivationMessage}</p>
-                <div className="mt-4 grid gap-3 text-xs sm:grid-cols-3">
+                <div className="mt-4 grid gap-3 text-xs sm:grid-cols-2">
                   <div>
-                    <p className="font-medium text-[var(--foreground)]">1. Payout details</p>
-                    <p className={`mt-1 ${draftDetailsReady ? "text-emerald-700" : "text-amber-700"}`}>{draftDetailsReady ? "Saved" : "Needs saving"}</p>
+                    <p className="font-medium text-[var(--foreground)]">1. Review payout details</p>
+                    <p className={`mt-1 ${draftDetailsReady ? "text-emerald-700" : "text-amber-700"}`}>{draftDetailsReady ? "Ready" : "Save changes"}</p>
                   </div>
                   <div>
-                    <p className="font-medium text-[var(--foreground)]">2. Milestone plan</p>
-                    <p className={`mt-1 ${draftMilestonePlanReady ? "text-emerald-700" : "text-amber-700"}`}>{draftMilestonePlanReady ? "Saved" : "Needs saving"}</p>
-                  </div>
-                  <div>
-                    <p className="font-medium text-[var(--foreground)]">3. Activate</p>
-                    <p className={`mt-1 ${canActivateDraft ? "text-emerald-700" : "text-[var(--text-muted)]"}`}>{canActivateDraft ? "Ready" : "Locked until saved"}</p>
+                    <p className="font-medium text-[var(--foreground)]">2. Review milestones</p>
+                    <p className={`mt-1 ${draftMilestonePlanReady ? "text-emerald-700" : "text-amber-700"}`}>{draftMilestonePlanReady ? "Ready" : "Save changes"}</p>
                   </div>
                 </div>
               </div>
