@@ -7,6 +7,7 @@ import { useToast } from "@/lib/context/toast-context";
 import { useScrollLock } from "@/lib/hooks/use-scroll-lock";
 import { discoverBrowserWallets, type EIP6963ProviderDetail } from "@/lib/arc/browser-wallet";
 import { decodeGoogleJwt, loadGoogleGsiScript } from "@/lib/auth/google";
+import { getPostSignInDestination } from "@/lib/auth/post-sign-in-destination";
 import {
   X,
   Sparkles,
@@ -47,14 +48,10 @@ export function AuthModal() {
     closeAuthModal();
     const next = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("next") : null;
     const requestedDestination = authReturnTo ?? next;
-    const destination = requestedDestination && requestedDestination.startsWith("/") && !requestedDestination.startsWith("//")
-      ? requestedDestination
-      : "/dashboard";
+    const destination = getPostSignInDestination(requestedDestination, needsPaymentAccountSetup);
     // `/auth-required` is a static sign-in boundary. Refreshing it after a
     // successful wallet session leaves the user on the same sign-in screen.
-    router.replace(needsPaymentAccountSetup
-      ? `/settings?onboarding=1&next=${encodeURIComponent(destination)}`
-      : destination);
+    router.replace(destination);
   }, [authReturnTo, closeAuthModal, router]);
 
   useEffect(() => {
