@@ -56,9 +56,9 @@ function simplifyPaymentEvents(items: AccessibleActivityItem[]) {
     const key = paymentKey(item);
     if (item.action === "proof_confirmed" && key && releases.has(key)) return [];
     if (item.action === "release_confirmed" && key && proofs.has(key)) {
-      return [{ ...item, action: "payment_confirmed", title: "Payment confirmed", description: undefined, metadata: proofs.get(key)!.metadata }];
+      return [{ ...item, action: "payment_confirmed", description: undefined, metadata: proofs.get(key)!.metadata }];
     }
-    if (item.action === "proof_confirmed") return [{ ...item, action: "payment_confirmed", title: "Payment confirmed", description: undefined }];
+    if (item.action === "proof_confirmed") return [{ ...item, action: "payment_confirmed", description: undefined }];
     if (item.action === "proof_failed" && key && failedReleases.has(key)) return [];
     if (item.action === "release_failed" && key && failedProofs.has(key)) {
       return [{ ...item, action: "payment_failed", title: "Payment needs attention", description: "The payment could not be completed." }];

@@ -56,17 +56,17 @@ function getLogTitle(action: string, milestoneTitle?: string) {
     case "milestone_rejected":
       return `Rejected ${milestoneTitle ?? "milestone"}`;
     case "release_queued":
-      return `Payment started for ${milestoneTitle ?? "milestone"}`;
+      return `Payment on the way for ${milestoneTitle ?? "milestone"}`;
     case "release_retried":
-      return `Payment retry started for ${milestoneTitle ?? "milestone"}`;
+      return `Payment on the way for ${milestoneTitle ?? "milestone"}`;
     case "release_failed":
       return `Payment could not be completed for ${milestoneTitle ?? "milestone"}`;
     case "release_confirmed":
-      return `Payment completed for ${milestoneTitle ?? "milestone"}`;
+      return `Paid ${milestoneTitle ?? "milestone"}`;
     case "proof_failed":
       return `Payment confirmation failed for ${milestoneTitle ?? "milestone"}`;
     case "proof_confirmed":
-      return `Payment confirmed for ${milestoneTitle ?? "milestone"}`;
+      return `Paid ${milestoneTitle ?? "milestone"}`;
     case "payment_simulated_completed":
       return `Payment recorded for ${milestoneTitle ?? "milestone"}`;
     default:
@@ -335,7 +335,7 @@ async function getDerivedPayoutActivity(payoutId: string, workspaceId: string, s
       action: "release_queued",
       occurredAt: release.createdAt.toISOString(),
       actorLabel: labelForUser(release.triggeredBy),
-      title: `Payment started for ${milestone?.title ?? "milestone"}`,
+      title: `Payment on the way for ${milestone?.title ?? "milestone"}`,
       description: `${release.amountUsdc.toString()} USDC payment is being processed.`,
     });
 
@@ -349,7 +349,7 @@ async function getDerivedPayoutActivity(payoutId: string, workspaceId: string, s
         action: "release_confirmed",
         occurredAt: release.executedAt.toISOString(),
         actorLabel: labelForUser(release.triggeredBy),
-        title: `Payment completed for ${milestone?.title ?? "milestone"}`,
+        title: `Paid ${milestone?.title ?? "milestone"}`,
         description: "Payment was confirmed.",
       });
     }
@@ -380,7 +380,7 @@ async function getDerivedPayoutActivity(payoutId: string, workspaceId: string, s
         action: "proof_confirmed",
         occurredAt: proof.confirmedAt.toISOString(),
         actorLabel: "System",
-        title: `Payment confirmed for ${milestone?.title ?? "milestone"}`,
+        title: `Paid ${milestone?.title ?? "milestone"}`,
         description: undefined,
       });
     }
@@ -546,7 +546,7 @@ export async function getWorkspaceActivity(workspaceId: string, role: ActivityVi
         action: "proof_confirmed",
         occurredAt: proof.confirmedAt.toISOString(),
         actorLabel: "System",
-        title: `Payment confirmed for ${proof.milestone?.title ?? "milestone"}`,
+        title: `Paid ${proof.milestone?.title ?? "milestone"}`,
         description: undefined,
         metadata: {
           txHash: proof.txHash || undefined,
