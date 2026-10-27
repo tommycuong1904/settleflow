@@ -93,6 +93,9 @@ export async function PUT(request: Request) {
     if (error instanceof SyntaxError) {
       return apiError("INVALID_JSON_BODY", { message: "Invalid JSON body.", status: 400 });
     }
+    if (error instanceof Error && (error.message === "AUTH_CONTEXT_REQUIRED" || error.message === "AUTH_ROLE_AMBIGUOUS")) {
+      return apiError(error.message, { status: 403 });
+    }
     const message =
       error instanceof Error ? error.message : "Failed to save workspace settings.";
     return apiError("SETTINGS_SAVE_FAILED", { message, status: 400 });

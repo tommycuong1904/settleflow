@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { createSessionToken } from "@/lib/auth/session";
 import { db } from "@/lib/db/client";
-import { GET as getSettings } from "@/app/api/v1/settings/route";
+import { GET as getSettings, PUT as updateSettings } from "@/app/api/v1/settings/route";
 
 const token = () => createSessionToken({ userId: "settings-user", email: "settings@example.com", name: "Settings", address: null, authType: "web2_google" });
 const request = async () => new Request("https://settleflow.local/api/v1/settings", { headers: { cookie: `sf_session=${await token()}` } });
@@ -12,6 +12,20 @@ test("settings GET maps missing membership context to 403", async () => {
   db.user.findFirst = (async () => null) as typeof db.user.findFirst;
   try {
     const response = await getSettings(await request());
+    assert.equal(response.status, 403);
+    assert.equal((await response.json()).code, "AUTH_CONTEXT_REQUIRED");
+  } finally { db.user.findFirst = original; }
+});
+
+test("settings PUT maps missing membership context to 403", async () => {
+  const original = db.user.findFirst;
+  db.user.findFirst = (async () => null) as typeof db.user.findFirst;
+  try {
+    const response = await updateSettings(new Request("https://settleflow.local/api/v1/settings", {
+      method: "PUT",
+      headers: { cookie: `sf_session=${await token()}`, "content-type": "application/json" },
+      body: JSON.stringify({ notifyOnRelease: false }),
+    }));
     assert.equal(response.status, 403);
     assert.equal((await response.json()).code, "AUTH_CONTEXT_REQUIRED");
   } finally { db.user.findFirst = original; }
