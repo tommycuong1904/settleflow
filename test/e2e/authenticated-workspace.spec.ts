@@ -215,7 +215,7 @@ test("owner and contributor payout views are scoped to their workspace", async (
     await contributorPage.goto("/payouts");
     await expect(contributorPage.getByRole("main").getByText("See the work assigned to you and submit it when it is ready.")).toBeVisible();
     await expect(contributorPage.getByRole("main").getByText("No payouts assigned yet")).toBeVisible();
-    await expect(contributorPage.getByRole("main").getByText("Your workspace owner will assign a payout when work is ready. You can then review the scope and submit work here — no wallet setup is needed.")).toBeVisible();
+    await expect(contributorPage.getByRole("main").getByText("Your workspace owner will assign your first payout. You can then review the scope and submit work here — no wallet setup is needed yet.")).toBeVisible();
     await expect(contributorPage.getByRole("link", { name: "New Payout" })).toHaveCount(0);
 
     await ownerContext.close();
@@ -283,7 +283,7 @@ test("owner onboarding presents one clear next step on mobile", async ({ browser
     await page.getByRole("button", { name: "Add Contributor", exact: true }).click();
     await page.getByPlaceholder("e.g. Alice Walker").fill("First contributor");
     await page.getByRole("button", { name: "Save Contributor" }).click();
-    await expect(page.getByText("First contributor")).toBeVisible();
+    await expect(page.getByText("First contributor is ready")).toBeVisible();
 
     await page.goto("/dashboard");
     await expect(page.getByText("Step 2 of 2")).toBeVisible();
