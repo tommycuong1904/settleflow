@@ -189,6 +189,30 @@ test("real DB authorization enforces user, membership, workspace, role, and obje
     assert.equal(contributorList.status, 200);
     assert.deepEqual((await contributorList.json()).data.map((item: { id: string }) => item.id), [payoutA.id]);
 
+    const forgedOwnerCreate = await createPayout(new Request(`https://settleflow.local/api/v1/payouts?workspaceId=${workspaceA.id}`, {
+      method: "POST",
+      headers: {
+        cookie: sessionCookie(await tokenFor(emailContributor, contributorUser.id)),
+        "content-type": "application/json",
+        "x-settleflow-actor": "owner",
+        "x-settleflow-owner-user-id": userA.id,
+        "x-settleflow-contributor-user-id": userA.id,
+      },
+      body: JSON.stringify({
+        title: "Forged owner payout",
+        contributorId: contributorA.id,
+        targetWalletAddress: walletA,
+        totalAmountUsdc: "1",
+        ownerUserId: userA.id,
+        createdByUserId: userA.id,
+        actor: "owner",
+        milestones: [{ title: "Forged milestone", description: "Must not create", amountUsdc: "1", sequence: 1 }],
+      }),
+    }));
+    assert.equal(forgedOwnerCreate.status, 403);
+    assert.equal((await forgedOwnerCreate.json()).code, "FORBIDDEN_PAYOUT_CREATE_ACTOR");
+    assert.equal(await db.payout.count({ where: { workspaceId: workspaceA.id } }), 1);
+
     const missingMembership = await getPayouts(request("/api/v1/payouts", await tokenFor(emailNoMembership, noMembershipUser.id)));
     assert.equal(missingMembership.status, 403);
     assert.equal((await missingMembership.json()).code, "AUTH_CONTEXT_REQUIRED");
