@@ -253,9 +253,9 @@ export function PayoutDetailClient({
       }
       : isOwnerActor && nextContributorMilestone
         ? {
-          label: "Up next",
-          title: "Waiting for a contributor to submit work",
-          description: `The next milestone is ${nextContributorMilestone.title}. You will be able to review it when it is submitted.`,
+          label: "Payout is live",
+          title: `${nextContributorMilestone.title} is ready to start`,
+          description: `${contributor?.name ?? "The contributor"} can now submit work for your review.`,
         }
         : isOwnerActor && nextReleasableMilestone
           ? {
@@ -338,8 +338,10 @@ export function PayoutDetailClient({
       setPayoutStatusState(data.payout?.status ?? "active");
       toast({
         variant: "success",
-        title: "Payout Activated",
-        description: "Draft is now active. Milestones can be submitted.",
+        title: "Payout is live",
+        description: nextContributorMilestone
+          ? `${nextContributorMilestone.title} is ready for the contributor to start.`
+          : "The contributor can now submit work for review.",
       });
       notifyWorkflowUpdated();
       await refreshActivity();

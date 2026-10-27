@@ -77,9 +77,9 @@ test("owner and contributor payout views are scoped to their workspace", async (
     const noWalletPayout = await db.payout.findFirst({ where: { workspaceId, contributorId: noWalletContributor.id }, select: { targetWalletAddress: true, status: true } });
     expect(noWalletPayout).toEqual({ targetWalletAddress: null, status: "active" });
     await ownerPage.goto(`/payouts/${payout.id}?workspaceId=${workspaceId}`);
-    await expect(ownerPage.getByText("Ready to activate?")).toBeVisible();
+    await expect(ownerPage.getByText("Ready to activate")).toBeVisible();
     await ownerPage.getByRole("button", { name: "Activate payout" }).click();
-    await expect(ownerPage.getByText("Waiting for a contributor to submit work")).toBeVisible();
+    await expect(ownerPage.getByText("Payout is live")).toBeVisible();
     await expect(ownerPage.getByRole("button", { name: "Submit milestone" })).toHaveCount(0);
 
     const contributorPage = await contributorContext.newPage();
