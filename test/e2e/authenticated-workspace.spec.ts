@@ -91,7 +91,7 @@ test("owner and contributor payout views are scoped to their workspace", async (
     await expect(contributorPage.getByRole("main").getByText("Your next step")).toBeVisible();
     await expect(contributorPage.getByRole("main").getByText("Submit your work, respond to feedback, and track payment progress.")).toBeVisible();
     await expect(contributorPage.getByText("Payment setup")).toHaveCount(0);
-    await expect(contributorPage.getByRole("button", { name: "Export Payout Summary" })).toHaveCount(0);
+    await expect(contributorPage.getByRole("button", { name: "Payment summary" })).toBeVisible();
     await expect(contributorPage.getByRole("paragraph").filter({ hasText: "Ready for your work" })).toBeVisible();
     await expect(contributorPage.getByRole("button", { name: "Submit work for review" })).toHaveCount(1);
     await contributorPage.goto(`/dashboard?workspaceId=${workspaceId}`);
@@ -147,7 +147,7 @@ test("owner and contributor payout views are scoped to their workspace", async (
     await ownerPage.getByRole("button", { name: "Mark as paid (demo)" }).click();
     await expect(ownerPage.getByLabel("Notifications").getByText("Payment recorded for testing")).toBeVisible();
     await expect(ownerPage.getByText("Simulated · no funds moved")).toBeVisible();
-    await ownerPage.getByRole("button", { name: "Export Payout Summary" }).click();
+    await ownerPage.getByRole("button", { name: "Payment summary" }).click();
     await expect(ownerPage.getByText("Payment summary")).toBeVisible();
     await expect(ownerPage.getByText("Simulated payment (test)")).toBeVisible();
     await expect(ownerPage.getByRole("main").getByText("Payment recorded for testing")).toBeVisible();

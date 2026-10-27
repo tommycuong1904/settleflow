@@ -46,6 +46,7 @@ export function PayoutReceiptModal({
     (payment) => payment.method === "simulated" && payment.status === "completed" && payment.evidenceType === "none",
   );
   const hasSimulatedPayment = completedSimulatedPayments.length > 0;
+  const latestPaymentAt = releaseProof?.confirmedAt ?? completedSimulatedPayments[0]?.completedAt;
   const paymentMethodLabel = isSettlementReceipt
     ? "USDC on Arc Testnet"
     : hasSimulatedPayment
@@ -176,7 +177,7 @@ export function PayoutReceiptModal({
 
             <div className="text-right text-xs text-slate-400 font-mono print:text-slate-600">
               <p>Receipt: {payout.id.slice(0, 12)}</p>
-              <p>Date: {new Date().toLocaleDateString()}</p>
+              <p>Generated: {new Date().toLocaleDateString()}</p>
             </div>
           </div>
         </div>
@@ -184,18 +185,17 @@ export function PayoutReceiptModal({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-5 border-b border-[var(--border-soft)] text-xs print:border-slate-300">
           <div>
             <p className="text-[11px] uppercase tracking-wider text-[var(--text-muted)] font-medium">
-              Contributor
+              Recipient
             </p>
             <p className="mt-1 text-sm font-semibold text-[var(--foreground)] print:text-black">
               {contributor?.name ?? "Designated Contributor"}
             </p>
-            <p className="mt-0.5 font-mono text-[var(--text-primary)] print:text-slate-700 break-all">
-              {isSettlementReceipt && contributor?.walletAddress ? (
-                <span>Address: {contributor.walletAddress}</span>
-              ) : (
-                hasSimulatedPayment ? "Payment recorded for testing" : "Payment details not recorded"
-              )}
-            </p>
+            {contributor?.email ? <p className="mt-0.5 text-[var(--text-primary)] print:text-slate-700 break-all">{contributor.email}</p> : null}
+            {isSettlementReceipt && contributor?.walletAddress ? (
+              <p className="mt-0.5 font-mono text-[var(--text-primary)] print:text-slate-700 break-all">Address: {contributor.walletAddress}</p>
+            ) : !contributor?.email ? (
+              <p className="mt-0.5 text-[var(--text-primary)] print:text-slate-700">{hasSimulatedPayment ? "Payment recorded for testing" : "Payment details not recorded"}</p>
+            ) : null}
           </div>
 
           <div className="sm:text-right">
@@ -211,6 +211,7 @@ export function PayoutReceiptModal({
                 {payoutStatusLabel}
               </strong>
             </p>
+            {latestPaymentAt ? <p className="mt-0.5 text-[var(--text-primary)] print:text-slate-700">Latest payment: {new Date(latestPaymentAt).toLocaleDateString()}</p> : null}
           </div>
         </div>
 

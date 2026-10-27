@@ -655,7 +655,7 @@ export function PayoutDetailClient({
                 : "Submit your work, respond to feedback, and track payment progress."
           }
         >
-          {isOwnerActor && effectivePayoutStatus !== "draft" ? (
+          {effectivePayoutStatus !== "draft" ? (
             <Button
               type="button"
               variant="secondary"
@@ -663,7 +663,7 @@ export function PayoutDetailClient({
               onClick={() => setIsReceiptModalOpen(true)}
               icon={<FileCheck size={15} className="text-[var(--accent-cyan)]" />}
             >
-              Export Payout Summary
+              Payment summary
             </Button>
           ) : null}
         </PageHeader>
