@@ -106,6 +106,9 @@ export async function PATCH(
     if (error instanceof SyntaxError) {
       return apiError("INVALID_JSON_BODY", { message: "Invalid JSON body.", status: 400 });
     }
+    if (error instanceof Error && (error.message === "AUTH_CONTEXT_REQUIRED" || error.message === "AUTH_ROLE_AMBIGUOUS")) {
+      return apiError(error.message, { status: 403 });
+    }
     const message =
       error instanceof Error ? error.message : "Failed to update contributor.";
     return apiError("CONTRIBUTOR_UPDATE_FAILED", { message, status: 400 });
@@ -152,6 +155,9 @@ export async function DELETE(
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Failed to delete contributor.";
+    if (message === "AUTH_CONTEXT_REQUIRED" || message === "AUTH_ROLE_AMBIGUOUS") {
+      return apiError(message, { status: 403 });
+    }
     if (message === "CONTRIBUTOR_NOT_FOUND") {
       return apiError("CONTRIBUTOR_NOT_FOUND", {
         message: "Contributor not found.",
