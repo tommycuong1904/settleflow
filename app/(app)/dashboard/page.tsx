@@ -214,19 +214,19 @@ export default async function DashboardPage() {
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">{isOwnerSetup ? (!hasContributors ? "Step 1 of 2" : "Step 2 of 2") : hasPayouts ? "All caught up" : "Get started"}</p>
             <h2 className="mt-2 text-2xl font-semibold tracking-tight text-[var(--foreground)]">
               {!hasContributors
-                ? isOwner ? "Add the first person you will pay." : "Your workspace is getting ready."
-                : !hasPayouts ? isOwner ? "Create your first payout." : "No payout task needs you right now."
+                ? isOwner ? "Add the first person you will pay." : "You’re ready to start."
+                : !hasPayouts ? isOwner ? "Create your first payout." : "No work assigned yet."
                   : "No payout task needs you right now."}
             </h2>
             <p className="mt-2 text-sm text-[var(--text-muted)]">
               {!hasContributors
                 ? isOwner
                   ? "Add a contributor with their name and email. Payment details can be added later."
-                  : "Your workspace owner will add contributors and create the first payout."
+                  : "Your workspace owner will add payout work. You can submit work here as soon as it is assigned."
                 : !hasPayouts
                   ? isOwner
                     ? "Set the work, milestones, and amount. You can choose a payment method later."
-                    : "The workspace owner will create the first payout."
+                    : "Your workspace owner will create the first payout. You can then review the scope and submit your work here."
                   : "Create a payout or return when a contributor submits work."}
             </p>
             {isOwner && !hasContributors ? (

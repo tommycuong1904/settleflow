@@ -154,7 +154,7 @@ export function PayoutListClient({
                 ? "Try another search or show all payouts."
                 : canCreatePayout
                 ? "Create a payout to define the work, approval steps, and amount."
-                : "Your workspace owner will assign a payout when work is ready. You can then review the scope and submit work here — no wallet setup is needed."
+                : "Your workspace owner will assign your first payout. You can then review the scope and submit work here — no wallet setup is needed yet."
             }
           />
           {searchQuery || statusFilter !== "all" ? (

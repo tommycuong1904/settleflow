@@ -33,7 +33,7 @@ export default async function NotificationsPage() {
           : "Follow owner decisions, requested changes, and payment updates for your assigned work."}
       />
       {notifications.length === 0 ? (
-        <EmptyState title="No updates yet" description={isOwner ? "Updates will appear here when work is submitted, reviewed, or paid." : "Updates will appear here when your work is reviewed or a payment status changes."} />
+        <EmptyState title="No updates yet" description={isOwner ? "Updates will appear here when work is submitted, reviewed, or paid." : "Updates will appear here when your work is reviewed or paid."} />
       ) : (
         <NotificationListClient notifications={notifications.map((notification) => ({
           ...notification,
