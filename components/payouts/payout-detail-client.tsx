@@ -257,6 +257,12 @@ export function PayoutDetailClient({
           title: "Waiting for a contributor to submit work",
           description: `The next milestone is ${nextContributorMilestone.title}. You will be able to review it when it is submitted.`,
         }
+        : isOwnerActor && nextReleasableMilestone
+          ? {
+            label: "Ready to pay",
+            title: `${nextReleasableMilestone.title} is approved`,
+            description: "Payment is the next step. Use the payment action on this milestone when you are ready.",
+          }
         : !isOwnerActor && nextContributorMilestone
           ? {
             label: "Your next step",
@@ -275,6 +281,12 @@ export function PayoutDetailClient({
               href: `#milestone-${nextSubmittedMilestone.id}`,
               action: "View submission",
             }
+            : !isOwnerActor && nextReleasableMilestone
+              ? {
+                label: "Work approved",
+                title: `${nextReleasableMilestone.title} is ready for payment`,
+                description: "The workspace owner can now send payment. You will see the confirmation here when it is complete.",
+              }
             : null
     : null;
 
@@ -717,7 +729,9 @@ export function PayoutDetailClient({
             <p className="mt-3 text-sm text-[var(--text-secondary)]">
               {effectivePayoutStatus === "partially_released"
                   ? "Some milestones have been paid. Continue reviewing approved milestones."
-                  : "All milestones in this payout have been paid."}
+                  : isOwnerActor
+                    ? "All milestones in this payout have been paid."
+                    : "All milestones in this payout have been paid to you."}
             </p>
           ) : null}
         </section>
