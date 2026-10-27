@@ -139,8 +139,8 @@ export default async function DashboardPage() {
     ...pendingApprovals.map((milestone) => ({
       id: `review-${milestone.id}`,
       href: payoutHref(milestone.payoutId),
-      title: isOwner ? `Review work from ${contributorNameFor(milestone.payoutId)}` : "Waiting for owner review",
-      description: isOwner ? `${milestone.title} · ${formatUsdc(milestone.amount)} USDC` : `${milestone.title} has been submitted.`,
+      title: isOwner ? `Review work from ${contributorNameFor(milestone.payoutId)}` : "Awaiting review",
+      description: isOwner ? `${milestone.title} · ${formatUsdc(milestone.amount)} USDC` : `${milestone.title} has been submitted to the workspace owner.`,
       action: isOwner ? "Review work" : "View payout",
     })),
     ...(isOwner ? releaseReadyMilestones.map((milestone) => ({
@@ -149,6 +149,13 @@ export default async function DashboardPage() {
       title: `Pay ${formatUsdc(milestone.amount)} USDC to ${contributorNameFor(milestone.payoutId)}`,
       description: `${milestone.title} is approved and ready for payment.`,
       action: "Review & pay",
+    })) : []),
+    ...(!isOwner ? releaseReadyMilestones.map((milestone) => ({
+      id: `payment-on-the-way-${milestone.id}`,
+      href: payoutHref(milestone.payoutId),
+      title: "Payment on the way",
+      description: `${milestone.title} is approved. The workspace owner can now send ${formatUsdc(milestone.amount)} USDC.`,
+      action: "View payout",
     })) : []),
     ...(!isOwner && needsContributorPaymentSetup ? [{
       id: "setup-payment-account",
