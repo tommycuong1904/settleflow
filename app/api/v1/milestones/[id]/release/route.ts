@@ -21,69 +21,78 @@ function isReleaseExecutionMode(value: unknown): value is "browser_wallet" | "ci
 /** Read-only check used before the browser asks a wallet to connect. */
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const productContext = await resolveProductContextFromRequestWithSession(request);
-  const policyViolation = assertCanReleaseMilestone({
-    productContext,
-    actorUserId: productContext.ownerUserId,
-  });
-  if (policyViolation) {
-    return apiError(policyViolation.code, {
-      message: policyViolation.message,
-      status: policyViolation.status,
-    });
+  if (!(await getSessionFromRequest(request))) {
+    return apiError("AUTH_REQUIRED", { message: "Sign in is required.", status: 401 });
   }
 
-  if (ARC_CONFIG.executionMode === "real" && !isServerRealExecutionAuthorized()) {
-    return apiError("REAL_EXECUTION_NOT_AUTHORIZED", {
-      message: "Live Arc Testnet payments are not authorized in this environment yet.",
-      status: 403,
+  try {
+    const productContext = await resolveProductContextFromRequestWithSession(request);
+    const policyViolation = assertCanReleaseMilestone({
+      productContext,
+      actorUserId: productContext.ownerUserId,
     });
-  }
+    if (policyViolation) {
+      return apiError(policyViolation.code, {
+        message: policyViolation.message,
+        status: policyViolation.status,
+      });
+    }
 
-  const existingRelease = await db.release.findFirst({
-    where: {
-      milestoneId: id,
-      payout: { workspaceId: productContext.workspaceId },
-      triggeredByUserId: productContext.ownerUserId,
-    },
-    orderBy: { createdAt: "desc" },
-    select: {
-      id: true,
-      status: true,
-      executionMode: true,
-      txHash: true,
-      arcRequestId: true,
-      proofs: {
-        orderBy: { createdAt: "desc" },
-        take: 1,
-        select: { id: true, releaseId: true, milestoneId: true, txHash: true, network: true, status: true, explorerUrl: true, confirmedAt: true, failedAt: true, failureReason: true },
+    if (ARC_CONFIG.executionMode === "real" && !isServerRealExecutionAuthorized()) {
+      return apiError("REAL_EXECUTION_NOT_AUTHORIZED", {
+        message: "Live Arc Testnet payments are not authorized in this environment yet.",
+        status: 403,
+      });
+    }
+
+    const existingRelease = await db.release.findFirst({
+      where: {
+        milestoneId: id,
+        payout: { workspaceId: productContext.workspaceId },
+        triggeredByUserId: productContext.ownerUserId,
       },
-    },
-  });
-  const proof = existingRelease?.proofs[0];
-  return NextResponse.json({
-    ready: true,
-    existingRelease: existingRelease && proof ? {
-      id: existingRelease.id,
-      status: existingRelease.status,
-      proof: {
-        id: proof.id,
-        releaseId: proof.releaseId ?? existingRelease.id,
-        milestoneId: proof.milestoneId ?? id,
-        txHash: proof.txHash ?? "",
-        network: proof.network ?? "Arc Testnet",
-        status: proof.status,
-        explorerUrl: proof.explorerUrl ?? "",
-        confirmedAt: proof.confirmedAt?.toISOString(),
-        failedAt: proof.failedAt?.toISOString(),
-        failureReason: proof.failureReason ?? undefined,
-        executionMode: existingRelease.executionMode,
-        releaseStatus: existingRelease.status,
-        releaseTxHash: existingRelease.txHash ?? undefined,
-        releaseArcRequestId: existingRelease.arcRequestId ?? undefined,
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        status: true,
+        executionMode: true,
+        txHash: true,
+        arcRequestId: true,
+        proofs: {
+          orderBy: { createdAt: "desc" },
+          take: 1,
+          select: { id: true, releaseId: true, milestoneId: true, txHash: true, network: true, status: true, explorerUrl: true, confirmedAt: true, failedAt: true, failureReason: true },
+        },
       },
-    } : undefined,
-  });
+    });
+    const proof = existingRelease?.proofs[0];
+    return NextResponse.json({
+      ready: true,
+      existingRelease: existingRelease && proof ? {
+        id: existingRelease.id,
+        status: existingRelease.status,
+        proof: {
+          id: proof.id,
+          releaseId: proof.releaseId ?? existingRelease.id,
+          milestoneId: proof.milestoneId ?? id,
+          txHash: proof.txHash ?? "",
+          network: proof.network ?? "Arc Testnet",
+          status: proof.status,
+          explorerUrl: proof.explorerUrl ?? "",
+          confirmedAt: proof.confirmedAt?.toISOString(),
+          failedAt: proof.failedAt?.toISOString(),
+          failureReason: proof.failureReason ?? undefined,
+          executionMode: existingRelease.executionMode,
+          releaseStatus: existingRelease.status,
+          releaseTxHash: existingRelease.txHash ?? undefined,
+          releaseArcRequestId: existingRelease.arcRequestId ?? undefined,
+        },
+      } : undefined,
+    });
+  } catch (error) {
+    const code = error instanceof Error ? error.message : "UNABLE_TO_CHECK_RELEASE_READINESS";
+    return apiErrorFromCode(code, {}, {}, { message: "Unable to check payment readiness.", status: 500 });
+  }
 }
 
 export async function POST(

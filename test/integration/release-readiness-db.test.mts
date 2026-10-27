@@ -20,6 +20,16 @@ const { GET: releaseReadiness } = (await import(moduleUrl)) as {
 
 const routeParams = (id: string) => ({ params: Promise.resolve({ id }) });
 
+test("release readiness rejects an unauthenticated request", async () => {
+  const response = await releaseReadiness(
+    new Request("https://settleflow.local/api/v1/milestones/missing/release"),
+    routeParams("missing"),
+  );
+
+  assert.equal(response.status, 401);
+  assert.equal((await response.json()).code, "AUTH_REQUIRED");
+});
+
 test("unauthorized real readiness is read-only and creates no release records", async () => {
   const suffix = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const email = `readiness-owner-${suffix}@example.com`;
