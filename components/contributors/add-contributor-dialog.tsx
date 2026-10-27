@@ -64,7 +64,7 @@ export function AddContributorDialog({
     const requestTimeout = createRequestTimeout();
 
     try {
-      const res = await fetch("/api/contributors", {
+      const res = await fetch("/api/v1/contributors", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
