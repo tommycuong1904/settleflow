@@ -126,7 +126,7 @@ test("owner and contributor payout views are scoped to their workspace", async (
     await expect(ownerPage.getByRole("main").getByText("Milestone ready for review")).toBeVisible();
     await ownerPage.goto(`/payouts/${payout.id}?workspaceId=${workspaceId}`);
     await expect(ownerPage.getByRole("main").getByText("1 milestone awaiting your review.")).toBeVisible();
-    await expect(ownerPage.getByText("Review Browser milestone")).toBeVisible();
+    await expect(ownerPage.getByText("Review Browser milestone").first()).toBeVisible();
     await expect(ownerPage.getByRole("link", { name: "Review work" })).toBeVisible();
     await expect(ownerPage.getByRole("heading", { name: "Payment action" })).toHaveCount(0);
     await expect(ownerPage.getByText("No payment action needed")).toHaveCount(0);
