@@ -11,6 +11,7 @@ import { db } from "@/lib/db/client";
 test("a contributor cannot queue, refresh, or retry a workspace release", async () => {
   const suffix = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const owner = await db.user.create({ data: { displayName: "Release Owner", email: `release-owner-${suffix}@example.test` } });
+  const opsUser = await db.user.create({ data: { displayName: "Release Ops", email: `release-ops-${suffix}@example.test` } });
   const reviewerUser = await db.user.create({ data: { displayName: "Release Reviewer", email: `release-reviewer-${suffix}@example.test` } });
   const contributorUser = await db.user.create({ data: { displayName: "Release Contributor", email: `release-contributor-${suffix}@example.test` } });
   const otherContributorUser = await db.user.create({ data: { displayName: "Other Release Contributor", email: `other-release-contributor-${suffix}@example.test` } });
@@ -22,12 +23,14 @@ test("a contributor cannot queue, refresh, or retry a workspace release", async 
   const proof = await db.transactionProof.create({ data: { payoutId: payout.id, milestoneId: milestone.id, releaseId: failedRelease.id, status: "failed", failureReason: "Original failure", failedAt: new Date() } });
   await db.workspaceMember.createMany({ data: [
     { workspaceId: workspace.id, userId: owner.id, role: "owner" },
+    { workspaceId: workspace.id, userId: opsUser.id, role: "ops" },
     { workspaceId: workspace.id, userId: reviewerUser.id, role: "reviewer" },
     { workspaceId: workspace.id, userId: contributorUser.id, role: "contributor" },
     { workspaceId: workspace.id, userId: otherContributorUser.id, role: "contributor" },
   ] });
   const token = await createSessionToken({ userId: contributorUser.id, email: contributorUser.email!, name: contributorUser.displayName, address: null, authType: "web2_google" });
   const reviewerToken = await createSessionToken({ userId: reviewerUser.id, email: reviewerUser.email!, name: reviewerUser.displayName, address: null, authType: "web2_google" });
+  const opsToken = await createSessionToken({ userId: opsUser.id, email: opsUser.email!, name: opsUser.displayName, address: null, authType: "web2_google" });
   const otherToken = await createSessionToken({ userId: otherContributorUser.id, email: otherContributorUser.email!, name: otherContributorUser.displayName, address: null, authType: "web2_google" });
   const headers = { cookie: `sf_session=${token}`, "content-type": "application/json" };
   const params = (id: string) => ({ params: Promise.resolve({ id }) });
@@ -55,14 +58,31 @@ test("a contributor cannot queue, refresh, or retry a workspace release", async 
     assert.equal(reviewerQueueAttempt.status, 403);
     assert.equal(await db.release.count({ where: { milestoneId: milestone.id } }), 1);
 
+    const opsHeaders = { cookie: `sf_session=${opsToken}`, "content-type": "application/json" };
+    const opsQueueAttempt = await release(new Request(`https://settleflow.local/api/v1/milestones/${milestone.id}/release?workspaceId=${workspace.id}`, {
+      method: "POST", headers: opsHeaders, body: JSON.stringify({ amountUsdc: "5", executionMode: "browser_wallet" }),
+    }), params(milestone.id));
+    assert.equal(opsQueueAttempt.status, 403);
+    assert.equal(await db.release.count({ where: { milestoneId: milestone.id } }), 1);
+
     const refreshAttempt = await refreshProof(new Request(`https://settleflow.local/api/v1/releases/${failedRelease.id}/proof/refresh?workspaceId=${workspace.id}`, {
       method: "POST", headers, body: JSON.stringify({ status: "failed", failureReason: "Contributor rewrite attempt" }),
     }), params(failedRelease.id));
     assert.equal(refreshAttempt.status, 403);
     assert.equal((await db.transactionProof.findUnique({ where: { id: proof.id } }))?.failureReason, "Original failure");
 
+    const opsRefreshAttempt = await refreshProof(new Request(`https://settleflow.local/api/v1/releases/${failedRelease.id}/proof/refresh?workspaceId=${workspace.id}`, {
+      method: "POST", headers: opsHeaders, body: JSON.stringify({ status: "failed", failureReason: "Ops rewrite attempt" }),
+    }), params(failedRelease.id));
+    assert.equal(opsRefreshAttempt.status, 403);
+    assert.equal((await db.transactionProof.findUnique({ where: { id: proof.id } }))?.failureReason, "Original failure");
+
     const retryAttempt = await retry(new Request(`https://settleflow.local/api/v1/releases/${failedRelease.id}/retry?workspaceId=${workspace.id}`, { method: "POST", headers }), params(failedRelease.id));
     assert.equal(retryAttempt.status, 403);
+    assert.equal(await db.release.count({ where: { milestoneId: milestone.id } }), 1);
+
+    const opsRetryAttempt = await retry(new Request(`https://settleflow.local/api/v1/releases/${failedRelease.id}/retry?workspaceId=${workspace.id}`, { method: "POST", headers: opsHeaders }), params(failedRelease.id));
+    assert.equal(opsRetryAttempt.status, 403);
     assert.equal(await db.release.count({ where: { milestoneId: milestone.id } }), 1);
   } finally {
     await db.transactionProof.deleteMany({ where: { payoutId: payout.id } });
@@ -72,6 +92,6 @@ test("a contributor cannot queue, refresh, or retry a workspace release", async 
     await db.contributor.delete({ where: { id: contributor.id } });
     await db.workspaceMember.deleteMany({ where: { workspaceId: workspace.id } });
     await db.workspace.delete({ where: { id: workspace.id } });
-    await db.user.deleteMany({ where: { id: { in: [owner.id, reviewerUser.id, contributorUser.id, otherContributorUser.id] } } });
+    await db.user.deleteMany({ where: { id: { in: [owner.id, opsUser.id, reviewerUser.id, contributorUser.id, otherContributorUser.id] } } });
   }
 });
