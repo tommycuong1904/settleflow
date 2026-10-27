@@ -13,7 +13,7 @@ type PayoutListClientProps = {
 };
 
 function isPassiveNextAction(nextAction: string) {
-  return nextAction.startsWith("Waiting") || nextAction === "Payment complete";
+  return ["Awaiting review", "Payment on the way", "Paid"].includes(nextAction);
 }
 
 export function PayoutListClient({

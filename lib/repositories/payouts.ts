@@ -160,10 +160,10 @@ export async function listAccessiblePayouts(input: {
       ? milestoneStatuses.some((status) => status === "pending" || status === "rejected")
         ? "Submit work"
         : milestoneStatuses.includes("submitted")
-        ? "Waiting for review"
+        ? "Awaiting review"
         : payout.status === "completed"
-        ? "Payment complete"
-        : "Waiting for payment"
+        ? "Paid"
+        : "Payment on the way"
       : "View payout";
     return {
       ...toListItem(payout),
