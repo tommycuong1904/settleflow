@@ -66,7 +66,7 @@ test("caller sourceWalletAddress is not used by browser confirmation", async () 
 test("an uncertain browser submission keeps technical recovery out of the payout UI", async () => {
   const ui = await source("components/payouts/payout-detail-release-shell.tsx");
   assert.match(ui, /Payment processing/);
-  assert.match(ui, /You do not need to sign, retry, or provide any payment details/);
+  assert.match(ui, /You do not need to take action right now/);
   assert.doesNotMatch(ui, /Enter a transaction hash manually/);
   assert.doesNotMatch(ui, /Check for payment/);
   assert.doesNotMatch(ui, /OWNER_CONFIRMED_NO_TRANSACTION/);
@@ -111,8 +111,10 @@ test("account switching is rejected when it differs from the browser source snap
 
 test("browser confirmation relies on the verified source snapshot and cannot double-finalize", async () => {
   const repo = await source("lib/repositories/release-proof.ts");
-  const bind = repo.slice(repo.indexOf("if (verifiedBrowserSourceWallet)"), repo.indexOf("const now = new Date()"));
-  assert.match(bind, /status: "pending", txHash: null/);
+  const bindStart = repo.indexOf("if (verifiedBrowserSourceWallet)");
+  const bind = repo.slice(bindStart, repo.indexOf("const now = new Date()", bindStart));
+  assert.match(bind, /where: \{ id: release\.id, status: "pending", txHash: null \}/);
+  assert.match(bind, /data: \{ txHash: input\.txHash \}/);
   assert.doesNotMatch(bind, /sourceWalletAddress: verifiedBrowserSourceWallet/);
   assert.match(bind, /if \(bound\.count !== 1\) throw/);
   assert.match(repo, /where: \{ id: proof\.id, status: "pending" \}/);
