@@ -152,7 +152,7 @@ test("owner and contributor payout views are scoped to their workspace", async (
     await expect(ownerPage.getByLabel("Notifications").getByText("Payment recorded for testing")).toBeVisible();
     await expect(ownerPage.getByText("Simulated · no funds moved")).toBeVisible();
     await ownerPage.getByRole("button", { name: "Payment summary" }).click();
-    await expect(ownerPage.getByText("Payment summary")).toBeVisible();
+    await expect(ownerPage.getByText("Payment summary").first()).toBeVisible();
     await expect(ownerPage.getByText("Simulated payment (test)")).toBeVisible();
     await expect(ownerPage.getByRole("main").getByText("Payment recorded for testing")).toBeVisible();
     await expect(ownerPage.getByText("USDC on Arc Testnet")).toHaveCount(0);

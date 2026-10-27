@@ -83,7 +83,7 @@ test("contributor can revise submitted work and owner can approve the resubmissi
     await expect(ownerPage.getByText("Revision requested")).toBeVisible();
 
     await contributorPage.reload();
-    await expect(contributorPage.getByText("Revision requested")).toBeVisible();
+    await expect(contributorPage.getByText("Revision requested").first()).toBeVisible();
     await expect(contributorPage.getByText("Owner feedback")).toBeVisible();
     await expect(contributorPage.getByText("Please add the final source files before approval.").first()).toBeVisible();
     await contributorPage.getByRole("button", { name: "Resubmit work" }).first().click();
