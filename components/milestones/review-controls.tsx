@@ -19,22 +19,22 @@ export function ReviewControls({
       <div className="space-y-1 min-w-0">
         <p className="font-semibold text-[var(--foreground)] flex items-center gap-1.5 text-xs">
           <Clock size={14} className="text-amber-500 shrink-0" />
-          <span>Review submitted work</span>
+          <span>Ready for your review</span>
         </p>
         <p className="text-[11px] text-[var(--text-muted)] leading-relaxed">
-          Submitted {submittedAt ? new Date(submittedAt).toLocaleDateString() : "recently"}. Approving makes this milestone ready for payment.
+          Submitted {submittedAt ? new Date(submittedAt).toLocaleDateString() : "recently"}. Approve to make it ready for payment, or request changes from the contributor.
         </p>
       </div>
       <div className="flex w-full items-center gap-2.5 sm:w-auto sm:shrink-0">
         <Button
-          variant="danger"
+          variant="secondary"
           size="sm"
           onClick={onReject}
           disabled={busy}
           icon={<RotateCcw size={12} />}
           className="flex-1 justify-center sm:flex-none"
         >
-          Request Revision
+          Request changes
         </Button>
         <Button
           variant="primary"

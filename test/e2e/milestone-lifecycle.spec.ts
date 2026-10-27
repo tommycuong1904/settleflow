@@ -68,7 +68,7 @@ test("contributor can revise submitted work and owner can approve the resubmissi
 
     const ownerPage = await ownerContext.newPage();
     await ownerPage.goto(`/payouts/${payoutId}?workspaceId=${workspaceId}`);
-    await ownerPage.getByRole("button", { name: "Request Revision" }).click();
+    await ownerPage.getByRole("button", { name: "Request changes" }).click();
     await ownerPage.getByLabel("Feedback").fill("Please add the final source files before approval.");
     await ownerPage.getByRole("button", { name: "Send Revision Request" }).click();
     await expect(ownerPage.getByText("Revision requested")).toBeVisible();

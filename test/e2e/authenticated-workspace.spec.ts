@@ -127,7 +127,7 @@ test("owner and contributor payout views are scoped to their workspace", async (
     await expect(ownerPage.getByRole("heading", { name: "Payment action" })).toHaveCount(0);
     await expect(ownerPage.getByText("No payment action needed")).toHaveCount(0);
     await ownerPage.setViewportSize({ width: 390, height: 844 });
-    await ownerPage.getByRole("button", { name: "Request Revision" }).click();
+    await ownerPage.getByRole("button", { name: "Request changes" }).click();
     await expect(ownerPage.getByRole("dialog", { name: /Request changes to .*Browser milestone/ })).toBeVisible();
     await expect.poll(() => ownerPage.getByRole("dialog").evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
     await ownerPage.getByLabel("Close dialog").click();
