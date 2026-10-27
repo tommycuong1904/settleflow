@@ -12,8 +12,8 @@ type PayoutListClientProps = {
   canCreatePayout: boolean;
 };
 
-function isPassiveNextAction(nextAction: string) {
-  return ["Awaiting review", "Payment on the way", "Paid"].includes(nextAction);
+function isActionableNextAction(nextAction: string) {
+  return ["Complete setup", "Review work", "Review & pay", "Submit work"].includes(nextAction);
 }
 
 export function PayoutListClient({
@@ -167,8 +167,8 @@ export function PayoutListClient({
         <div className="overflow-hidden rounded-2xl border border-[var(--border-soft)] bg-[var(--surface)] divide-y divide-[var(--border-soft)]">
           {paginatedPayouts.map((payout) => {
             const contributor = payout.contributor;
-            const passiveNextAction = isPassiveNextAction(payout.nextAction);
-            const actionLabel = passiveNextAction ? "View payout" : payout.nextAction;
+            const actionableNextAction = isActionableNextAction(payout.nextAction);
+            const actionLabel = actionableNextAction ? payout.nextAction : "View payout";
             const statusLabel =
               payout.status === "completed"
                 ? "Paid"
@@ -204,11 +204,11 @@ export function PayoutListClient({
                     </div>
                     <p className="text-xs text-[var(--text-muted)]">
                       <strong className="text-[var(--foreground)] font-medium">
-                        {contributor.displayName}
+                        {payout.membershipRole === "contributor" ? "Assigned to you" : contributor.displayName}
                       </strong>
                     </p>
                     <p className="text-xs text-[var(--text-muted)]">
-                      Next: <span className="font-medium text-[var(--text-primary)]">{payout.nextAction}</span>
+                      {actionableNextAction ? "Next action" : "Status"}: <span className="font-medium text-[var(--text-primary)]">{payout.nextAction}</span>
                     </p>
                   </div>
 
@@ -221,7 +221,7 @@ export function PayoutListClient({
                         {formatUsdc(Number(payout.totalAmount))} USDC
                       </p>
                     </div>
-                    <Button href={`/payouts/${payout.id}?workspaceId=${encodeURIComponent(payout.workspaceId)}`} variant={passiveNextAction ? "ghost" : "secondary"} size="sm" className="w-full justify-center whitespace-nowrap sm:w-52">
+                    <Button href={`/payouts/${payout.id}?workspaceId=${encodeURIComponent(payout.workspaceId)}`} variant={actionableNextAction ? "secondary" : "ghost"} size="sm" className="w-full justify-center whitespace-nowrap sm:w-52">
                       {actionLabel} <ArrowRight size={14} className="ml-1" />
                     </Button>
                   </div>
