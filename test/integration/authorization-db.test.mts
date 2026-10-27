@@ -7,6 +7,7 @@ import { GET as getPayouts } from "@/app/api/payouts/route";
 import { GET as getPayoutDetail, PATCH as updatePayout } from "@/app/api/v1/payouts/[id]/route";
 import { POST as createPayout } from "@/app/api/v1/payouts/route";
 import { POST as createContributor } from "@/app/api/contributors/route";
+import { POST as createContributorV1 } from "@/app/api/v1/contributors/route";
 import { PATCH as updateContributor } from "@/app/api/v1/contributors/[id]/route";
 import { POST as approveMilestone } from "@/app/api/v1/milestones/[id]/approve/route";
 
@@ -35,6 +36,12 @@ test("validation routes keep machine codes and return actionable form guidance",
     }));
     assert.equal(anonymousContributor.status, 401);
     assert.equal((await anonymousContributor.json()).code, "AUTH_REQUIRED");
+
+    const anonymousContributorV1 = await createContributorV1(new Request("https://settleflow.local/api/v1/contributors", {
+      method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ name: "Anonymous" }),
+    }));
+    assert.equal(anonymousContributorV1.status, 401);
+    assert.equal((await anonymousContributorV1.json()).code, "AUTH_REQUIRED");
 
     const invalidPayout = await createPayout(new Request(`https://settleflow.local/api/v1/payouts?workspaceId=${workspace.id}`, {
       method: "POST", headers, body: JSON.stringify({ title: "", contributorId: "", totalAmountUsdc: "0", milestones: [] }),
