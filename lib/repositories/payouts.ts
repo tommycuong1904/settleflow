@@ -293,6 +293,11 @@ export type PayoutDetailData = {
       notes?: string | null;
       submittedAt: string;
     };
+    latestReview?: {
+      decision: "approved" | "rejected";
+      comment?: string | null;
+      reviewedAt: string;
+    };
   }[];
   releaseProof?: {
     id: string;
@@ -388,6 +393,15 @@ export async function getPayoutDetail(
               submittedAt: true,
             },
           },
+          reviews: {
+            orderBy: { reviewedAt: "desc" },
+            take: 1,
+            select: {
+              decision: true,
+              comment: true,
+              reviewedAt: true,
+            },
+          },
         },
       },
       transactionProofs: {
@@ -453,6 +467,7 @@ export async function getPayoutDetail(
       : undefined,
     milestones: payout.milestones.map((m) => {
       const latest = m.submissions?.[0];
+      const latestReview = m.reviews?.[0];
       return {
         id: m.id,
         payoutId: m.payoutId,
@@ -472,6 +487,13 @@ export async function getPayoutDetail(
               artifactLabel: latest.artifactLabel,
               notes: latest.notes,
               submittedAt: latest.submittedAt.toISOString(),
+            }
+          : undefined,
+        latestReview: latestReview
+          ? {
+              decision: latestReview.decision,
+              comment: latestReview.comment,
+              reviewedAt: latestReview.reviewedAt.toISOString(),
             }
           : undefined,
       };

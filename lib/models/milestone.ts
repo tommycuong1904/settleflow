@@ -13,6 +13,13 @@ export type MilestoneSubmissionSummary = {
   notes?: string | null;
   submittedAt: string;
 };
+
+export type MilestoneReviewSummary = {
+  decision: "approved" | "rejected";
+  comment?: string | null;
+  reviewedAt: string;
+};
+
 export type Milestone = {
   id: string;
   payoutId: string;
@@ -25,4 +32,5 @@ export type Milestone = {
   rejectedAt?: string;
   releasedAt?: string;
   latestSubmission?: MilestoneSubmissionSummary;
+  latestReview?: MilestoneReviewSummary;
 };

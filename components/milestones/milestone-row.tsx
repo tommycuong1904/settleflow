@@ -368,6 +368,12 @@ export function MilestoneRow({
                     ? "Review the requested changes, then resubmit your work for approval."
                     : "The contributor needs to resubmit this milestone before owner approval can continue."}
                 </p>
+                {milestone.latestReview?.decision === "rejected" && milestone.latestReview.comment ? (
+                  <div className="mt-3 rounded-xl border border-amber-500/20 bg-amber-500/10 p-3 text-sm text-amber-950 dark:text-amber-100">
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-amber-800 dark:text-amber-300">Owner feedback</p>
+                    <p className="mt-1 whitespace-pre-line leading-relaxed">{milestone.latestReview.comment}</p>
+                  </div>
+                ) : null}
               </div>
               {isContributorActor && !isPrimarySubmitAction ? (
                 <Button onClick={() => setIsSubmitModalOpen(true)} size="sm" className="w-full justify-center sm:w-auto">
