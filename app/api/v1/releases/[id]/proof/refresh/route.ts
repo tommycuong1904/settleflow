@@ -3,13 +3,17 @@ import { apiError, apiErrorFromCode } from "@/lib/api/errors";
 import { hasOwnerWorkspaceContext, isValidProofRefreshStatus } from "@/lib/api/release-payload";
 import { refreshReleaseProof, type RefreshProofInput } from "@/lib/repositories/release-proof";
 import { assertCanRefreshProof } from "@/lib/runtime/product-policy";
-import { resolveProductContextFromRequestWithSession } from "@/lib/auth/session-server";
+import { getSessionFromRequest, resolveProductContextFromRequestWithSession } from "@/lib/auth/session-server";
 
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
+
+  if (!(await getSessionFromRequest(request))) {
+    return apiError("AUTH_REQUIRED", { message: "Sign in is required.", status: 401 });
+  }
 
   let body: Partial<RefreshProofInput> | null;
   try {

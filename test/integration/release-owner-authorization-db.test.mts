@@ -6,8 +6,31 @@ import { GET as getRelease } from "@/app/api/v1/releases/[id]/route";
 import { POST as refreshProof } from "@/app/api/v1/releases/[id]/proof/refresh/route";
 import { POST as retry } from "@/app/api/v1/releases/[id]/retry/route";
 import { POST as browserCandidates } from "@/app/api/v1/releases/[id]/browser-candidates/route";
+import { POST as claimRelease } from "@/app/api/v1/releases/[id]/claim/route";
+import { POST as markUnsubmitted } from "@/app/api/v1/releases/[id]/mark-unsubmitted/route";
 import { createSessionToken } from "@/lib/auth/session";
 import { db } from "@/lib/db/client";
+
+test("release mutation endpoints reject requests without a session", async () => {
+  const params = (id: string) => ({ params: Promise.resolve({ id }) });
+  const request = (url: string, body?: object) => new Request(`https://settleflow.local${url}`, {
+    method: "POST",
+    headers: body ? { "content-type": "application/json" } : undefined,
+    body: body ? JSON.stringify(body) : undefined,
+  });
+
+  for (const response of await Promise.all([
+    release(request("/api/v1/milestones/missing/release", { amountUsdc: "1", executionMode: "browser_wallet" }), params("missing")),
+    retry(request("/api/v1/releases/missing/retry"), params("missing")),
+    refreshProof(request("/api/v1/releases/missing/proof/refresh", { status: "failed", failureReason: "test" }), params("missing")),
+    claimRelease(request("/api/v1/releases/missing/claim"), params("missing")),
+    markUnsubmitted(request("/api/v1/releases/missing/mark-unsubmitted"), params("missing")),
+    browserCandidates(request("/api/v1/releases/missing/browser-candidates"), params("missing")),
+  ])) {
+    assert.equal(response.status, 401);
+    assert.equal((await response.json()).code, "AUTH_REQUIRED");
+  }
+});
 
 test("a contributor cannot queue, refresh, or retry a workspace release", async () => {
   const suffix = `${Date.now()}-${Math.random().toString(36).slice(2)}`;

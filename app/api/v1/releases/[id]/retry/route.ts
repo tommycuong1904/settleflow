@@ -6,13 +6,16 @@ import { claimReleaseExecution, markReleaseReconciliationPending, recordReleaseS
 import { sendUsdcOnArc } from "@/lib/arc/send";
 import { ARC_CONFIG } from "@/lib/arc/config";
 import { assertCanRetryRelease } from "@/lib/runtime/product-policy";
-import { resolveProductContextFromRequestWithSession } from "@/lib/auth/session-server";
+import { getSessionFromRequest, resolveProductContextFromRequestWithSession } from "@/lib/auth/session-server";
 
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
+  if (!(await getSessionFromRequest(request))) {
+    return apiError("AUTH_REQUIRED", { message: "Sign in is required.", status: 401 });
+  }
   const productContext = await resolveProductContextFromRequestWithSession(request);
   const ownerUserId = productContext.ownerUserId;
 

@@ -100,6 +100,9 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
+  if (!(await getSessionFromRequest(request))) {
+    return apiError("AUTH_REQUIRED", { message: "Sign in is required.", status: 401 });
+  }
   try {
     const productContext = await resolveProductContextFromRequestWithSession(request);
     const body = await request.json();

@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server";
+import { apiError } from "@/lib/api/errors";
 import { claimReleaseExecution } from "@/lib/repositories/release-proof";
-import { resolveProductContextFromRequestWithSession } from "@/lib/auth/session-server";
+import { getSessionFromRequest, resolveProductContextFromRequestWithSession } from "@/lib/auth/session-server";
 import { assertCanReleaseMilestone } from "@/lib/runtime/product-policy";
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  if (!(await getSessionFromRequest(request))) {
+    return apiError("AUTH_REQUIRED", { message: "Sign in is required.", status: 401 });
+  }
   const context = await resolveProductContextFromRequestWithSession(request);
   const violation = assertCanReleaseMilestone({ productContext: context, actorUserId: context.activeUserId });
   if (violation) return NextResponse.json({ error: violation.message }, { status: violation.status });
