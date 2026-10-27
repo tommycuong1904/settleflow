@@ -32,6 +32,30 @@ test("release mutation endpoints reject requests without a session", async () =>
   }
 });
 
+test("retry and proof refresh reject a signed session without a workspace membership", async () => {
+  const token = await createSessionToken({
+    userId: "missing-release-member",
+    email: "missing-release-member@example.test",
+    name: "Missing Release Member",
+    address: null,
+    authType: "web2_google",
+  });
+  const headers = { cookie: `sf_session=${token}`, "content-type": "application/json" };
+  const params = { params: Promise.resolve({ id: "missing" }) };
+
+  const retryResponse = await retry(new Request("https://settleflow.local/api/v1/releases/missing/retry", {
+    method: "POST", headers,
+  }), params);
+  assert.equal(retryResponse.status, 403);
+  assert.equal((await retryResponse.json()).code, "AUTH_CONTEXT_REQUIRED");
+
+  const proofResponse = await refreshProof(new Request("https://settleflow.local/api/v1/releases/missing/proof/refresh", {
+    method: "POST", headers, body: JSON.stringify({ status: "failed", failureReason: "test" }),
+  }), params);
+  assert.equal(proofResponse.status, 403);
+  assert.equal((await proofResponse.json()).code, "AUTH_CONTEXT_REQUIRED");
+});
+
 test("a contributor cannot queue, refresh, or retry a workspace release", async () => {
   const suffix = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const owner = await db.user.create({ data: { displayName: "Release Owner", email: `release-owner-${suffix}@example.test` } });

@@ -16,22 +16,22 @@ export async function POST(
   if (!(await getSessionFromRequest(request))) {
     return apiError("AUTH_REQUIRED", { message: "Sign in is required.", status: 401 });
   }
-  const productContext = await resolveProductContextFromRequestWithSession(request);
-  const ownerUserId = productContext.ownerUserId;
-
-  if (!hasOwnerWorkspaceContext({ workspaceId: productContext.workspaceId, ownerUserId })) {
-    return apiError("INVALID_RELEASE_RETRY_PAYLOAD", {
-      message: "owner and workspace context are required.",
-      status: 400,
-    });
-  }
-
-  const policyViolation = assertCanRetryRelease({ productContext, actorUserId: ownerUserId });
-  if (policyViolation) {
-    return apiError(policyViolation.code, { message: policyViolation.message, status: policyViolation.status });
-  }
-
   try {
+    const productContext = await resolveProductContextFromRequestWithSession(request);
+    const ownerUserId = productContext.ownerUserId;
+
+    if (!hasOwnerWorkspaceContext({ workspaceId: productContext.workspaceId, ownerUserId })) {
+      return apiError("INVALID_RELEASE_RETRY_PAYLOAD", {
+        message: "owner and workspace context are required.",
+        status: 400,
+      });
+    }
+
+    const policyViolation = assertCanRetryRelease({ productContext, actorUserId: ownerUserId });
+    if (policyViolation) {
+      return apiError(policyViolation.code, { message: policyViolation.message, status: policyViolation.status });
+    }
+
     const result = await retryFailedRelease(id, ownerUserId, productContext.workspaceId);
     if (result.release.executionMode === "circle_wallet") {
       await claimReleaseExecution(result.release.id, productContext.workspaceId);

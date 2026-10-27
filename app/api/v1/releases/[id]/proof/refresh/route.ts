@@ -26,22 +26,22 @@ export async function POST(
     return apiError("INVALID_PROOF_STATUS", { message: "status must be confirmed or failed.", status: 400 });
   }
 
-  const productContext = await resolveProductContextFromRequestWithSession(request);
-  const ownerUserId = productContext.ownerUserId;
-
-  if (!hasOwnerWorkspaceContext({ workspaceId: productContext.workspaceId, ownerUserId })) {
-    return apiError("INVALID_PROOF_REFRESH_PAYLOAD", {
-      message: "owner and workspace context are required.",
-      status: 400,
-    });
-  }
-
-  const policyViolation = assertCanRefreshProof({ productContext, actorUserId: ownerUserId });
-  if (policyViolation) {
-    return apiError(policyViolation.code, { message: policyViolation.message, status: policyViolation.status });
-  }
-
   try {
+    const productContext = await resolveProductContextFromRequestWithSession(request);
+    const ownerUserId = productContext.ownerUserId;
+
+    if (!hasOwnerWorkspaceContext({ workspaceId: productContext.workspaceId, ownerUserId })) {
+      return apiError("INVALID_PROOF_REFRESH_PAYLOAD", {
+        message: "owner and workspace context are required.",
+        status: 400,
+      });
+    }
+
+    const policyViolation = assertCanRefreshProof({ productContext, actorUserId: ownerUserId });
+    if (policyViolation) {
+      return apiError(policyViolation.code, { message: policyViolation.message, status: policyViolation.status });
+    }
+
     const result = await refreshReleaseProof(id, ownerUserId, productContext.workspaceId, body as RefreshProofInput);
     return NextResponse.json(result);
   } catch (error) {
