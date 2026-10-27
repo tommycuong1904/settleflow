@@ -30,6 +30,12 @@ test("validation routes keep machine codes and return actionable form guidance",
   const headers = { cookie: sessionCookie(token), "content-type": "application/json" };
 
   try {
+    const anonymousContributor = await createContributor(new Request("https://settleflow.local/api/contributors", {
+      method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ name: "Anonymous" }),
+    }));
+    assert.equal(anonymousContributor.status, 401);
+    assert.equal((await anonymousContributor.json()).code, "AUTH_REQUIRED");
+
     const invalidPayout = await createPayout(new Request(`https://settleflow.local/api/v1/payouts?workspaceId=${workspace.id}`, {
       method: "POST", headers, body: JSON.stringify({ title: "", contributorId: "", totalAmountUsdc: "0", milestones: [] }),
     }));
@@ -80,6 +86,15 @@ test("cross-workspace create and approve mutations are rejected without side eff
     assert.equal(createResponse.status, 403);
     assert.equal((await createResponse.json()).code, "AUTH_CONTEXT_REQUIRED");
     assert.equal(await db.payout.count({ where: { workspaceId: workspaceB.id } }), 1);
+
+    const legacyContributorCreate = await createContributor(new Request(`https://settleflow.local/api/contributors?workspaceId=${workspaceB.id}`, {
+      method: "POST",
+      headers: { cookie: sessionCookie(ownerToken), "content-type": "application/json" },
+      body: JSON.stringify({ name: "Cross workspace contributor" }),
+    }));
+    assert.equal(legacyContributorCreate.status, 403);
+    assert.equal((await legacyContributorCreate.json()).code, "AUTH_CONTEXT_REQUIRED");
+    assert.equal(await db.contributor.count({ where: { workspaceId: workspaceB.id } }), 1);
 
     const reviewerToken = await tokenFor(reviewerEmail, reviewer.id);
     const approveResponse = await approveMilestone(new Request(`https://settleflow.local/api/v1/milestones/${milestone.id}/approve?workspaceId=${workspaceB.id}`, {

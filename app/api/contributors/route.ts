@@ -38,9 +38,22 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  if (!(await getSessionFromRequest(request))) {
+    return apiError("AUTH_REQUIRED", { message: "Sign in is required.", status: 401 });
+  }
+
+  let productContext;
+  try {
+    productContext = await resolveProductContextFromRequestWithSession(request);
+  } catch (error) {
+    if (error instanceof Error && (error.message === "AUTH_CONTEXT_REQUIRED" || error.message === "AUTH_ROLE_AMBIGUOUS")) {
+      return apiError(error.message, { status: 403 });
+    }
+    return apiError("CONTRIBUTOR_CREATE_FAILED", { message: "We couldn't add this contributor. Please try again.", status: 500 });
+  }
+
   try {
     const body = await request.json();
-    const productContext = await resolveProductContextFromRequestWithSession(request);
 
     const permissionViolation = assertCanCreateContributor({
       productContext,
