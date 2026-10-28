@@ -1,10 +1,21 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { classifyFrontendAuthError } from "@/lib/runtime/auth-error-classification";
+import { classifyFrontendAuthError, getFrontendAuthErrorMessage } from "@/lib/runtime/auth-error-classification";
 
 test("classifies authentication-required errors separately", () => {
   assert.equal(classifyFrontendAuthError(new Error("AUTH_REQUIRED")), "auth-required");
+});
+
+test("turns authorization codes into Web2-facing next steps", () => {
+  assert.equal(getFrontendAuthErrorMessage(new Error("AUTH_CONTEXT_REQUIRED"), "Fallback"), "Your workspace access is not available. Choose a workspace you can access and try again.");
+  assert.equal(getFrontendAuthErrorMessage(new Error("AUTH_ROLE_AMBIGUOUS"), "Fallback"), "Your workspace access needs attention. Ask the workspace owner to review your role.");
+  assert.equal(getFrontendAuthErrorMessage(new Error("AUTH_REQUIRED"), "Fallback"), "Your session has ended. Sign in and try again.");
+});
+
+test("keeps non-auth errors and fallbacks intact", () => {
+  assert.equal(getFrontendAuthErrorMessage(new Error("Could not save"), "Fallback"), "Could not save");
+  assert.equal(getFrontendAuthErrorMessage(null, "Fallback"), "Fallback");
 });
 
 test("classifies missing workspace context as an auth-context error", () => {

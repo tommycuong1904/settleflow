@@ -20,6 +20,7 @@ import { useToast } from "@/lib/context/toast-context";
 import { createRequestTimeout } from "@/lib/client/request-timeout";
 import { useScrollLock } from "@/lib/hooks/use-scroll-lock";
 import { PRODUCT_CONTEXT_HEADER_NAMES } from "@/lib/runtime/product-context";
+import { getFrontendAuthErrorMessage } from "@/lib/runtime/auth-error-classification";
 import type { ContributorListItem } from "@/lib/repositories/contributors";
 
 type EditContributorDialogProps = {
@@ -112,7 +113,7 @@ export function EditContributorDialog({
         }
       }, 800);
     } catch (err) {
-      setError(err instanceof DOMException && err.name === "AbortError" ? "Saving changes timed out. Check your connection and try again." : err instanceof Error ? err.message : "We couldn't save these changes. Please try again.");
+      setError(err instanceof DOMException && err.name === "AbortError" ? "Saving changes timed out. Check your connection and try again." : getFrontendAuthErrorMessage(err, "We couldn't save these changes. Please try again."));
     } finally {
       requestTimeout.clear();
       setIsSubmitting(false);
@@ -159,7 +160,7 @@ export function EditContributorDialog({
         router.refresh();
       }
     } catch (err) {
-      setError(err instanceof DOMException && err.name === "AbortError" ? "Updating contributor status timed out. Check your connection and try again." : err instanceof Error ? err.message : "We couldn't update contributor status. Please try again.");
+      setError(err instanceof DOMException && err.name === "AbortError" ? "Updating contributor status timed out. Check your connection and try again." : getFrontendAuthErrorMessage(err, "We couldn't update contributor status. Please try again."));
     } finally {
       requestTimeout.clear();
       setIsUpdatingStatus(false);

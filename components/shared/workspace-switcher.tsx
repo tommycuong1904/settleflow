@@ -2,6 +2,7 @@
 
 import { Check, ChevronDown, LoaderCircle, Pencil, RotateCcw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { getFrontendAuthErrorMessage } from "@/lib/runtime/auth-error-classification";
 
 type WorkspaceMembership = {
   id: string;
@@ -81,7 +82,7 @@ export function WorkspaceSwitcher({
       // component reads the new cookie instead of retaining the prior RSC tree.
       window.location.assign("/dashboard");
     } catch (switchError) {
-      setError(switchError instanceof Error ? switchError.message : "Unable to switch workspace.");
+      setError(getFrontendAuthErrorMessage(switchError, "Unable to switch workspace."));
     } finally {
       setIsSwitching(false);
     }
@@ -110,7 +111,7 @@ export function WorkspaceSwitcher({
         : item));
       setEditingWorkspaceId(null);
     } catch (labelError) {
-      setError(labelError instanceof Error ? labelError.message : "Unable to save workspace label.");
+      setError(getFrontendAuthErrorMessage(labelError, "Unable to save workspace label."));
     } finally {
       setIsSavingLabel(false);
     }

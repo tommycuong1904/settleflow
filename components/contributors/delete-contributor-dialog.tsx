@@ -8,6 +8,7 @@ import { useToast } from "@/lib/context/toast-context";
 import { useScrollLock } from "@/lib/hooks/use-scroll-lock";
 import type { ContributorListItem } from "@/lib/repositories/contributors";
 import { PRODUCT_CONTEXT_HEADER_NAMES } from "@/lib/runtime/product-context";
+import { getFrontendAuthErrorMessage } from "@/lib/runtime/auth-error-classification";
 
 type DeleteContributorDialogProps = {
   isOpen: boolean;
@@ -63,7 +64,7 @@ export function DeleteContributorDialog({
         router.refresh();
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An unexpected error occurred.");
+      setError(getFrontendAuthErrorMessage(err, "We couldn't delete this contributor. Please try again."));
     } finally {
       setIsSubmitting(false);
     }

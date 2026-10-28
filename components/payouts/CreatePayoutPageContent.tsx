@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useResolvedProductContext } from "@/lib/runtime/product-context-client";
+import { getFrontendAuthErrorMessage } from "@/lib/runtime/auth-error-classification";
 import { useWallet } from "@/lib/context/wallet-context";
 import { createRequestTimeout } from "@/lib/client/request-timeout";
 import { formatUsdc } from "@/lib/utils/format";
@@ -323,9 +324,7 @@ function CreatePayoutPageContent() {
         submit:
           error instanceof DOMException && error.name === "AbortError"
             ? "Creating the payout timed out. Please try again."
-            : error instanceof Error
-            ? error.message
-            : "Unable to create payout.",
+            : getFrontendAuthErrorMessage(error, "Unable to create payout."),
       });
       setSubmitState("idle");
     } finally {

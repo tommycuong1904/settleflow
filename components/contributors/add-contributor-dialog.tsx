@@ -18,6 +18,7 @@ import { useToast } from "@/lib/context/toast-context";
 import { createRequestTimeout } from "@/lib/client/request-timeout";
 import { useScrollLock } from "@/lib/hooks/use-scroll-lock";
 import { PRODUCT_CONTEXT_HEADER_NAMES } from "@/lib/runtime/product-context";
+import { getFrontendAuthErrorMessage } from "@/lib/runtime/auth-error-classification";
 
 type AddContributorDialogProps = {
   isOpen: boolean;
@@ -111,9 +112,7 @@ export function AddContributorDialog({
       setError(
         err instanceof DOMException && err.name === "AbortError"
           ? "Adding this contributor timed out. Check your connection and try again."
-          : err instanceof Error
-          ? err.message
-          : "We couldn't add this contributor. Please try again.",
+          : getFrontendAuthErrorMessage(err, "We couldn't add this contributor. Please try again."),
       );
     } finally {
       requestTimeout.clear();

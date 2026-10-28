@@ -41,7 +41,7 @@ export default function AppError({ error, reset }: { error: Error & { digest?: s
           </h1>
           <p className="mt-3 text-sm text-[var(--text-muted)]">
             {isRoleAmbiguous
-              ? "Your account has conflicting workspace roles. Contact an administrator to resolve access."
+              ? "Your account has conflicting workspace roles. Ask the workspace owner to resolve access."
               : "Your sign-in is valid, but no authorized workspace context is available for this page."}
           </p>
           <div className="mt-6 flex justify-center"><Button variant="secondary" onClick={() => reset()} icon={<RefreshCw size={14} />}>Try again</Button></div>
