@@ -23,14 +23,14 @@ export function ServerAuthContextState({ kind }: ServerAuthContextStateProps) {
 
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-wider text-neutral-500 font-mono">
-            {forbidden ? "ACCESS DENIED" : roleConflict ? "ROLE CONFLICT" : "WORKSPACE INVITATION REQUIRED"}
+            {forbidden ? "ACCESS DENIED" : roleConflict ? "ROLE CONFLICT" : "WORKSPACE ACCESS UNAVAILABLE"}
           </p>
           <h1 className="text-xl font-bold text-black tracking-tight mt-1">
             {forbidden
               ? "You do not have access to this payout"
               : roleConflict
               ? "Your workspace role needs attention"
-              : "No active workspace membership"}
+              : "You don’t have an active workspace"}
           </h1>
         </div>
 
@@ -39,7 +39,7 @@ export function ServerAuthContextState({ kind }: ServerAuthContextStateProps) {
             ? "Your account is authenticated, but this payout is not available for your current role."
             : roleConflict
             ? "Your account has conflicting roles for this workspace. No workspace data was loaded."
-            : "Your account is signed in, but it is not currently connected to a usable workspace. Please ask the workspace owner for an invitation link to get started."}
+            : "Your invitation may have expired or your workspace access may have changed. Ask the workspace owner for a new invitation link, or use the account menu to sign in with another account."}
         </p>
       </div>
     </div>
