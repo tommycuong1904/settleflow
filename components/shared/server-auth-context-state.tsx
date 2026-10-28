@@ -39,7 +39,7 @@ export function ServerAuthContextState({ kind }: ServerAuthContextStateProps) {
             ? "Your account is authenticated, but this payout is not available for your current role."
             : roleConflict
             ? "Your account has conflicting roles for this workspace. No workspace data was loaded."
-            : "Your account is signed in, but it is not currently connected to a usable workspace. Please ask your workspace administrator for an invitation link to get started."}
+            : "Your account is signed in, but it is not currently connected to a usable workspace. Please ask the workspace owner for an invitation link to get started."}
         </p>
       </div>
     </div>

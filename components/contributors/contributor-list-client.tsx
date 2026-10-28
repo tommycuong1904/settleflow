@@ -13,6 +13,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { Button } from "@/components/shared/button";
 import { useToast } from "@/lib/context/toast-context";
 import { createRequestTimeout } from "@/lib/client/request-timeout";
+import { getFrontendAuthErrorMessage } from "@/lib/runtime/auth-error-classification";
 import {
   Search,
   UserPlus,
@@ -120,7 +121,7 @@ export function ContributorListClient({
         title: "Couldn’t create invite link",
         description: err instanceof DOMException && err.name === "AbortError"
           ? "Creating the invite link timed out. Check your connection and try again."
-          : err instanceof Error ? err.message : "Could not generate link.",
+          : getFrontendAuthErrorMessage(err, "Could not generate link."),
       });
     } finally {
       requestTimeout.clear();
