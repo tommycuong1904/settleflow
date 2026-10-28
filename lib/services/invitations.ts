@@ -68,6 +68,22 @@ export async function getInvitationByToken(token: string) {
   };
 }
 
+export async function listPendingInvitations(workspaceId: string) {
+  return db.invitation.findMany({
+    where: { workspaceId, status: "pending", expiresAt: { gt: new Date() } },
+    orderBy: { createdAt: "desc" },
+    select: { id: true, role: true, email: true, expiresAt: true, createdAt: true },
+  });
+}
+
+export async function revokePendingInvitation(workspaceId: string, invitationId: string) {
+  const revoked = await db.invitation.updateMany({
+    where: { id: invitationId, workspaceId, status: "pending", expiresAt: { gt: new Date() } },
+    data: { status: "revoked" },
+  });
+  if (revoked.count !== 1) throw new Error("INVITATION_NOT_FOUND_OR_INACTIVE");
+}
+
 export type AcceptInvitationResult =
   | { success: true; workspaceId: string; workspaceName: string; role: WorkspaceMemberRole }
   | { success: false; error: string };
