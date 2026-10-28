@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { apiErrorFromCode } from "@/lib/api/errors";
 import { CIRCLE_ARC_TESTNET, CircleApiError, getCircleChallenge, getCircleTransaction } from "@/lib/circle/user-controlled";
 import { getSessionFromRequest, resolveProductContextFromRequestWithSession } from "@/lib/auth/session-server";
 import { db } from "@/lib/db/client";
@@ -68,7 +69,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const session = await getSessionFromRequest(request);
   if (!session) return NextResponse.json({ error: "AUTH_REQUIRED" }, { status: 401 });
   if (session.authType !== "web2_google") return NextResponse.json({ error: "CIRCLE_WALLET_REQUIRES_GOOGLE_SESSION" }, { status: 403 });
-  const context = await resolveProductContextFromRequestWithSession(request);
+  let context;
+  try {
+    context = await resolveProductContextFromRequestWithSession(request);
+  } catch (error) {
+    const code = error instanceof Error ? error.message : "UNABLE_TO_RESOLVE_RELEASE_CONTEXT";
+    return apiErrorFromCode(code, {}, {}, { message: "Unable to resolve payment context.", status: 500 });
+  }
   const violation = assertCanReleaseMilestone({ productContext: context, actorUserId: context.activeUserId });
   if (violation) return NextResponse.json({ error: violation.message }, { status: violation.status });
   if (session.userId !== context.ownerUserId) return NextResponse.json({ error: "CIRCLE_WALLET_OWNER_MISMATCH" }, { status: 403 });
