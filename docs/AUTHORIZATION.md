@@ -95,6 +95,7 @@ The centralized policy functions currently enforce:
 - `reviewer`: retained for historical memberships only; review decisions are disabled in the active Owner/Contributor MVP.
 - `contributor`: submit milestones and view only payouts matched to the active user through the linked contributor user, recipient wallet, or contributor email.
 - Contributor management requires the `owner` actor.
+- Workspace-member management requires the `owner` actor. Owners can list members and remove only `contributor` memberships. Owner, `ops`, and `reviewer` memberships cannot be changed or removed through the product UI; role changes are intentionally out of scope for the active MVP.
 
 These are the permissions explicitly represented by `lib/runtime/product-policy.ts`. This document does not infer additional permissions from role names.
 

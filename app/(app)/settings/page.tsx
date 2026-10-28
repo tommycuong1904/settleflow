@@ -12,6 +12,7 @@ import { addArcNetworkToWallet } from "@/lib/arc/onchain";
 import { useToast } from "@/lib/context/toast-context";
 import { BrowserPushToggle } from "@/components/notifications/browser-push-toggle";
 import { CirclePaymentAccount } from "@/components/settings/circle-payment-account";
+import { WorkspaceMembers } from "@/components/settings/workspace-members";
 import { getCirclePaymentSession } from "@/lib/circle/user-controlled-client";
 import {
   Shield,
@@ -326,6 +327,8 @@ export default function SettingsPage() {
             )}
           </div>
         </details>}
+
+        {isOwner ? <WorkspaceMembers workspaceId={productContext.workspaceId} /> : null}
 
         {/* Active session */}
         <div className="rounded-xl border border-[var(--border-soft)] p-6 sm:p-8 space-y-6">

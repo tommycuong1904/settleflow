@@ -170,6 +170,7 @@ This repository is now a full-stack Next.js application for SettleFlow, an Arc-n
 - Session-aware handlers resolve the authenticated user and workspace membership into product context.
 - Protected session resolution is membership-authoritative. First-sign-in bootstrap is limited to creating a new user-owned workspace for an account with no memberships; multi-workspace sessions require an authorized `workspaceId` selector. A user has one persisted role per workspace; owner-only settings and invitation actions are enforced by policy.
 - The app sidebar exposes a Workspace Switcher. It lists only persisted memberships and persists a selected workspace only after the server verifies that membership; navigation capabilities update for the selected workspace role. Any member may set a personal label for a workspace without changing the Owner-managed workspace name seen by other members.
+- Owners can view workspace members in Settings and remove a Contributor's access. Role changes and removal of Owner, `ops`, or `reviewer` memberships are intentionally not available in the active MVP.
 - Actor identity for core workflow mutations is derived from request/session context rather than trusted client body actor IDs.
 
 ### Unknown

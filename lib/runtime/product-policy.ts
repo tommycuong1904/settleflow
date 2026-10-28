@@ -63,6 +63,13 @@ export function assertCanManageContributor({
   );
 }
 
+export function assertCanManageWorkspaceMembers({ productContext, actorUserId }: PolicyInput) {
+  return (
+    assertActor(productContext, "owner", "FORBIDDEN_WORKSPACE_MEMBER_MANAGE_ACTOR", "Only owners can manage workspace members.") ??
+    assertActorUserAlignment(productContext, actorUserId, "FORBIDDEN_WORKSPACE_MEMBER_MANAGE_CONTEXT", "Member management context does not match the active owner.")
+  );
+}
+
 export function assertCanActivatePayout({ productContext, actorUserId }: PolicyInput) {
   return (
     assertActor(productContext, "owner", "FORBIDDEN_PAYOUT_ACTIVATE_ACTOR", "Only owners can activate payouts in this flow.") ??

@@ -7,6 +7,7 @@ import {
   assertCanApproveMilestone,
   assertCanCreatePayout,
   assertCanReleaseMilestone,
+  assertCanManageWorkspaceMembers,
   assertCanSubmitMilestone,
 } from "./product-policy";
 
@@ -77,6 +78,18 @@ test("contributor policy passes when actor and active user align", () => {
   });
 
   assert.equal(violation, null);
+});
+
+test("only an aligned owner can manage workspace members", () => {
+  assert.equal(assertCanManageWorkspaceMembers({ productContext: contextFor("owner"), actorUserId: "user-1" }), null);
+  assert.equal(
+    assertCanManageWorkspaceMembers({ productContext: contextFor("contributor"), actorUserId: "user-1" })?.code,
+    "FORBIDDEN_WORKSPACE_MEMBER_MANAGE_ACTOR",
+  );
+  assert.equal(
+    assertCanManageWorkspaceMembers({ productContext: contextFor("owner"), actorUserId: "other-user" })?.code,
+    "FORBIDDEN_WORKSPACE_MEMBER_MANAGE_CONTEXT",
+  );
 });
 
 test("each membership role retains its current policy boundary", () => {

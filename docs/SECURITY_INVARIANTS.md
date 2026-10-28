@@ -163,6 +163,24 @@ Repositories receive workspace IDs and compare resource ownership, returning no 
 ### Status
 Implemented
 
+## Workspace member management
+
+### Invariant
+
+Only an Owner in the active workspace can list its members or remove a membership, and the product can remove only a Contributor membership.
+
+### Why it matters
+
+It prevents a contributor from enumerating teammates or changing access, and preserves Owner authority while role transfer is not yet a supported workflow.
+
+### Enforcement
+
+The workspace-members routes require a verified session, an active workspace match, and `assertCanManageWorkspaceMembers`. The repository rejects removal of any non-contributor role.
+
+### Status
+
+Implemented and DB integration-tested for owner access, contributor denial, cross-workspace denial, and non-contributor removal denial.
+
 ## Contributor resource isolation
 
 ### Invariant
