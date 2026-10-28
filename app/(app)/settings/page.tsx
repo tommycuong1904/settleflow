@@ -329,7 +329,7 @@ export default function SettingsPage() {
           </div>
         </details>}
 
-        {isOwner ? <WorkspaceMembers workspaceId={productContext.workspaceId} /> : null}
+        {isOwner ? <WorkspaceMembers key={productContext.workspaceId} workspaceId={productContext.workspaceId} /> : null}
         {isOwner ? <PendingInvitations /> : null}
 
         {/* Active session */}

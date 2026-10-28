@@ -24,8 +24,6 @@ export function WorkspaceMembers({ workspaceId }: { workspaceId: string }) {
 
   useEffect(() => {
     let active = true;
-    setIsLoading(true);
-    setError(null);
     void fetch(`/api/v1/workspaces/${workspaceId}/members`, { cache: "no-store" })
       .then(async (response) => {
         const payload = await response.json().catch(() => ({})) as { data?: WorkspaceMember[]; error?: string };
