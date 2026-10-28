@@ -10,6 +10,13 @@ import { GET as getSettings } from "@/app/api/v1/settings/route";
 import { GET as getDashboard } from "@/app/api/dashboard/route";
 import { PUT as updateSettings } from "@/app/api/v1/settings/route";
 import { POST as createPayout } from "@/app/api/v1/payouts/route";
+import { PATCH as updatePayout } from "@/app/api/v1/payouts/[id]/route";
+import { POST as activatePayout } from "@/app/api/v1/payouts/[id]/activate/route";
+import { PATCH as updateContributor, DELETE as deleteContributor } from "@/app/api/v1/contributors/[id]/route";
+import { POST as submitMilestone } from "@/app/api/v1/milestones/[id]/submit/route";
+import { POST as approveMilestone } from "@/app/api/v1/milestones/[id]/approve/route";
+import { POST as rejectMilestone } from "@/app/api/v1/milestones/[id]/reject/route";
+import { POST as completeSimulatedPayment } from "@/app/api/v1/milestones/[id]/simulated-payment/route";
 
 const cookie = (token: string) => ({ cookie: `sf_session=${token}` });
 
@@ -39,6 +46,27 @@ test("protected GET handlers reject missing sessions", async () => {
   await assertUnauthorized(getActivity, "/api/v1/payouts/p1/activity", { params: Promise.resolve({ id: "p1" }) });
   await assertUnauthorized(getSettings, "/api/v1/settings");
   await assertUnauthorized(getDashboard, "/api/v1/dashboard");
+});
+
+test("core payout, contributor, and milestone mutations reject missing sessions in the handler", async () => {
+  const payoutParams = { params: Promise.resolve({ id: "payout-1" }) };
+  const contributorParams = { params: Promise.resolve({ id: "contributor-1" }) };
+  const milestoneParams = { params: Promise.resolve({ id: "milestone-1" }) };
+  const post = (url: string, body = {}) => new Request(`https://settleflow.local${url}`, {
+    method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body),
+  });
+
+  await assertUnauthorized(createPayout, "/api/v1/payouts");
+  await assertUnauthorized(updatePayout, "/api/v1/payouts/payout-1", payoutParams);
+  await assertUnauthorized(activatePayout, "/api/v1/payouts/payout-1/activate", payoutParams);
+  await assertUnauthorized(updateContributor, "/api/v1/contributors/contributor-1", contributorParams);
+  await assertUnauthorized(deleteContributor, "/api/v1/contributors/contributor-1", contributorParams);
+
+  for (const handler of [submitMilestone, approveMilestone, rejectMilestone, completeSimulatedPayment]) {
+    const response = await handler(post("/api/v1/milestones/milestone-1/action"), milestoneParams);
+    assert.equal(response.status, 401);
+    assert.equal((await response.json()).code, "AUTH_REQUIRED");
+  }
 });
 
 test("GET /api/v1/payouts rejects an invalid session", async () => {

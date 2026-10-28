@@ -3,12 +3,15 @@ import { apiError, apiErrorFromCode } from "@/lib/api/errors";
 import { hasContributorSubmissionPayload } from "@/lib/api/milestone-payload";
 import { submitMilestone } from "@/lib/repositories/milestone-submission";
 import { assertCanSubmitMilestone } from "@/lib/runtime/product-policy";
-import { resolveProductContextFromRequestWithSession } from "@/lib/auth/session-server";
+import { getSessionFromRequest, resolveProductContextFromRequestWithSession } from "@/lib/auth/session-server";
 
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  if (!(await getSessionFromRequest(request))) {
+    return apiError("AUTH_REQUIRED", { message: "Sign in is required.", status: 401 });
+  }
   const { id } = await params;
   try {
     const productContext = await resolveProductContextFromRequestWithSession(request);

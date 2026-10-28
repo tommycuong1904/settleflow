@@ -61,6 +61,9 @@ export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  if (!(await getSessionFromRequest(request))) {
+    return apiError("AUTH_REQUIRED", { message: "Sign in is required.", status: 401 });
+  }
   const { id } = await params;
   try {
     const productContext = await resolveProductContextFromRequestWithSession(request);

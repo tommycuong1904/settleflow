@@ -10,9 +10,12 @@ import {
 } from "@/lib/api/payout-payload";
 import { createPayout } from "@/lib/repositories/payout-creation";
 import { assertCanCreatePayout } from "@/lib/runtime/product-policy";
-import { resolveProductContextFromRequestWithSession } from "@/lib/auth/session-server";
+import { getSessionFromRequest, resolveProductContextFromRequestWithSession } from "@/lib/auth/session-server";
 
 export async function POST(request: Request) {
+  if (!(await getSessionFromRequest(request))) {
+    return apiError("AUTH_REQUIRED", { message: "Sign in is required.", status: 401 });
+  }
   try {
     const productContext = await resolveProductContextFromRequestWithSession(request);
     const body = await request.json();

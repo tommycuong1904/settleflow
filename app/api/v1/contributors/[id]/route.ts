@@ -5,13 +5,16 @@ import {
   getContributorOwnership,
   updateContributor,
 } from "@/lib/repositories/contributors";
-import { resolveProductContextFromRequestWithSession } from "@/lib/auth/session-server";
+import { getSessionFromRequest, resolveProductContextFromRequestWithSession } from "@/lib/auth/session-server";
 import { assertCanManageContributor } from "@/lib/runtime/product-policy";
 
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  if (!(await getSessionFromRequest(request))) {
+    return apiError("AUTH_REQUIRED", { message: "Sign in is required.", status: 401 });
+  }
   const { id } = await params;
 
   try {
@@ -119,6 +122,9 @@ export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  if (!(await getSessionFromRequest(_request))) {
+    return apiError("AUTH_REQUIRED", { message: "Sign in is required.", status: 401 });
+  }
   const { id } = await params;
 
   try {
