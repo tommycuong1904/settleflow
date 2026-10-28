@@ -19,7 +19,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     const violation = assertCanManageWorkspaceMembers({ productContext, actorUserId: productContext.activeUserId });
     if (violation) return apiError(violation.code, { message: violation.message, status: violation.status });
 
-    await removeContributorMembership(workspaceId, userId);
+    await removeContributorMembership(workspaceId, userId, productContext.activeUserId);
     return NextResponse.json({ data: { userId } });
   } catch (error) {
     const code = error instanceof Error ? error.message : "WORKSPACE_MEMBER_REMOVE_FAILED";

@@ -47,12 +47,20 @@ test("workspace members are owner-only and only contributors can be removed", as
     const removed = await removeMember(request(`https://settleflow.local/api/v1/workspaces/${workspace.id}/members/${contributor.id}?workspaceId=${workspace.id}`, ownerToken, "DELETE"), removeParams);
     assert.equal(removed.status, 200);
     assert.equal(await db.workspaceMember.findUnique({ where: { workspaceId_userId: { workspaceId: workspace.id, userId: contributor.id } } }), null);
+    assert.deepEqual(
+      await db.activityLog.findFirst({
+        where: { workspaceId: workspace.id, entityType: "workspace_member", entityId: contributor.id, action: "workspace_member_removed" },
+        select: { actorUserId: true, metadataJson: true },
+      }),
+      { actorUserId: owner.id, metadataJson: { removedUserId: contributor.id, removedRole: "contributor" } },
+    );
 
     const ownerParams = { params: Promise.resolve({ id: workspace.id, userId: owner.id }) };
     const ownerRemoval = await removeMember(request(`https://settleflow.local/api/v1/workspaces/${workspace.id}/members/${owner.id}?workspaceId=${workspace.id}`, ownerToken, "DELETE"), ownerParams);
     assert.equal(ownerRemoval.status, 409);
     assert.equal((await ownerRemoval.json()).code, "WORKSPACE_MEMBER_REMOVAL_NOT_ALLOWED");
   } finally {
+    await db.activityLog.deleteMany({ where: { workspaceId: { in: [workspace.id, otherWorkspace.id] } } });
     await db.workspaceMember.deleteMany({ where: { workspaceId: { in: [workspace.id, otherWorkspace.id] } } });
     await db.workspace.deleteMany({ where: { id: { in: [workspace.id, otherWorkspace.id] } } });
     await db.user.deleteMany({ where: { id: { in: [owner.id, contributor.id, reviewer.id] } } });

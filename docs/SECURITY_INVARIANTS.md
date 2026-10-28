@@ -175,7 +175,7 @@ It prevents a contributor from enumerating teammates or changing access, and pre
 
 ### Enforcement
 
-The workspace-members routes require a verified session, an active workspace match, and `assertCanManageWorkspaceMembers`. The repository rejects removal of any non-contributor role.
+The workspace-members routes require a verified session, an active workspace match, and `assertCanManageWorkspaceMembers`. The repository rejects removal of any non-contributor role and records a workspace activity event in the same transaction as a successful removal.
 
 ### Status
 

@@ -1,4 +1,5 @@
 import { db } from "@/lib/db/client";
+import { recordActivity } from "@/lib/repositories/activity-log";
 
 export async function listWorkspaceMembers(workspaceId: string) {
   return db.workspaceMember.findMany({
@@ -13,7 +14,7 @@ export async function listWorkspaceMembers(workspaceId: string) {
   });
 }
 
-export async function removeContributorMembership(workspaceId: string, userId: string) {
+export async function removeContributorMembership(workspaceId: string, userId: string, actorUserId: string) {
   const membership = await db.workspaceMember.findUnique({
     where: { workspaceId_userId: { workspaceId, userId } },
     select: { userId: true, role: true },
@@ -22,7 +23,17 @@ export async function removeContributorMembership(workspaceId: string, userId: s
   if (!membership) throw new Error("WORKSPACE_MEMBER_NOT_FOUND");
   if (membership.role !== "contributor") throw new Error("WORKSPACE_MEMBER_REMOVAL_NOT_ALLOWED");
 
-  await db.workspaceMember.delete({
-    where: { workspaceId_userId: { workspaceId, userId } },
+  await db.$transaction(async (tx) => {
+    await tx.workspaceMember.delete({
+      where: { workspaceId_userId: { workspaceId, userId } },
+    });
+    await recordActivity(tx, {
+      workspaceId,
+      actorUserId,
+      entityType: "workspace_member",
+      entityId: userId,
+      action: "workspace_member_removed",
+      metadata: { removedUserId: userId, removedRole: "contributor" },
+    });
   });
 }
