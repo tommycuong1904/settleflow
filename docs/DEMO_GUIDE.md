@@ -1,192 +1,116 @@
 # SettleFlow — Demo Guide
 
-> **Thời gian chạy thử:** ~5 phút  
-> **URL dev:** `http://localhost:3000`
-> **Mạng:** Arc Testnet (Chain ID `5042002`, USDC native). Demo mặc định chạy ở mock mode; không gửi transaction thật.
+> **Mục tiêu:** trình bày payout workflow Web2-first trên Arc Testnet.
+> **Thời lượng:** 5–7 phút. **Deployment:** `https://settleflow-dev.vercel.app`.
 
----
+## Kịch bản trình bày
 
-## Tổng quan quy trình
-
-```
-Owner tạo Payout
-    └─→ Contributor nộp Deliverable (+ GitHub PR / Loom / Figma link)
-            └─→ Reviewer kiểm tra & Approve hoặc Reject
-                    └─→ Owner Release USDC on Arc Testnet
-                            └─→ Hệ thống gửi Discord Webhook + tạo Settlement Proof
+```text
+Owner (Google) tạo contributor và payout
+  → Contributor nhận link mời, đăng nhập Google, submit work
+  → Owner review, approve, và xác nhận thanh toán Circle
+  → Arc Testnet xác nhận USDC; SettleFlow hiển thị Paid và proof
 ```
 
----
+Owner và Contributor là hai role hoạt động trong MVP. Owner tạo payout, review,
+approve và thanh toán. Contributor chỉ thấy công việc được giao và submit/resubmit.
+Không dùng Role Switcher, Reviewer, dữ liệu mock, hay simulated payment trong buổi demo.
 
-## Vai trò trong demo
+## Chuẩn bị trước khi trình bày
 
-| Vai trò | Hành động chính | Cách chọn |
-|---|---|---|
-| **Owner** | Tạo payout, kích hoạt, release USDC | Role Switcher → `Owner` |
-| **Contributor** | Nộp bài kèm deliverable | Role Switcher → `Contributor` |
-| **Reviewer** | Duyệt Approve / Reject milestone | Role Switcher → `Reviewer` |
+1. Xác nhận deployment `main` và CI xanh.
+2. Chuẩn bị hai tài khoản Google riêng: **Owner** và **Contributor**.
+3. Với Owner, mở Settings và hoàn tất **Set up payment account** (Circle User-controlled).
+4. Nạp test USDC vào payment account của Owner trên Arc Testnet; dùng một khoản nhỏ,
+   ví dụ `0.1 USDC`.
+5. Kiểm tra môi trường deployment được cho phép thanh toán Arc Testnet. Nếu payment
+   bị chặn bởi authorization gate, dừng tại trạng thái Approved — không đổi cấu hình
+   ngay trước buổi demo.
+6. Dùng một cửa sổ bình thường cho Owner và cửa sổ Incognito/Browser Profile khác cho
+   Contributor để hai session không lẫn nhau.
 
-> **Lưu ý:** Role Switcher nằm ở góc phải trên cùng của màn hình (header). Bấm để chuyển nhanh giữa các vai trò.
+## Luồng demo
 
----
+### 1. Owner tạo contributor và link mời
 
-## Bước 0 — Kết nối Ví & Thiết lập Arc Testnet
+1. Đăng nhập Google bằng Owner.
+2. Mở **Contributors** → **Add Contributor**.
+3. Điền tên và email của Contributor. Ví nhận có thể để trống lúc này.
+4. Tạo contributor, mở menu invitation của người đó, rồi copy link mời.
 
-1. Mở `http://localhost:3000/` → Bấm **"Get Started"** hoặc **"Connect Wallet"**
-2. Trong modal **Auth**, chọn **tab Web3** → Bấm **"Add / Switch Arc Testnet in MetaMask"**
-3. MetaMask sẽ prompt thêm mạng → **Chấp nhận**
-4. Bấm **"Connect MetaMask / Rabby"** để đăng nhập (hoặc chọn tab **Web2** để dùng Google). Chi tiết OAuth xem `GOOGLE_OAUTH_SETUP.md`.
-5. Xác nhận Network Badge ở header hiển thị **"Arc Testnet"**
+Điểm cần nói: Contributor không cần browser wallet hay recovery phrase để vào workspace
+và làm việc.
 
-> **Lấy USDC Testnet:** Nếu số dư bằng 0, bấm badge USDC ở header → Bấm **"Request Testnet USDC from Faucet"**
+### 2. Contributor nhận workspace
 
----
+1. Mở link ở cửa sổ Contributor.
+2. Đăng nhập Google đúng email đã được mời.
+3. Xác nhận màn hình **Join [workspace]**, rồi chọn **Accept & Join**.
+4. Ứng dụng đi thẳng về dashboard Contributor, không đi qua Settings.
 
-## Bước 1 — Tạo Payout Agreement (vai trò: Owner)
+Điểm cần nói: link mời mới là quyền gia nhập workspace; Google sign-in chỉ xác minh
+tài khoản, không tự cấp quyền vào workspace khác.
 
-**URL:** `/payouts/new`
+### 3. Owner tạo payout
 
-1. Chuyển Role Switcher sang **Owner**
-2. Điền form:
-   - **Payout title:** `Q3 Frontend Bounty — SettleFlow UI`
-   - **Contributor:** Chọn contributor từ danh sách
-   - **Target wallet:** Paste địa chỉ ví nhận USDC (Arc Testnet)
-   - **Description:** Tùy ý
-3. Thêm milestones:
-   - Milestone 1: `Design System & Core Components` — `500 USDC`
-   - Milestone 2: `Payout Detail UI & Release Flow` — `750 USDC`
-   - Milestone 3: `Dashboard KPIs & Activity Feed` — `250 USDC`
-4. Bấm **"Create Payout"**
-5. Khi payout được tạo, bấm **"Activate Payout"** để chuyển từ draft → active
+1. Quay lại cửa sổ Owner → **New Payout**.
+2. Chọn Contributor vừa tạo.
+3. Tạo một milestone duy nhất, ví dụ:
+   - title: `Draft campaign concepts`
+   - amount: `0.1 USDC`
+   - description: `Create three visual directions for review.`
+4. Lưu draft rồi **Activate payout**.
 
----
+### 4. Contributor submit work
 
-## Bước 2 — Nộp Deliverable (vai trò: Contributor)
+1. Ở cửa sổ Contributor, mở payout được giao.
+2. Chọn **Submit work for review**.
+3. Thêm work summary và một proof URL.
+4. Submit; trạng thái trở thành **Awaiting review**.
 
-**URL:** `/payouts/[id]` → mở payout vừa tạo
+Điểm cần nói: Contributor không thấy nút tạo payout, approve hoặc pay.
 
-1. Chuyển Role Switcher sang **Contributor**
-2. Trong milestone đầu tiên, bấm **"Submit milestone"**
-3. Modal **Deliverable Submission** mở ra:
-   - **Work Summary:** `Implemented complete design system with 12 base components, dark mode tokens, and responsive layout system.`
-   - **Proof / Artifact URL:** `https://github.com/org/settleflow-ui/pull/42`
-   - **Artifact Type:** Chọn `GitHub Pull Request`
-   - **Notes for Reviewer:** `Test on Chrome & Safari. Figma tokens link in PR description.`
-4. Bấm **"Submit for Review"**
-5. Trạng thái milestone chuyển sang `submitted` — hệ thống tự động gửi Discord notification (nếu đã cấu hình webhook)
+### 5. Owner review và approve
 
----
+1. Owner mở dashboard hoặc payout detail.
+2. Chọn **Review work**, kiểm tra summary/proof.
+3. Chọn **Approve work**.
 
-## Bước 3 — Review & Approve (vai trò: Reviewer)
+Điểm cần nói: approval và payment là hai bước riêng, có audit trail rõ ràng.
 
-**URL:** `/payouts/[id]` — cùng payout
+### 6. Thanh toán Arc Testnet
 
-1. Chuyển Role Switcher sang **Reviewer**
-2. Trong milestone vừa được nộp, xem phần **"Review needed"**
-3. Bấm **"View Submitted Artifact"** để kiểm tra GitHub PR
-4. Chọn một trong hai hành động:
+1. Trước payment, thêm ví nhận hợp lệ cho Contributor nếu chưa có.
+2. Owner chọn **Pay 0.1 USDC**.
+3. Màn hình review phải thể hiện amount, milestone, tên Contributor và địa chỉ ví nhận.
+4. Chọn **Confirm** và hoàn tất Circle confirmation khi được yêu cầu.
+5. Chờ SettleFlow cập nhật trạng thái. Không sign/retry lần hai khi đang processing.
+6. Khi thành công, modal hiển thị **Payment confirmed**; payout detail hiển thị **Paid**
+   và payment details/proof.
 
-   **✅ Approve:**
-   - Bấm **"Approve"** trong Review Controls
-   - Milestone chuyển sang `approved` — hệ thống gửi Discord notification
+Điểm cần nói: mọi chi tiết blockchain là progressive disclosure; người dùng chỉ cần
+xác nhận ai nhận tiền và bao nhiêu. Transaction/proof vẫn có thể xem khi cần.
 
-   **⚠️ Reject (optional):**
-   - Bấm **"Reject"**
-   - Nhập feedback: `Please add unit tests for the Button component and fix mobile layout on iOS Safari.`
-   - Milestone về trạng thái `rejected` → Contributor nhận thông báo và có thể **Resubmit**
+## Tiêu chí pass rehearsal
 
----
+- Owner và Contributor nhìn thấy navigation/hành động khác nhau đúng role.
+- Link mời email-bound chặn sai tài khoản Google.
+- Contributor không thể create payout, approve hay pay.
+- Owner không thể mở payment signing khi Contributor chưa có ví nhận.
+- Một payment Arc Testnet nhỏ đạt `Paid` và có transaction proof/explorer link.
+- Refresh trang vẫn giữ trạng thái payout/payment chính xác.
 
-## Bước 4 — Queue release in mock mode (vai trò: Owner)
+## Phương án dự phòng
 
-**URL:** `/payouts/[id]` — panel bên phải
+- Nếu Circle payment account chưa ready: trình bày đến approval, giải thích payment
+  account được thiết lập một lần trong Settings.
+- Nếu Arc confirmation chậm: giữ nguyên trạng thái processing, không retry; chuyển sang
+  một payout đã hoàn tất để trình bày payment proof.
+- Nếu link mời hết hạn/revoked: Owner tạo link mới trong Settings hoặc Contributors.
 
-1. Chuyển Role Switcher sang **Owner**
-2. Panel bên phải hiển thị milestone đã được Approve và nút **"Release Milestone"**
-3. Kiểm tra số tiền: `500 USDC` → địa chỉ ví contributor
-4. Bấm **"Release Milestone"** trong mock mode để kiểm tra queue/state/proof flow. Không có transaction on-chain nào được gửi.
-5. Kiểm tra trạng thái và activity record trong ứng dụng.
-6. Không bật real execution trong demo. `circle_wallet` là capability cấu hình riêng, còn `browser_wallet` phải fail-closed trên server; bất kỳ bounded staging transaction nào cũng cần `STAGING_BOUNDED_TRANSACTION_GATE.md` và separate operator approval.
+## Không trình bày trong scope này
 
----
-
-## Bước 5 — Xem Settlement Proof & Export Receipt
-
-**URL:** `/payouts/[id]`
-
-1. Sau khi Release thành công, bấm **"View Settlement Proof"** trong panel
-2. Modal Receipt hiển thị:
-   - Tên payout và milestone đã release
-   - Số USDC đã chuyển
-   - Transaction Hash
-   - Link Arcscan: xác minh giao dịch on-chain
-   - Timestamp xác nhận
-3. Tùy chọn:
-   - **"Print Receipt"** — in hoặc lưu PDF
-   - **"Download JSON"** — tải raw settlement proof
-
----
-
-## Bước 6 — Kiểm tra Settings & Webhook (Optional)
-
-**URL:** `/settings`
-
-1. Dán Discord Webhook URL vào ô **"Webhook URL"**
-2. Bấm **"Send Test Webhook"** → Kiểm tra Discord nhận thông báo test
-3. Bật/tắt từng loại notification:
-   - ✅ Milestone Submitted
-   - ✅ Milestone Approved
-   - ✅ USDC Released
-4. Bấm **"Test Node Health"** → Kiểm tra Arc Testnet RPC latency
-
----
-
-## Bước 7 — Xem Activity Feed & Dashboard
-
-| URL | Nội dung |
-|---|---|
-| `/dashboard` | KPI tổng hợp, danh sách payout active, pending approvals, recent releases |
-| `/activity` | Log toàn bộ sự kiện theo thời gian: submitted, approved, rejected, released |
-| `/contributors` | Danh sách contributor, số payout, tổng USDC nhận |
-
----
-
-## Luồng hoàn chỉnh trong 5 phút
-
-```
-00:00  Mở localhost:3000 → Giải thích vấn đề & giải pháp (Landing Page)
-00:45  Kết nối ví MetaMask / Login Google → vào Dashboard
-01:15  Tạo payout Q3 bounty với 3 milestones (Owner)
-01:50  Submit Milestone 1 kèm GitHub PR link (Contributor)
-02:20  Reviewer Approve Milestone 1
-02:40  Owner queue release 500 USDC trong mock mode (không gửi transaction)
-03:10  Xem Settlement Proof + link Arcscan
-03:30  Discord nhận notification tự động
-04:00  Activity Feed hiển thị toàn bộ lịch sử
-04:30  Q&A / Wrap-up
-```
-
----
-
-## Tips Demo
-
-- **Chạy 2 tab song song:** Tab 1 = Contributor, Tab 2 = Reviewer để chuyển role nhanh hơn
-- **Chuẩn bị sẵn USDC Testnet** từ faucet trước demo (~5 phút để confirm)
-- **Discord Webhook:** Cài đặt trước ở `/settings` để audience thấy real-time notification ngay lúc demo
-- **Không cần seed database:** Hệ thống có sẵn dữ liệu mẫu từ Prisma seed
-
----
-
-## Troubleshooting nhanh
-
-| Vấn đề | Cách xử lý |
-|---|---|
-| MetaMask không thấy Arc Testnet | Settings → **"Add to MetaMask"** hoặc vào `/settings` |
-| Số dư USDC = 0 | Header → Badge USDC → **"Request from Faucet"** |
-| Không thấy nút Approve | Đảm bảo Role Switcher đang ở **Reviewer** |
-| Giao dịch pending quá lâu | Tăng gas fee trong MetaMask hoặc dùng **"Speed Up"** |
-| Discord không nhận webhook | Kiểm tra URL tại `/settings` → **"Send Test Webhook"** |
-
----
-
-*Tài liệu này mô tả demo an toàn ở mock mode trên Arc Testnet context. Demo không gửi transaction thật. Với staging execution, xem `STAGING_BOUNDED_TRANSACTION_GATE.md` và `ARC_STAGING_SAFETY_RUNBOOK.md`; việc đó không được suy ra từ demo này.*
+- Browser-wallet payment, reviewer/ops roles, mock/simulated payments, webhook/push,
+  multi-sig, bridge, escrow và production settlement.
+- Không công bố API keys, CRON secrets, private keys, Circle user tokens hay link mời
+  trên slide công khai.
