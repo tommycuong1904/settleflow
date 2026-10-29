@@ -16,16 +16,16 @@ SettleFlow turns contributor compensation into a milestone-based payout workflow
 
 1. Create a contributor payout and define milestones
 2. Contributor submits completed work with proof (GitHub PR, Figma, Loom video)
-3. Reviewer approves or rejects each milestone
+3. Workspace Owner approves or rejects each milestone
 4. Owner releases USDC on Arc Testnet — only after approval
 5. Settlement proof is generated with Arcscan transaction link
-6. Real-time Discord / Slack notification dispatched at each step
+6. Settlement proof retains the Arc Testnet transaction link
 
 ## Why Arc
 
 - **Arc** acts as the settlement rail
 - **USDC** is the core payment and settlement layer (native on Arc)
-- **Circle Wallets** is the payout execution path: a connected browser wallet (`browser_wallet`) or a server-side EOA derived from `ARC_SERVER_PRIVATE_KEY` (`circle_wallet`)
+- **Circle User-controlled Wallets** provide the Web2-first payment account for Google users on Arc Testnet; browser-wallet payment remains an advanced option
 
 ---
 
@@ -38,7 +38,8 @@ SettleFlow turns contributor compensation into a milestone-based payout workflow
 | Node.js           | ≥ 20    |
 | npm               | ≥ 10    |
 | PostgreSQL        | ≥ 15    |
-| MetaMask or Rabby | Latest  |
+| Google account | Required for the Web2-first payment flow |
+| MetaMask or Rabby | Optional, for advanced browser-wallet payment |
 
 ### 1. Clone & install dependencies
 
@@ -67,13 +68,10 @@ NEXT_PUBLIC_ARC_CHAIN_ID=5042002
 NEXT_PUBLIC_ARC_RPC_URL=https://rpc.testnet.arc.io
 NEXT_PUBLIC_ARC_EXPLORER_URL=https://testnet.arcscan.app
 
-# Circle Wallets (optional — required only for server-side `circle_wallet` release execution)
-NEXT_PUBLIC_CIRCLE_APP_ID=your_circle_app_id
-
-# Server-side private key for Circle Wallets release execution (executionMode=circle_wallet).
-# The server account is derived from this key and must hold native USDC on Arc to pay gas.
-# Keep it secret and server-only (never NEXT_PUBLIC_); leave unset to fail explicitly.
-# ARC_SERVER_PRIVATE_KEY=0x...
+# Circle User-controlled Wallets (required for Google payment-account setup)
+CIRCLE_USER_CONTROLLED_ENABLED=true
+NEXT_PUBLIC_CIRCLE_USER_CONTROLLED_APP_ID=your_circle_app_id
+CIRCLE_USER_CONTROLLED_API_KEY=your_circle_testnet_api_key
 
 # Webhook Notifications (optional — Discord, Slack, or custom endpoint)
 SETTLEFLOW_WEBHOOK_URL=https://discord.com/api/webhooks/...
@@ -97,7 +95,12 @@ npm run dev
 
 App runs at **[http://localhost:3000](http://localhost:3000)**.
 
-### 5. Connect Arc Testnet to MetaMask
+### 5. Set up a testnet payment account
+
+Sign in with Google, open **Settings**, and select **Set up payment account**.
+Circle creates the Arc Testnet payment account; fund it with test USDC before a payment.
+
+### 6. Optional: connect Arc Testnet to MetaMask
 
 Either:
 
@@ -113,7 +116,7 @@ Network parameters:
 | Currency | USDC |
 | Explorer | `https://testnet.arcscan.app` |
 
-### 6. Get testnet USDC
+### 7. Get testnet USDC
 
 In the app, click the **USDC balance badge** in the header → **"Request Testnet USDC from Faucet"**
 
@@ -180,7 +183,7 @@ settleflow/
 │   ├── milestones/     # MilestoneRow, SubmitMilestoneDialog, ReviewControls
 │   ├── payouts/        # PayoutDetail, ReleaseShell, ReceiptModal
 │   ├── dashboard/      # KPI stats, wallet gate
-│   └── shared/         # AppHeader, AppSidebar, AuthModal, RoleSwitcher
+│   └── shared/         # AppHeader, AppSidebar, AuthModal
 ├── lib/
 │   ├── arc/            # Arc Testnet config, release executor, browser wallet, onchain helpers
 │   ├── context/        # WalletContext, ToastContext
@@ -201,13 +204,13 @@ settleflow/
 ```
 Owner creates Payout (draft → active)
     └─→ Contributor submits Milestone + Deliverable proof
-            └─→ Reviewer Approves or Rejects
+            └─→ Owner Approves or Rejects
                     └─→ Owner Releases USDC on Arc Testnet
                             └─→ Settlement Proof generated (Arcscan link)
-                                    └─→ Discord / Slack Webhook notification
 ```
 
-Role switching is available in the top-right header for demo and local testing.
+The active MVP roles are Owner and Contributor. Workspace membership is granted
+through invitations; the UI does not simulate roles.
 
 ---
 
@@ -221,7 +224,7 @@ Role switching is available in the top-right header for demo and local testing.
 | Database           | PostgreSQL + Prisma                           |
 | Blockchain         | Arc Testnet (Chain ID `5042002`)              |
 | Settlement token   | USDC (native on Arc)                          |
-| Wallet integration | Circle Wallets (browser EOA) + Viem v2 server EOA (`circle_wallet`) |
+| Wallet integration | Circle User-controlled Wallets + optional browser EOA |
 | Notifications      | Webhook dispatcher (Discord, Slack, Telegram) |
 
 ---
