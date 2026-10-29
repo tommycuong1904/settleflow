@@ -34,7 +34,7 @@ export function PendingInvitations() {
   async function revoke(invitation: Invitation) {
     setRevokingId(invitation.id);
     try {
-      const response = await fetch(`/api/v1/invitations/${invitation.id}`, { method: "DELETE" });
+      const response = await fetch(`/api/v1/invitations/${invitation.id}/revoke`, { method: "DELETE" });
       const payload = await response.json().catch(() => ({})) as { error?: string };
       if (!response.ok) throw new Error(payload.error ?? "Unable to revoke invitation.");
       setInvitations((current) => current.filter((item) => item.id !== invitation.id));
