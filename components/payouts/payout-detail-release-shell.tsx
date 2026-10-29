@@ -232,6 +232,13 @@ export function PayoutDetailReleaseShell({
   const openPaymentMethod = useCallback(async () => {
     setReleaseError(null);
     setResumeReleaseId(undefined);
+    // A real payment always needs a recipient address. Keep the existing
+    // method screen when it is missing so the Owner sees the exact next step
+    // instead of reaching a signing confirmation that cannot succeed.
+    if (!recipientAddress) {
+      setReleaseModalMode("method");
+      return;
+    }
     // In real/Testnet there is one enabled rail, so asking the user to choose
     // it only adds a redundant modal step. Demo/mock retains the selector.
     if (authType === "web2_google" && !canUseSimulatedPayment) {
@@ -253,7 +260,7 @@ export function PayoutDetailReleaseShell({
       }
     }
     setReleaseModalMode(canUseSimulatedPayment ? "method" : "review");
-  }, [authType, canUseSimulatedPayment]);
+  }, [authType, canUseSimulatedPayment, recipientAddress]);
 
   useEffect(() => {
     if (
