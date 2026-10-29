@@ -123,7 +123,7 @@ export default function AcceptInvitePage({
           </h1>
           <p className="text-xs text-neutral-600 leading-relaxed">
             {invite.isExpired
-              ? "This invitation link has expired. Please ask the workspace administrator for a new invitation link."
+              ? "This invitation link has expired. Please ask the workspace owner for a new invitation link."
               : `This invitation is no longer active (${invite.status}).`}
           </p>
           <button

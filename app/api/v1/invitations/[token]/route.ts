@@ -25,6 +25,6 @@ export async function GET(
     status: invitation.status,
     isExpired: invitation.isExpired,
     isValid: invitation.isValid,
-    invitedBy: invitation.createdBy.displayName || invitation.createdBy.email || "Workspace Admin",
+    invitedBy: invitation.createdBy.displayName || invitation.createdBy.email || "Workspace owner",
   });
 }
