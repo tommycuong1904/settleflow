@@ -42,7 +42,7 @@ function PayoutPreview() {
   return <div className="sf-preview-wrap" aria-label="Animated payout workflow preview">
     <div className="sf-orbit sf-orbit-one" /><div className="sf-orbit sf-orbit-two" />
     <div className="sf-payout-card">
-      <div className="sf-card-top"><span className="sf-label">PAYOUT</span><span className="sf-live"><span /> LIVE FLOW</span></div>
+      <div className="sf-card-top"><span className="sf-label">EXAMPLE PAYOUT</span><span className="sf-live"><span /> OWNER VIEW</span></div>
       <div className="sf-amount">$2,400 <small>USDC</small></div>
       <div className="sf-card-meta"><span>Contributor payout</span><span>SettleFlow / 024</span></div>
       <div className="sf-milestone"><div className="sf-milestone-icon"><Check size={15} /></div><div><strong>Milestone 01 — Approved</strong><small>Ready for payment</small></div><CircleCheck size={18} className="sf-check" /></div>
@@ -62,11 +62,11 @@ export default function Home() {
         <div className="sf-hero-copy">
           <SectionKicker>PAYMENT WORKFLOW FOR TEAMS</SectionKicker>
           <h1>
-            Pay for approved work, <em>without chasing the context.</em>
+            Pay contributors after work is <em>approved.</em>
           </h1>
           <p className="sf-lede">
             Keep work, approvals, payments, and records in one shared workflow.
-            Everyone sees what needs attention and what happens next.
+            Everyone sees what needs attention, who decides, and what happens next.
           </p>
           <div className="sf-cta-row">
             <AuthEntryButton variant="primary" />
@@ -78,7 +78,7 @@ export default function Home() {
             <span className="sf-note-check">
               <Check size={13} />
             </span>
-            Start with Google — no wallet needed
+            Start with Google — no browser wallet or recovery phrase needed
           </div>
         </div>
         <PayoutPreview />
@@ -220,7 +220,7 @@ export default function Home() {
             <h2>Technical settlement when you need it.</h2>
             <p>
               SettleFlow keeps payment operations simple by default. Arc and USDC
-              support the advanced wallet-payment path when your team chooses it.
+              handle settlement in the background, with technical details available when needed.
             </p>
           </div>
           <div className="sf-layers">
@@ -234,13 +234,13 @@ export default function Home() {
               [
                 "USDC",
                 "Money layer",
-                "Defines the payment asset for an advanced wallet payment.",
+                "Defines the payment asset for Arc Testnet settlement.",
                 CircleCheck,
               ],
               [
                 "Arc",
                 "Settlement rail",
-                "Powers the advanced settlement path for approved USDC payments.",
+                "Provides the settlement rail for approved USDC payments.",
                 ShieldCheck,
               ],
             ].map(([title, label, text, Icon]) => (
@@ -259,32 +259,32 @@ export default function Home() {
         <div className="sf-container">
           <div className="sf-proof-head">
             <div className="sf-section-intro">
-              <SectionKicker>SAFE TESTING</SectionKicker>
-              <h2>Test the workflow before moving money.</h2>
+              <SectionKicker>PAYMENT, SIMPLIFIED</SectionKicker>
+              <h2>Pay with Google. Keep proof when it matters.</h2>
               <p>
-                Simulated payments let a team test the full workflow without funds,
-                wallets, or a transaction. Wallet payment remains an advanced Arc Testnet option.
+                Owners set up a secure payment account when they need to pay. Contributors can
+                join, submit work, and follow payment status without a browser wallet.
               </p>
             </div>
           </div>
           <div className="sf-proof-grid">
             {[
-              ["Contributor workflow", "Milestone submission and owner approval."],
+              ["Google sign-in", "Start with a familiar account instead of a browser wallet."],
               [
-                "Approval-gated payment",
-                "A payment becomes available only after approval.",
+                "Owner approval",
+                "A payment becomes available only after approved work.",
               ],
               [
-                "Simulated payment",
-                "Record a test payment safely — no funds move.",
+                "Payment account",
+                "Set it up once when you are ready to make a payment.",
               ],
               [
-                "Advanced wallet payment",
-                "Use a browser wallet on Arc Testnet when that method is selected.",
+                "Arc Testnet record",
+                "Confirmed payment details stay attached to the milestone.",
               ],
               [
-                "Product state",
-                "Owner and contributor views keep workflow state synchronized.",
+                "Role-aware workspace",
+                "Owners and contributors see only their next safe action.",
               ],
             ].map(([title, text]) => (
               <div key={title}>
