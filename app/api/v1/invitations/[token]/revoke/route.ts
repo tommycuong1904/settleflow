@@ -4,14 +4,14 @@ import { apiError } from "@/lib/api/errors";
 import { getSessionFromRequest, resolveProductContextFromRequestWithSession } from "@/lib/auth/session-server";
 import { revokePendingInvitation } from "@/lib/services/invitations";
 
-export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ token: string }> }) {
   if (!(await getSessionFromRequest(request))) return apiError("AUTH_REQUIRED", { message: "Sign in is required.", status: 401 });
   try {
     const productContext = await resolveProductContextFromRequestWithSession(request);
     if (productContext.actor !== "owner") return apiError("FORBIDDEN_INVITATION_REVOKE", { message: "Only workspace owners can revoke invitations.", status: 403 });
-    const { id } = await params;
-    await revokePendingInvitation(productContext.workspaceId, id);
-    return NextResponse.json({ data: { id } });
+    const { token } = await params;
+    await revokePendingInvitation(productContext.workspaceId, token);
+    return NextResponse.json({ data: { id: token } });
   } catch (error) {
     const code = error instanceof Error ? error.message : "INVITATION_REVOKE_FAILED";
     if (code === "AUTH_CONTEXT_REQUIRED" || code === "AUTH_ROLE_AMBIGUOUS") return apiError(code, { status: 403 });

@@ -9,7 +9,7 @@ import { acceptInvitation, createInvitation } from "@/lib/services/invitations";
 import { listPayouts } from "@/lib/repositories/payouts";
 import { POST as createInvitationRoute } from "@/app/api/v1/invitations/route";
 import { GET as listInvitationRoute } from "@/app/api/v1/invitations/route";
-import { DELETE as revokeInvitationRoute } from "@/app/api/v1/invitations/[id]/revoke/route";
+import { DELETE as revokeInvitationRoute } from "@/app/api/v1/invitations/[token]/revoke/route";
 import { POST as acceptInvitationRoute } from "@/app/api/v1/invitations/[token]/accept/route";
 import { POST as createContributorInvitationRoute } from "@/app/api/v1/contributors/[id]/invite/route";
 
@@ -91,7 +91,7 @@ test("invitations enforce authorization, email binding, lifecycle, and one membe
     const revokedInvitation = await revokeInvitationRoute(new NextRequest(
       `https://settleflow.local/api/v1/invitations/${ownerInvitationBody.invitation.id}/revoke?workspaceId=${workspace.id}`,
       { method: "DELETE", headers: { cookie: `sf_session=${await tokenFor(owner)}` } },
-    ), { params: Promise.resolve({ id: ownerInvitationBody.invitation.id }) });
+    ), { params: Promise.resolve({ token: ownerInvitationBody.invitation.id }) });
     assert.equal(revokedInvitation.status, 200);
     assert.equal((await db.invitation.findUniqueOrThrow({ where: { id: ownerInvitationBody.invitation.id } })).status, "revoked");
 
