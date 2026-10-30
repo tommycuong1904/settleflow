@@ -21,6 +21,7 @@ export function WorkspaceMembers({ workspaceId }: { workspaceId: string }) {
   const [error, setError] = useState<string | null>(null);
   const [confirmUserId, setConfirmUserId] = useState<string | null>(null);
   const [removingUserId, setRemovingUserId] = useState<string | null>(null);
+  const visibleMembers = members.filter((member) => member.role === "owner" || member.role === "contributor");
 
   useEffect(() => {
     let active = true;
@@ -59,14 +60,14 @@ export function WorkspaceMembers({ workspaceId }: { workspaceId: string }) {
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)] text-[var(--text-muted)]"><Users size={20} /></div>
         <div>
           <h2 className="text-base font-semibold text-[var(--foreground)]">Workspace members</h2>
-          <p className="mt-1 text-xs text-[var(--text-muted)]">Owners manage payments. Contributor access can be removed here.</p>
+          <p className="mt-1 text-xs text-[var(--text-muted)]">The workspace owner manages payments. Contributor access can be removed here.</p>
         </div>
       </div>
 
       {isLoading ? <div className="mt-5 flex items-center gap-2 text-sm text-[var(--text-muted)]"><LoaderCircle size={15} className="animate-spin" /> Loading members…</div> : null}
       {error ? <p role="alert" className="mt-5 rounded-xl border border-amber-300/50 bg-amber-50/70 p-3 text-sm text-amber-900">{error}</p> : null}
       {!isLoading && !error ? <div className="mt-5 divide-y divide-[var(--border-soft)] rounded-xl border border-[var(--border-soft)]">
-        {members.map((member) => {
+        {visibleMembers.map((member) => {
           const name = member.user.displayName || member.user.email || "Workspace member";
           const isContributor = member.role === "contributor";
           const confirming = confirmUserId === member.userId;

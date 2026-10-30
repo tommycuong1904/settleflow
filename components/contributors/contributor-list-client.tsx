@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { hasRole } from "@/lib/runtime/role-utils";
 import type { ProductActor } from "@/lib/runtime/product-context";
 import type { ContributorListItem } from "@/lib/repositories/contributors";
-import { formatUsdc } from "@/lib/utils/format";
 import { AddContributorDialog } from "./add-contributor-dialog";
 import { EditContributorDialog } from "./edit-contributor-dialog";
 import { DeleteContributorDialog } from "./delete-contributor-dialog";
@@ -221,7 +220,7 @@ export function ContributorListClient({
         </div>
       </div>
 
-      {/* Contributor Cards List */}
+      {/* Contributor rows */}
       {filteredContributors.length === 0 ? (
         <div className="space-y-4">
           <EmptyState
@@ -253,7 +252,13 @@ export function ContributorListClient({
           )}
         </div>
       ) : (
-        <div className="grid items-start gap-4 xl:grid-cols-2">
+        <div className="space-y-3 lg:space-y-0 lg:overflow-hidden lg:rounded-xl lg:border lg:border-[var(--border-soft)]">
+          <div className="hidden lg:grid lg:grid-cols-[minmax(0,1fr)_156px_132px_156px] lg:items-center lg:gap-x-4 lg:border-b lg:border-[var(--border-soft)] lg:bg-[var(--surface-muted)] lg:px-5 lg:py-3.5">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Contributor</span>
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Manage</span>
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Payouts</span>
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">New payout</span>
+          </div>
           {filteredContributors.map((contributor) => {
             const initials = contributor.displayName
               .split(" ")
@@ -264,14 +269,15 @@ export function ContributorListClient({
 
             const activeInviteUrl = inviteLinks[contributor.id];
             const isInvitePopoverOpen = openInvitePopoverId === contributor.id;
+            const contributorEmail = contributor.email?.trim();
 
             return (
               <div
                 key={contributor.id}
-                className="rounded-xl border border-[var(--border-soft)] bg-[var(--surface)] p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-all hover:border-[var(--border-strong)] hover:shadow-[0_4px_12px_rgba(15,23,42,0.06)] flex flex-col justify-between gap-5 group"
+                className="group flex flex-col gap-4 rounded-xl border border-[var(--border-soft)] bg-[var(--surface)] p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-all hover:border-[var(--border-strong)] hover:shadow-[0_4px_12px_rgba(15,23,42,0.06)] lg:grid lg:grid-cols-[minmax(0,1fr)_156px_132px_156px] lg:items-center lg:gap-x-4 lg:gap-y-0 lg:rounded-none lg:border-x-0 lg:border-t-0 lg:border-b lg:p-4 lg:shadow-none lg:hover:border-[var(--border-soft)] lg:hover:bg-[rgba(15,23,42,0.025)] lg:hover:shadow-none"
               >
                 {/* Top Section: Avatar & Info */}
-                <div>
+                <div className="min-w-0 flex-1">
                   <div className="flex items-start justify-between gap-3">
                       <div className="flex min-w-0 items-center gap-3.5">
                       <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--surface-muted)] border border-[var(--border-soft)] text-[var(--foreground)] font-bold text-base shrink-0">
@@ -297,148 +303,132 @@ export function ContributorListClient({
                             <Briefcase size={12} /> {contributor.role}
                           </p>
                         ) : null}
+                        {contributorEmail ? (
+                          <p className="mt-0.5 flex min-w-0 items-center gap-1 break-all text-xs text-[var(--text-muted)]">
+                            <Mail size={12} className="shrink-0" />
+                            {contributorEmail}
+                          </p>
+                        ) : null}
                       </div>
                     </div>
-                    {canManageContributor(contributor) ? (
-                      <div className="flex shrink-0 items-center gap-2">
-                        <div
-                          ref={isInvitePopoverOpen ? invitePopoverRef : null}
-                          className="relative"
-                        >
-                          <Button
-                            variant="outline"
-                            className="!h-9 !w-9 !min-h-0 !p-0 !rounded-full"
-                            title={activeInviteUrl ? "View invite link" : "Generate invite link"}
-                            disabled={invitingId === contributor.id}
-                            onClick={() => activeInviteUrl
-                              ? setOpenInvitePopoverId(isInvitePopoverOpen ? null : contributor.id)
-                              : handleCopyClaimLink(contributor)}
-                          >
-                            {invitingId === contributor.id ? <Loader2 size={14} className="animate-spin" /> : <UserPlus size={14} />}
-                            <span className="sr-only">{activeInviteUrl ? "View invite link" : "Generate invite link"}</span>
-                          </Button>
-
-                          {isInvitePopoverOpen && activeInviteUrl ? (
-                            <div
-                              className="absolute right-0 top-full z-20 mt-2 hidden w-80 rounded-xl border border-cyan-500/30 bg-[var(--surface)] p-3 shadow-lg sm:block"
-                              role="dialog"
-                              aria-label={`Invite link for ${contributor.displayName}`}
-                            >
-                              <div className="flex items-center justify-between gap-2">
-                                <div className="flex items-center gap-1.5">
-                                  <span className="flex h-1.5 w-1.5 rounded-full bg-cyan-400" />
-                                  <span className="text-[11px] font-semibold uppercase tracking-wider text-cyan-400">Invite link</span>
-                                  <span className="text-[10px] text-[var(--text-muted)]">Valid 7 days</span>
-                                </div>
-                                <button
-                                  type="button"
-                                  onClick={() => setOpenInvitePopoverId(null)}
-                                  className="rounded p-0.5 text-[var(--text-muted)] transition-colors hover:text-[var(--foreground)]"
-                                  title="Close invite link"
-                                >
-                                  <X size={13} />
-                                  <span className="sr-only">Close invite link</span>
-                                </button>
-                              </div>
-                              <input
-                                readOnly
-                                value={activeInviteUrl}
-                                className="mt-2 w-full rounded-lg border border-[var(--border-soft)] bg-[var(--surface-muted)] px-2.5 py-2 text-[11px] font-mono text-[var(--foreground)] focus:border-cyan-500/50 focus:outline-none"
-                                onFocus={(e) => e.target.select()}
-                              />
-                              <div className="mt-2 flex items-center justify-between gap-2">
-                                <button
-                                  type="button"
-                                  onClick={() => handleCopyClaimLink(contributor)}
-                                  className="text-[11px] font-medium text-[var(--text-muted)] transition-colors hover:text-[var(--foreground)]"
-                                >
-                                  Generate new link
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={async () => {
-                                    await navigator.clipboard.writeText(activeInviteUrl);
-                                    setCopiedLinkId(contributor.id);
-                                    setTimeout(() => setCopiedLinkId(null), 2000);
-                                  }}
-                                  className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-soft)] bg-[var(--surface-muted)] px-2.5 py-1.5 text-[11px] font-medium text-[var(--foreground)] transition-all hover:border-cyan-500/40 hover:text-cyan-400"
-                                >
-                                  {copiedLinkId === contributor.id ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
-                                  {copiedLinkId === contributor.id ? "Copied" : "Copy"}
-                                </button>
-                              </div>
-                            </div>
-                          ) : null}
-                        </div>
-                        <Button variant="outline" className="!h-9 !w-9 !min-h-0 !p-0 !rounded-full" title="Edit contributor" onClick={() => {
-                          setEditingContributor(contributor);
-                          setIsEditModalOpen(true);
-                        }}>
-                          <Pencil size={14} />
-                          <span className="sr-only">Edit contributor</span>
-                        </Button>
-                        <Button variant="outline" className="!h-9 !w-9 !min-h-0 !p-0 !rounded-full text-red-400 border-red-400/40 hover:bg-red-500/10" title="Delete contributor" onClick={() => {
-                          setDeletingContributor(contributor);
-                          setIsDeleteModalOpen(true);
-                        }}>
-                          <Trash2 size={14} />
-                          <span className="sr-only">Delete contributor</span>
-                        </Button>
-                      </div>
-                    ) : null}
                   </div>
 
-                  {(contributor.email || contributor.notes) ? (
+                  {contributor.notes ? (
                     <div className="mt-4 space-y-2 pt-3 border-t border-[var(--border-soft)]">
-                    {contributor.email && (
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-[11px] uppercase tracking-wider text-[var(--text-muted)] font-mono">
-                          Email
-                        </span>
-                        <span className="flex min-w-0 items-center gap-1 break-all text-xs text-[var(--text-primary)]">
-                          <Mail size={12} className="text-[var(--text-muted)]" />{" "}
-                          {contributor.email}
-                        </span>
-                      </div>
-                    )}
-
-                    {contributor.notes && (
                       <p className="text-xs text-[var(--text-muted)] italic pt-1 leading-relaxed">
                         &quot;{contributor.notes}&quot;
                       </p>
-                    )}
                     </div>
                   ) : null}
                 </div>
 
+                {canManageContributor(contributor) ? (
+                  <div className="flex shrink-0 items-center gap-2 lg:justify-self-start">
+                    <div
+                      ref={isInvitePopoverOpen ? invitePopoverRef : null}
+                      className="relative"
+                    >
+                      <Button
+                        variant="outline"
+                        className="!h-9 !w-9 !min-h-0 !p-0 !rounded-full"
+                        title={activeInviteUrl ? "View invite link" : "Generate invite link"}
+                        disabled={invitingId === contributor.id}
+                        onClick={() => activeInviteUrl
+                          ? setOpenInvitePopoverId(isInvitePopoverOpen ? null : contributor.id)
+                          : handleCopyClaimLink(contributor)}
+                      >
+                        {invitingId === contributor.id ? <Loader2 size={14} className="animate-spin" /> : <UserPlus size={14} />}
+                        <span className="sr-only">{activeInviteUrl ? "View invite link" : "Generate invite link"}</span>
+                      </Button>
+
+                      {isInvitePopoverOpen && activeInviteUrl ? (
+                        <div
+                          className="absolute right-0 top-full z-20 mt-2 hidden w-80 rounded-xl border border-cyan-500/30 bg-[var(--surface)] p-3 shadow-lg sm:block"
+                          role="dialog"
+                          aria-label={`Invite link for ${contributor.displayName}`}
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-1.5">
+                              <span className="flex h-1.5 w-1.5 rounded-full bg-cyan-400" />
+                              <span className="text-[11px] font-semibold uppercase tracking-wider text-cyan-400">Invite link</span>
+                              <span className="text-[10px] text-[var(--text-muted)]">Valid 7 days</span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setOpenInvitePopoverId(null)}
+                              className="rounded p-0.5 text-[var(--text-muted)] transition-colors hover:text-[var(--foreground)]"
+                              title="Close invite link"
+                            >
+                              <X size={13} />
+                              <span className="sr-only">Close invite link</span>
+                            </button>
+                          </div>
+                          <input
+                            readOnly
+                            value={activeInviteUrl}
+                            className="mt-2 w-full rounded-lg border border-[var(--border-soft)] bg-[var(--surface-muted)] px-2.5 py-2 text-[11px] font-mono text-[var(--foreground)] focus:border-cyan-500/50 focus:outline-none"
+                            onFocus={(e) => e.target.select()}
+                          />
+                          <div className="mt-2 flex items-center justify-between gap-2">
+                            <button
+                              type="button"
+                              onClick={() => handleCopyClaimLink(contributor)}
+                              className="text-[11px] font-medium text-[var(--text-muted)] transition-colors hover:text-[var(--foreground)]"
+                            >
+                              Generate new link
+                            </button>
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                await navigator.clipboard.writeText(activeInviteUrl);
+                                setCopiedLinkId(contributor.id);
+                                setTimeout(() => setCopiedLinkId(null), 2000);
+                              }}
+                              className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-soft)] bg-[var(--surface-muted)] px-2.5 py-1.5 text-[11px] font-medium text-[var(--foreground)] transition-all hover:border-cyan-500/40 hover:text-cyan-400"
+                            >
+                              {copiedLinkId === contributor.id ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
+                              {copiedLinkId === contributor.id ? "Copied" : "Copy"}
+                            </button>
+                          </div>
+                        </div>
+                      ) : null}
+                    </div>
+                    <Button variant="outline" className="!h-9 !w-9 !min-h-0 !p-0 !rounded-full" title="Edit contributor" onClick={() => {
+                      setEditingContributor(contributor);
+                      setIsEditModalOpen(true);
+                    }}>
+                      <Pencil size={14} />
+                      <span className="sr-only">Edit contributor</span>
+                    </Button>
+                    <Button variant="outline" className="!h-9 !w-9 !min-h-0 !p-0 !rounded-full text-red-400 border-red-400/40 hover:bg-red-500/10" title="Delete contributor" onClick={() => {
+                      setDeletingContributor(contributor);
+                      setIsDeleteModalOpen(true);
+                    }}>
+                      <Trash2 size={14} />
+                      <span className="sr-only">Delete contributor</span>
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="hidden lg:block" aria-hidden="true" />
+                )}
+
                 {/* Bottom Section: Metrics and primary action */}
-                <div className="pt-3.5 border-t border-[var(--border-soft)] space-y-3">
-                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-                    <div className="flex items-center gap-4">
-                      <div>
-                        <p className="text-[10px] uppercase tracking-wider text-[var(--text-muted)]">
-                          Paid
-                        </p>
-                        <p className="text-xs font-semibold text-[var(--foreground)] font-mono">
-                          {formatUsdc(contributor.totalSettledUsdc)} USDC
-                        </p>
-                      </div>
-                      <div className="h-6 w-px bg-[var(--border-soft)]" />
-                      <div>
-                        <p className="text-[10px] uppercase tracking-wider text-[var(--text-muted)]">
-                          Payouts
-                        </p>
-                        <p className="text-xs font-semibold text-[var(--foreground)] font-mono">
-                          {contributor.payoutCount} ({contributor.activePayoutCount} active)
-                        </p>
-                      </div>
+                <div className="space-y-3 border-t border-[var(--border-soft)] pt-3.5 lg:contents">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between lg:contents">
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wider text-[var(--text-muted)]">
+                        Payouts
+                      </p>
+                      <p className="whitespace-nowrap text-xs font-mono font-semibold tabular-nums text-[var(--foreground)]">
+                        {contributor.payoutCount} ({contributor.activePayoutCount} active)
+                      </p>
                     </div>
 
-                    <div className="flex w-full flex-nowrap items-center lg:w-auto">
+                    <div className="flex w-full flex-nowrap items-center sm:w-auto">
                       <Button
                         href={`/payouts/new?contributorId=${contributor.id}&workspaceId=${encodeURIComponent(workspaceId)}`}
                         variant="ghost"
-                        className="w-full justify-center text-xs lg:ml-auto lg:w-auto lg:px-3 lg:py-1.5 lg:h-auto"
+                        className="w-full justify-center whitespace-nowrap text-xs sm:w-auto sm:px-3 sm:py-1.5 sm:h-auto"
                       >
                         <Plus size={13} className="mr-1" /> New Payout
                       </Button>

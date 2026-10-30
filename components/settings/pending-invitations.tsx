@@ -25,7 +25,7 @@ export function PendingInvitations() {
         if (!response.ok) throw new Error(payload.error ?? "Unable to load invitations.");
         return payload.data ?? [];
       })
-      .then((data) => { if (active) setInvitations(data); })
+      .then((data) => { if (active) setInvitations(data.filter((invitation) => invitation.role === "contributor")); })
       .catch((loadError) => { if (active) setError(getFrontendAuthErrorMessage(loadError, "Unable to load invitations.")); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };

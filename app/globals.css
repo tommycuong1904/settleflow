@@ -599,6 +599,60 @@ h1 {
   font-size: 14px;
 }
 
+.sf-role-section {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: 48px;
+  align-items: end;
+  padding-bottom: 110px;
+}
+
+.sf-role-intro .sf-kicker {
+  margin-bottom: 14px;
+}
+
+.sf-role-intro h2 {
+  max-width: 360px;
+  margin: 0;
+  font-size: clamp(27px, 3vw, 40px);
+  line-height: 1.08;
+}
+
+.sf-role-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.sf-role-card {
+  min-height: 190px;
+  padding: 26px;
+  border: 1px solid var(--border-soft);
+  border-radius: 14px;
+  background: var(--surface);
+}
+
+.sf-role-label {
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+}
+
+.sf-role-card h3 {
+  margin: 22px 0 10px;
+  font-size: 19px;
+  line-height: 1.25;
+}
+
+.sf-role-card p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
 .sf-note-check {
   display: grid;
   place-items: center;
@@ -1148,6 +1202,18 @@ h1 {
   background: var(--background);
 }
 
+@media (min-width: 1100px) {
+  .sf-why-arc .sf-section-intro,
+  .sf-proof .sf-section-intro {
+    max-width: none;
+  }
+
+  .sf-settlement-title,
+  .sf-proof-title {
+    white-space: nowrap;
+  }
+}
+
 .sf-proof-head {
   display: flex;
   align-items: end;
@@ -1285,6 +1351,12 @@ h1 {
     min-height: 470px;
   }
 
+  .sf-role-section {
+    grid-template-columns: 1fr;
+    gap: 28px;
+    padding-bottom: 88px;
+  }
+
   .sf-timeline {
     overflow-x: auto;
     padding-bottom: 15px;
@@ -1384,6 +1456,29 @@ h1 {
 
   .sf-preview-wrap {
     min-height: 460px;
+  }
+
+  .sf-role-section {
+    gap: 24px;
+    padding-bottom: 72px;
+  }
+
+  .sf-role-intro {
+    text-align: center;
+  }
+
+  .sf-role-intro h2 {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .sf-role-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .sf-role-card {
+    min-height: 0;
+    padding: 22px;
   }
 
   .sf-payout-card {

@@ -3,7 +3,9 @@ import crypto from "crypto";
 import type { Prisma, WorkspaceMemberRole } from "@prisma/client";
 import { reconcileUserContributors } from "@/lib/repositories/contributors";
 
-export const INVITABLE_WORKSPACE_ROLES = ["owner", "contributor"] as const;
+// The active MVP has one workspace owner. Contributor invitations are the
+// only membership grant exposed through the product.
+export const INVITABLE_WORKSPACE_ROLES = ["contributor"] as const;
 export type InvitableWorkspaceRole = (typeof INVITABLE_WORKSPACE_ROLES)[number];
 
 export function isInvitableWorkspaceRole(role: unknown): role is InvitableWorkspaceRole {

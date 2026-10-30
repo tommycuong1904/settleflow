@@ -84,6 +84,25 @@ export default function Home() {
         <PayoutPreview />
       </section>
 
+      <section className="sf-role-section sf-container" aria-labelledby="role-summary-title">
+        <div className="sf-role-intro">
+          <SectionKicker>ONE WORKFLOW, CLEAR RESPONSIBILITIES</SectionKicker>
+          <h2 id="role-summary-title">Everyone sees the next safe action.</h2>
+        </div>
+        <div className="sf-role-grid">
+          <article className="sf-role-card">
+            <span className="sf-role-label">FOR OWNERS</span>
+            <h3>Approve work before you pay.</h3>
+            <p>Create payouts, review submitted work, and confirm a payment only when the milestone is ready.</p>
+          </article>
+          <article className="sf-role-card">
+            <span className="sf-role-label">FOR CONTRIBUTORS</span>
+            <h3>Submit work and follow payment.</h3>
+            <p>Join with Google, send deliverables for review, and see exactly where payment stands.</p>
+          </article>
+        </div>
+      </section>
+
       <section className="sf-section sf-problem">
         <div className="sf-container">
           <div className="sf-section-intro">
@@ -216,11 +235,11 @@ export default function Home() {
       <section id="why-arc" className="sf-section sf-why-arc">
         <div className="sf-container">
           <div className="sf-section-intro sf-centered">
-            <SectionKicker>PAYMENT INFRASTRUCTURE</SectionKicker>
-            <h2>Technical settlement when you need it.</h2>
+            <SectionKicker>HOW PAYMENTS WORK</SectionKicker>
+            <h2 className="sf-settlement-title">Simple to use. Verified when it matters.</h2>
             <p>
-              SettleFlow keeps payment operations simple by default. Arc and USDC
-              handle settlement in the background, with technical details available when needed.
+              Owners confirm payment after approved work. SettleFlow keeps the record,
+              while Arc and USDC handle settlement in the background.
             </p>
           </div>
           <div className="sf-layers">
@@ -260,7 +279,7 @@ export default function Home() {
           <div className="sf-proof-head">
             <div className="sf-section-intro">
               <SectionKicker>PAYMENT, SIMPLIFIED</SectionKicker>
-              <h2>Pay with Google. Keep proof when it matters.</h2>
+              <h2 className="sf-proof-title">Pay with Google. Keep proof when it matters.</h2>
               <p>
                 Owners set up a secure payment account when they need to pay. Contributors can
                 join, submit work, and follow payment status without a browser wallet.

@@ -8,8 +8,6 @@ import { db } from "@/lib/db/client";
 import { acceptInvitation, createInvitation } from "@/lib/services/invitations";
 import { listPayouts } from "@/lib/repositories/payouts";
 import { POST as createInvitationRoute } from "@/app/api/v1/invitations/route";
-import { GET as listInvitationRoute } from "@/app/api/v1/invitations/route";
-import { DELETE as revokeInvitationRoute } from "@/app/api/v1/invitations/[token]/revoke/route";
 import { POST as acceptInvitationRoute } from "@/app/api/v1/invitations/[token]/accept/route";
 import { POST as createContributorInvitationRoute } from "@/app/api/v1/contributors/[id]/invite/route";
 
@@ -59,50 +57,13 @@ test("invitations enforce authorization, email binding, lifecycle, and one membe
     assert.equal(unauthorized.status, 403);
     assert.equal((await unauthorized.json()).code, "FORBIDDEN_INVITATION_CREATE");
 
-    for (const role of ["ops", "reviewer", "contributor"]) {
-      const unavailableRole = await createInvitationRoute(request(
-        `https://settleflow.local/api/v1/invitations?workspaceId=${workspace.id}`,
-        await tokenFor(owner),
-        { role },
-      ));
-      assert.equal(unavailableRole.status, 400);
-      assert.equal(
-        (await unavailableRole.json()).error,
-        "Contributor invitations must be created from the Contributor page to ensure proper record linking.",
-      );
-    }
-
     const ownerInvitation = await createInvitationRoute(request(
       `https://settleflow.local/api/v1/invitations?workspaceId=${workspace.id}`,
       await tokenFor(owner),
       { role: "owner", expiresInDays: 7 },
     ));
-    assert.equal(ownerInvitation.status, 200);
-    const ownerInvitationBody = await ownerInvitation.json() as { invitation: { id: string; role: string } };
-    assert.equal(ownerInvitationBody.invitation.role, "owner");
-
-    const listedInvitations = await listInvitationRoute(new NextRequest(
-      `https://settleflow.local/api/v1/invitations?workspaceId=${workspace.id}`,
-      { headers: { cookie: `sf_session=${await tokenFor(owner)}` } },
-    ));
-    assert.equal(listedInvitations.status, 200);
-    assert.ok((await listedInvitations.json() as { data: Array<{ id: string }> }).data.some((item) => item.id === ownerInvitationBody.invitation.id));
-
-    const revokedInvitation = await revokeInvitationRoute(new NextRequest(
-      `https://settleflow.local/api/v1/invitations/${ownerInvitationBody.invitation.id}/revoke?workspaceId=${workspace.id}`,
-      { method: "DELETE", headers: { cookie: `sf_session=${await tokenFor(owner)}` } },
-    ), { params: Promise.resolve({ token: ownerInvitationBody.invitation.id }) });
-    assert.equal(revokedInvitation.status, 200);
-    assert.equal((await db.invitation.findUniqueOrThrow({ where: { id: ownerInvitationBody.invitation.id } })).status, "revoked");
-
-    const otherWorkspaceInvitation = await createInvitationRoute(request(
-      `https://settleflow.local/api/v1/invitations?workspaceId=${otherWorkspace.id}`,
-      await tokenFor(owner),
-      { role: "owner", expiresInDays: 7 },
-    ));
-    assert.equal(otherWorkspaceInvitation.status, 200);
-    const otherWorkspaceInvite = await otherWorkspaceInvitation.json() as { invitation: { id: string } };
-    assert.equal((await db.invitation.findUniqueOrThrow({ where: { id: otherWorkspaceInvite.invitation.id } })).workspaceId, otherWorkspace.id);
+    assert.equal(ownerInvitation.status, 410);
+    assert.equal((await ownerInvitation.json()).code, "OWNER_INVITATIONS_UNAVAILABLE");
 
     const invitedContributor = await db.contributor.create({
       data: {
@@ -203,7 +164,7 @@ test("invitations enforce authorization, email binding, lifecycle, and one membe
     });
     assert.equal((await acceptInvitation(revoked.token, other.id)).success, false);
 
-    for (const role of ["ops", "reviewer"] as const) {
+    for (const role of ["owner", "ops", "reviewer"] as const) {
       const legacyInvite = await db.invitation.create({
         data: { workspaceId: workspace.id, createdByUserId: owner.id, role, token: `${role}-${suffix}`, expiresAt: new Date(Date.now() + 60_000) },
       });

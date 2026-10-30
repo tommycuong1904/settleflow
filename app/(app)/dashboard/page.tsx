@@ -94,8 +94,19 @@ export default async function DashboardPage() {
     0,
   );
   const outstandingExposure = Math.max(totalScheduled - releasedValue, 0);
-  const failedSettlementProof = transactionProofs.find((proof) => proof.status === "failed");
-  const pendingSettlementProofs = transactionProofs.filter((proof) => proof.status === "pending");
+  // A payment can leave behind an earlier failed or pending proof before a
+  // later attempt completes. Those historical proofs must not turn a paid
+  // milestone back into an action item on the dashboard.
+  const openMilestoneIds = new Set(
+    milestones
+      .filter((milestone) => milestone.status !== "released")
+      .map((milestone) => milestone.id),
+  );
+  const openSettlementProofs = transactionProofs.filter((proof) =>
+    openMilestoneIds.has(proof.milestoneId),
+  );
+  const failedSettlementProof = openSettlementProofs.find((proof) => proof.status === "failed");
+  const pendingSettlementProofs = openSettlementProofs.filter((proof) => proof.status === "pending");
   const stalePendingProofIds = new Set(
     pendingSettlementProofs
       .filter((proof) => proof.needsReconciliationAttention)

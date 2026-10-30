@@ -164,7 +164,12 @@ export function PayoutListClient({
           ) : null}
         </div>
       ) : ( <>
-        <div className="overflow-hidden rounded-2xl border border-[var(--border-soft)] bg-[var(--surface)] divide-y divide-[var(--border-soft)]">
+        <div className="overflow-hidden rounded-2xl border border-[var(--border-soft)] bg-[var(--surface)]">
+          <div className="hidden sm:grid sm:grid-cols-[minmax(0,1fr)_8rem_13rem] sm:items-center sm:gap-6 sm:border-b sm:border-[var(--border-soft)] sm:bg-[var(--surface-muted)] sm:px-5 sm:py-3.5">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Payout</span>
+            <span className="text-right text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Amount</span>
+            <span className="text-center text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Action</span>
+          </div>
           {paginatedPayouts.map((payout) => {
             const contributor = payout.contributor;
             const actionableNextAction = isActionableNextAction(payout.nextAction);
@@ -188,7 +193,7 @@ export function PayoutListClient({
             return (
               <div
                 key={payout.id}
-                className="px-5 py-4 transition-colors hover:bg-[rgba(15,23,42,0.025)]"
+                className="border-b border-[var(--border-soft)] px-5 py-4 transition-colors last:border-b-0 hover:bg-[rgba(15,23,42,0.025)]"
               >
                 <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_8rem_13rem] sm:items-center sm:gap-6">
                   <div className="space-y-1.5">

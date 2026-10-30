@@ -16,8 +16,8 @@ export function SiteHeader() {
   const navLinks = isHome
     ? [
         ["How it works", "#workflow"],
-        ["Payment infrastructure", "#why-arc"],
-        ["Try safely", "#proof"],
+        ["How payments work", "#why-arc"],
+        ["Payment account", "#proof"],
       ]
     : [
         ["Home", "/"],

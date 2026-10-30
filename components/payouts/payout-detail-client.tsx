@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 
 import { ActivityTimeline } from "@/components/payouts/activity-timeline";
 import { MilestoneRow } from "@/components/milestones/milestone-row";
@@ -77,6 +78,7 @@ export function PayoutDetailClient({
   currentActor,
   workspaceId,
 }: PayoutDetailClientProps) {
+  const router = useRouter();
   const isOwnerActor = isRole(currentActor, "owner");
   const canApproveMilestones = isOwnerActor;
   const [persistedRelease, setPersistedRelease] = useState<PersistedReleaseState | null>(() => {
@@ -569,13 +571,18 @@ export function PayoutDetailClient({
       });
       const data = (await response.json()) as {
         error?: string;
+        code?: string;
         milestone?: {
           status: Milestone["status"];
           approvedAt?: string | null;
           rejectedAt?: string | null;
         };
       };
-      if (!response.ok) throw new Error(data.error ?? `Unable to ${decision} milestone.`);
+      if (!response.ok) {
+        const error = new Error(data.error ?? `Unable to ${decision} milestone.`) as Error & { code?: string };
+        error.code = data.code;
+        throw error;
+      }
       setMilestoneState((current) =>
         current.map((milestone) =>
           milestone.id === milestoneId
@@ -602,8 +609,17 @@ export function PayoutDetailClient({
           : "Revisions requested. Contributor notified.",
       });
       await refreshActivity();
-    } catch {
-      setReviewError(`We couldn’t ${decision === "approved" ? "approve" : "request changes for"} this milestone. Its status has not changed. Try again in a moment.`);
+    } catch (error) {
+      const code = error instanceof Error && "code" in error
+        ? (error as Error & { code?: string }).code
+        : undefined;
+      if (code === "MILESTONE_NOT_REVIEWABLE") {
+        router.refresh();
+        setReviewError("This work is no longer awaiting review. The latest payout status has been loaded.");
+      } else {
+        setReviewError(`We couldn’t ${decision === "approved" ? "approve" : "request changes for"} this milestone. Its status has not changed. Try again in a moment.`);
+      }
+      throw error;
     } finally {
     }
   }

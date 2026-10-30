@@ -5,14 +5,17 @@ const db = new PrismaClient();
 
 // --- Constants ---
 const WS_ID = "ws-demo";
-const OWNER_ID = "user-owner";
+const LEGACY_CREATOR_ID = "user-owner";
+const DEMO_OWNER_ID = "user-owner-tommycuong";
 const REVIEWER_ID = "user-reviewer";
 const CONTRIB_USER_ID = "user-contrib";
+const RETIRED_PAYOUT_IDS = ["payout-1", "payout-2"];
+const RETIRED_MILESTONE_IDS = ["ms-1", "ms-2", "ms-3", "ms-4"];
 
 const contributors = [
   ["contrib-1", "Lena Tran", "0x7A12c84Ba6A5d2b116f45D3f9a3E0cA4B0Cd4b91", "Brand designer"],
   ["contrib-2", "Marcus Vale", "0x1A98bF14A4e5B9A68d8d9B4e6f2246F51C3D4A20", "Security QA"],
-  ["contrib-3", "Nora Kim", "0x91C2d1a2F17c28f2F44d8B3bB7D873A5D1C8a191", "Growth writer"],
+  ["contrib-3", "Nora Kim", "0x6B175474E89094C44Da98b954EedeAC495271d0F", "Growth writer"],
 ];
 
 async function main() {
@@ -27,13 +30,13 @@ async function main() {
 
   // --- Users ---
   const users = [
-    [OWNER_ID, "Alex Chen (Owner)", "owner@settleflow.xyz"],
+    [LEGACY_CREATOR_ID, "Alex Chen (Owner)", "owner@settleflow.xyz"],
     [REVIEWER_ID, "Sarah QA (Reviewer)", "reviewer@settleflow.xyz"],
     [CONTRIB_USER_ID, "David Builder (Contributor)", "contributor@settleflow.xyz"],
     ["user-owner-local", "Demo Owner", "owner@settleflow.local"],
     ["user-reviewer-local", "Demo Reviewer", "reviewer@settleflow.local"],
     ["user-contrib-local", "Nora Kim (linked)", "nora@settleflow.local"],
-    ["user-owner-tommycuong", "Tommy Cuong", "tommycuong1904@gmail.com"],
+    [DEMO_OWNER_ID, "Tommy Cuong", "tommycuong1904@gmail.com"],
     ["user-google-owner", "Alex Turner", "alex.turner@gmail.com"],
   ];
 
@@ -47,15 +50,23 @@ async function main() {
 
   // --- Workspace Members ---
   const members = [
-    [OWNER_ID, "owner"],
+    [DEMO_OWNER_ID, "owner"],
     [REVIEWER_ID, "reviewer"],
     [CONTRIB_USER_ID, "contributor"],
-    ["user-owner-local", "owner"],
     ["user-reviewer-local", "reviewer"],
     ["user-contrib-local", "contributor"],
-    ["user-owner-tommycuong", "owner"],
-    ["user-google-owner", "owner"],
   ];
+
+  // The demo workspace intentionally has one financial authority. Remove
+  // obsolete seeded Owner memberships while retaining their User records for
+  // payout provenance and historical test data.
+  await db.workspaceMember.deleteMany({
+    where: {
+      workspaceId: WS_ID,
+      role: "owner",
+      userId: { not: DEMO_OWNER_ID },
+    },
+  });
 
   for (const [userId, role] of members) {
     await db.workspaceMember.upsert({
@@ -81,109 +92,40 @@ async function main() {
     });
   }
 
-  // ============================================================
-  // Payout 1: "Smart Contract QA" — active, 2 milestones
-  //   milestone-1: approved (ready for release)
-  //   milestone-2: pending  (not yet submitted)
-  // ============================================================
-  await db.payout.upsert({
-    where: { id: "payout-1" },
-    update: {},
-    create: {
-      id: "payout-1",
-      workspaceId: WS_ID,
-      contributorId: "contrib-2",
-      createdByUserId: OWNER_ID,
-      title: "Smart Contract QA Support",
-      description: "Security review and QA for Arc contract integration.",
-      totalAmountUsdc: 450,
-      status: "active",
-      targetWalletAddress: "0x1A98bF14A4e5B9A68d8d9B4e6f2246F51C3D4A20",
-    },
-  });
-
-  // Milestone 1 — approved (release-test target)
-  await db.milestone.upsert({
-    where: { id: "ms-1" },
-    update: {},
-    create: {
-      id: "ms-1",
-      payoutId: "payout-1",
-      title: "QA checklist and threat review",
-      description: "Review contract logic and produce issue checklist.",
-      amountUsdc: 200,
-      sequence: 1,
-      status: "approved",
-      approvedAt: new Date("2026-07-20T12:00:00Z"),
-    },
-  });
-
-  // Milestone 2 — pending
-  await db.milestone.upsert({
-    where: { id: "ms-2" },
-    update: {},
-    create: {
-      id: "ms-2",
-      payoutId: "payout-1",
-      title: "Retest patched contract build",
-      description: "Validate resolved issues and produce final QA note.",
-      amountUsdc: 250,
-      sequence: 2,
-      status: "pending",
-    },
-  });
-
-  // ============================================================
-  // Payout 2: "Growth Content Sprint" — partially_released
-  //   ms-3: released (already done)
-  //   ms-4: submitted (awaiting review)
-  // ============================================================
-  await db.payout.upsert({
-    where: { id: "payout-2" },
-    update: {},
-    create: {
-      id: "payout-2",
-      workspaceId: WS_ID,
-      contributorId: "contrib-3",
-      createdByUserId: OWNER_ID,
-      title: "Growth Content Sprint",
-      description: "Content creation for launch thread and docs.",
-      totalAmountUsdc: 500,
-      status: "partially_released",
-      targetWalletAddress: "0x91C2d1a2F17c28f2F44d8B3bB7D873A5D1C8a191",
-    },
-  });
-
-  // Milestone 3 — released (already paid)
-  await db.milestone.upsert({
-    where: { id: "ms-3" },
-    update: {},
-    create: {
-      id: "ms-3",
-      payoutId: "payout-2",
-      title: "Thread outline",
-      description: "Prepare content structure for launch thread.",
-      amountUsdc: 100,
-      sequence: 1,
-      status: "released",
-      releasedAt: new Date("2026-07-18T15:00:00Z"),
-    },
-  });
-
-  // Milestone 4 — submitted (awaiting review)
-  await db.milestone.upsert({
-    where: { id: "ms-4" },
-    update: {},
-    create: {
-      id: "ms-4",
-      payoutId: "payout-2",
-      title: "Launch thread draft",
-      description: "Write the full launch thread copy.",
-      amountUsdc: 200,
-      sequence: 2,
-      status: "submitted",
-      submittedAt: new Date("2026-07-20T09:00:00Z"),
-    },
+  // Retire the two old fixtures from every seeded database. Their numeric
+  // route IDs were confusing in the UI and Payout 2 carried inconsistent
+  // payment data. Delete dependent records first because several financial
+  // relations intentionally use Restrict in the production schema.
+  await db.$transaction(async (tx) => {
+    await tx.activityLog.deleteMany({
+      where: {
+        OR: [
+          { payoutId: { in: RETIRED_PAYOUT_IDS } },
+          { milestoneId: { in: RETIRED_MILESTONE_IDS } },
+        ],
+      },
+    });
+    await tx.transactionProof.deleteMany({
+      where: {
+        OR: [
+          { payoutId: { in: RETIRED_PAYOUT_IDS } },
+          { milestoneId: { in: RETIRED_MILESTONE_IDS } },
+        ],
+      },
+    });
+    await tx.paymentAttempt.deleteMany({ where: { milestoneId: { in: RETIRED_MILESTONE_IDS } } });
+    await tx.release.deleteMany({
+      where: {
+        OR: [
+          { payoutId: { in: RETIRED_PAYOUT_IDS } },
+          { milestoneId: { in: RETIRED_MILESTONE_IDS } },
+        ],
+      },
+    });
+    await tx.milestoneReview.deleteMany({ where: { milestoneId: { in: RETIRED_MILESTONE_IDS } } });
+    await tx.milestoneSubmission.deleteMany({ where: { milestoneId: { in: RETIRED_MILESTONE_IDS } } });
+    await tx.milestone.deleteMany({ where: { id: { in: RETIRED_MILESTONE_IDS } } });
+    await tx.payout.deleteMany({ where: { id: { in: RETIRED_PAYOUT_IDS } } });
   });
 
   // ============================================================
@@ -197,7 +139,7 @@ async function main() {
       id: "payout-3",
       workspaceId: WS_ID,
       contributorId: "contrib-1",
-      createdByUserId: OWNER_ID,
+      createdByUserId: LEGACY_CREATOR_ID,
       title: "Landing Page Polish",
       description: "Visual refinements and responsive fixes for the landing page.",
       totalAmountUsdc: 300,
@@ -222,14 +164,11 @@ async function main() {
 
   console.log("✅ Seed complete.");
   console.log("   Workspace:", WS_ID);
-  console.log("   Users:    owner, reviewer, contributor (3)");
-  console.log("   Members:  owner, reviewer, contributor (3)");
+  console.log("   Active owner: Tommy Cuong (1)");
+  console.log("   Member roles: owner, reviewer, contributor");
   console.log("   Contribs: 3 (Lena, Marcus, Nora)");
-  console.log("   Payouts:  3 (active, partially_released, draft)");
-  console.log("   Milestones: 5 (pending, submitted, approved, released, pending)");
-  console.log("");
-  console.log("   Release-ready: payout-1 / ms-1 (approved, 200 USDC → Marcus)");
-  console.log("   Test conflict: payout-1 / ms-1 (double-release)");
+  console.log("   Payouts:  1 (draft)");
+  console.log("   Milestones: 1 (pending)");
 }
 
 main()

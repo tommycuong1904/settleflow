@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/shared/button";
 import { PageHeader } from "@/components/shared/page-header";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -18,12 +18,10 @@ import { getCirclePaymentSession } from "@/lib/circle/user-controlled-client";
 import {
   Shield,
   Cpu,
-  Check,
   Copy,
   ChevronDown,
   ExternalLink,
   Droplets,
-  UserPlus,
   Wallet,
   RefreshCw,
 } from "lucide-react";
@@ -173,34 +171,6 @@ export default function SettingsPage() {
   const [rpcStatus, setRpcStatus] = useState<"idle" | "testing" | "healthy">("idle");
   const [latencyMs, setLatencyMs] = useState<number | null>(null);
 
-  const [inviteEmail, setInviteEmail] = useState("");
-  const [generatedInviteUrl, setGeneratedInviteUrl] = useState<string | null>(null);
-  const [isGeneratingInvite, setIsGeneratingInvite] = useState(false);
-  const [copiedInvite, setCopiedInvite] = useState(false);
-
-  const handleCreateInvite = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsGeneratingInvite(true);
-    try {
-      const res = await fetch("/api/v1/invitations", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ role: "owner", email: inviteEmail.trim() || undefined }),
-      });
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body.error || "Failed to create invitation link.");
-      }
-      const data = await res.json();
-      setGeneratedInviteUrl(data.inviteUrl);
-      toast({ title: "Invitation link generated successfully!", variant: "success" });
-    } catch (err: unknown) {
-      toast({ title: err instanceof Error ? err.message : "Failed to create invitation", variant: "error" });
-    } finally {
-      setIsGeneratingInvite(false);
-    }
-  };
-
   const handleTestRpc = async () => {
     setRpcStatus("testing");
     const start = performance.now();
@@ -243,92 +213,6 @@ export default function SettingsPage() {
       />
 
       <div className="space-y-8">
-        {/* Team access */}
-        {isOwner && <details className="rounded-xl border border-[var(--border-soft)] bg-[var(--surface-muted)]/30 p-6 sm:p-8">
-          <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--surface-muted)] border border-[var(--border-soft)] text-[var(--text-muted)]">
-              <UserPlus size={20} />
-            </div>
-            <div>
-                <h2 className="text-base font-semibold text-[var(--foreground)]">Invite a workspace owner</h2>
-              <p className="text-xs text-[var(--text-muted)]">Give a trusted teammate full access to this workspace when needed.</p>
-            </div>
-            </div>
-            <ChevronDown size={18} className="shrink-0 text-[var(--text-muted)]" />
-          </summary>
-
-          <div className="mt-6 space-y-4 text-xs">
-            <div className="grid gap-4 md:grid-cols-3 items-end">
-              <div className="space-y-2.5 md:col-span-1">
-                <label className="block font-semibold uppercase tracking-wider text-[var(--text-muted)]">
-                  Invite Role
-                </label>
-                <div className="w-full rounded-full border border-[var(--border-soft)] bg-[var(--surface-muted)] py-2.5 px-3.5 text-xs text-[var(--foreground)]">
-                  Owner (Full Admin Access)
-                </div>
-              </div>
-
-              <div className="space-y-2.5 md:col-span-1">
-                <label className="block font-semibold uppercase tracking-wider text-[var(--text-muted)]">
-                  Target Email (Optional)
-                </label>
-                <input
-                  type="email"
-                  placeholder="name@company.com"
-                  value={inviteEmail}
-                  onChange={(e) => setInviteEmail(e.target.value)}
-                  className="w-full rounded-full border border-[var(--border-soft)] bg-[var(--input-background)] py-2.5 px-3.5 text-xs text-[var(--foreground)] placeholder:text-[var(--input-placeholder)] focus:border-[var(--foreground)] focus:bg-[var(--input-focus-background)] focus:outline-none"
-                />
-              </div>
-
-              <div className="md:col-span-1">
-                <Button
-                  type="button"
-                  variant="primary"
-                  size="md"
-                  onClick={handleCreateInvite}
-                  disabled={isGeneratingInvite}
-                  className="w-full flex items-center justify-center gap-2"
-                >
-                  <UserPlus size={14} />
-                  {isGeneratingInvite ? "Generating..." : "Generate Invite Link"}
-                </Button>
-              </div>
-            </div>
-
-            {generatedInviteUrl && (
-              <div className="mt-4 p-4 rounded-xl bg-[var(--surface-strong)] border border-[var(--border-soft)] space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="font-semibold text-[var(--foreground)]">Invitation Link Ready:</span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      navigator.clipboard.writeText(generatedInviteUrl);
-                      setCopiedInvite(true);
-                      setTimeout(() => setCopiedInvite(false), 2000);
-                      toast({ title: "Link copied to clipboard!", variant: "success" });
-                    }}
-                    className="inline-flex items-center gap-1.5 px-3 py-1 text-xs rounded-lg bg-[var(--surface-muted)] hover:bg-[var(--border-soft)] text-[var(--foreground)] font-medium transition-all"
-                  >
-                    {copiedInvite ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
-                    {copiedInvite ? "Copied!" : "Copy Link"}
-                  </button>
-                </div>
-                <input
-                  type="text"
-                  readOnly
-                  value={generatedInviteUrl}
-                  className="w-full rounded-full border border-[var(--border-soft)] bg-[var(--input-background)] py-2 px-3 text-xs font-mono text-[var(--foreground)] select-all"
-                />
-                <p className="text-[11px] text-[var(--text-muted)]">
-                  Share this link with your team member. Upon opening, they will accept the invite and join this workspace as <strong className="uppercase text-[var(--foreground)]">Owner</strong>.
-                </p>
-              </div>
-            )}
-          </div>
-        </details>}
-
         {isOwner ? <WorkspaceMembers key={productContext.workspaceId} workspaceId={productContext.workspaceId} /> : null}
         {isOwner ? <PendingInvitations /> : null}
 

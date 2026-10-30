@@ -19,7 +19,7 @@ The database role and runtime actor are intentionally not the same enum.
 
 `owner`, `ops`, `reviewer`, `contributor`.
 
-New invitations support only `owner` and `contributor`. `ops` and `reviewer` remain in the database/runtime model for historical memberships, but cannot be newly invited or accepted.
+Each workspace has one Owner in the active MVP. New invitations support only `contributor`; `ops`, `reviewer`, and `owner` remain in the database/runtime model for historical memberships, but cannot be newly invited or accepted.
 
 `ProductActor` currently contains four values:
 
@@ -29,7 +29,7 @@ The implemented mapping is:
 
 | WorkspaceMemberRole | ProductActor | Meaning in current policy |
 | --- | --- | --- |
-| `owner` | `owner` | owner-level operations |
+| `owner` | `owner` | single workspace financial authority in the active MVP |
 | `ops` | `ops` | historical membership only; not assignable through invitations |
 | `reviewer` | `reviewer` | historical membership only; not assignable through invitations |
 | `contributor` | `contributor` | submission and contributor-scoped viewing |
@@ -95,7 +95,7 @@ The centralized policy functions currently enforce:
 - `reviewer`: retained for historical memberships only; review decisions are disabled in the active Owner/Contributor MVP.
 - `contributor`: submit milestones and view only payouts matched to the active user through the linked contributor user, recipient wallet, or contributor email.
 - Contributor management requires the `owner` actor.
-- Workspace-member management requires the `owner` actor. Owners can list members and remove only `contributor` memberships. Owners can also list and revoke pending invitations in their active workspace. Owner, `ops`, and `reviewer` memberships cannot be changed or removed through the product UI; role changes are intentionally out of scope for the active MVP.
+- Workspace-member management requires the `owner` actor. Owners can list members and remove only `contributor` memberships. Owners can also list and revoke pending contributor invitations in their active workspace. Owner, `ops`, and `reviewer` memberships cannot be changed or removed through the product UI; role changes are intentionally out of scope for the active MVP.
 
 These are the permissions explicitly represented by `lib/runtime/product-policy.ts`. This document does not infer additional permissions from role names.
 
@@ -105,7 +105,7 @@ Requests carry a workspace context, and repository operations receive the worksp
 
 The request context resolver retains development/default fallbacks only when no session is present. For a verified session, `lib/auth/session-server.ts` requires a persisted `User` and `WorkspaceMember`; actor and user IDs are derived from the selected membership. A workspace selector is accepted only when it matches one of the user's memberships, and ambiguous multi-workspace sessions must select a workspace. Missing or unauthorized membership context returns `AUTH_CONTEXT_REQUIRED` (403).
 
-The sole self-service membership bootstrap occurs during the first verified Google or wallet sign-in. In that same transaction, an account with no memberships is locked and receives one new workspace plus its `owner` membership. It cannot grant access to an existing workspace or add an owner role to a workspace selected by client input; invitations remain the path into another user's workspace.
+The sole self-service membership bootstrap occurs during the first verified Google or wallet sign-in. In that same transaction, an account with no memberships is locked and receives one new workspace plus its sole `owner` membership. It cannot grant access to an existing workspace or add an owner role to a workspace selected by client input; contributor invitations remain the path into another user's workspace.
 
 ## Authentication and actor alignment
 

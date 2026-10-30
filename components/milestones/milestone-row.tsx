@@ -63,6 +63,7 @@ export function MilestoneRow({
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
   const [rejectComment, setRejectComment] = useState("");
   const [reviewBusy, setReviewBusy] = useState(false);
+  const reviewInFlightRef = useRef(false);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
   const rejectCommentRef = useRef<HTMLTextAreaElement>(null);
   const rejectDialogRef = useRef<HTMLDivElement>(null);
@@ -144,13 +145,18 @@ export function MilestoneRow({
   };
 
   async function handleApprove() {
-    if (!onApprove || reviewBusy) return;
+    if (!onApprove || reviewBusy || reviewInFlightRef.current) return;
+    reviewInFlightRef.current = true;
     setReviewBusy(true);
     try {
       await onApprove(milestone.id);
       setStatus("approved");
       onStatusChange?.(milestone.id, "approved");
+    } catch {
+      // The parent displays the actionable error. Do not show an optimistic
+      // Approved state when the server rejected the review.
     } finally {
+      reviewInFlightRef.current = false;
       setReviewBusy(false);
     }
   }

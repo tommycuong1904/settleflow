@@ -60,6 +60,70 @@ test("unapproved milestone release is rejected without creating release or proof
   }
 });
 
+test("invalid destination wallet is a validation error and creates no release", async () => {
+  const suffix = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const email = `invalid-destination-owner-${suffix}@example.com`;
+  const user = await db.user.create({ data: { displayName: "Invalid Destination Owner", email } });
+  const workspace = await db.workspace.create({ data: { name: "Invalid Destination Workspace", slug: `invalid-destination-${suffix}` } });
+  await db.workspaceMember.create({ data: { workspaceId: workspace.id, userId: user.id, role: "owner" } });
+  const contributor = await db.contributor.create({
+    data: { workspaceId: workspace.id, createdByUserId: user.id, name: "Invalid Destination Contributor" },
+  });
+  const payout = await db.payout.create({
+    data: {
+      workspaceId: workspace.id,
+      contributorId: contributor.id,
+      createdByUserId: user.id,
+      title: "Invalid Destination Payout",
+      totalAmountUsdc: "5",
+      status: "active",
+      targetWalletAddress: "not-an-evm-address",
+    },
+  });
+  const milestone = await db.milestone.create({
+    data: { payoutId: payout.id, title: "Approved Milestone", description: "Wallet validation test", amountUsdc: "5", sequence: 1, status: "approved" },
+  });
+  const sourceWallet = await db.userWallet.create({
+    data: {
+      userId: user.id,
+      address: "0x2222222222222222222222222222222222222222",
+      normalizedAddress: "0x2222222222222222222222222222222222222222",
+      kind: "web3_eoa",
+      authEnabled: true,
+      transactionEnabled: true,
+    },
+  });
+  const token = await createSessionToken({
+    userId: user.id,
+    email,
+    name: "Invalid Destination Owner",
+    address: sourceWallet.address,
+    walletId: sourceWallet.id,
+    authType: "web3_wallet",
+  });
+
+  try {
+    const response = await releaseRoute(new Request(`https://settleflow.local/api/v1/milestones/${milestone.id}/release?workspaceId=${workspace.id}`, {
+      method: "POST",
+      headers: { cookie: `sf_session=${token}` },
+      body: JSON.stringify({ amountUsdc: "5", executionMode: "browser_wallet" }),
+    }), { params: Promise.resolve({ id: milestone.id }) });
+    const body = await response.json();
+    assert.equal(response.status, 400);
+    assert.equal(body.code, "INVALID_DESTINATION_WALLET");
+    assert.equal(body.error, "Destination wallet must be a valid EVM address.");
+    assert.equal(await db.release.count({ where: { milestoneId: milestone.id } }), 0);
+    assert.equal(await db.transactionProof.count({ where: { milestoneId: milestone.id } }), 0);
+  } finally {
+    await db.milestone.delete({ where: { id: milestone.id } });
+    await db.payout.delete({ where: { id: payout.id } });
+    await db.contributor.delete({ where: { id: contributor.id } });
+    await db.workspaceMember.deleteMany({ where: { workspaceId: workspace.id } });
+    await db.workspace.delete({ where: { id: workspace.id } });
+    await db.user.delete({ where: { id: user.id } });
+  }
+});
+
 test("release, retry, proof refresh, tampering, and workspace boundaries hold through real routes", async () => {
   const suffix = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const email = `route-owner-${suffix}@example.com`;
